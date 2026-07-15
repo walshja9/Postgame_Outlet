@@ -15,8 +15,11 @@ The file is static, so any of these work and all have a free tier:
 - **Cloudflare Pages / S3 static site** — same idea if you already use one.
 
 Whichever you pick, the goal is a public HTTPS URL that serves `index.html`.
-Re-uploading the regenerated file (after you edit ratings/write-ups) is the only
-"deploy" step. Netlify drop and GitHub both let you re-drag / re-commit.
+The Shopify page embeds the approved GitHub Pages artifact. `python
+generate_site.py` creates only a dated file under `output/ratings-preview/`; it does not
+change Pages or Shopify. After the combined preview is explicitly approved, a
+separate release step may generate `docs/index.html` and deploy that reviewed
+commit.
 
 ## Step 2 — Embed it in a Shopify page
 

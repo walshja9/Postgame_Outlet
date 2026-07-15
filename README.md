@@ -24,7 +24,7 @@ data/
   writeups/        Optional per-team analysis: one <ABBR>.md per team (e.g. SEA.md).
 
 build_ratings.py   -> NFL_Power_Ratings_2026.xlsx  (workbook: ratings, QBs, depth, projections)
-generate_site.py   -> index.html                   (standalone ratings website, sortable)
+generate_site.py   -> output/ratings-preview/YYYY-MM-DD/index.html (private preview)
 spreads.py         -> terminal + spreads.html       (schedule + my line vs. ESPN market line)
 ```
 
@@ -35,7 +35,11 @@ cd ~/nfl-power-ratings
 
 # After editing data/ratings.csv, regenerate whichever you want:
 python3 build_ratings.py          # the Excel workbook
-python3 generate_site.py          # the ratings website (index.html)
+python generate_site.py
+# -> output/ratings-preview/YYYY-MM-DD/index.html (dated private preview)
+
+# Production output is explicit and is run only after preview approval:
+python generate_site.py --output docs/index.html
 
 # Spreads vs. the market (free, unofficial ESPN JSON API — no key/install):
 python3 spreads.py 1              # one week
@@ -45,6 +49,10 @@ python3 spreads.py all 2026 --html # also write spreads.html
 # Open an artifact:
 open index.html        # or NFL_Power_Ratings_2026.xlsx, or spreads.html
 ```
+
+Generation stops if any row in `data/ratings.csv` has `needs_review=Y`. Clear
+those flags through editorial review; never bypass the gate. The default command
+writes a private preview and does not replace the GitHub Pages artifact.
 
 ## Team write-ups (click-to-expand on the site)
 

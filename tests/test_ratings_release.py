@@ -3,6 +3,7 @@ import csv
 import json
 import tempfile
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
 
@@ -139,7 +140,7 @@ class SnapshotHtmlTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             with patch.object(generate_site, "DATA", temp):
                 with patch("generate_site.load_snaps", return_value=snaps, create=True):
-                    page = generate_site.build_html([row], 2026)
+                    page = generate_site.build_html([row], {"season": "2026"})
 
         marker = "const VERSION_META = "
         self.assertTrue(marker in page, f"{marker!r} missing")
@@ -161,13 +162,66 @@ class SnapshotHtmlTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             with patch.object(generate_site, "DATA", temp):
                 with patch.object(generate_site, "load_snaps", return_value=snaps):
-                    page = generate_site.build_html([], 2026)
+                    page = generate_site.build_html([], {"season": "2026"})
 
         payload = page.split("const VERSION_META = ", 1)[1].split(";\n", 1)[0]
         self.assertNotIn("</script>", payload)
         self.assertEqual(
             json.loads(payload)["Week 1"]["corrections"][0]["note"],
             note,
+        )
+
+
+class GeneratedDocumentTests(unittest.TestCase):
+    def setUp(self):
+        self.rows = [
+            {
+                "team": "Alpha", "conf": "AFC", "div": "East",
+                "qb_name": "A QB", "qb": 1.0, "off": 0.5, "def": -0.5,
+                "prior": 0.0, "rating": 1.0, "notes": "Alpha note",
+                "injury": False,
+            }
+        ]
+        self.config = {
+            "season": "2026",
+            "edition": "2026 Preseason",
+            "author": "Sean McCabe",
+        }
+        generate_site.build_html.qb_data = ([], [])
+
+    def test_metadata_names_author_edition_and_canonical_page(self):
+        generated_at = datetime(2026, 7, 15, 22, 0, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as temp:
+            Path(temp, "snapshots.json").write_text("{}", encoding="utf-8")
+            with patch.object(generate_site, "DATA", temp):
+                document = generate_site.build_html(
+                    self.rows,
+                    self.config,
+                    generated_at=generated_at,
+                )
+        self.assertIn('<meta name="description"', document)
+        self.assertIn(
+            '<link rel="canonical" href="https://postgameoutlet.com/pages/power-ratings">',
+            document,
+        )
+        self.assertIn("Sean McCabe", document)
+        self.assertIn("2026 Preseason", document)
+        self.assertIn('<time datetime="2026-07-15T22:00:00+00:00">', document)
+
+    def test_prediction_lab_surface_is_not_public(self):
+        with tempfile.TemporaryDirectory() as temp:
+            Path(temp, "snapshots.json").write_text("{}", encoding="utf-8")
+            with patch.object(generate_site, "DATA", temp):
+                document = generate_site.build_html(self.rows, self.config)
+        self.assertNotIn("Schedule &amp; Spreads", document)
+        self.assertNotIn("SPREADS_JSON", document)
+        self.assertNotIn("const SPREADS", document)
+
+    def test_default_output_is_private_preview(self):
+        args = generate_site.parse_args([])
+        self.assertRegex(
+            args.output.replace("\\", "/"),
+            r"output/ratings-preview/\d{4}-\d{2}-\d{2}/index\.html$",
         )
 
 

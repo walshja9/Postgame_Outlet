@@ -11,22 +11,39 @@ tier heat-map). No external dependencies — double-click to open.
 Re-run after editing the CSVs to refresh the page.
 """
 
+import argparse
 import csv
 import html
 import json
 import os
 import re
+import sys
 from datetime import datetime
 
 from release_ratings import load_release_rows
 from snapshot import load_snaps
 
-import spreads  # reuse the schedule-fetch + spread-compute logic
-
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "data")
 WRITEUPS = os.path.join(DATA, "writeups")
 QB_WRITEUPS = os.path.join(DATA, "qb_writeups")  # optional per-QB overrides
+PREVIEW_ROOT = os.path.join(HERE, "output", "ratings-preview")
+CANONICAL_URL = "https://postgameoutlet.com/pages/power-ratings"
+
+
+def default_preview_path(today=None):
+    today = today or datetime.now().astimezone().date()
+    return os.path.join(PREVIEW_ROOT, today.isoformat(), "index.html")
+
+
+def parse_args(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--output",
+        default=default_preview_path(),
+        help="Generated HTML path; defaults to a dated private local preview.",
+    )
+    return parser.parse_args(argv)
 
 # Teams whose 2025 ending rating was deflated by a hurt/benched starter —
 # trust the talent build more for these.
@@ -266,35 +283,6 @@ def load_qbs(team_ratings=None):
     return starters, backups
 
 
-def gather_spreads(season_year):
-    """Fetch the full season from ESPN and return a JSON-ready dict:
-    {week: [ {match, mine, market, edge, prime, big}, ... ]}.
-    Returns {} (and the page hides the tab) if nothing is available."""
-    ratings = spreads.load_ratings()
-    hfa, default_hfa = spreads.load_hfa()
-    out = {}
-    for wk in range(1, spreads.REG_SEASON_WEEKS + 1):
-        try:
-            payload = spreads.fetch_week(str(wk), season_year)
-        except Exception:  # noqa: BLE001
-            continue
-        games = spreads.parse_games(payload, ratings, hfa, default_hfa)
-        if not games:
-            continue
-        items = []
-        for g in sorted(games, key=lambda x: -(abs(x["edge"]) if x["edge"] is not None else -1)):
-            items.append({
-                "away": spreads.abbrev(g["away"]), "home": spreads.abbrev(g["home"]),
-                "awayFull": g["away"], "homeFull": g["home"],
-                "mine": spreads.fmt_spread(g["home"], g["my_spread"]),
-                "market": g["details"] or "(no line)",
-                "edge": g["edge"], "prime": g["prime"],
-                "big": g["edge"] is not None and abs(g["edge"]) >= 1.5,
-            })
-        out[wk] = items
-    return out
-
-
 def _bar(label, v, scale=6.5):
     """One horizontal +/- bar for a component in the expanded team detail.
     Bars grow right from center for positive, left for negative."""
@@ -409,7 +397,13 @@ def build_qb_detail(q, kind, rank):
         f'<div class="dr-writeup">{writeup}</div>')
 
 
-def build_html(rows, season):
+def build_html(rows, config, generated_at=None):
+    season = config.get("season", "2026")
+    edition = config.get("edition", f"{season} Preseason")
+    author = config.get("author", "Sean McCabe")
+    generated_at = generated_at or datetime.now().astimezone()
+    updated_iso = generated_at.isoformat(timespec="seconds")
+    updated = f"{generated_at:%B} {generated_at.day}, {generated_at.year}"
     body = render_rating_rows(rows)
 
     # Archived weekly snapshots -> {label: rendered <tr> rows}. "Current" is
@@ -470,16 +464,13 @@ def build_html(rows, season):
     has_qbs = "block" if starters else "none"
     qb_details_json = json.dumps(qb_details)
 
-    spreads_json = json.dumps(build_html.spreads_data or {})
-    weeks = sorted((build_html.spreads_data or {}).keys())
-    opts = "".join(f'<option value="{w}">Week {w}</option>' for w in weeks)
-    has_spreads = "block" if weeks else "none"
     details_json = json.dumps(build_details(rows))
 
-    now = datetime.now()
-    updated = f"{now:%B} {now.day}, {now.year}"  # %-d is POSIX-only; keep Windows-safe
     return (TEMPLATE
             .replace("{{SEASON}}", str(season))
+            .replace("{{EDITION}}", html.escape(edition))
+            .replace("{{AUTHOR}}", html.escape(author))
+            .replace("{{UPDATED_ISO}}", html.escape(updated_iso))
             .replace("{{UPDATED}}", updated)
             .replace("{{ROWS}}", body)
             .replace("{{DETAILS_JSON}}", details_json)
@@ -489,13 +480,9 @@ def build_html(rows, season):
             .replace("{{QB_STARTERS}}", qb_starter_rows)
             .replace("{{QB_BACKUPS}}", qb_backup_rows)
             .replace("{{QB_DETAILS_JSON}}", qb_details_json)
-            .replace("{{HAS_QBS}}", has_qbs)
-            .replace("{{SPREADS_JSON}}", spreads_json)
-            .replace("{{WEEK_OPTS}}", opts)
-            .replace("{{HAS_SPREADS}}", has_spreads))
+            .replace("{{HAS_QBS}}", has_qbs))
 
 
-build_html.spreads_data = {}  # set by main() before calling
 build_html.qb_data = ([], [])  # set by main() before calling
 
 
@@ -504,7 +491,9 @@ TEMPLATE = """<!DOCTYPE html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NFL Power Ratings {{SEASON}}</title>
+<title>{{EDITION}} NFL Power Ratings | Postgame Outlet</title>
+<meta name="description" content="Sean McCabe’s {{EDITION}} NFL Power Ratings, expressed as neutral-field points above or below a league-average team.">
+<link rel="canonical" href="https://postgameoutlet.com/pages/power-ratings">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -603,8 +592,6 @@ TEMPLATE = """<!DOCTYPE html>
   .version-meta { color:var(--mut); font-size:12px; margin:8px 0 0; }
   .version-meta:empty { display:none; }
   .version-meta p { margin:4px 0 0; }
-  td.edge { font-weight:700; font-size:15px; }
-  tr.bigedge { background:rgba(224,130,28,.12) !important; box-shadow:inset 3px 0 0 var(--teal); }
   .pos { color:var(--pos); } .neg { color:var(--neg); }
   .qbhead { font-family:var(--disp); font-weight:600; font-size:20px; color:var(--ink);
             margin:24px 0 10px; text-transform:uppercase; letter-spacing:.03em;
@@ -716,14 +703,13 @@ TEMPLATE = """<!DOCTYPE html>
   <header>
     <h1>NFL Power Ratings <span class="accent">{{SEASON}}</span></h1>
     <div class="sub">Preseason &middot; roster-based, points vs. a league-average team (0.0)</div>
-    <div class="updated">Updated {{UPDATED}} &middot; click any team to explore</div>
+    <div class="updated">By {{AUTHOR}} &middot; {{EDITION}} &middot; Updated <time datetime="{{UPDATED_ISO}}">{{UPDATED}}</time></div>
   </header>
 </div>
 <div class="wrap">
   <div class="tabs">
     <div class="tab active" data-panel="ratings">Power Ratings</div>
     <div class="tab" data-panel="qbs" style="display:{{HAS_QBS}}">QB Rankings</div>
-    <div class="tab" data-panel="spreads" style="display:{{HAS_SPREADS}}">Schedule &amp; Spreads</div>
     <div class="tab" data-panel="method">Methodology</div>
   </div>
   <div class="panel active" id="panel-ratings">
@@ -777,26 +763,6 @@ TEMPLATE = """<!DOCTYPE html>
       </tbody>
     </table>
   </div><!-- /panel-qbs -->
-
-  <div class="panel" id="panel-spreads">
-    <div class="weekbar">
-      <label for="wk" style="color:var(--mut);font-size:13px">Week</label>
-      <select id="wk"></select>
-      <span class="note">My line vs. market &middot; edge = market &minus; mine &middot; ★ = primetime (home +0.5)</span>
-    </div>
-    <table id="sp">
-      <thead><tr>
-        <th class="team">Matchup</th>
-        <th>My Line</th>
-        <th>Market</th>
-        <th>Edge</th>
-      </tr></thead>
-      <tbody></tbody>
-    </table>
-    <div class="legend">
-      Highlighted rows = my line differs from the market by <b>1.5+ points</b> — where my ratings see value the market doesn't.
-    </div>
-  </div><!-- /panel-spreads -->
 
   <div class="panel" id="panel-method">
     <div class="method">
@@ -865,7 +831,6 @@ TEMPLATE = """<!DOCTYPE html>
 </aside>
 
 <script>
-  const SPREADS = {{SPREADS_JSON}};
   const VERSIONS = {{VERSIONS_JSON}};
   const VERSION_META = {{VERSION_META_JSON}};
   const DETAILS = {{DETAILS_JSON}};
@@ -971,32 +936,6 @@ TEMPLATE = """<!DOCTYPE html>
     });
   });
 
-  // --- schedule & spreads ---
-  const wkSel = document.getElementById('wk');
-  const spBody = document.querySelector('#sp tbody');
-  const weeks = Object.keys(SPREADS).map(Number).sort((a, b) => a - b);
-  weeks.forEach(w => {
-    const o = document.createElement('option');
-    o.value = w; o.textContent = 'Week ' + w; wkSel.appendChild(o);
-  });
-  function renderWeek(w) {
-    const games = SPREADS[w] || [];
-    spBody.innerHTML = games.map(g => {
-      const star = g.prime ? ' <span class="inj">★</span>' : '';
-      const match = g.away + ' @ ' + g.home + star;
-      let edge = '—';
-      if (g.edge !== null) {
-        const cls = g.edge > 0 ? 'pos' : (g.edge < 0 ? 'neg' : '');
-        edge = '<span class="' + cls + '">' + (g.edge > 0 ? '+' : '') + g.edge.toFixed(1) + '</span>';
-      }
-      return '<tr class="' + (g.big ? 'bigedge' : '') + '">' +
-        '<td class="team">' + match + '</td>' +
-        '<td>' + g.mine + '</td><td>' + g.market + '</td>' +
-        '<td class="edge">' + edge + '</td></tr>';
-    }).join('');
-  }
-  if (weeks.length) { renderWeek(weeks[0]); wkSel.addEventListener('change', e => renderWeek(+e.target.value)); }
-
   // --- iframe embed bridge (no-op when opened directly) ---
   if (window.parent !== window) {
     document.body.classList.add('embedded');
@@ -1010,7 +949,7 @@ TEMPLATE = """<!DOCTYPE html>
     if (window.ResizeObserver) new ResizeObserver(reportHeight).observe(document.body);
     window.addEventListener('load', reportHeight);
     setTimeout(reportHeight, 60); setTimeout(reportHeight, 400);
-    // Content changed (tab switch, sort, snapshot, week) -> re-measure.
+    // Content changed (tab switch, sort, snapshot) -> re-measure.
     document.addEventListener('click', () => setTimeout(reportHeight, 30), true);
     // 2) Parent tells us which vertical slice of the iframe is on screen, so the
     //    drawer/scrim pin to the visible area instead of the whole tall iframe.
@@ -1028,30 +967,29 @@ TEMPLATE = """<!DOCTYPE html>
 """
 
 
-def main():
+def main(argv=None):
+    args = parse_args(argv)
     cfg = load_config()
-    season = cfg.get("season", "2026")
     prior = load_prior()
-    rows = load_teams(prior)
-    team_ratings = {r["team"]: r["rating"] for r in rows}
+    try:
+        rows = load_teams(prior)
+    except ValueError as error:
+        print(error, file=sys.stderr)
+        return 1
+    team_ratings = {row["team"]: row["rating"] for row in rows}
     build_html.qb_data = load_qbs(team_ratings)
 
-    print("Fetching schedule + market spreads from ESPN...")
-    try:
-        build_html.spreads_data = gather_spreads(season)
-    except Exception as e:  # noqa: BLE001
-        print(f"  (spreads unavailable: {e} — page will show ratings only)")
-        build_html.spreads_data = {}
-    nweeks = len(build_html.spreads_data)
-
-    out = os.path.join(HERE, "docs", "index.html")  # what GitHub Pages serves
-    with open(out, "w", encoding="utf-8") as f:
-        f.write(build_html(rows, season))
+    out = os.path.abspath(args.output)
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    with open(out, "w", encoding="utf-8") as handle:
+        handle.write(build_html(rows, cfg))
     print(f"Wrote {out}")
-    print(f"  {len(rows)} teams | top: {rows[0]['team']} {rows[0]['rating']:+.1f}"
-          f" | bottom: {rows[-1]['team']} {rows[-1]['rating']:+.1f}")
-    print(f"  spreads: {nweeks} weeks embedded")
+    print(
+        f"  {len(rows)} teams | top: {rows[0]['team']} {rows[0]['rating']:+.1f}"
+        f" | bottom: {rows[-1]['team']} {rows[-1]['rating']:+.1f}"
+    )
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

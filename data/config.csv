@@ -2,3 +2,5 @@ key,value,description
 home_field_adv,2.0,Points added to the home team in a projection
 scheme_mode,additive,"additive = scheme_value adds directly to rating; multiplier = scheme_value scales (off_value+def_value) by (1+scheme_value/10)"
 season,2026,Season label for the output workbook
+edition,2026 Preseason,Public edition label
+author,Sean McCabe,Named Power Ratings author
