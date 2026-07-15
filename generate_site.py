@@ -507,7 +507,7 @@ TEMPLATE = """<!DOCTYPE html>
     --row-alt:#f7f9fc; --hover:#edf1f7; --border:#dfe6ef; --border2:#c9d3e2;
     --ink:#384f6f; --mut:#647892; --dim:#8fa0b6;
     --teal:#e0821c; --teal2:#c96f0e; --violet:#384f6f; --violet2:#384f6f;
-    --pos:#1a9a6c; --neg:#d94f36; --accent:#e0821c;
+    --pos:#1a9a6c; --neg:#d94f36; --accent:#e0821c; --orange:#fd962f;
     --disp:'Oswald',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
     --body:'Montserrat',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
   }
@@ -517,20 +517,24 @@ TEMPLATE = """<!DOCTYPE html>
     background:var(--bg);
     background-attachment:fixed; min-height:100vh;
   }
-  .wrap { max-width:1040px; margin:0 auto; padding:30px 16px 72px; }
+  .wrap { max-width:1040px; margin:0 auto; padding:0 16px 72px; }
 
-  header { text-align:center; margin-bottom:20px; }
+  /* Full-bleed slate banner, same family as the store's hero boxes */
+  .hero { background:linear-gradient(120deg,#324763 0%,#384f6f 55%,#3f5878 100%);
+          padding:38px 16px 34px; margin-bottom:26px;
+          border-bottom:3px solid var(--orange); }
+  header { text-align:center; max-width:1040px; margin:0 auto; }
   header h1 {
     margin:0; font-family:var(--disp); font-weight:700; line-height:.95;
-    font-size:clamp(34px,6.5vw,60px); letter-spacing:.5px; color:var(--ink);
+    font-size:clamp(34px,6.5vw,60px); letter-spacing:.5px; color:#fff;
     text-transform:uppercase;
   }
-  header h1 .accent { color:var(--teal); }
-  header .sub { color:var(--mut); font-size:13px; margin-top:9px;
+  header h1 .accent { color:var(--orange); }
+  header .sub { color:rgba(255,255,255,.72); font-size:13px; margin-top:9px;
                 letter-spacing:.04em; }
-  header .updated { color:var(--dim); font-size:11px; margin-top:6px;
+  header .updated { color:rgba(255,255,255,.5); font-size:11px; margin-top:6px;
                     letter-spacing:.06em; text-transform:uppercase; }
-  header .updated::before { content:"● "; color:var(--teal); }
+  header .updated::before { content:"● "; color:var(--orange); }
 
   .panel.active { background:var(--panel);
     border:1px solid var(--border); border-radius:14px; padding:18px 16px 20px;
@@ -539,13 +543,13 @@ TEMPLATE = """<!DOCTYPE html>
   table { width:100%; border-collapse:collapse; background:transparent; }
   th,td { padding:10px 11px; text-align:right; white-space:nowrap; }
   th {
-    background:var(--panel2); color:var(--mut); font-family:var(--body); font-weight:600;
+    background:var(--ink); color:rgba(255,255,255,.78); font-family:var(--body); font-weight:600;
     font-size:11px; letter-spacing:.07em; text-transform:uppercase; cursor:pointer;
-    user-select:none; border-bottom:1px solid var(--border2);
+    user-select:none; border-bottom:2px solid var(--orange);
   }
   th:first-child { border-top-left-radius:9px; } th:last-child { border-top-right-radius:9px; }
-  th:hover { color:var(--teal2); background:#e7edf5; }
-  th.up { color:var(--teal); } th.down { color:var(--teal); }
+  th:hover { color:#ffc07a; background:#2e415c; }
+  th.up { color:var(--orange); } th.down { color:var(--orange); }
   th.up::after { content:" \\2191"; } th.down::after { content:" \\2193"; }
   tbody tr { border-bottom:1px solid var(--border); }
   tbody tr:nth-child(even) { background:var(--row-alt); }
@@ -580,7 +584,7 @@ TEMPLATE = """<!DOCTYPE html>
     font-size:14px; font-weight:600; letter-spacing:.01em; transition:all .12s;
   }
   .tab:hover { color:var(--ink); border-color:var(--border2); }
-  .tab.active { color:var(--violet2); background:rgba(56,79,111,.10); border-color:var(--violet); }
+  .tab.active { color:#fff; background:var(--orange); border-color:var(--orange); }
   .panel { display:none; } .panel.active { display:block; }
 
   .weekbar { display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
@@ -697,12 +701,14 @@ TEMPLATE = """<!DOCTYPE html>
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="hero">
   <header>
     <h1>NFL Power Ratings <span class="accent">{{SEASON}}</span></h1>
     <div class="sub">Preseason &middot; roster-based, points vs. a league-average team (0.0)</div>
     <div class="updated">Updated {{UPDATED}} &middot; click any team to explore</div>
   </header>
+</div>
+<div class="wrap">
   <div class="tabs">
     <div class="tab active" data-panel="ratings">Power Ratings</div>
     <div class="tab" data-panel="qbs" style="display:{{HAS_QBS}}">QB Rankings</div>
@@ -734,7 +740,7 @@ TEMPLATE = """<!DOCTYPE html>
   </table>
   <div class="legend">
     <b>Rating</b> = QB + Offense + Defense (each in points vs. a league-average team, 0.0).<br>
-    <b>Off / Def</b> are non-QB unit values. <b>End '25</b> is last season's ending rating, shown for reference. Teal = above average, red = below.
+    <b>Off / Def</b> are non-QB unit values. <b>End '25</b> is last season's ending rating, shown for reference. Green = above average, red = below.
   </div>
   </div><!-- /panel-ratings -->
 
@@ -782,6 +788,23 @@ TEMPLATE = """<!DOCTYPE html>
 
   <div class="panel" id="panel-method">
     <div class="method">
+      <h3>The quick version</h3>
+      <p>Welcome to the Postgame Outlet power ratings corner. In a nutshell, our power
+      ratings tell you how many points better or worse a team is than an average NFL
+      team. If Green Bay is a <code>+9</code>, we see them as nine points stronger than
+      a league-average team on a neutral field. If Kansas City is <code>+8.5</code>,
+      Green Bay would be about half a point better than the Chiefs somewhere neutral.</p>
+      <p>Home field plays a role too. We give about a point and a half for home field
+      on average, but tougher buildings like Green Bay or Seattle get bumped closer to
+      two, while friendlier stops like Jacksonville or the Chargers might only get a
+      single point. Prime-time home games get an extra half-point for the intensity.</p>
+      <p>These are <b>living numbers</b> — they move as we get new info: injuries,
+      trades, or just last year's data mattering less as the new season takes shape.
+      One thing we don't bake in is motivation. A team on a losing streak might come
+      out extra fired up, and we leave that layer of context to you. Use the ratings
+      to read the NFL landscape at a glance — and maybe find a little edge on your
+      picks — but remember they're always evolving, just like the game itself.</p>
+
       <h3>What this is</h3>
       <p>A roster-based, points-denominated power rating for all 32 NFL teams. Every
       team's rating is expressed in <b>points versus a league-average team (0.0)</b> and
