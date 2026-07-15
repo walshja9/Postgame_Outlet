@@ -772,16 +772,11 @@ TEMPLATE = """<!DOCTYPE html>
       team. If Green Bay is a <code>+9</code>, we see them as nine points stronger than
       a league-average team on a neutral field. If Kansas City is <code>+8.5</code>,
       Green Bay would be about half a point better than the Chiefs somewhere neutral.</p>
-      <p>Home field plays a role too. We give about a point and a half for home field
-      on average, but tougher buildings like Green Bay or Seattle get bumped closer to
-      two, while friendlier stops like Jacksonville or the Chargers might only get a
-      single point. Prime-time home games get an extra half-point for the intensity.</p>
       <p>These are <b>living numbers</b> — they move as we get new info: injuries,
       trades, or just last year's data mattering less as the new season takes shape.
       One thing we don't bake in is motivation. A team on a losing streak might come
       out extra fired up, and we leave that layer of context to you. Use the ratings
-      to read the NFL landscape at a glance — and maybe find a little edge on your
-      picks — but remember they're always evolving, just like the game itself.</p>
+      to read the NFL landscape at a glance, and revisit them as the league changes.</p>
 
       <h3>What this is</h3>
       <p>A roster-based, points-denominated power rating for all 32 NFL teams. Every

@@ -220,6 +220,9 @@ class GeneratedDocumentTests(unittest.TestCase):
         self.assertNotIn("my_margin(home)", document)
         self.assertNotIn("unofficial ESPN feed", document)
         self.assertNotIn("season-long edge list", document)
+        self.assertNotIn("Home field plays a role", document)
+        self.assertNotIn("Prime-time home games", document)
+        self.assertNotRegex(document, r"edge on your\s+picks")
 
     def test_default_output_is_private_preview(self):
         args = generate_site.parse_args([])
