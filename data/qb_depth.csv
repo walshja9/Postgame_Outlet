@@ -1,0 +1,65 @@
+team,string,qb_name,value,notes,age,exp
+Minnesota Vikings,2,J.J. McCarthy,-2.5,Near-startable; former 1st-rounder,23,2
+Atlanta Falcons,2,Tua Tagovailoa,-2.5,Startable vet behind Penix,28,6
+Indianapolis Colts,2,Anthony Richardson Sr.,-2.5,Former starter; high upside,24,3
+Kansas City Chiefs,2,Justin Fields,-2.5,Former starter,27,5
+Cincinnati Bengals,2,Joe Flacco,-3.0,Proven veteran,41,18
+Washington Commanders,2,Marcus Mariota,-3.0,Solid vet backup,33,11
+San Francisco 49ers,2,Mac Jones,-3.0,Former starter,28,5
+Cleveland Browns,2,Shedeur Sanders,-3.0,Rookie; Watson now starter,24,1
+New York Giants,2,Jameis Winston,-3.0,Veteran starting experience,32,11
+Baltimore Ravens,2,Tyler Huntley,-3.5,Mobile; has started games,28,6
+Carolina Panthers,2,Kenny Pickett,-3.5,Former 1st-rounder,28,4
+Detroit Lions,2,Teddy Bridgewater,-3.5,Veteran,34,12
+Green Bay Packers,2,Tyrod Taylor,-3.5,Veteran,37,15
+Seattle Seahawks,2,Drew Lock,-3.5,Veteran,30,7
+New Orleans Saints,2,Spencer Rattler,-3.5,Developing,26,2
+Pittsburgh Steelers,2,Mason Rudolph,-3.5,Veteran,31,8
+Arizona Cardinals,2,Gardner Minshew II,-3.5,Veteran spot-starter,30,7
+Tampa Bay Buccaneers,2,Jake Browning,-3.5,Has shown competence,30,7
+Denver Broncos,2,Jarrett Stidham,-4.0,Journeyman,,
+Los Angeles Chargers,2,Trey Lance,-4.0,Former 1st-rounder; unproven,,
+Houston Texans,2,Davis Mills,-4.0,Replacement-level,,
+Tennessee Titans,2,Mitchell Trubisky,-4.0,Journeyman,,
+Jacksonville Jaguars,2,Nick Mullens,-4.0,Journeyman,,
+Dallas Cowboys,2,Joe Milton III,-4.0,Strong arm; raw,,
+Philadelphia Eagles,2,Tanner McKee,-4.0,Developmental,,
+New York Jets,2,Cade Klubnik,-4.0,Rookie,,
+Miami Dolphins,2,Quinn Ewers,-4.0,Rookie,,
+Las Vegas Raiders,2,Fernando Mendoza,-3.0,Rookie; raised per your read,22,0
+Los Angeles Rams,2,Ty Simpson,-4.0,Rookie,,
+Chicago Bears,2,Tyson Bagent,-4.5,UDFA backup,,
+Buffalo Bills,2,Kyle Allen,-4.5,Deep journeyman,,
+New England Patriots,2,Tommy DeVito,-4.5,Deep journeyman,,
+Las Vegas Raiders,3,Aidan O'Connell,-4.5,Real starting experience,,
+Tennessee Titans,3,Will Levis,-4.5,Former 2nd-round starter,,
+Minnesota Vikings,3,Carson Wentz,-4.5,Former MVP-candidate vet,,
+Dallas Cowboys,3,Sam Howell,-4.5,Has starting experience,,
+Philadelphia Eagles,3,Andy Dalton,-4.5,Proven veteran,,
+Chicago Bears,3,Case Keenum,-4.5,Proven veteran,,
+New Orleans Saints,3,Zach Wilson,-5.0,Former #2 overall,,
+Cincinnati Bengals,3,Josh Johnson,-5.0,Career journeyman,,
+Baltimore Ravens,3,Skylar Thompson,-5.0,Spot backup,,
+New York Giants,3,Brandon Allen,-5.0,Journeyman,,
+Atlanta Falcons,3,Trevor Siemian,-5.0,Veteran,,
+Cleveland Browns,3,Dillon Gabriel,-5.0,Rookie,,
+Green Bay Packers,3,Kyle McCord,-5.0,Rookie,,
+Arizona Cardinals,3,Carson Beck,-5.0,Rookie,,
+Pittsburgh Steelers,3,Will Howard,-5.5,Rookie,,
+Houston Texans,3,Graham Mertz,-5.5,Rookie,,
+Indianapolis Colts,3,Riley Leonard,-5.5,Rookie,,
+Kansas City Chiefs,3,Garrett Nussmeier,-5.5,Rookie,,
+Seattle Seahawks,3,Jalen Milroe,-5.5,Raw rookie,,
+Carolina Panthers,3,Will Grier,-5.5,Journeyman,,
+Denver Broncos,3,Sam Ehlinger,-5.5,Deep backup,,
+Los Angeles Chargers,3,DJ Uiagalelei,-5.5,Rookie,,
+Los Angeles Rams,3,Stetson Bennett IV,-5.5,Deep backup,,
+San Francisco 49ers,3,Adrian Martinez,-5.5,Deep backup,,
+Miami Dolphins,3,Cam Miller,-5.5,Rookie,,
+Buffalo Bills,3,Shane Buechele,-6.0,Camp arm,,
+New England Patriots,3,Behren Morton,-6.0,Raw rookie,,
+New York Jets,3,Brady Cook,-6.0,Raw rookie,,
+Jacksonville Jaguars,3,Carter Bradley,-6.0,Deep backup,,
+Washington Commanders,3,Athan Kaliakmanis,-6.0,Raw rookie,,
+Detroit Lions,3,Luke Altmyer,-6.0,Raw rookie,,
+Tampa Bay Buccaneers,3,Connor Bazelak,-6.0,Raw rookie,,
