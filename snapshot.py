@@ -4,19 +4,19 @@ Freeze the current power ratings under a week label so the website can show
 historical snapshots in its dropdown.
 
 Usage:
-    python3 snapshot.py "Week 1"        # save current ratings as "Week 1"
-    python3 snapshot.py "Week 1" --force  # overwrite an existing label
-    python3 snapshot.py --list          # list saved snapshots
-    python3 snapshot.py --remove "Week 1"  # delete a snapshot
+    python snapshot.py "Week 1"
+    python snapshot.py --list
+    python snapshot.py --correct "Week 1" "Corrected opponent label; rating unchanged."
 
-Snapshots are stored in data/snapshots.json as {label: [team dicts]}, newest
-last. After saving, re-run generate_site.py to refresh index.html.
+Snapshots are stored in data/snapshots.json and cannot be overwritten or removed.
+Corrections are appended as disclosed notes without changing frozen rating rows.
 """
 
 import csv
 import json
 import os
 import sys
+from datetime import datetime
 
 from release_ratings import load_release_rows
 
@@ -53,55 +53,98 @@ def snapshot_current():
     return teams
 
 
-def load_snaps():
-    if os.path.exists(SNAP):
-        return json.load(open(SNAP))
-    return {}
+def normalize_snapshot_entry(value):
+    if isinstance(value, list):
+        return {"published_at": "", "rows": value, "corrections": []}
+    if not isinstance(value, dict) or not isinstance(value.get("rows"), list):
+        raise ValueError("Invalid snapshot entry: expected a row list or snapshot object")
+    return {
+        "published_at": value.get("published_at", ""),
+        "rows": value["rows"],
+        "corrections": list(value.get("corrections", [])),
+    }
 
 
-def save_snaps(snaps):
-    json.dump(snaps, open(SNAP, "w"), indent=1)
+def load_snaps(path=SNAP):
+    if not os.path.exists(path):
+        return {}
+    with open(path, encoding="utf-8") as handle:
+        raw = json.load(handle)
+    return {label: normalize_snapshot_entry(value) for label, value in raw.items()}
 
 
-def main():
-    args = sys.argv[1:]
+def save_snaps(snaps, path=SNAP):
+    with open(path, "w", encoding="utf-8") as handle:
+        json.dump(snaps, handle, indent=1, ensure_ascii=False)
+        handle.write("\n")
+
+
+def timestamp():
+    return datetime.now().astimezone().isoformat(timespec="seconds")
+
+
+def add_snapshot(snaps, label, rows, at=None):
+    if label in snaps:
+        raise ValueError(f"Snapshot '{label}' already exists; snapshots are immutable")
+    snaps[label] = {
+        "published_at": at or timestamp(),
+        "rows": rows,
+        "corrections": [],
+    }
+
+
+def add_correction(snaps, label, note, at=None):
+    if label not in snaps:
+        raise ValueError(f"No snapshot named '{label}'")
+    note = note.strip()
+    if not note:
+        raise ValueError("Correction note cannot be empty")
+    entry = normalize_snapshot_entry(snaps[label])
+    entry["corrections"].append({"at": at or timestamp(), "note": note})
+    snaps[label] = entry
+
+
+def main(argv=None):
+    args = list(sys.argv[1:] if argv is None else argv)
     if not args:
         print(__doc__)
-        return
+        return 0
     if args[0] == "--list":
         snaps = load_snaps()
         if not snaps:
             print("  No snapshots saved yet.")
-        for label in snaps:
-            print(f"  {label:<16} ({len(snaps[label])} teams)")
-        return
-    if args[0] == "--remove":
-        if len(args) < 2:
-            print("  Usage: snapshot.py --remove \"Week 1\"")
-            return
+        for label, entry in snaps.items():
+            print(f"  {label:<16} ({len(entry['rows'])} teams)")
+        return 0
+    if args[0] == "--correct":
+        if len(args) < 3:
+            print('  Usage: snapshot.py --correct "Week 1" "Correction note"', file=sys.stderr)
+            return 2
         snaps = load_snaps()
-        if args[1] in snaps:
-            del snaps[args[1]]
-            save_snaps(snaps)
-            print(f"  Removed '{args[1]}'. Re-run generate_site.py to refresh.")
-        else:
-            print(f"  No snapshot named '{args[1]}'.")
-        return
+        try:
+            add_correction(snaps, args[1], " ".join(args[2:]))
+        except ValueError as error:
+            print(f"  {error}", file=sys.stderr)
+            return 1
+        save_snaps(snaps)
+        print(f"  Added disclosed correction to '{args[1]}'.")
+        return 0
+    if args[0].startswith("--"):
+        print(f"  Unknown command: {args[0]}", file=sys.stderr)
+        return 2
 
     label = args[0]
-    force = "--force" in args
     snaps = load_snaps()
-    if label in snaps and not force:
-        print(f"  '{label}' already exists. Use --force to overwrite.")
-        return
-    # If overwriting, drop and re-append so it keeps newest-last order.
-    if label in snaps:
-        del snaps[label]
-    snaps[label] = snapshot_current()
+    try:
+        add_snapshot(snaps, label, snapshot_current())
+    except ValueError as error:
+        print(f"  {error}", file=sys.stderr)
+        return 1
     save_snaps(snaps)
-    print(f"  Saved snapshot '{label}' ({len(snaps[label])} teams).")
-    print("  Re-run: python3 generate_site.py   to update the website dropdown.")
+    print(f"  Saved snapshot '{label}' ({len(snaps[label]['rows'])} teams).")
+    print("  Re-run: python generate_site.py   to update the private preview.")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

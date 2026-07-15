@@ -19,6 +19,7 @@ import re
 from datetime import datetime
 
 from release_ratings import load_release_rows
+from snapshot import load_snaps
 
 import spreads  # reuse the schedule-fetch + spread-compute logic
 
@@ -414,12 +415,17 @@ def build_html(rows, season):
     # Archived weekly snapshots -> {label: rendered <tr> rows}. "Current" is
     # always the live data; saved weeks come from data/snapshots.json.
     versions = {"Current": body}
+    version_meta = {"Current": {"published_at": "", "corrections": []}}
     snap_path = os.path.join(DATA, "snapshots.json")
-    if os.path.exists(snap_path):
-        snaps = json.load(open(snap_path))
-        for label in snaps:  # preserve insertion order (save order)
-            versions[label] = render_rating_rows(snaps[label], detail=False)
+    snaps = load_snaps(snap_path)
+    for label, entry in snaps.items():
+        versions[label] = render_rating_rows(entry["rows"], detail=False)
+        version_meta[label] = {
+            "published_at": entry["published_at"],
+            "corrections": entry["corrections"],
+        }
     versions_json = json.dumps(versions)
+    version_meta_json = json.dumps(version_meta).replace("<", "\\u003c")
     ver_opts = "".join(f'<option value="{html.escape(l)}">{html.escape(l)}</option>'
                        for l in versions)
 
@@ -478,6 +484,7 @@ def build_html(rows, season):
             .replace("{{ROWS}}", body)
             .replace("{{DETAILS_JSON}}", details_json)
             .replace("{{VERSIONS_JSON}}", versions_json)
+            .replace("{{VERSION_META_JSON}}", version_meta_json)
             .replace("{{VERSION_OPTS}}", ver_opts)
             .replace("{{QB_STARTERS}}", qb_starter_rows)
             .replace("{{QB_BACKUPS}}", qb_backup_rows)
@@ -593,6 +600,9 @@ TEMPLATE = """<!DOCTYPE html>
   .weekbar select { background:var(--panel2); color:var(--ink); border:1px solid var(--border2);
          border-radius:8px; padding:7px 12px; font-size:14px; font-family:var(--body); }
   .weekbar .note { color:var(--dim); font-size:12px; }
+  .version-meta { color:var(--mut); font-size:12px; margin:8px 0 0; }
+  .version-meta:empty { display:none; }
+  .version-meta p { margin:4px 0 0; }
   td.edge { font-weight:700; font-size:15px; }
   tr.bigedge { background:rgba(224,130,28,.12) !important; box-shadow:inset 3px 0 0 var(--teal); }
   .pos { color:var(--pos); } .neg { color:var(--neg); }
@@ -722,6 +732,7 @@ TEMPLATE = """<!DOCTYPE html>
     <select id="ver">{{VERSION_OPTS}}</select>
     <span class="note">Click any column to sort &middot; pick a past week to see ratings as they stood</span>
   </div>
+    <div id="versionMeta" class="version-meta" role="status" aria-live="polite"></div>
   <table id="pr">
     <thead>
       <tr>
@@ -856,6 +867,7 @@ TEMPLATE = """<!DOCTYPE html>
 <script>
   const SPREADS = {{SPREADS_JSON}};
   const VERSIONS = {{VERSIONS_JSON}};
+  const VERSION_META = {{VERSION_META_JSON}};
   const DETAILS = {{DETAILS_JSON}};
   const QB_DETAILS = {{QB_DETAILS_JSON}};
 </script>
@@ -918,11 +930,29 @@ TEMPLATE = """<!DOCTYPE html>
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
 
   // --- snapshot dropdown (Current + archived weeks) ---
+  const versionMeta = document.getElementById('versionMeta');
+  function renderVersionMeta(label) {
+    const meta = VERSION_META[label] || { published_at: '', corrections: [] };
+    versionMeta.replaceChildren();
+    if (meta.published_at) {
+      const published = document.createElement('p');
+      published.textContent = 'Snapshot locked ' + meta.published_at;
+      versionMeta.appendChild(published);
+    }
+    meta.corrections.forEach(correction => {
+      const note = document.createElement('p');
+      note.textContent = 'Correction ' + correction.at + ': ' + correction.note;
+      versionMeta.appendChild(note);
+    });
+  }
+  renderVersionMeta('Current');
+
   const verSel = document.getElementById('ver');
   if (verSel) {
     verSel.addEventListener('change', e => {
       const cur = e.target.value === 'Current';
       tb.innerHTML = VERSIONS[e.target.value] || VERSIONS['Current'];
+      renderVersionMeta(e.target.value);
       closeDrawer();       // archived snapshots have no drawer detail
       if (cur) bindRows(); // only the live table opens the drawer
       // reset sort to Rating descending (the archived rank order)

@@ -1,4 +1,6 @@
+import copy
 import csv
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -73,6 +75,100 @@ class ReleaseGateTests(unittest.TestCase):
             with patch.object(spreads, "DATA", str(data)):
                 with self.assertRaisesRegex(ValueError, "Alpha"):
                     spreads.load_ratings()
+
+
+class SnapshotTests(unittest.TestCase):
+    def test_legacy_snapshot_list_is_preserved(self):
+        rows = [{"team": "Alpha", "rating": 1.0}]
+        entry = snapshot.normalize_snapshot_entry(rows)
+        self.assertEqual(entry["rows"], rows)
+        self.assertEqual(entry["published_at"], "")
+        self.assertEqual(entry["corrections"], [])
+
+    def test_correction_note_does_not_change_frozen_rows(self):
+        snaps = {
+            "Week 1": {
+                "published_at": "2026-09-10T12:00:00-04:00",
+                "rows": [{"team": "Alpha", "rating": 1.0}],
+                "corrections": [],
+            }
+        }
+        before = copy.deepcopy(snaps["Week 1"]["rows"])
+        snapshot.add_correction(
+            snaps,
+            "Week 1",
+            "Corrected the displayed opponent name; rating unchanged.",
+            at="2026-09-11T09:30:00-04:00",
+        )
+        self.assertEqual(snaps["Week 1"]["rows"], before)
+        self.assertEqual(
+            snaps["Week 1"]["corrections"],
+            [{
+                "at": "2026-09-11T09:30:00-04:00",
+                "note": "Corrected the displayed opponent name; rating unchanged.",
+            }],
+        )
+
+    def test_duplicate_snapshot_label_is_rejected(self):
+        snaps = {"Week 1": {"published_at": "", "rows": [], "corrections": []}}
+        with self.assertRaisesRegex(ValueError, "already exists"):
+            snapshot.add_snapshot(snaps, "Week 1", [], at="2026-09-10T12:00:00-04:00")
+
+    def test_correction_note_cannot_be_empty(self):
+        snaps = {"Week 1": {"published_at": "", "rows": [], "corrections": []}}
+        with self.assertRaisesRegex(ValueError, "cannot be empty"):
+            snapshot.add_correction(snaps, "Week 1", "   ")
+
+
+class SnapshotHtmlTests(unittest.TestCase):
+    def test_snapshot_metadata_is_embedded_and_rendered(self):
+        row = {
+            "team": "Alpha", "conf": "AFC", "div": "East",
+            "qb_name": "A QB", "qb": 1.0, "off": 0.5, "def": -0.5,
+            "prior": "", "rating": 1.0, "injury": False,
+        }
+        meta = {
+            "published_at": "2026-09-10T12:00:00-04:00",
+            "corrections": [{
+                "at": "2026-09-11T09:30:00-04:00",
+                "note": "Corrected opponent label; rating unchanged.",
+            }],
+        }
+        snaps = {"Week 1": {**meta, "rows": [row]}}
+
+        with tempfile.TemporaryDirectory() as temp:
+            with patch.object(generate_site, "DATA", temp):
+                with patch("generate_site.load_snaps", return_value=snaps, create=True):
+                    page = generate_site.build_html([row], 2026)
+
+        marker = "const VERSION_META = "
+        self.assertTrue(marker in page, f"{marker!r} missing")
+        payload = page.split(marker, 1)[1].split(";\n", 1)[0]
+        self.assertEqual(json.loads(payload)["Week 1"], meta)
+        self.assertIn('id="versionMeta"', page)
+        self.assertIn("renderVersionMeta(e.target.value);", page)
+
+    def test_snapshot_correction_cannot_break_out_of_script(self):
+        note = "Correction </script><script>alert(1)</script>"
+        snaps = {
+            "Week 1": {
+                "published_at": "",
+                "rows": [],
+                "corrections": [{"at": "2026-09-11T09:30:00-04:00", "note": note}],
+            }
+        }
+
+        with tempfile.TemporaryDirectory() as temp:
+            with patch.object(generate_site, "DATA", temp):
+                with patch.object(generate_site, "load_snaps", return_value=snaps):
+                    page = generate_site.build_html([], 2026)
+
+        payload = page.split("const VERSION_META = ", 1)[1].split(";\n", 1)[0]
+        self.assertNotIn("</script>", payload)
+        self.assertEqual(
+            json.loads(payload)["Week 1"]["corrections"][0]["note"],
+            note,
+        )
 
 
 if __name__ == "__main__":
