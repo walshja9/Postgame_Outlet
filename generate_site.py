@@ -156,7 +156,7 @@ def load_writeup(abbr):
     path = os.path.join(WRITEUPS, f"{abbr}.md")
     if not os.path.exists(path):
         return ""
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         return md_to_html(f.read())
 
 
@@ -175,7 +175,7 @@ def extract_qb_section(abbr):
     path = os.path.join(WRITEUPS, f"{abbr}.md")
     if not os.path.exists(path):
         return ""
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         text = f.read()
     # Split on ## headings, find the Quarterback block.
     parts = re.split(r"(?m)^##\s+", text)
@@ -192,7 +192,7 @@ def load_qb_writeup(name, abbr):
     'Quarterback' section; otherwise ''. (Hybrid: reuse now, override later.)"""
     override = os.path.join(QB_WRITEUPS, f"{qb_slug(name)}.md")
     if os.path.exists(override):
-        with open(override) as f:
+        with open(override, encoding="utf-8") as f:
             return md_to_html(f.read())
     return md_to_html(extract_qb_section(abbr))
 
@@ -469,7 +469,8 @@ def build_html(rows, season):
     has_spreads = "block" if weeks else "none"
     details_json = json.dumps(build_details(rows))
 
-    updated = datetime.now().strftime("%B %-d, %Y")
+    now = datetime.now()
+    updated = f"{now:%B} {now.day}, {now.year}"  # %-d is POSIX-only; keep Windows-safe
     return (TEMPLATE
             .replace("{{SEASON}}", str(season))
             .replace("{{UPDATED}}", updated)
@@ -497,25 +498,23 @@ TEMPLATE = """<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NFL Power Ratings {{SEASON}}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  /* ValuCast-style: dark navy canvas, bordered panels, teal values, violet
-     active states, green-up / orange-down for movement. */
+  /* Postgame Outlet (Shopify Spotlight) palette: white canvas, slate-blue ink
+     (#384f6f), orange accent (#fd962f family), Oswald display + Montserrat body. */
   :root {
-    --bg:#0a0e1a; --bg2:#0e1424; --panel:#111828; --panel2:#161f33;
-    --row-alt:#0f1626; --hover:#1b2740; --border:#243049; --border2:#2f3d5c;
-    --ink:#e7ecf5; --mut:#8b97b0; --dim:#5f6d88;
-    --teal:#2dd4bf; --teal2:#5eead4; --violet:#8b7cf6; --violet2:#a78bfa;
-    --pos:#34d399; --neg:#f4785f; --accent:#2dd4bf;
+    --bg:#ffffff; --bg2:#ffffff; --panel:#ffffff; --panel2:#f0f3f8;
+    --row-alt:#f7f9fc; --hover:#edf1f7; --border:#dfe6ef; --border2:#c9d3e2;
+    --ink:#384f6f; --mut:#647892; --dim:#8fa0b6;
+    --teal:#e0821c; --teal2:#c96f0e; --violet:#384f6f; --violet2:#384f6f;
+    --pos:#1a9a6c; --neg:#d94f36; --accent:#e0821c;
     --disp:'Oswald',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-    --body:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    --body:'Montserrat',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
   }
   * { box-sizing:border-box; }
   body {
     margin:0; color:var(--ink); font:15px/1.45 var(--body);
-    background:
-      radial-gradient(1100px 520px at 50% -8%, #142138 0%, transparent 60%),
-      var(--bg);
+    background:var(--bg);
     background-attachment:fixed; min-height:100vh;
   }
   .wrap { max-width:1040px; margin:0 auto; padding:30px 16px 72px; }
@@ -535,7 +534,7 @@ TEMPLATE = """<!DOCTYPE html>
 
   .panel.active { background:var(--panel);
     border:1px solid var(--border); border-radius:14px; padding:18px 16px 20px;
-    box-shadow:0 16px 50px rgba(0,0,0,.45); }
+    box-shadow:0 10px 30px rgba(56,79,111,.10); }
 
   table { width:100%; border-collapse:collapse; background:transparent; }
   th,td { padding:10px 11px; text-align:right; white-space:nowrap; }
@@ -545,7 +544,7 @@ TEMPLATE = """<!DOCTYPE html>
     user-select:none; border-bottom:1px solid var(--border2);
   }
   th:first-child { border-top-left-radius:9px; } th:last-child { border-top-right-radius:9px; }
-  th:hover { color:var(--teal2); background:#1a2540; }
+  th:hover { color:var(--teal2); background:#e7edf5; }
   th.up { color:var(--teal); } th.down { color:var(--teal); }
   th.up::after { content:" \\2191"; } th.down::after { content:" \\2193"; }
   tbody tr { border-bottom:1px solid var(--border); }
@@ -553,7 +552,7 @@ TEMPLATE = """<!DOCTYPE html>
   tbody tr:last-child { border-bottom:none; }
   tbody tr:hover { background:var(--hover); }
   tr.teamrow, tr.qbrow { cursor:pointer; }
-  tr.teamrow.sel, tr.qbrow.sel { background:rgba(139,124,246,.16); box-shadow:inset 3px 0 0 var(--violet); }
+  tr.teamrow.sel, tr.qbrow.sel { background:rgba(56,79,111,.10); box-shadow:inset 3px 0 0 var(--violet); }
   td.rank { text-align:center; color:var(--dim); font-family:var(--body);
             font-weight:600; font-size:14px; width:40px; font-variant-numeric:tabular-nums; }
   td.team, th.team, td.qbn, th.qbn { text-align:left; }
@@ -581,7 +580,7 @@ TEMPLATE = """<!DOCTYPE html>
     font-size:14px; font-weight:600; letter-spacing:.01em; transition:all .12s;
   }
   .tab:hover { color:var(--ink); border-color:var(--border2); }
-  .tab.active { color:var(--violet2); background:rgba(139,124,246,.14); border-color:var(--violet); }
+  .tab.active { color:var(--violet2); background:rgba(56,79,111,.10); border-color:var(--violet); }
   .panel { display:none; } .panel.active { display:block; }
 
   .weekbar { display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
@@ -590,7 +589,7 @@ TEMPLATE = """<!DOCTYPE html>
          border-radius:8px; padding:7px 12px; font-size:14px; font-family:var(--body); }
   .weekbar .note { color:var(--dim); font-size:12px; }
   td.edge { font-weight:700; font-size:15px; }
-  tr.bigedge { background:rgba(45,212,191,.10) !important; box-shadow:inset 3px 0 0 var(--teal); }
+  tr.bigedge { background:rgba(224,130,28,.12) !important; box-shadow:inset 3px 0 0 var(--teal); }
   .pos { color:var(--pos); } .neg { color:var(--neg); }
   .qbhead { font-family:var(--disp); font-weight:600; font-size:20px; color:var(--ink);
             margin:24px 0 10px; text-transform:uppercase; letter-spacing:.03em;
@@ -610,14 +609,14 @@ TEMPLATE = """<!DOCTYPE html>
   }
 
   /* --- Team drawer (slides in from right; table stays put) --- */
-  .scrim { position:fixed; inset:0; background:rgba(4,7,14,.62);
+  .scrim { position:fixed; inset:0; background:rgba(30,42,60,.45);
            backdrop-filter:blur(2px); opacity:0; pointer-events:none;
            transition:opacity .2s ease; z-index:40; }
   .scrim.open { opacity:1; pointer-events:auto; }
   .drawer {
     position:fixed; top:0; right:0; height:100vh; width:min(460px,92vw);
     background:var(--bg2); border-left:1px solid var(--border2);
-    box-shadow:-24px 0 60px rgba(0,0,0,.5); z-index:50;
+    box-shadow:-24px 0 60px rgba(56,79,111,.25); z-index:50;
     transform:translateX(100%); transition:transform .24s cubic-bezier(.4,0,.2,1);
     display:flex; flex-direction:column;
   }
@@ -673,17 +672,17 @@ TEMPLATE = """<!DOCTYPE html>
     font-family:var(--disp); font-weight:600; color:var(--teal2); text-transform:uppercase;
     letter-spacing:.03em; margin:18px 0 7px; font-size:14px; }
   .dr-writeup h4:first-child { margin-top:0; }
-  .dr-writeup p { margin:0 0 11px; color:#c9d3e6; }
+  .dr-writeup p { margin:0 0 11px; color:#4a5d78; }
   .dr-writeup ul { margin:0 0 11px; padding-left:20px; }
-  .dr-writeup li { margin:3px 0; color:#c9d3e6; }
+  .dr-writeup li { margin:3px 0; color:#4a5d78; }
   .dr-writeup strong { color:var(--ink); }
   .dr-writeup code { background:var(--panel2); padding:1px 5px; border-radius:4px;
                      font-size:12px; color:var(--teal2); }
-  .dr-writeup .stub { font-style:italic; color:#c9d3e6; }
+  .dr-writeup .stub { font-style:italic; color:#4a5d78; }
   .dr-writeup .stub-hint { color:var(--dim); font-size:12px; margin-top:4px; }
 
   /* Methodology tab */
-  .method { color:#c9d3e6; font-size:15px; line-height:1.65; }
+  .method { color:#4a5d78; font-size:15px; line-height:1.65; }
   .method h3 { font-family:var(--disp); font-weight:600; color:var(--ink);
                text-transform:uppercase; letter-spacing:.03em; font-size:19px;
                margin:24px 0 9px; border-bottom:2px solid var(--teal); padding-bottom:5px; }
@@ -991,8 +990,8 @@ def main():
         build_html.spreads_data = {}
     nweeks = len(build_html.spreads_data)
 
-    out = os.path.join(HERE, "index.html")
-    with open(out, "w") as f:
+    out = os.path.join(HERE, "docs", "index.html")  # what GitHub Pages serves
+    with open(out, "w", encoding="utf-8") as f:
         f.write(build_html(rows, season))
     print(f"Wrote {out}")
     print(f"  {len(rows)} teams | top: {rows[0]['team']} {rows[0]['rating']:+.1f}"
