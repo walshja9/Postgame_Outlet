@@ -18,6 +18,8 @@ import os
 import re
 from datetime import datetime
 
+from release_ratings import load_release_rows
+
 import spreads  # reuse the schedule-fetch + spread-compute logic
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -93,21 +95,20 @@ def squeeze(x):
 
 def load_teams(prior):
     rows = []
-    with open(os.path.join(DATA, "ratings.csv"), newline="") as f:
-        for r in csv.DictReader(f):
-            qb = float(r["qb_value"] or 0)
-            off = float(r["off_value"] or 0)
-            dfn = float(r["def_value"] or 0)
-            # Rating is the straight sum of its components so the table reconciles.
-            rating = round(qb + off + dfn, 1)
-            p = prior.get(r["team"])
-            rows.append({
-                "team": r["team"], "conf": r["conf"], "div": r["division"],
-                "qb_name": r["qb_name"], "qb": qb, "off": off, "def": dfn,
-                "prior": p if p is not None else "",
-                "rating": rating, "notes": r.get("notes", ""),
-                "injury": r["team"] in INJURY_DEFLATED,
-            })
+    path = os.path.join(DATA, "ratings.csv")
+    for r in load_release_rows(path):
+        qb = float(r["qb_value"] or 0)
+        off = float(r["off_value"] or 0)
+        dfn = float(r["def_value"] or 0)
+        rating = round(qb + off + dfn, 1)
+        p = prior.get(r["team"])
+        rows.append({
+            "team": r["team"], "conf": r["conf"], "div": r["division"],
+            "qb_name": r["qb_name"], "qb": qb, "off": off, "def": dfn,
+            "prior": p if p is not None else "",
+            "rating": rating, "notes": r.get("notes", ""),
+            "injury": r["team"] in INJURY_DEFLATED,
+        })
     rows.sort(key=lambda x: -x["rating"])
     return rows
 

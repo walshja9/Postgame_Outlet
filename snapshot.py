@@ -18,6 +18,8 @@ import json
 import os
 import sys
 
+from release_ratings import load_release_rows
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "data")
 SNAP = os.path.join(DATA, "snapshots.json")
@@ -35,7 +37,8 @@ def load_prior():
 def snapshot_current():
     prior = load_prior()
     teams = []
-    for r in csv.DictReader(open(os.path.join(DATA, "ratings.csv"), newline="")):
+    path = os.path.join(DATA, "ratings.csv")
+    for r in load_release_rows(path):
         qb = float(r["qb_value"] or 0)
         off = float(r["off_value"] or 0)
         dfn = float(r["def_value"] or 0)

@@ -30,6 +30,8 @@ import os
 import sys
 import urllib.request
 
+from release_ratings import load_release_rows
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "data")
 ENDPOINT = ("https://site.api.espn.com/apis/site/v2/sports/football/nfl/"
@@ -39,11 +41,14 @@ REG_SEASON_WEEKS = 18
 
 def load_ratings():
     out = {}
-    with open(os.path.join(DATA, "ratings.csv"), newline="") as f:
-        for r in csv.DictReader(f):
-            out[r["team"]] = round(float(r["qb_value"] or 0)
-                                   + float(r["off_value"] or 0)
-                                   + float(r["def_value"] or 0), 1)
+    path = os.path.join(DATA, "ratings.csv")
+    for r in load_release_rows(path):
+        out[r["team"]] = round(
+            float(r["qb_value"] or 0)
+            + float(r["off_value"] or 0)
+            + float(r["def_value"] or 0),
+            1,
+        )
     return out
 
 
@@ -277,7 +282,11 @@ def main():
     week = args[0] if len(args) > 0 else "1"
     year = args[1] if len(args) > 1 else "2026"
 
-    ratings = load_ratings()
+    try:
+        ratings = load_ratings()
+    except ValueError as error:
+        print(f"  {error}", file=sys.stderr)
+        return 1
     hfa, default_hfa = load_hfa()
 
     if week.lower() == "all":
@@ -309,4 +318,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
