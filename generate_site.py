@@ -801,21 +801,8 @@ TEMPLATE = """<!DOCTYPE html>
         sit within about ±1.0, driven by the 2026 free-agency and draft roster movement.</li>
       </ul>
 
-      <h3>From ratings to a betting line</h3>
-      <p>The spread model turns two ratings into a projected margin:</p>
-      <div class="formula">my_margin(home) = rating_home − rating_away + HFA<br>
-      HFA = per-team home-field (default 1.5) + 0.5 if it's a primetime home game</div>
-      <p>The projected spread is <code>−my_margin</code> (negative = home favored). The
-      <b>edge</b> is <code>market − my_spread</code>; anything 1.5 points or larger is
-      flagged as a spot where my number disagrees with the market.</p>
-
       <h3>Honesty &amp; caveats</h3>
       <ul>
-        <li>Market spreads come from an unofficial ESPN feed and only firm up close to
-        game week — early-summer lines are placeholders, so don't over-read specific
-        edges yet.</li>
-        <li>If one or two teams dominate the season-long edge list, that usually means
-        <em>my</em> rating on those teams is the outlier — not the market.</li>
         <li>Teams marked <span class="inj">▲inj</span> had a 2025 finish deflated by an
         injured or benched starter, so they're weighted toward roster talent rather than
         last year's record.</li>

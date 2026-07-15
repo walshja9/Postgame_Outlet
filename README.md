@@ -46,8 +46,7 @@ python3 spreads.py 1              # one week
 python3 spreads.py all            # full 18-week season + summary
 python3 spreads.py all 2026 --html # also write spreads.html
 
-# Open an artifact:
-open index.html        # or NFL_Power_Ratings_2026.xlsx, or spreads.html
+# Open output/ratings-preview/YYYY-MM-DD/index.html in your browser.
 ```
 
 Generation stops if any row in `data/ratings.csv` has `needs_review=Y`. Clear

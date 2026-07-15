@@ -216,6 +216,10 @@ class GeneratedDocumentTests(unittest.TestCase):
         self.assertNotIn("Schedule &amp; Spreads", document)
         self.assertNotIn("SPREADS_JSON", document)
         self.assertNotIn("const SPREADS", document)
+        self.assertNotIn("From ratings to a betting line", document)
+        self.assertNotIn("my_margin(home)", document)
+        self.assertNotIn("unofficial ESPN feed", document)
+        self.assertNotIn("season-long edge list", document)
 
     def test_default_output_is_private_preview(self):
         args = generate_site.parse_args([])
