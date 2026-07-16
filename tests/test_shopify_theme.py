@@ -119,6 +119,38 @@ class ShopifyThemeTests(unittest.TestCase):
         self.assertEqual("dfs", template["sections"]["dfs"]["settings"]["required_tag"])
         self.assertNotIn("assistant", path.read_text(encoding="utf-8").lower())
 
+    def test_articles_expose_trust_fields_and_native_related_modules(self):
+        article = text("sections/main-article.liquid")
+        for field in (
+            "custom.deck",
+            "custom.byline",
+            "custom.updated_at",
+            "custom.model_version",
+            "custom.key_takeaway",
+            "custom.sources",
+            "custom.methodology",
+            "custom.correction_history",
+        ):
+            self.assertIn(field, article)
+        template = data("templates/article.json")
+        types = [template["sections"][key]["type"] for key in template["order"]]
+        self.assertEqual(["main-article", "featured-blog", "featured-product"], types)
+        self.assertTrue(template["sections"]["related_product"]["disabled"])
+        blog = data("templates/blog.json")["sections"]["main"]["settings"]
+        self.assertEqual("grid", blog["layout"])
+        self.assertTrue(blog["show_author"])
+
+    def test_preview_navigation_and_footer_have_no_duplicate_form(self):
+        header = data("sections/header-group.json")
+        footer = data("sections/footer-group.json")
+        self.assertEqual("content-first-preview", header["sections"]["header"]["settings"]["menu"])
+        self.assertEqual(
+            "content-footer-preview",
+            footer["sections"]["footer"]["blocks"]["content_links"]["settings"]["menu"],
+        )
+        combined = json.dumps(data("templates/index.json")) + json.dumps(footer)
+        self.assertEqual(1, combined.count("form-embed-block"))
+
 
 if __name__ == "__main__":
     unittest.main()
