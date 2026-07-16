@@ -37,6 +37,12 @@ class ShopifyThemeTests(unittest.TestCase):
         self.assertEqual(1, layout.count("postgame-content.js"))
         self.assertIn("data-postgame-content-type", layout)
         self.assertIn("data-postgame-content-id", layout)
+        # spec 12: ratings/fantasy pages are content surfaces and must emit
+        # postgame_content_product_click, same as homepage and articles
+        self.assertIn(
+            "template.suffix == 'power-ratings' or template.suffix == 'fantasy'",
+            layout,
+        )
 
     def test_shared_script_has_embed_and_analytics_contracts(self):
         script_path = THEME / "assets/postgame-content.js"

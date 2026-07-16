@@ -308,6 +308,9 @@
     {% elsif template.name == 'article' %}
       data-postgame-content-type="article"
       data-postgame-content-id="{{ article.handle | escape }}"
+    {% elsif template.suffix == 'power-ratings' or template.suffix == 'fantasy' %}
+      data-postgame-content-type="page"
+      data-postgame-content-id="{{ page.handle | escape }}"
     {% endif %}
   >
     <a class="skip-to-content-link button visually-hidden" href="#MainContent">
