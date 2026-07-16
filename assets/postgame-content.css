@@ -1,0 +1,45 @@
+.postgame-shell {
+  width: min(100% - 3rem, 120rem);
+  margin: 0 auto;
+  padding: 3.6rem 0;
+}
+
+.postgame-grid {
+  display: grid;
+  gap: 2rem;
+}
+
+.postgame-card,
+.postgame-takeaway {
+  border: 0.1rem solid rgba(56, 79, 111, 0.25);
+  border-radius: 0.8rem;
+  padding: 2rem;
+}
+
+.postgame-kicker,
+.postgame-meta {
+  color: #384f6f;
+  font-size: 1.4rem;
+}
+
+.postgame-ratings-frame {
+  display: block;
+  width: 100%;
+  min-height: 160rem;
+  border: 0;
+}
+
+.postgame-shell :focus-visible {
+  outline: 0.3rem solid #384f6f;
+  outline-offset: 0.3rem;
+}
+
+@media screen and (min-width: 750px) {
+  .postgame-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .postgame-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .postgame-grid--5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+
+@media screen and (max-width: 749px) {
+  .postgame-shell { width: min(100% - 2rem, 120rem); }
+}
