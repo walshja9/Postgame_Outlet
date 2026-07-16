@@ -1,0 +1,105 @@
+{
+  "sections": {
+    "featured_collection": {
+      "type": "featured-collection",
+      "settings": {
+        "title": "",
+        "heading_size": "h2",
+        "description": "",
+        "show_description": false,
+        "description_style": "body",
+        "collection": "all",
+        "products_to_show": 24,
+        "columns_desktop": 4,
+        "full_width": false,
+        "show_view_all": true,
+        "view_all_style": "outline",
+        "enable_desktop_slider": false,
+        "color_scheme": "scheme-1",
+        "image_ratio": "square",
+        "image_shape": "default",
+        "show_secondary_image": true,
+        "show_vendor": false,
+        "show_rating": false,
+        "quick_add": "none",
+        "columns_mobile": "2",
+        "swipe_on_mobile": false,
+        "padding_top": 0,
+        "padding_bottom": 36
+      }
+    },
+    "featured_product_fUHQJA": {
+      "type": "featured-product",
+      "blocks": {
+        "text_ddX8XX": {
+          "type": "text",
+          "settings": {
+            "text": "{{ section.settings.product.vendor }}",
+            "text_style": "uppercase"
+          }
+        },
+        "title_6WjBNc": {
+          "type": "title",
+          "settings": {
+            "heading_size": "h1"
+          }
+        },
+        "price_mEzXVw": {
+          "type": "price",
+          "settings": {}
+        },
+        "variant_picker_i4zFik": {
+          "type": "variant_picker",
+          "settings": {
+            "picker_type": "button",
+            "swatch_shape": "circle"
+          }
+        },
+        "quantity_selector_zEwa9w": {
+          "type": "quantity_selector",
+          "settings": {}
+        },
+        "buy_buttons_eDTYAQ": {
+          "type": "buy_buttons",
+          "settings": {
+            "show_dynamic_checkout": true,
+            "show_gift_card_recipient": true
+          }
+        },
+        "share_fgCPXK": {
+          "type": "share",
+          "settings": {
+            "share_label": "Share"
+          }
+        }
+      },
+      "block_order": [
+        "text_ddX8XX",
+        "title_6WjBNc",
+        "price_mEzXVw",
+        "variant_picker_i4zFik",
+        "quantity_selector_zEwa9w",
+        "buy_buttons_eDTYAQ",
+        "share_fgCPXK"
+      ],
+      "settings": {
+        "product": "mahomes-kelse-2024",
+        "color_scheme": "scheme-d0e50468-479c-48b5-abd4-e091b2b42030",
+        "secondary_background": false,
+        "media_size": "medium",
+        "constrain_to_viewport": true,
+        "media_fit": "contain",
+        "media_position": "left",
+        "image_zoom": "lightbox",
+        "hide_variants": false,
+        "enable_video_looping": false,
+        "padding_top": 36,
+        "padding_bottom": 36
+      }
+    }
+  },
+  "order": [
+    "featured_collection",
+    "featured_product_fUHQJA"
+  ]
+}
