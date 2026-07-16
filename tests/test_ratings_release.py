@@ -121,6 +121,33 @@ class SnapshotTests(unittest.TestCase):
             snapshot.add_correction(snaps, "Week 1", "   ")
 
 
+class MovementTests(unittest.TestCase):
+    def test_movement_compares_current_rank_to_latest_snapshot(self):
+        current = [
+            {"team": "Beta", "rating": 2.0},
+            {"team": "Alpha", "rating": 1.0},
+            {"team": "Gamma", "rating": 0.0},
+        ]
+        previous = [
+            {"team": "Alpha", "rating": 2.0},
+            {"team": "Beta", "rating": 1.0},
+            {"team": "Gamma", "rating": 0.0},
+        ]
+        self.assertEqual(
+            generate_site.movement_by_team(current, previous),
+            {"Beta": 1, "Alpha": -1, "Gamma": 0},
+        )
+
+    def test_new_team_has_no_comparable_movement(self):
+        self.assertEqual(
+            generate_site.movement_by_team(
+                [{"team": "Alpha", "rating": 1.0}],
+                [],
+            ),
+            {"Alpha": None},
+        )
+
+
 class SnapshotHtmlTests(unittest.TestCase):
     def test_snapshot_metadata_is_embedded_and_rendered(self):
         row = {

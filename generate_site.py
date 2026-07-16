@@ -296,13 +296,33 @@ def _bar(label, v, scale=6.5):
             f'<span class="brk-v">{v:+.1f}</span></div>')
 
 
-def render_rating_rows(rows, detail=True):
+def movement_by_team(current_rows, previous_rows):
+    current = sorted(current_rows, key=lambda row: -row["rating"])
+    previous = sorted(previous_rows, key=lambda row: -row["rating"])
+    current_rank = {row["team"]: rank for rank, row in enumerate(current, 1)}
+    previous_rank = {row["team"]: rank for rank, row in enumerate(previous, 1)}
+    return {
+        team: previous_rank[team] - rank if team in previous_rank else None
+        for team, rank in current_rank.items()
+    }
+
+
+def render_movement(value):
+    if value is None or value == 0:
+        return '<span class="move same" aria-label="No rank change">—</span>'
+    if value > 0:
+        return f'<span class="move up" aria-label="Up {value}">↑ {value}</span>'
+    return f'<span class="move down" aria-label="Down {abs(value)}">↓ {abs(value)}</span>'
+
+
+def render_rating_rows(rows, detail=True, movements=None):
     """Render the Power Ratings <tr> rows for one set of team dicts (a live or
     archived snapshot). Rows are ranked by rating; rank reflects each set.
 
     When detail=True, each row is clickable (carries data-abbr) and opens the
     team drawer — the detail content itself lives in the DETAILS payload, so the
     table never shifts. Archived snapshots pass detail=False (no drawer)."""
+    movements = movements or {}
     ranked = sorted(rows, key=lambda x: -x["rating"])
     ratings = [r["rating"] for r in ranked] or [0]
     hi, lo = max(ratings), min(ratings)
@@ -319,11 +339,12 @@ def render_rating_rows(rows, detail=True):
       <td class="rank">{i}</td>
       <td class="team"><span class="chip" style="background:{c1};border-color:{c2}">{abbr}</span>
         <span class="tname">{nm}</span><span class="div">{r['conf']} {r['div']}</span></td>
-      <td class="qbn">{qbn}{star}</td>
-      <td data-v="{r['qb']}">{r['qb']:+.1f}</td>
-      <td data-v="{r['off']}">{r['off']:+.1f}</td>
-      <td data-v="{r['def']}">{r['def']:+.1f}</td>
-      <td class="prior" data-v="{r['prior'] or -99}">{prior}</td>
+      <td class="movement" data-v="{movements.get(r['team'], 0) or 0}">{render_movement(movements.get(r['team']))}</td>
+      <td class="qbn detail-col">{qbn}{star}</td>
+      <td class="detail-col" data-v="{r['qb']}">{r['qb']:+.1f}</td>
+      <td class="detail-col" data-v="{r['off']}">{r['off']:+.1f}</td>
+      <td class="detail-col" data-v="{r['def']}">{r['def']:+.1f}</td>
+      <td class="prior detail-col" data-v="{r['prior'] or -99}">{prior}</td>
       <td class="rating" data-v="{r['rating']}" style="background:{bg}">{r['rating']:+.1f}</td>
     </tr>""")
     return "\n".join(out)
@@ -404,14 +425,17 @@ def build_html(rows, config, generated_at=None):
     generated_at = generated_at or datetime.now().astimezone()
     updated_iso = generated_at.isoformat(timespec="seconds")
     updated = f"{generated_at:%B} {generated_at.day}, {generated_at.year}"
-    body = render_rating_rows(rows)
+
+    snap_path = os.path.join(DATA, "snapshots.json")
+    snaps = load_snaps(snap_path)
+    previous_rows = list(snaps.values())[-1]["rows"] if snaps else []
+    movements = movement_by_team(rows, previous_rows)
+    body = render_rating_rows(rows, movements=movements)
 
     # Archived weekly snapshots -> {label: rendered <tr> rows}. "Current" is
     # always the live data; saved weeks come from data/snapshots.json.
     versions = {"Current": body}
     version_meta = {"Current": {"published_at": "", "corrections": []}}
-    snap_path = os.path.join(DATA, "snapshots.json")
-    snaps = load_snaps(snap_path)
     for label, entry in snaps.items():
         versions[label] = render_rating_rows(entry["rows"], detail=False)
         version_meta[label] = {
@@ -453,9 +477,9 @@ def build_html(rows, config, generated_at=None):
         return (f'<tr class="qbrow" data-qb="{html.escape(key)}"><td class="rank">{rank}</td>'
                 f'<td class="team"><span class="chip" style="background:{c1};border-color:{c2}">{abbr}</span>'
                 f'<span class="tname">{nm}</span>{tag}</td>'
-                f'<td class="qbmeta">{age}</td>'
-                f'<td class="qbmeta">{exp}</td>'
-                f'<td class="qbmeta {tr_cls}">{tr_disp}</td>'
+                f'<td class="qbmeta detail-col">{age}</td>'
+                f'<td class="qbmeta detail-col">{exp}</td>'
+                f'<td class="qbmeta detail-col {tr_cls}">{tr_disp}</td>'
                 f'<td class="qbtier">{qb_tier_short(q["val"])}</td>'
                 f'<td class="rating" style="background:{bg}">{q["val"]:+.1f}</td></tr>')
 
@@ -537,6 +561,7 @@ TEMPLATE = """<!DOCTYPE html>
     border:1px solid var(--border); border-radius:14px; padding:18px 16px 20px;
     box-shadow:0 10px 30px rgba(56,79,111,.10); }
 
+  .table-shell { width:100%; max-width:100%; overflow-x:auto; }
   table { width:100%; border-collapse:collapse; background:transparent; }
   th,td { padding:10px 11px; text-align:right; white-space:nowrap; }
   th {
@@ -565,6 +590,11 @@ TEMPLATE = """<!DOCTYPE html>
   .div { color:var(--dim); font-size:11px; margin-left:8px; text-transform:uppercase; letter-spacing:.04em; }
   .qbn { color:var(--mut); font-weight:500; }
   .inj { color:var(--neg); font-size:11px; font-weight:700; }
+  .movement { text-align:center; width:64px; }
+  .move { font-weight:700; white-space:nowrap; }
+  .move.up { color:var(--pos); }
+  .move.down { color:var(--neg); }
+  .move.same { color:var(--dim); }
   td.rating { font-family:var(--body); font-weight:700; font-size:16px; border-radius:4px;
               color:var(--teal2); }
   td.prior { color:var(--dim); }
@@ -605,8 +635,25 @@ TEMPLATE = """<!DOCTYPE html>
   th.qbtier, td.qbtier { text-align:right; }
   td.qbtier { color:var(--dim); font-size:12px; text-transform:uppercase;
               letter-spacing:.03em; white-space:nowrap; }
+  @media (max-width:960px) {
+    .detail-col { display:none; }
+    .panel.active { padding:12px 8px 16px; }
+    th, td { padding:9px 7px; }
+    td.team, th.team { white-space:normal; }
+    .tname { overflow-wrap:anywhere; }
+    .div { display:block; margin:2px 0 0 49px; }
+    .chip { margin-right:6px; }
+  }
+
+  @media (max-width:390px) {
+    .wrap { padding-left:8px; padding-right:8px; }
+    .hero { padding-left:8px; padding-right:8px; }
+    td.rank { width:30px; }
+    .chip { min-width:34px; padding:3px 4px; }
+    .movement { width:50px; }
+  }
   @media (max-width:600px) {
-    /* drop the wider tier label on narrow screens; keep age/exp/team rating */
+    /* drop the wider tier label on narrow screens */
     th.qbtier, td.qbtier { display:none; }
   }
 
@@ -719,16 +766,18 @@ TEMPLATE = """<!DOCTYPE html>
     <span class="note">Click any column to sort &middot; pick a past week to see ratings as they stood</span>
   </div>
     <div id="versionMeta" class="version-meta" role="status" aria-live="polite"></div>
+  <div class="table-shell">
   <table id="pr">
     <thead>
       <tr>
         <th class="rank" data-k="rank">#</th>
         <th class="team" data-k="team">Team</th>
-        <th class="qbn" data-k="qbn">QB</th>
-        <th data-k="num">QB</th>
-        <th data-k="num">Off</th>
-        <th data-k="num">Def</th>
-        <th data-k="num">End '25</th>
+        <th scope="col" class="movement" data-k="num">Move</th>
+        <th class="qbn detail-col" data-k="qbn">QB</th>
+        <th class="detail-col" data-k="num">QB</th>
+        <th class="detail-col" data-k="num">Off</th>
+        <th class="detail-col" data-k="num">Def</th>
+        <th class="detail-col" data-k="num">End '25</th>
         <th data-k="num" class="up">Rating</th>
       </tr>
     </thead>
@@ -736,6 +785,7 @@ TEMPLATE = """<!DOCTYPE html>
 {{ROWS}}
     </tbody>
   </table>
+  </div>
   <div class="legend">
     <b>Rating</b> = QB + Offense + Defense (each in points vs. a league-average team, 0.0).<br>
     <b>Off / Def</b> are non-QB unit values. <b>End '25</b> is last season's ending rating, shown for reference. Green = above average, red = below.
@@ -745,23 +795,27 @@ TEMPLATE = """<!DOCTYPE html>
   <div class="panel" id="panel-qbs">
     <div class="sub" style="margin:-6px 0 14px">QB value in points vs. a league-average QB (0.0). Starters ranked 1&ndash;32, then the top 18 backups. &middot; click any QB to explore</div>
     <h2 class="qbhead">Starting QBs</h2>
+    <div class="table-shell">
     <table class="qbtable">
       <thead><tr><th class="rank">#</th><th class="team">Quarterback</th>
-        <th class="qbmeta">Age</th><th class="qbmeta">Exp</th>
-        <th class="qbmeta">Team</th><th class="qbtier">Tier</th><th>Value</th></tr></thead>
+        <th class="qbmeta detail-col">Age</th><th class="qbmeta detail-col">Exp</th>
+        <th class="qbmeta detail-col">Team</th><th class="qbtier">Tier</th><th>Value</th></tr></thead>
       <tbody>
 {{QB_STARTERS}}
       </tbody>
     </table>
+    </div>
     <h2 class="qbhead">Top 18 Backups</h2>
+    <div class="table-shell">
     <table class="qbtable">
       <thead><tr><th class="rank">#</th><th class="team">Quarterback</th>
-        <th class="qbmeta">Age</th><th class="qbmeta">Exp</th>
-        <th class="qbmeta">Team</th><th class="qbtier">Tier</th><th>Value</th></tr></thead>
+        <th class="qbmeta detail-col">Age</th><th class="qbmeta detail-col">Exp</th>
+        <th class="qbmeta detail-col">Team</th><th class="qbtier">Tier</th><th>Value</th></tr></thead>
       <tbody>
 {{QB_BACKUPS}}
       </tbody>
     </table>
+    </div>
   </div><!-- /panel-qbs -->
 
   <div class="panel" id="panel-method">
@@ -821,7 +875,7 @@ TEMPLATE = """<!DOCTYPE html>
 <script>
   const tb = document.querySelector('#pr tbody');
   const ths = document.querySelectorAll('#pr th');
-  let sortCol = 7, asc = false;
+  let sortCol = 8, asc = false;
   function val(tr, i) {
     const td = tr.children[i];
     const dv = td.getAttribute('data-v');
@@ -830,7 +884,7 @@ TEMPLATE = """<!DOCTYPE html>
     return td.textContent.trim().toLowerCase();
   }
   function sortBy(i) {
-    if (i === sortCol) asc = !asc; else { sortCol = i; asc = (i === 1 || i === 2); }
+    if (i === sortCol) asc = !asc; else { sortCol = i; asc = (i === 1 || i === 3); }
     const rows = [...tb.rows];
     rows.sort((a, b) => {
       const x = val(a, i), y = val(b, i);
@@ -903,7 +957,7 @@ TEMPLATE = """<!DOCTYPE html>
       closeDrawer();       // archived snapshots have no drawer detail
       if (cur) bindRows(); // only the live table opens the drawer
       // reset sort to Rating descending (the archived rank order)
-      sortCol = -1; asc = false; sortBy(7);
+      sortCol = -1; asc = false; sortBy(8);
     });
   }
 
