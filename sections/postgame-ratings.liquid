@@ -12,7 +12,13 @@
   {%- endif -%}
   <p>A Power Rating estimates how many points stronger or weaker a team is than a league-average team on a neutral field.</p>
   {%- if section.settings.summary != blank -%}<div class="rte">{{ section.settings.summary }}</div>{%- endif -%}
-  <p><a href="/pages/methodology-preview">Methodology</a> · <a href="/pages/accountability-preview">Corrections and accountability</a></p>
+  {%- if section.settings.methodology_link != blank or section.settings.accountability_link != blank -%}
+    <p>
+      {%- if section.settings.methodology_link != blank -%}<a href="{{ section.settings.methodology_link }}">Methodology</a>{%- endif -%}
+      {%- if section.settings.methodology_link != blank and section.settings.accountability_link != blank %} · {% endif -%}
+      {%- if section.settings.accountability_link != blank -%}<a href="{{ section.settings.accountability_link }}">Corrections and accountability</a>{%- endif -%}
+    </p>
+  {%- endif -%}
   {%- if section.settings.ratings_url != blank -%}
     <iframe
       class="postgame-ratings-frame"
@@ -33,7 +39,9 @@
     { "type": "text", "id": "published_at", "label": "Published time" },
     { "type": "text", "id": "updated_at", "label": "Updated time" },
     { "type": "richtext", "id": "summary", "label": "Current-edition summary" },
-    { "type": "url", "id": "ratings_url", "label": "Ratings application URL" }
+    { "type": "url", "id": "ratings_url", "label": "Ratings application URL" },
+    { "type": "url", "id": "methodology_link", "label": "Methodology page" },
+    { "type": "url", "id": "accountability_link", "label": "Accountability page" }
   ],
   "presets": [{ "name": "Postgame Power Ratings" }]
 }
