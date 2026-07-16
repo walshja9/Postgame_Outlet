@@ -97,13 +97,19 @@ class ShopifyThemeTests(unittest.TestCase):
         template = json.loads(template_path.read_text(encoding="utf-8"))
         self.assertEqual("postgame-ratings", template["sections"]["main"]["type"])
         section = section_path.read_text(encoding="utf-8")
+        schema = json.loads(section.split("{% schema %}", 1)[1].split("{% endschema %}", 1)[0])
+        ratings_url = next(setting for setting in schema["settings"] if setting["id"] == "ratings_url")
+        self.assertNotIn("default", ratings_url)
+        self.assertEqual(
+            "https://walshja9.github.io/Postgame_Outlet/",
+            template["sections"]["main"]["settings"]["ratings_url"],
+        )
         self.assertLess(section.index("<h1"), section.index("<iframe"))
         for value in (
             "A Power Rating estimates",
-            "/pages/methodology",
-            "/pages/accountability",
+            "/pages/methodology-preview",
+            "/pages/accountability-preview",
             "data-postgame-ratings-frame",
-            "https://walshja9.github.io/Postgame_Outlet/",
         ):
             self.assertIn(value, section)
 
