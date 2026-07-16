@@ -1,0 +1,48 @@
+name: Publish edition
+
+on:
+  workflow_dispatch:
+    inputs:
+      label:
+        description: "Edition label (e.g. Week 3)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: board-update
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      TZ: America/New_York
+      LABEL: ${{ inputs.label }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run tests (includes the editorial gate)
+        run: python -m unittest discover -s tests
+      - name: Snapshot the edition
+        run: python snapshot.py "$LABEL"
+      - name: Regenerate public board
+        run: python generate_site.py --output docs/index.html
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/snapshots.json docs/index.html
+          if git diff --cached --quiet; then
+            echo "Nothing changed - snapshot may already exist."
+            exit 1
+          fi
+          git commit -m "Publish edition: $LABEL"
+          git pull --rebase origin main
+          git push origin main
