@@ -1,33 +1,33 @@
 team,conf,division,qb_name,qb_value,off_value,def_value,hc_name,coaching_value,oc_name,dc_name,scheme_value,your_edge,needs_review,notes,age,exp
-Buffalo Bills,AFC,East,Josh Allen,6.5,1.0,-0.5,,0.0,,,0.0,0.0,Y,"+DJ Moore; OL (Corbett/Cushenberry). Lost Cooks/Davis/Samuel; D lost Bosa/Milano, +Chubb/CGJ/Stone",30,8
-Miami Dolphins,AFC,East,Malik Willis,-1.5,-1.5,-1.5,,0.0,,,0.0,0.0,Y,"WR gutted (Hill/Waddle/Wilson out); D lost Chubb/Fitzpatrick, +Uche/Ojabo",27,4
-New England Patriots,AFC,East,Drake Maye,3.0,0.5,0.5,,0.0,,,0.0,0.0,Y,+A.J. Brown/Doubs/Vera-Tucker big skill upgrade; D +Dre'Mont Jones/Byard,24,2
-New York Jets,AFC,East,Geno Smith,-2.0,-2.0,-1.5,,0.0,,,0.0,0.0,Y,Skill thin (Garrett Wilson); D strong +Fitzpatrick/Demario Davis/Sweat/Onyemata,36,13
-Baltimore Ravens,AFC,North,Lamar Jackson,4.5,0.5,0.5,,0.0,,,0.0,0.0,Y,Henry/Flowers elite; D +Hendrickson/Campbell,29,8
-Cincinnati Bengals,AFC,North,Joe Burrow,5.0,0.5,-0.5,,0.0,,,0.0,0.0,Y,Chase/Higgins elite; D big +Dexter Lawrence/Jon Allen/Mafe/Dugger,30,6
-Cleveland Browns,AFC,North,Deshaun Watson,-2.5,-1.0,1.0,,0.0,,,0.0,0.0,Y,"OL +Howard/Z.Johnson/Jenkins; D lost Garrett (to LAR), +Verse/Q.Williams",31,9
-Pittsburgh Steelers,AFC,North,Aaron Rodgers,-1.0,0.0,1.0,,0.0,,,0.0,0.0,Y,+Pittman/Dowdle; TJ Watt D +Dean/Savage,43,21
-Houston Texans,AFC,South,C.J. Stroud,0.5,0.5,2.0,,0.0,,,0.0,0.0,Y,Nico Collins +Montgomery; D Anderson/Stingley elite,25,3
-Indianapolis Colts,AFC,South,Daniel Jones,0.0,0.0,-0.5,,0.0,,,0.0,0.0,Y,Taylor RB; D +Key/Clemons,29,7
-Jacksonville Jaguars,AFC,South,Trevor Lawrence,3.0,0.0,0.0,,0.0,,,0.0,0.0,Y,"BTJ/Thomas Jr; D lost Lloyd, +Orhorhoro",27,5
-Tennessee Titans,AFC,South,Cam Ward,0.0,-0.5,0.0,,0.0,,,0.0,0.0,Y,+Wan'Dale; D huge volume +J.Johnson/JFM (quantity),24,1
-Denver Broncos,AFC,West,Bo Nix,-0.5,0.0,2.0,,0.0,,,0.0,0.0,Y,"+Waddle, Sutton; D elite Surtain/Bonitto",27,2
-Kansas City Chiefs,AFC,West,Patrick Mahomes,4.5,0.0,-0.5,,0.0,,,0.0,0.0,Y,Worthy/Rice/+Walker III; D +Sneed/Elam,31,9
-Las Vegas Raiders,AFC,West,Kirk Cousins,-2.5,-0.5,-1.0,,0.0,,,0.0,0.0,Y,Bowers TE +Linderbaum; D Crosby +Paye/Q.Walker/Dean,38,14
-Los Angeles Chargers,AFC,West,Justin Herbert,4.0,0.5,0.5,,0.0,,,0.0,0.0,Y,McConkey +Njoku; D Mack +Tomlinson,28,6
-Dallas Cowboys,NFC,East,Dak Prescott,1.5,0.5,0.0,,0.0,,,0.0,0.0,Y,CeeDee Lamb +MVS; D Parsons +Gary/Kendrick,33,10
-New York Giants,NFC,East,Jaxson Dart,-1.0,-0.5,0.5,,0.0,,,0.0,0.0,Y,Nabers +aging WRs (OBJ/Mooney/JuJu); D +Edmunds/Burns,23,1
-Philadelphia Eagles,NFC,East,Jalen Hurts,2.0,0.0,0.5,,0.0,,,0.0,0.0,Y,"Barkley/Smith/Goedert; D lost edges (Graham/Ojulari/Phillips), +Greenard/Epenesa",28,6
-Washington Commanders,NFC,East,Jayden Daniels,2.0,0.0,-1.0,,0.0,,,0.0,0.0,Y,McLaurin +White; D +Chaisson/Omenihu/Oweh,26,2
-Chicago Bears,NFC,North,Caleb Williams,3.0,0.5,-0.5,,0.0,,,0.0,0.0,Y,Lost DJ Moore (to BUF); Odunze/Burden; OL +Wills/Bradbury,25,2
-Detroit Lions,NFC,North,Jared Goff,2.0,1.0,0.0,,0.0,,,0.0,0.0,Y,"Gibbs/St.Brown/Williams elite +Pacheco; D Hutchinson, lost Reader/Anzalone",32,10
-Green Bay Packers,NFC,North,Jordan Love,1.0,0.5,-0.5,,0.0,,,0.0,0.0,Y,"Jacobs; lost Doubs/Wicks; D +Hargrave/Franklin, lost Gary",28,6
-Minnesota Vikings,NFC,North,Kyler Murray,-0.5,1.0,0.5,,0.0,,,0.0,0.0,Y,Jefferson/Addison +Jennings; D lost Greenard/Allen/Hargrave,29,7
-Atlanta Falcons,NFC,South,Michael Penix Jr.,-2.0,1.0,0.0,,0.0,,,0.0,0.0,Y,"Bijan/London +B.Robinson; D +Ebukam/Ojulari, Pearce young",26,2
-Carolina Panthers,NFC,South,Bryce Young,0.5,0.0,0.0,,0.0,,,0.0,0.0,Y,McMillan +Dillon; D +Jaelan Phillips/Devin Lloyd,25,3
-New Orleans Saints,NFC,South,Tyler Shough,-1.0,0.5,0.0,,0.0,,,0.0,0.0,Y,"Olave/Kamara +Etienne; D thin, lost Davis",27,1
-Tampa Bay Buccaneers,NFC,South,Baker Mayfield,2.0,1.0,-0.5,,0.0,,,0.0,0.0,Y,"Godwin/Egbuka, lost Mike Evans (to SF); D lost Reddick/David",31,8
-Arizona Cardinals,NFC,West,Jacoby Brissett,-1.5,-1.0,-1.0,,0.0,,,0.0,0.0,Y,Harrison Jr +Allgeier/Bourne; D +Billings/Lopez,34,10
-Los Angeles Rams,NFC,West,Matthew Stafford,5.5,1.0,1.0,,0.0,,,0.0,0.0,Y,Nacua/Kyren; D big +Myles Garrett/McDuffie/Watson,38,17
-San Francisco 49ers,NFC,West,Brock Purdy,2.5,1.5,0.5,,0.0,,,0.0,0.0,Y,+Mike Evans/Christian Kirk big WR; McCaffrey/Kittle; D +Odighizuwa/Greenlaw,27,4
-Seattle Seahawks,NFC,West,Sam Darnold,2.0,2.0,2.0,,0.0,,,0.0,0.0,Y,"Avg QB played great; elite well-built roster, low turnover; JSN, lost Walker RB; D +Fowler",29,8
+Buffalo Bills,AFC,East,Josh Allen,6.5,1.0,-0.5,,0.0,,,0.0,0.0,N,"+DJ Moore; OL (Corbett/Cushenberry). Lost Cooks/Davis/Samuel; D lost Bosa/Milano, +Chubb/CGJ/Stone",30,8
+Miami Dolphins,AFC,East,Malik Willis,-1.5,-1.5,-1.5,,0.0,,,0.0,0.0,N,"WR gutted (Hill/Waddle/Wilson out); D lost Chubb/Fitzpatrick, +Uche/Ojabo",27,4
+New England Patriots,AFC,East,Drake Maye,3.0,0.5,0.5,,0.0,,,0.0,0.0,N,+A.J. Brown/Doubs/Vera-Tucker big skill upgrade; D +Dre'Mont Jones/Byard,24,2
+New York Jets,AFC,East,Geno Smith,-2.0,-2.0,-1.5,,0.0,,,0.0,0.0,N,Skill thin (Garrett Wilson); D strong +Fitzpatrick/Demario Davis/Sweat/Onyemata,36,13
+Baltimore Ravens,AFC,North,Lamar Jackson,4.5,0.5,0.5,,0.0,,,0.0,0.0,N,Henry/Flowers elite; D +Hendrickson/Campbell,29,8
+Cincinnati Bengals,AFC,North,Joe Burrow,5.0,0.5,-0.5,,0.0,,,0.0,0.0,N,Chase/Higgins elite; D big +Dexter Lawrence/Jon Allen/Mafe/Dugger,30,6
+Cleveland Browns,AFC,North,Deshaun Watson,-2.5,-1.0,1.0,,0.0,,,0.0,0.0,N,"OL +Howard/Z.Johnson/Jenkins; D lost Garrett (to LAR), +Verse/Q.Williams",31,9
+Pittsburgh Steelers,AFC,North,Aaron Rodgers,-1.0,0.0,1.0,,0.0,,,0.0,0.0,N,+Pittman/Dowdle; TJ Watt D +Dean/Savage,43,21
+Houston Texans,AFC,South,C.J. Stroud,0.5,0.5,2.0,,0.0,,,0.0,0.0,N,Nico Collins +Montgomery; D Anderson/Stingley elite,25,3
+Indianapolis Colts,AFC,South,Daniel Jones,0.0,0.0,-0.5,,0.0,,,0.0,0.0,N,Taylor RB; D +Key/Clemons,29,7
+Jacksonville Jaguars,AFC,South,Trevor Lawrence,3.0,0.0,0.0,,0.0,,,0.0,0.0,N,"BTJ/Thomas Jr; D lost Lloyd, +Orhorhoro",27,5
+Tennessee Titans,AFC,South,Cam Ward,0.0,-0.5,0.0,,0.0,,,0.0,0.0,N,+Wan'Dale; D huge volume +J.Johnson/JFM (quantity),24,1
+Denver Broncos,AFC,West,Bo Nix,-0.5,0.0,2.0,,0.0,,,0.0,0.0,N,"+Waddle, Sutton; D elite Surtain/Bonitto",27,2
+Kansas City Chiefs,AFC,West,Patrick Mahomes,4.5,0.0,-0.5,,0.0,,,0.0,0.0,N,Worthy/Rice/+Walker III; D +Sneed/Elam,31,9
+Las Vegas Raiders,AFC,West,Kirk Cousins,-2.5,-0.5,-1.0,,0.0,,,0.0,0.0,N,Bowers TE +Linderbaum; D Crosby +Paye/Q.Walker/Dean,38,14
+Los Angeles Chargers,AFC,West,Justin Herbert,4.0,0.5,0.5,,0.0,,,0.0,0.0,N,McConkey +Njoku; D Mack +Tomlinson,28,6
+Dallas Cowboys,NFC,East,Dak Prescott,1.5,0.5,0.0,,0.0,,,0.0,0.0,N,CeeDee Lamb +MVS; D Parsons +Gary/Kendrick,33,10
+New York Giants,NFC,East,Jaxson Dart,-1.0,-0.5,0.5,,0.0,,,0.0,0.0,N,Nabers +aging WRs (OBJ/Mooney/JuJu); D +Edmunds/Burns,23,1
+Philadelphia Eagles,NFC,East,Jalen Hurts,2.0,0.0,0.5,,0.0,,,0.0,0.0,N,"Barkley/Smith/Goedert; D lost edges (Graham/Ojulari/Phillips), +Greenard/Epenesa",28,6
+Washington Commanders,NFC,East,Jayden Daniels,2.0,0.0,-1.0,,0.0,,,0.0,0.0,N,McLaurin +White; D +Chaisson/Omenihu/Oweh,26,2
+Chicago Bears,NFC,North,Caleb Williams,3.0,0.5,-0.5,,0.0,,,0.0,0.0,N,Lost DJ Moore (to BUF); Odunze/Burden; OL +Wills/Bradbury,25,2
+Detroit Lions,NFC,North,Jared Goff,2.0,1.0,0.0,,0.0,,,0.0,0.0,N,"Gibbs/St.Brown/Williams elite +Pacheco; D Hutchinson, lost Reader/Anzalone",32,10
+Green Bay Packers,NFC,North,Jordan Love,1.0,0.5,-0.5,,0.0,,,0.0,0.0,N,"Jacobs; lost Doubs/Wicks; D +Hargrave/Franklin, lost Gary",28,6
+Minnesota Vikings,NFC,North,Kyler Murray,-0.5,1.0,0.5,,0.0,,,0.0,0.0,N,Jefferson/Addison +Jennings; D lost Greenard/Allen/Hargrave,29,7
+Atlanta Falcons,NFC,South,Michael Penix Jr.,-2.0,1.0,0.0,,0.0,,,0.0,0.0,N,"Bijan/London +B.Robinson; D +Ebukam/Ojulari, Pearce young",26,2
+Carolina Panthers,NFC,South,Bryce Young,0.5,0.0,0.0,,0.0,,,0.0,0.0,N,McMillan +Dillon; D +Jaelan Phillips/Devin Lloyd,25,3
+New Orleans Saints,NFC,South,Tyler Shough,-1.0,0.5,0.0,,0.0,,,0.0,0.0,N,"Olave/Kamara +Etienne; D thin, lost Davis",27,1
+Tampa Bay Buccaneers,NFC,South,Baker Mayfield,2.0,1.0,-0.5,,0.0,,,0.0,0.0,N,"Godwin/Egbuka, lost Mike Evans (to SF); D lost Reddick/David",31,8
+Arizona Cardinals,NFC,West,Jacoby Brissett,-1.5,-1.0,-1.0,,0.0,,,0.0,0.0,N,Harrison Jr +Allgeier/Bourne; D +Billings/Lopez,34,10
+Los Angeles Rams,NFC,West,Matthew Stafford,5.5,1.0,1.0,,0.0,,,0.0,0.0,N,Nacua/Kyren; D big +Myles Garrett/McDuffie/Watson,38,17
+San Francisco 49ers,NFC,West,Brock Purdy,2.5,1.5,0.5,,0.0,,,0.0,0.0,N,+Mike Evans/Christian Kirk big WR; McCaffrey/Kittle; D +Odighizuwa/Greenlaw,27,4
+Seattle Seahawks,NFC,West,Sam Darnold,2.0,2.0,2.0,,0.0,,,0.0,0.0,N,"Avg QB played great; elite well-built roster, low turnover; JSN, lost Walker RB; D +Fowler",29,8
