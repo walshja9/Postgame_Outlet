@@ -1,0 +1,16 @@
+{
+  "sections": {
+    "main": {
+      "type": "postgame-ratings",
+      "settings": {
+        "edition": "",
+        "author": "",
+        "published_at": "",
+        "updated_at": "",
+        "summary": "",
+        "ratings_url": "https://walshja9.github.io/Postgame_Outlet/"
+      }
+    }
+  },
+  "order": ["main"]
+}

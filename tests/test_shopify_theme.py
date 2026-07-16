@@ -89,6 +89,36 @@ class ShopifyThemeTests(unittest.TestCase):
         ):
             self.assertIn(value, section)
 
+    def test_power_ratings_template_has_native_context_before_embed(self):
+        template_path = THEME / "templates/page.power-ratings.json"
+        section_path = THEME / "sections/postgame-ratings.liquid"
+        self.assertTrue(template_path.exists(), "Power Ratings template is missing")
+        self.assertTrue(section_path.exists(), "Power Ratings section is missing")
+        template = json.loads(template_path.read_text(encoding="utf-8"))
+        self.assertEqual("postgame-ratings", template["sections"]["main"]["type"])
+        section = section_path.read_text(encoding="utf-8")
+        self.assertLess(section.index("<h1"), section.index("<iframe"))
+        for value in (
+            "A Power Rating estimates",
+            "/pages/methodology",
+            "/pages/accountability",
+            "data-postgame-ratings-frame",
+            "https://walshja9.github.io/Postgame_Outlet/",
+        ):
+            self.assertIn(value, section)
+
+    def test_fantasy_template_has_dynasty_and_dfs_without_tools(self):
+        path = THEME / "templates/page.fantasy.json"
+        self.assertTrue(path.exists(), "Fantasy template is missing")
+        template = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(
+            ["main-page", "postgame-tagged-articles", "postgame-tagged-articles"],
+            [template["sections"][key]["type"] for key in template["order"]],
+        )
+        self.assertEqual("dynasty", template["sections"]["dynasty"]["settings"]["required_tag"])
+        self.assertEqual("dfs", template["sections"]["dfs"]["settings"]["required_tag"])
+        self.assertNotIn("assistant", path.read_text(encoding="utf-8").lower())
+
 
 if __name__ == "__main__":
     unittest.main()

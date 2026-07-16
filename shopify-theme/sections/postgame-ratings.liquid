@@ -1,0 +1,40 @@
+<section class="postgame-shell" aria-labelledby="ratings-title-{{ section.id }}">
+  {%- if section.settings.edition != blank -%}<p class="postgame-kicker">NFL · {{ section.settings.edition | escape }}</p>{%- endif -%}
+  <h1 id="ratings-title-{{ section.id }}">{{ page.title | escape }}</h1>
+  {%- if section.settings.author != blank or section.settings.published_at != blank or section.settings.updated_at != blank -%}
+    <p class="postgame-meta">
+      {%- if section.settings.author != blank -%}By {{ section.settings.author | escape }}{%- endif -%}
+      {%- if section.settings.published_at != blank -%} · Published {{ section.settings.published_at | escape }}{%- endif -%}
+      {%- if section.settings.updated_at != blank -%} · Updated {{ section.settings.updated_at | escape }}{%- endif -%}
+    </p>
+  {%- else -%}
+    <p class="postgame-meta">Edition details will appear after editorial review.</p>
+  {%- endif -%}
+  <p>A Power Rating estimates how many points stronger or weaker a team is than a league-average team on a neutral field.</p>
+  {%- if section.settings.summary != blank -%}<div class="rte">{{ section.settings.summary }}</div>{%- endif -%}
+  <p><a href="/pages/methodology">Methodology</a> · <a href="/pages/accountability">Corrections and accountability</a></p>
+  {%- if section.settings.ratings_url != blank -%}
+    <iframe
+      class="postgame-ratings-frame"
+      src="{{ section.settings.ratings_url | escape }}"
+      title="NFL Power Ratings"
+      loading="eager"
+      data-postgame-ratings-frame
+    ></iframe>
+  {%- endif -%}
+</section>
+
+{% schema %}
+{
+  "name": "Postgame Power Ratings",
+  "settings": [
+    { "type": "text", "id": "edition", "label": "Edition" },
+    { "type": "text", "id": "author", "label": "Author" },
+    { "type": "text", "id": "published_at", "label": "Published time" },
+    { "type": "text", "id": "updated_at", "label": "Updated time" },
+    { "type": "richtext", "id": "summary", "label": "Current-edition summary" },
+    { "type": "url", "id": "ratings_url", "label": "Ratings application URL", "default": "https://walshja9.github.io/Postgame_Outlet/" }
+  ],
+  "presets": [{ "name": "Postgame Power Ratings" }]
+}
+{% endschema %}
