@@ -1,0 +1,90 @@
+{%- liquid
+  assign release_ready = true
+  assign team_count = 0
+  if section.settings.edition == blank or section.settings.author == blank or section.settings.published_at == blank
+    assign release_ready = false
+  endif
+  for block in section.blocks
+    if block.type == 'team'
+      assign team_count = team_count | plus: 1
+      if block.settings.ordinal == blank or block.settings.team == blank or block.settings.rating == blank or block.settings.movement == blank
+        assign release_ready = false
+      endif
+    endif
+  endfor
+  if team_count != 5
+    assign release_ready = false
+  endif
+-%}
+
+<section class="postgame-shell" aria-labelledby="ratings-preview-{{ section.id }}">
+  <h2 id="ratings-preview-{{ section.id }}">NFL Power Ratings</h2>
+  {%- if release_ready -%}
+    <p class="postgame-kicker">{{ section.settings.edition | escape }}</p>
+    <p class="postgame-meta">By {{ section.settings.author | escape }} · Published {{ section.settings.published_at | escape }}</p>
+    <p>Rating points represent neutral-field strength versus a league-average team.</p>
+    <ol class="postgame-grid postgame-grid--5">
+      {%- for block in section.blocks -%}
+        {%- if block.type == 'team' -%}
+          <li class="postgame-card" {{ block.shopify_attributes }}>
+            <strong>{{ block.settings.ordinal | escape }}. {{ block.settings.team | escape }}</strong>
+            <span>Rating {{ block.settings.rating | escape }}</span>
+            <span>Movement {{ block.settings.movement | escape }}</span>
+          </li>
+        {%- endif -%}
+      {%- endfor -%}
+    </ol>
+    {%- assign mover_count = section.blocks | where: 'type', 'mover' | size -%}
+    {%- if mover_count > 0 -%}
+      <h3>Biggest movers</h3>
+      <div class="postgame-grid postgame-grid--3">
+        {%- for block in section.blocks -%}
+          {%- if block.type == 'mover' and block.settings.team != blank and block.settings.movement != blank -%}
+            <div class="postgame-card" {{ block.shopify_attributes }}>
+              <strong>{{ block.settings.team | escape }}</strong>
+              <p>{{ block.settings.movement | escape }}</p>
+              {%- if block.settings.explanation != blank -%}<p>{{ block.settings.explanation | escape }}</p>{%- endif -%}
+            </div>
+          {%- endif -%}
+        {%- endfor -%}
+      </div>
+    {%- endif -%}
+  {%- else -%}
+    <p>The current edition and biggest movers are awaiting editorial review.</p>
+  {%- endif -%}
+  <a class="button" href="/pages/power-ratings">View all 32 teams</a>
+</section>
+
+{% schema %}
+{
+  "name": "Postgame ratings preview",
+  "max_blocks": 8,
+  "settings": [
+    { "type": "text", "id": "edition", "label": "Edition" },
+    { "type": "text", "id": "author", "label": "Author" },
+    { "type": "text", "id": "published_at", "label": "Published time" }
+  ],
+  "blocks": [
+    {
+      "type": "team",
+      "name": "Reviewed top-five team",
+      "settings": [
+        { "type": "text", "id": "ordinal", "label": "Ordinal" },
+        { "type": "text", "id": "team", "label": "Team" },
+        { "type": "text", "id": "rating", "label": "Signed rating" },
+        { "type": "text", "id": "movement", "label": "Movement text" }
+      ]
+    },
+    {
+      "type": "mover",
+      "name": "Reviewed mover",
+      "settings": [
+        { "type": "text", "id": "team", "label": "Team" },
+        { "type": "text", "id": "movement", "label": "Movement text" },
+        { "type": "textarea", "id": "explanation", "label": "Explanation" }
+      ]
+    }
+  ],
+  "presets": [{ "name": "Postgame ratings preview" }]
+}
+{% endschema %}

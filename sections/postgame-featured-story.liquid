@@ -1,0 +1,40 @@
+{%- liquid
+  assign featured_article = section.settings.article
+  assign teaser = featured_article.excerpt
+  if teaser == blank
+    assign teaser = featured_article.content
+  endif
+  assign byline = featured_article.metafields.custom.byline.value | default: featured_article.author
+-%}
+
+{%- if featured_article != blank -%}
+  <section class="postgame-shell color-{{ section.settings.color_scheme }} gradient">
+    <article class="postgame-featured-story">
+      {%- if featured_article.image -%}
+        <a href="{{ featured_article.url }}" aria-label="{{ featured_article.title | escape }}">
+          {{ featured_article.image | image_url: width: 1600 | image_tag: loading: 'eager', widths: '375, 750, 1100, 1500, 1600', alt: featured_article.image.alt }}
+        </a>
+      {%- endif -%}
+      <div>
+        <p class="postgame-kicker">Latest ratings update</p>
+        <h1><a href="{{ featured_article.url }}">{{ featured_article.title | escape }}</a></h1>
+        <p class="postgame-meta">
+          By {{ byline | escape }} · {{ featured_article.published_at | time_tag: format: 'date' }}
+        </p>
+        <p>{{ teaser | strip_html | truncatewords: 42 }}</p>
+        <a class="button" href="{{ featured_article.url }}">Read the update</a>
+      </div>
+    </article>
+  </section>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Postgame featured story",
+  "settings": [
+    { "type": "article", "id": "article", "label": "Featured article" },
+    { "type": "color_scheme", "id": "color_scheme", "label": "Color scheme", "default": "scheme-1" }
+  ],
+  "presets": [{ "name": "Postgame featured story" }]
+}
+{% endschema %}

@@ -1,0 +1,68 @@
+{{ 'component-article-card.css' | asset_url | stylesheet_tag }}
+{{ 'component-card.css' | asset_url | stylesheet_tag }}
+
+{%- liquid
+  assign matching_count = 0
+  for candidate in section.settings.blog.articles
+    assign matches = false
+    if section.settings.required_tag == blank or candidate.tags contains section.settings.required_tag
+      assign matches = true
+    elsif section.settings.alternate_tag != blank and candidate.tags contains section.settings.alternate_tag
+      assign matches = true
+    endif
+    if matches
+      assign matching_count = matching_count | plus: 1
+      if matching_count >= section.settings.limit
+        break
+      endif
+    endif
+  endfor
+-%}
+
+{%- if matching_count > 0 -%}
+  <section class="postgame-shell" aria-labelledby="tagged-articles-{{ section.id }}">
+    <h2 id="tagged-articles-{{ section.id }}">{{ section.settings.heading | escape }}</h2>
+    <div class="postgame-grid postgame-grid--3">
+      {%- assign rendered_count = 0 -%}
+      {%- for candidate in section.settings.blog.articles -%}
+        {%- liquid
+          assign matches = false
+          if section.settings.required_tag == blank or candidate.tags contains section.settings.required_tag
+            assign matches = true
+          elsif section.settings.alternate_tag != blank and candidate.tags contains section.settings.alternate_tag
+            assign matches = true
+          endif
+        -%}
+        {%- if matches -%}
+          <div class="postgame-card">
+            {%- render 'article-card',
+              article: candidate,
+              media_height: 'medium',
+              media_aspect_ratio: candidate.image.aspect_ratio,
+              show_image: true,
+              show_date: true,
+              show_author: true,
+              show_excerpt: true
+            -%}
+          </div>
+          {%- assign rendered_count = rendered_count | plus: 1 -%}
+          {%- if rendered_count >= section.settings.limit -%}{%- break -%}{%- endif -%}
+        {%- endif -%}
+      {%- endfor -%}
+    </div>
+  </section>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Postgame tagged articles",
+  "settings": [
+    { "type": "text", "id": "heading", "label": "Heading", "default": "Latest analysis" },
+    { "type": "blog", "id": "blog", "label": "Blog" },
+    { "type": "text", "id": "required_tag", "label": "Required tag" },
+    { "type": "text", "id": "alternate_tag", "label": "Alternate tag" },
+    { "type": "range", "id": "limit", "label": "Article limit", "min": 1, "max": 6, "step": 1, "default": 3 }
+  ],
+  "presets": [{ "name": "Postgame tagged articles" }]
+}
+{% endschema %}
