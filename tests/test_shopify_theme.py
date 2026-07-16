@@ -134,8 +134,9 @@ class ShopifyThemeTests(unittest.TestCase):
             self.assertIn(field, article)
         template = data("templates/article.json")
         types = [template["sections"][key]["type"] for key in template["order"]]
-        self.assertEqual(["main-article", "featured-blog", "featured-product"], types)
+        self.assertEqual(["main-article", "postgame-tagged-articles", "featured-product"], types)
         self.assertTrue(template["sections"]["related_product"]["disabled"])
+        self.assertIn("candidate.id == article.id", text("sections/postgame-tagged-articles.liquid"))
         blog = data("templates/blog.json")["sections"]["main"]["settings"]
         self.assertEqual("grid", blog["layout"])
         self.assertTrue(blog["show_author"])
