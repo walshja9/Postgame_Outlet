@@ -18,7 +18,7 @@ import os
 import sys
 from datetime import datetime
 
-from release_ratings import load_release_rows
+from release_ratings import atomic_write_text, load_release_rows
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "data")
@@ -69,14 +69,11 @@ def load_snaps(path=SNAP):
     if not os.path.exists(path):
         return {}
     with open(path, encoding="utf-8") as handle:
-        raw = json.load(handle)
-    return {label: normalize_snapshot_entry(value) for label, value in raw.items()}
+        return json.load(handle)
 
 
 def save_snaps(snaps, path=SNAP):
-    with open(path, "w", encoding="utf-8") as handle:
-        json.dump(snaps, handle, indent=1, ensure_ascii=False)
-        handle.write("\n")
+    atomic_write_text(path, json.dumps(snaps, indent=1, ensure_ascii=False) + "\n")
 
 
 def timestamp():
@@ -113,7 +110,8 @@ def main(argv=None):
         snaps = load_snaps()
         if not snaps:
             print("  No snapshots saved yet.")
-        for label, entry in snaps.items():
+        for label, value in snaps.items():
+            entry = normalize_snapshot_entry(value)
             print(f"  {label:<16} ({len(entry['rows'])} teams)")
         return 0
     if args[0] == "--correct":

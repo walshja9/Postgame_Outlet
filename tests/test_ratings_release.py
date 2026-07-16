@@ -41,6 +41,26 @@ def write_ratings(path, review_values=("N", "N")):
 
 
 class ReleaseGateTests(unittest.TestCase):
+    def test_missing_review_column_fails_closed(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp, "ratings.csv")
+            fields = [field for field in FIELDS if field != "needs_review"]
+            with open(path, "w", newline="", encoding="utf-8") as handle:
+                writer = csv.DictWriter(handle, fieldnames=fields)
+                writer.writeheader()
+                writer.writerow({field: "" for field in fields})
+
+            with self.assertRaisesRegex(ValueError, "missing needs_review column"):
+                load_release_rows(path)
+
+    def test_unknown_review_value_fails_closed(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp, "ratings.csv")
+            write_ratings(path, ("N", "maybe"))
+
+            with self.assertRaisesRegex(ValueError, "Invalid needs_review.*Beta"):
+                load_release_rows(path)
+
     def test_lists_every_flagged_team(self):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp, "ratings.csv")
@@ -120,6 +140,29 @@ class SnapshotTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "cannot be empty"):
             snapshot.add_correction(snaps, "Week 1", "   ")
 
+    def test_adding_snapshot_preserves_unrelated_legacy_shape(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp, "snapshots.json")
+            legacy = [{"team": "Alpha", "rating": 1.0}]
+            path.write_text(json.dumps({"Legacy": legacy}), encoding="utf-8")
+
+            snaps = snapshot.load_snaps(path)
+            snapshot.add_snapshot(snaps, "Week 1", [], at="2026-09-10T12:00:00-04:00")
+            snapshot.save_snaps(snaps, path)
+
+            self.assertEqual(json.loads(path.read_text(encoding="utf-8"))["Legacy"], legacy)
+
+    def test_failed_snapshot_replace_preserves_existing_file(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp, "snapshots.json")
+            path.write_text("original\n", encoding="utf-8")
+
+            with patch("os.replace", side_effect=OSError("replace failed")):
+                with self.assertRaisesRegex(OSError, "replace failed"):
+                    snapshot.save_snaps({"Week 1": []}, path)
+
+            self.assertEqual(path.read_text(encoding="utf-8"), "original\n")
+
 
 class MovementTests(unittest.TestCase):
     def test_movement_compares_current_rank_to_latest_snapshot(self):
@@ -145,6 +188,21 @@ class MovementTests(unittest.TestCase):
                 [],
             ),
             {"Alpha": None},
+        )
+
+    def test_same_edition_snapshot_is_skipped_for_movement(self):
+        prior = [{"team": "Alpha", "rating": 0.0}]
+        current = [{"team": "Alpha", "rating": 1.0}]
+        snaps = {
+            "Preseason": {"published_at": "", "rows": prior, "corrections": []},
+            "2026 Preseason": {"published_at": "", "rows": current, "corrections": []},
+        }
+
+        selector = getattr(generate_site, "previous_snapshot_rows", None)
+        self.assertIsNotNone(selector)
+        self.assertEqual(
+            selector(snaps, "2026 Preseason"),
+            prior,
         )
 
 
@@ -301,6 +359,40 @@ class GeneratedDocumentTests(unittest.TestCase):
         self.assertRegex(
             args.output.replace("\\", "/"),
             r"output/ratings-preview/\d{4}-\d{2}-\d{2}/index\.html$",
+        )
+
+    def test_failed_output_replace_preserves_existing_preview(self):
+        with tempfile.TemporaryDirectory() as temp:
+            output = Path(temp, "index.html")
+            output.write_text("original", encoding="utf-8")
+            with (
+                patch.object(generate_site, "load_config", return_value=self.config),
+                patch.object(generate_site, "load_prior", return_value={}),
+                patch.object(generate_site, "load_teams", return_value=self.rows),
+                patch.object(generate_site, "load_qbs", return_value=([], [])),
+                patch.object(generate_site, "build_html", return_value="replacement"),
+                patch.object(
+                    generate_site,
+                    "atomic_write_text",
+                    side_effect=OSError("replace failed"),
+                    create=True,
+                ),
+            ):
+                with self.assertRaisesRegex(OSError, "replace failed"):
+                    generate_site.main(["--output", str(output)])
+
+            self.assertEqual(output.read_text(encoding="utf-8"), "original")
+
+    def test_small_text_uses_contrast_safe_colors(self):
+        with tempfile.TemporaryDirectory() as temp:
+            Path(temp, "snapshots.json").write_text("{}", encoding="utf-8")
+            with patch.object(generate_site, "DATA", temp):
+                document = generate_site.build_html(self.rows, self.config)
+
+        self.assertIn("--mut:#5b6c84; --dim:#5b6c84;", document)
+        self.assertIn(
+            "header .updated { color:rgba(255,255,255,.75);",
+            document,
         )
 
 

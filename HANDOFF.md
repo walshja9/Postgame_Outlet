@@ -1,42 +1,43 @@
 # Handoff — NFL Power Ratings
 
-You're taking this project over. Here's the 2-minute orientation; full detail is
-in `README.md` and `SHOPIFY.md`.
+This repository owns the independent ratings data, snapshots, writeups, and
+interactive ratings artifact. Shopify owns the public site shell, navigation,
+articles, products, cart, and checkout. See `README.md` and `SHOPIFY.md` for the
+full workflow.
 
-## What it is
-A roster-based NFL power-rating system. You edit plain data files, run a Python
-script, and it spits out a standalone `index.html` (the ratings website), an
-Excel workbook, and a spreads-vs-market page. No install, no API keys, no server.
+## Source of truth
 
-## The one thing to understand: content lives in data files
-All the editable **content** is under `data/`:
-- `data/ratings.csv`      — the 32 teams' QB/Off/Def numbers, names, notes (THE main file)
-- `data/writeups/<ABBR>.md` — the per-team analysis that expands on each row (BUF.md, SEA.md, ...)
-- `data/qb_depth.csv`, `data/hfa.csv`, `data/config.csv` — supporting inputs
+Editable ratings content lives under `data/`:
 
-Edit those, then regenerate:
+- `data/ratings.csv` — 32 teams, component values, notes, and the editorial gate
+- `data/writeups/<ABBR>.md` — team analysis
+- `data/qb_depth.csv`, `data/hfa.csv`, and `data/config.csv` — supporting inputs
+- `data/snapshots.json` — append-only published-edition history and corrections
+
+Every release row must have `needs_review=N`. Missing, unknown, or `Y` values
+block generation and snapshots.
+
+## Preview workflow
+
 ```bash
-cd nfl-power-ratings
-python3 generate_site.py      # rebuilds index.html from the data files
+python generate_site.py
 ```
-That's the whole content-editing loop. `index.html` is generated output — don't
-hand-edit it; edit the data and re-run.
 
-## Putting it on Shopify
-`index.html` is fully self-contained. Host it statically somewhere (GitHub Pages
-or Netlify — free), then embed that URL in a Shopify page via `<iframe>`. Shopify
-strips the inline `<script>`/`<style>`, so pasting the raw HTML won't work — the
-iframe is the way. Details in `SHOPIFY.md`.
+The default command writes a dated private artifact under
+`output/ratings-preview/YYYY-MM-DD/index.html`. It does not change the GitHub
+Pages file or Shopify. Review that artifact before any release command.
 
-## Sean stays in the content loop
-Sean will keep editing content on his side by changing the same `data/` files and
-re-running `generate_site.py`, then sending you the updated `index.html` (or the
-changed data files) to re-publish. Keep `data/` as the source of truth so those
-edits merge cleanly.
+After explicit release approval, generate the approved public artifact with an
+explicit destination such as:
+
+```bash
+python generate_site.py --output docs/index.html
+```
+
+Do not hand-edit generated HTML. Edit the source data or writeups, regenerate,
+and commit the reviewed source and artifact together.
 
 ## Requirements
-Python 3 with `openpyxl` (only needed for the Excel workbook):
-```bash
-pip3 install openpyxl
-```
-The website and spreads scripts use the standard library only.
+
+The ratings site and snapshot tools use the Python standard library. `openpyxl`
+is needed only for the optional Excel workbook.

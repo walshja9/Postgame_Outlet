@@ -1,6 +1,6 @@
 # Putting the ratings on postgameoutlet.com (Shopify)
 
-The site is one self-contained `index.html` (inline CSS + JS, no external files).
+The ratings app is one self-contained `index.html` (inline CSS + JS, no external files).
 Shopify's page editor **strips `<script>` and `<style>` tags**, so you can't just
 paste the HTML into a page. The reliable way to embed it is a two-step: host the
 file statically, then drop an `<iframe>` into a Shopify page.
@@ -58,8 +58,10 @@ commit.
    </script>
    ```
 
-4. Save. The page will live at `postgameoutlet.com/pages/power-ratings`.
-5. Add it to your store nav: **Online Store → Navigation → Main menu → Add menu item**.
+4. Save it only in the unpublished preview workflow. The approved canonical page
+   will live at `postgameoutlet.com/pages/power-ratings` after cutover.
+5. Add the preview page only to the unpublished theme's preview menu. Do not
+   change the live store menu until explicit cutover approval.
 
 ### How the script fixes the two iframe gotchas
 Both are handled automatically — you don't tune anything:
@@ -83,10 +85,9 @@ The iframe still renders and every tab works. You'd just: (a) set a generous fix
 the iframe rather than the viewport. The script is strongly recommended, but the
 page degrades gracefully without it.
 
-## Alternative — native Shopify (more work, no iframe)
+## Alternative — native Shopify (not selected)
 
-If you'd rather not host externally, the HTML can be split into a **custom Liquid
-section**: put the markup in a `section` file, move the CSS into the theme's
-stylesheet, and load the JS via the theme's assets. This is the "proper" Shopify
-way but requires theme-file access and re-splitting on every change. The iframe
-route above keeps `generate_site.py` as the single source of truth, so start there.
+The HTML could be split into a custom Liquid section, but that would duplicate
+the independent app and require re-splitting every ratings change. The selected
+iframe architecture keeps `generate_site.py` as the ratings source of truth and
+uses Shopify for the native content and commerce shell.

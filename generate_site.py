@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Generate a standalone, self-contained index.html for the NFL Power Ratings.
+Generate a standalone, self-contained NFL Power Ratings preview.
 
-Reads data/ratings.csv + data/prior_2025.csv, computes the preseason blend
-(same logic we settled on: 50/50 prior-vs-build, 75/25 for injury-deflated
-2025 finishers, then a soft squeeze of the tails), and writes a single
-index.html with embedded CSS + vanilla JS (sortable table, team-color chips,
-tier heat-map). No external dependencies — double-click to open.
+Reads data/ratings.csv + data/prior_2025.csv and writes a single HTML artifact
+with embedded CSS + vanilla JS (sortable table, team-color chips, tier heat-map).
+The displayed rating is the direct component sum; the prior is reference-only.
+The default destination is a dated private preview, while production output
+requires an explicit path after approval. No external dependencies are required.
 
 Re-run after editing the CSVs to refresh the page.
 """
@@ -20,8 +20,8 @@ import re
 import sys
 from datetime import datetime
 
-from release_ratings import load_release_rows
-from snapshot import load_snaps
+from release_ratings import atomic_write_text, load_release_rows
+from snapshot import load_snaps, normalize_snapshot_entry
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "data")
@@ -100,15 +100,6 @@ def load_prior():
         return {}
     return {r["team"]: float(r["end_2025_rating"])
             for r in csv.DictReader(open(path, newline=""))}
-
-
-def squeeze(x):
-    """Soft-compress the tails so preseason is tighter than end-of-year."""
-    if x > 5:
-        return 5 + (x - 5) * 0.6
-    if x < -3:
-        return -3 + (x + 3) * 0.55
-    return x
 
 
 def load_teams(prior):
@@ -307,6 +298,13 @@ def movement_by_team(current_rows, previous_rows):
     }
 
 
+def previous_snapshot_rows(snaps, edition):
+    for label, value in reversed(list(snaps.items())):
+        if label != edition:
+            return normalize_snapshot_entry(value)["rows"]
+    return []
+
+
 def render_movement(value):
     if value is None or value == 0:
         return '<span class="move same" aria-label="No rank change">—</span>'
@@ -436,7 +434,7 @@ def build_html(rows, config, generated_at=None):
 
     snap_path = os.path.join(DATA, "snapshots.json")
     snaps = load_snaps(snap_path)
-    previous_rows = list(snaps.values())[-1]["rows"] if snaps else []
+    previous_rows = previous_snapshot_rows(snaps, edition)
     movements = movement_by_team(rows, previous_rows)
     body = render_rating_rows(rows, movements=movements)
 
@@ -444,7 +442,8 @@ def build_html(rows, config, generated_at=None):
     # always the live data; saved weeks come from data/snapshots.json.
     versions = {"Current": body}
     version_meta = {"Current": {"published_at": "", "corrections": []}}
-    for label, entry in snaps.items():
+    for label, value in snaps.items():
+        entry = normalize_snapshot_entry(value)
         versions[label] = render_rating_rows(entry["rows"], detail=False)
         version_meta[label] = {
             "published_at": entry["published_at"],
@@ -539,7 +538,7 @@ TEMPLATE = """<!DOCTYPE html>
   :root {
     --bg:#ffffff; --bg2:#ffffff; --panel:#ffffff; --panel2:#f0f3f8;
     --row-alt:#f7f9fc; --hover:#edf1f7; --border:#dfe6ef; --border2:#c9d3e2;
-    --ink:#384f6f; --mut:#647892; --dim:#647892;
+    --ink:#384f6f; --mut:#5b6c84; --dim:#5b6c84;
     --teal:#e0821c; --teal2:#8a4a05; --violet:#384f6f; --violet2:#384f6f;
     --pos:#08734f; --neg:#a73525; --accent:#e0821c; --orange:#fd962f;
     --disp:'Oswald',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
@@ -576,7 +575,7 @@ TEMPLATE = """<!DOCTYPE html>
   header h1 .accent { color:var(--orange); }
   header .sub { color:rgba(255,255,255,.72); font-size:13px; margin-top:9px;
                 letter-spacing:.04em; }
-  header .updated { color:rgba(255,255,255,.5); font-size:11px; margin-top:6px;
+  header .updated { color:rgba(255,255,255,.75); font-size:11px; margin-top:6px;
                     letter-spacing:.06em; text-transform:uppercase; }
   header .updated::before { content:"● "; color:var(--orange); }
 
@@ -605,9 +604,9 @@ TEMPLATE = """<!DOCTYPE html>
   td.team, th.team, td.qbn, th.qbn { text-align:left; }
   .chip { display:inline-block; min-width:40px; text-align:center; padding:3px 6px; margin-right:9px;
           border-radius:5px; font-size:11px; font-weight:700; color:#fff; border:1px solid;
+          background:#18283a !important;
           vertical-align:middle; text-shadow:0 1px 1px rgba(0,0,0,.55);
           box-shadow:0 1px 3px rgba(0,0,0,.4); }
-  .chip { background:#18283a !important; color:#fff; }
   .tname { font-weight:600; color:var(--ink); }
   .div { color:var(--dim); font-size:11px; margin-left:8px; text-transform:uppercase; letter-spacing:.04em; }
   .qbn { color:var(--mut); font-weight:500; }
@@ -618,8 +617,7 @@ TEMPLATE = """<!DOCTYPE html>
   .move.down { color:var(--neg); }
   .move.same { color:var(--dim); }
   td.rating { font-family:var(--body); font-weight:700; font-size:16px; border-radius:4px;
-              color:var(--teal2); }
-  td.rating { color:var(--ink); }
+              color:var(--ink); }
   td.prior { color:var(--dim); }
   td[data-v] { font-variant-numeric:tabular-nums; color:var(--ink); }
   .legend { color:var(--mut); font-size:12px; margin-top:16px; line-height:1.7;
@@ -634,8 +632,7 @@ TEMPLATE = """<!DOCTYPE html>
     font-size:14px; font-weight:600; letter-spacing:.01em; transition:all .12s;
   }
   .tab:hover { color:var(--ink); border-color:var(--border2); }
-  .tab.active { color:#fff; background:var(--orange); border-color:var(--orange); }
-  .tab.active { color:#18283a; }
+  .tab.active { color:#18283a; background:var(--orange); border-color:var(--orange); }
   .panel { display:none; } .panel.active { display:block; }
   .sort-button { width:100%; text-align:inherit; text-transform:inherit; letter-spacing:inherit; }
   .row-trigger { display:inline-flex; align-items:center; text-align:left; }
@@ -727,8 +724,7 @@ TEMPLATE = """<!DOCTYPE html>
              margin-bottom:16px; border-bottom:1px solid var(--border); padding-right:36px; }
   .dr-title { display:flex; flex-direction:column; gap:2px; min-width:0; }
   .dr-name { font-family:var(--disp); font-weight:600; font-size:22px; color:var(--ink);
-             text-transform:uppercase; letter-spacing:.02em; line-height:1.05; }
-  .dr-name { margin:0; }
+             text-transform:uppercase; letter-spacing:.02em; line-height:1.05; margin:0; }
   .dr-sub { color:var(--dim); font-size:11px; text-transform:uppercase; letter-spacing:.04em; }
   .dr-rating { margin-left:auto; font-family:var(--disp); font-weight:700; font-size:26px; }
   .dr-rating.pos { color:var(--pos); } .dr-rating.neg { color:var(--neg); }
@@ -1145,9 +1141,7 @@ def main(argv=None):
     build_html.qb_data = load_qbs(team_ratings)
 
     out = os.path.abspath(args.output)
-    os.makedirs(os.path.dirname(out), exist_ok=True)
-    with open(out, "w", encoding="utf-8") as handle:
-        handle.write(build_html(rows, cfg))
+    atomic_write_text(out, build_html(rows, cfg))
     print(f"Wrote {out}")
     print(
         f"  {len(rows)} teams | top: {rows[0]['team']} {rows[0]['rating']:+.1f}"

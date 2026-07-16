@@ -55,7 +55,7 @@ writes a private preview and does not replace the GitHub Pages artifact.
 
 ## Team write-ups (click-to-expand on the site)
 
-Every team row on `index.html` expands (click it) to show a QB/Off/Def bar
+Every team row in the generated ratings artifact expands (click it) to show a QB/Off/Def bar
 breakdown plus your analysis. The analysis comes from `data/writeups/<ABBR>.md`
 — plain markdown (`##` headings, `**bold**`, `- bullets`, paragraphs). If a team
 has no write-up file yet, the row falls back to the one-line `notes` from
@@ -64,16 +64,16 @@ has no write-up file yet, the row falls back to the one-line `notes` from
 ```bash
 # Team abbreviations match the chips (BUF, SEA, KC, LAR, ...). To add one:
 $EDITOR data/writeups/BUF.md      # write markdown
-python3 generate_site.py          # re-embed into index.html
+python3 generate_site.py          # rebuild the dated private preview
 ```
 
 Two examples ship already: `data/writeups/SEA.md` and `KC.md`.
 
 ## Publishing to postgameoutlet.com
 
-See `SHOPIFY.md` — host the generated `index.html` statically (GitHub Pages /
-Netlify drop) and embed it in a Shopify page via `<iframe>` (Shopify strips the
-inline `<script>`/`<style>` the site needs, so pasting raw HTML won't work).
+Shopify owns the public content and commerce shell. The approved ratings artifact
+remains independently hosted and is embedded in the native Power Ratings page.
+See `SHOPIFY.md` for the preview-first embed and release workflow.
 
 ## Rating conventions (how the numbers were calibrated)
 
@@ -106,6 +106,3 @@ kept only as a reference column on the website.
   NYJ recurred — worth a sanity check when real lines firm up.)
 - Coaching / Scheme / Edge columns exist in ratings.csv but are still 0.0 — the
   natural next layer.
-- Eventual goal: embed the ratings (and maybe spreads) table into the Shopify store
-  (postgameoutlet.com), built standalone first.
-```
