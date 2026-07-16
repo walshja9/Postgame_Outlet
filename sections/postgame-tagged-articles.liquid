@@ -10,6 +10,9 @@
     elsif section.settings.alternate_tag != blank and candidate.tags contains section.settings.alternate_tag
       assign matches = true
     endif
+    if template.name == 'article' and candidate.id == article.id
+      assign matches = false
+    endif
     if matches
       assign matching_count = matching_count | plus: 1
       if matching_count >= section.settings.limit
@@ -31,6 +34,9 @@
             assign matches = true
           elsif section.settings.alternate_tag != blank and candidate.tags contains section.settings.alternate_tag
             assign matches = true
+          endif
+          if template.name == 'article' and candidate.id == article.id
+            assign matches = false
           endif
         -%}
         {%- if matches -%}
