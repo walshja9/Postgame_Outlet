@@ -662,6 +662,11 @@ TEMPLATE = """<!DOCTYPE html>
   td.qbtier { color:var(--dim); font-size:12px; text-transform:uppercase;
               letter-spacing:.03em; white-space:nowrap; }
   @media (max-width:960px) {
+    .row-trigger {
+      display:grid; grid-template-columns:auto minmax(0,1fr); max-width:100%;
+    }
+    .row-trigger .tname, .row-trigger .div { grid-column:2; min-width:0; }
+    .row-trigger .div { margin:2px 0 0; }
     .detail-col { display:none; }
     .panel.active { padding:12px 8px 16px; }
     th, td { padding:9px 7px; }
@@ -1067,7 +1072,8 @@ TEMPLATE = """<!DOCTYPE html>
   }
 
   // --- tabs ---
-  const tabs = [...document.querySelectorAll('[role="tab"]')];
+  const tabs = [...document.querySelectorAll('[role="tab"]')]
+    .filter(tab => tab.style.display !== 'none');
   function activateTab(tab, moveFocus) {
     closeDrawer(false);
     tabs.forEach(item => {

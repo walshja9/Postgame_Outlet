@@ -269,6 +269,33 @@ class GeneratedDocumentTests(unittest.TestCase):
         self.assertEqual(document.count("<h1"), 1)
         self.assertIn(':focus-visible', document)
 
+    def test_hidden_qb_tab_is_excluded_from_roving_keyboard_tabs(self):
+        with tempfile.TemporaryDirectory() as temp:
+            Path(temp, "snapshots.json").write_text("{}", encoding="utf-8")
+            with patch.object(generate_site, "DATA", temp):
+                document = generate_site.build_html(self.rows, self.config)
+        self.assertIn('data-panel="qbs" style="display:none"', document)
+        self.assertIn(
+            "const tabs = [...document.querySelectorAll('[role=\"tab\"]')]\n"
+            "    .filter(tab => tab.style.display !== 'none');",
+            document,
+        )
+
+    def test_mobile_row_triggers_stack_secondary_labels_without_overflow(self):
+        with tempfile.TemporaryDirectory() as temp:
+            Path(temp, "snapshots.json").write_text("{}", encoding="utf-8")
+            with patch.object(generate_site, "DATA", temp):
+                document = generate_site.build_html(self.rows, self.config)
+        self.assertIn(
+            """  @media (max-width:960px) {
+    .row-trigger {
+      display:grid; grid-template-columns:auto minmax(0,1fr); max-width:100%;
+    }
+    .row-trigger .tname, .row-trigger .div { grid-column:2; min-width:0; }
+    .row-trigger .div { margin:2px 0 0; }""",
+            document,
+        )
+
     def test_default_output_is_private_preview(self):
         args = generate_site.parse_args([])
         self.assertRegex(
