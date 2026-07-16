@@ -251,6 +251,24 @@ class GeneratedDocumentTests(unittest.TestCase):
         self.assertNotIn("Prime-time home games", document)
         self.assertNotRegex(document, r"edge on your\s+picks")
 
+    def test_generated_controls_have_native_keyboard_semantics(self):
+        with tempfile.TemporaryDirectory() as temp:
+            Path(temp, "snapshots.json").write_text("{}", encoding="utf-8")
+            with patch.object(generate_site, "DATA", temp):
+                document = generate_site.build_html(self.rows, self.config)
+        self.assertIn('role="tablist"', document)
+        self.assertIn('role="tab"', document)
+        self.assertIn('class="sort-button"', document)
+        self.assertIn('aria-sort="descending"', document)
+        self.assertIn('aria-haspopup="dialog"', document)
+        self.assertIn('role="dialog"', document)
+        self.assertIn('aria-modal="true"', document)
+        self.assertIn('id="drawerClose"', document)
+        self.assertIn('role="status"', document)
+        self.assertIn('<caption class="visually-hidden">', document)
+        self.assertEqual(document.count("<h1"), 1)
+        self.assertIn(':focus-visible', document)
+
     def test_default_output_is_private_preview(self):
         args = generate_site.parse_args([])
         self.assertRegex(

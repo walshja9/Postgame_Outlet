@@ -319,9 +319,9 @@ def render_rating_rows(rows, detail=True, movements=None):
     """Render the Power Ratings <tr> rows for one set of team dicts (a live or
     archived snapshot). Rows are ranked by rating; rank reflects each set.
 
-    When detail=True, each row is clickable (carries data-abbr) and opens the
-    team drawer — the detail content itself lives in the DETAILS payload, so the
-    table never shifts. Archived snapshots pass detail=False (no drawer)."""
+    When detail=True, the team-name button opens the team drawer — the detail
+    content itself lives in the DETAILS payload, so the table never shifts.
+    Archived snapshots pass detail=False (no drawer)."""
     movements = movements or {}
     ranked = sorted(rows, key=lambda x: -x["rating"])
     ratings = [r["rating"] for r in ranked] or [0]
@@ -334,11 +334,19 @@ def render_rating_rows(rows, detail=True, movements=None):
         star = ' <span class="inj" title="2025 finish deflated by injury; weighted toward roster talent">▲inj</span>' if r.get("injury") else ""
         prior = f'{r["prior"]:+.2f}' if r.get("prior", "") != "" else "—"
         bg = heat(r["rating"], lo, hi)
-        rowattr = f' class="teamrow" data-abbr="{abbr}"' if detail else ""
+        team_content = (
+            f'<span class="chip" style="background:{c1};border-color:{c2}">{abbr}</span>'
+            f'<span class="tname">{nm}</span><span class="div">{r["conf"]} {r["div"]}</span>'
+        )
+        if detail:
+            team_content = (
+                f'<button type="button" class="row-trigger team-trigger" '
+                f'data-abbr="{abbr}" aria-haspopup="dialog">{team_content}</button>'
+            )
+        rowattr = ' class="teamrow"' if detail else ""
         out.append(f"""    <tr{rowattr}>
       <td class="rank">{i}</td>
-      <td class="team"><span class="chip" style="background:{c1};border-color:{c2}">{abbr}</span>
-        <span class="tname">{nm}</span><span class="div">{r['conf']} {r['div']}</span></td>
+      <td class="team">{team_content}</td>
       <td class="movement" data-v="{movements.get(r['team'], 0) or 0}">{render_movement(movements.get(r['team']))}</td>
       <td class="qbn detail-col">{qbn}{star}</td>
       <td class="detail-col" data-v="{r['qb']}">{r['qb']:+.1f}</td>
@@ -371,7 +379,7 @@ def build_details(rows):
         subtitle = f'{r["conf"]} {r["div"]} &middot; QB: {html.escape(r.get("qb_name", ""))}'
         details[abbr] = (
             f'<div class="dr-head"><span class="chip" style="background:{c1};border-color:{c2}">{abbr}</span>'
-            f'<div class="dr-title"><span class="dr-name">{nm}</span>'
+            f'<div class="dr-title"><h2 class="dr-name" id="drawerTitle">{nm}</h2>'
             f'<span class="dr-sub">{subtitle}</span></div>'
             f'<span class="dr-rating {rating_cls}">{r["rating"]:+.1f}</span></div>'
             f'<div class="dr-bars">{bars}</div>'
@@ -410,7 +418,7 @@ def build_qb_detail(q, kind, rank):
     bar = _bar("Value", val)
     return (
         f'<div class="dr-head"><span class="chip" style="background:{c1};border-color:{c2}">{abbr}</span>'
-        f'<div class="dr-title"><span class="dr-name">{nm}</span>'
+        f'<div class="dr-title"><h2 class="dr-name" id="drawerTitle">{nm}</h2>'
         f'<span class="dr-sub">{subtitle}</span></div>'
         f'<span class="dr-rating {val_cls}">{val:+.1f}</span></div>'
         f'<div class="dr-tier">{qb_tier(val)} &middot; points vs. a league-average QB (0.0)</div>'
@@ -447,8 +455,8 @@ def build_html(rows, config, generated_at=None):
     ver_opts = "".join(f'<option value="{html.escape(l)}">{html.escape(l)}</option>'
                        for l in versions)
 
-    # QB tab: starters 1-32, then top-18 backups. Rows are clickable and open
-    # the same drawer as teams, keyed by data-qb into the QB_DETAILS payload.
+    # QB tab: starters 1-32, then top-18 backups. Name buttons open the same
+    # drawer as teams, keyed by data-qb into the QB_DETAILS payload.
     starters, backups = build_html.qb_data or ([], [])
     qb_details = {}
 
@@ -474,9 +482,14 @@ def build_html(rows, config, generated_at=None):
         tr_cls = "pos" if (tr is not None and tr >= 0) else ("neg" if tr is not None else "")
         key = qb_key(q, kind)
         qb_details[key] = build_qb_detail(q, kind, rank)
-        return (f'<tr class="qbrow" data-qb="{html.escape(key)}"><td class="rank">{rank}</td>'
-                f'<td class="team"><span class="chip" style="background:{c1};border-color:{c2}">{abbr}</span>'
-                f'<span class="tname">{nm}</span>{tag}</td>'
+        trigger = (
+            f'<button type="button" class="row-trigger qb-trigger" '
+            f'data-qb="{html.escape(key)}" aria-haspopup="dialog">'
+            f'<span class="chip" style="background:{c1};border-color:{c2}">{abbr}</span>'
+            f'<span class="tname">{nm}</span>{tag}</button>'
+        )
+        return (f'<tr class="qbrow"><td class="rank">{rank}</td>'
+                f'<td class="team">{trigger}</td>'
                 f'<td class="qbmeta detail-col">{age}</td>'
                 f'<td class="qbmeta detail-col">{exp}</td>'
                 f'<td class="qbmeta detail-col {tr_cls}">{tr_disp}</td>'
@@ -526,13 +539,23 @@ TEMPLATE = """<!DOCTYPE html>
   :root {
     --bg:#ffffff; --bg2:#ffffff; --panel:#ffffff; --panel2:#f0f3f8;
     --row-alt:#f7f9fc; --hover:#edf1f7; --border:#dfe6ef; --border2:#c9d3e2;
-    --ink:#384f6f; --mut:#647892; --dim:#8fa0b6;
-    --teal:#e0821c; --teal2:#c96f0e; --violet:#384f6f; --violet2:#384f6f;
-    --pos:#1a9a6c; --neg:#d94f36; --accent:#e0821c; --orange:#fd962f;
+    --ink:#384f6f; --mut:#647892; --dim:#647892;
+    --teal:#e0821c; --teal2:#8a4a05; --violet:#384f6f; --violet2:#384f6f;
+    --pos:#08734f; --neg:#a73525; --accent:#e0821c; --orange:#fd962f;
     --disp:'Oswald',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
     --body:'Montserrat',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
   }
   * { box-sizing:border-box; }
+  [hidden] { display:none !important; }
+  .visually-hidden {
+    position:absolute !important; width:1px; height:1px; padding:0; margin:-1px;
+    overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+  }
+  :focus-visible { outline:3px solid #005fcc; outline-offset:3px; }
+  .tab, .sort-button, .row-trigger, .drawer-close { font:inherit; }
+  .sort-button, .row-trigger {
+    border:0; background:transparent; color:inherit; padding:0; cursor:pointer;
+  }
   body {
     margin:0; color:var(--ink); font:15px/1.45 var(--body);
     background:var(--bg);
@@ -566,7 +589,7 @@ TEMPLATE = """<!DOCTYPE html>
   th,td { padding:10px 11px; text-align:right; white-space:nowrap; }
   th {
     background:var(--ink); color:rgba(255,255,255,.78); font-family:var(--body); font-weight:600;
-    font-size:11px; letter-spacing:.07em; text-transform:uppercase; cursor:pointer;
+    font-size:11px; letter-spacing:.07em; text-transform:uppercase;
     user-select:none; border-bottom:2px solid var(--orange);
   }
   th:first-child { border-top-left-radius:9px; } th:last-child { border-top-right-radius:9px; }
@@ -577,8 +600,6 @@ TEMPLATE = """<!DOCTYPE html>
   tbody tr:nth-child(even) { background:var(--row-alt); }
   tbody tr:last-child { border-bottom:none; }
   tbody tr:hover { background:var(--hover); }
-  tr.teamrow, tr.qbrow { cursor:pointer; }
-  tr.teamrow.sel, tr.qbrow.sel { background:rgba(56,79,111,.10); box-shadow:inset 3px 0 0 var(--violet); }
   td.rank { text-align:center; color:var(--dim); font-family:var(--body);
             font-weight:600; font-size:14px; width:40px; font-variant-numeric:tabular-nums; }
   td.team, th.team, td.qbn, th.qbn { text-align:left; }
@@ -586,6 +607,7 @@ TEMPLATE = """<!DOCTYPE html>
           border-radius:5px; font-size:11px; font-weight:700; color:#fff; border:1px solid;
           vertical-align:middle; text-shadow:0 1px 1px rgba(0,0,0,.55);
           box-shadow:0 1px 3px rgba(0,0,0,.4); }
+  .chip { background:#18283a !important; color:#fff; }
   .tname { font-weight:600; color:var(--ink); }
   .div { color:var(--dim); font-size:11px; margin-left:8px; text-transform:uppercase; letter-spacing:.04em; }
   .qbn { color:var(--mut); font-weight:500; }
@@ -597,6 +619,7 @@ TEMPLATE = """<!DOCTYPE html>
   .move.same { color:var(--dim); }
   td.rating { font-family:var(--body); font-weight:700; font-size:16px; border-radius:4px;
               color:var(--teal2); }
+  td.rating { color:var(--ink); }
   td.prior { color:var(--dim); }
   td[data-v] { font-variant-numeric:tabular-nums; color:var(--ink); }
   .legend { color:var(--mut); font-size:12px; margin-top:16px; line-height:1.7;
@@ -612,7 +635,10 @@ TEMPLATE = """<!DOCTYPE html>
   }
   .tab:hover { color:var(--ink); border-color:var(--border2); }
   .tab.active { color:#fff; background:var(--orange); border-color:var(--orange); }
+  .tab.active { color:#18283a; }
   .panel { display:none; } .panel.active { display:block; }
+  .sort-button { width:100%; text-align:inherit; text-transform:inherit; letter-spacing:inherit; }
+  .row-trigger { display:inline-flex; align-items:center; text-align:left; }
 
   .weekbar { display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
   .weekbar label { font-weight:600; color:var(--mut); font-size:13px; }
@@ -697,6 +723,7 @@ TEMPLATE = """<!DOCTYPE html>
   .dr-title { display:flex; flex-direction:column; gap:2px; min-width:0; }
   .dr-name { font-family:var(--disp); font-weight:600; font-size:22px; color:var(--ink);
              text-transform:uppercase; letter-spacing:.02em; line-height:1.05; }
+  .dr-name { margin:0; }
   .dr-sub { color:var(--dim); font-size:11px; text-transform:uppercase; letter-spacing:.04em; }
   .dr-rating { margin-left:auto; font-family:var(--disp); font-weight:700; font-size:26px; }
   .dr-rating.pos { color:var(--pos); } .dr-rating.neg { color:var(--neg); }
@@ -743,6 +770,10 @@ TEMPLATE = """<!DOCTYPE html>
   .method .formula { background:var(--panel2); border-left:3px solid var(--teal);
                      padding:11px 14px; border-radius:0 8px 8px 0; margin:0 0 14px;
                      font-family:var(--body); font-size:14px; color:var(--ink); }
+
+  @media (prefers-reduced-motion:reduce) {
+    *, *::before, *::after { scroll-behavior:auto !important; transition:none !important; }
+  }
 </style>
 </head>
 <body>
@@ -754,31 +785,40 @@ TEMPLATE = """<!DOCTYPE html>
   </header>
 </div>
 <div class="wrap">
-  <div class="tabs">
-    <div class="tab active" data-panel="ratings">Power Ratings</div>
-    <div class="tab" data-panel="qbs" style="display:{{HAS_QBS}}">QB Rankings</div>
-    <div class="tab" data-panel="method">Methodology</div>
+  <div class="tabs" role="tablist" aria-label="Ratings views">
+    <button type="button" class="tab active" id="tab-ratings" role="tab"
+      aria-selected="true" aria-controls="panel-ratings" tabindex="0"
+      data-panel="ratings">Power Ratings</button>
+    <button type="button" class="tab" id="tab-qbs" role="tab"
+      aria-selected="false" aria-controls="panel-qbs" tabindex="-1"
+      data-panel="qbs" style="display:{{HAS_QBS}}">QB Ratings</button>
+    <button type="button" class="tab" id="tab-method" role="tab"
+      aria-selected="false" aria-controls="panel-method" tabindex="-1"
+      data-panel="method">Methodology</button>
   </div>
-  <div class="panel active" id="panel-ratings">
+  <section class="panel active" id="panel-ratings" role="tabpanel" aria-labelledby="tab-ratings">
+  <h2 class="visually-hidden">NFL team ratings board</h2>
   <div class="weekbar">
     <label for="ver">Snapshot</label>
     <select id="ver">{{VERSION_OPTS}}</select>
     <span class="note">Click any column to sort &middot; pick a past week to see ratings as they stood</span>
   </div>
     <div id="versionMeta" class="version-meta" role="status" aria-live="polite"></div>
+  <p class="visually-hidden" id="tableStatus" role="status" aria-live="polite"></p>
   <div class="table-shell">
   <table id="pr">
+    <caption class="visually-hidden">All 32 NFL teams ordered by current Power Rating</caption>
     <thead>
       <tr>
-        <th class="rank" data-k="rank">#</th>
-        <th class="team" data-k="team">Team</th>
-        <th scope="col" class="movement" data-k="num">Move</th>
-        <th class="qbn detail-col" data-k="qbn">QB</th>
-        <th class="detail-col" data-k="num">QB</th>
-        <th class="detail-col" data-k="num">Off</th>
-        <th class="detail-col" data-k="num">Def</th>
-        <th class="detail-col" data-k="num">End '25</th>
-        <th data-k="num" class="up">Rating</th>
+        <th scope="col" class="rank" aria-sort="none"><button type="button" class="sort-button" data-column="0">#</button></th>
+        <th scope="col" class="team" aria-sort="none"><button type="button" class="sort-button" data-column="1">Team</button></th>
+        <th scope="col" class="movement" aria-sort="none"><button type="button" class="sort-button" data-column="2">Move</button></th>
+        <th scope="col" class="qbn detail-col" aria-sort="none"><button type="button" class="sort-button" data-column="3">QB</button></th>
+        <th scope="col" class="detail-col" aria-sort="none"><button type="button" class="sort-button" data-column="4">QB</button></th>
+        <th scope="col" class="detail-col" aria-sort="none"><button type="button" class="sort-button" data-column="5">Off</button></th>
+        <th scope="col" class="detail-col" aria-sort="none"><button type="button" class="sort-button" data-column="6">Def</button></th>
+        <th scope="col" class="detail-col" aria-sort="none"><button type="button" class="sort-button" data-column="7">End '25</button></th>
+        <th scope="col" aria-sort="descending"><button type="button" class="sort-button" data-column="8">Rating</button></th>
       </tr>
     </thead>
     <tbody>
@@ -790,13 +830,14 @@ TEMPLATE = """<!DOCTYPE html>
     <b>Rating</b> = QB + Offense + Defense (each in points vs. a league-average team, 0.0).<br>
     <b>Off / Def</b> are non-QB unit values. <b>End '25</b> is last season's ending rating, shown for reference. Green = above average, red = below.
   </div>
-  </div><!-- /panel-ratings -->
+  </section><!-- /panel-ratings -->
 
-  <div class="panel" id="panel-qbs">
+  <section class="panel" id="panel-qbs" role="tabpanel" aria-labelledby="tab-qbs" hidden>
     <div class="sub" style="margin:-6px 0 14px">QB value in points vs. a league-average QB (0.0). Starters ranked 1&ndash;32, then the top 18 backups. &middot; click any QB to explore</div>
     <h2 class="qbhead">Starting QBs</h2>
     <div class="table-shell">
     <table class="qbtable">
+      <caption class="visually-hidden">Starting quarterback ratings</caption>
       <thead><tr><th class="rank">#</th><th class="team">Quarterback</th>
         <th class="qbmeta detail-col">Age</th><th class="qbmeta detail-col">Exp</th>
         <th class="qbmeta detail-col">Team</th><th class="qbtier">Tier</th><th>Value</th></tr></thead>
@@ -808,6 +849,7 @@ TEMPLATE = """<!DOCTYPE html>
     <h2 class="qbhead">Top 18 Backups</h2>
     <div class="table-shell">
     <table class="qbtable">
+      <caption class="visually-hidden">Backup quarterback ratings</caption>
       <thead><tr><th class="rank">#</th><th class="team">Quarterback</th>
         <th class="qbmeta detail-col">Age</th><th class="qbmeta detail-col">Exp</th>
         <th class="qbmeta detail-col">Team</th><th class="qbtier">Tier</th><th>Value</th></tr></thead>
@@ -816,9 +858,10 @@ TEMPLATE = """<!DOCTYPE html>
       </tbody>
     </table>
     </div>
-  </div><!-- /panel-qbs -->
+  </section><!-- /panel-qbs -->
 
-  <div class="panel" id="panel-method">
+  <section class="panel" id="panel-method" role="tabpanel" aria-labelledby="tab-method" hidden>
+    <h2 class="visually-hidden">Power Ratings methodology</h2>
     <div class="method">
       <h3>The quick version</h3>
       <p>Welcome to the Postgame Outlet power ratings corner. In a nutshell, our power
@@ -857,12 +900,13 @@ TEMPLATE = """<!DOCTYPE html>
         last year's record.</li>
       </ul>
     </div>
-  </div><!-- /panel-method -->
+  </section><!-- /panel-method -->
 </div>
 
-<div class="scrim" id="scrim"></div>
-<aside class="drawer" id="drawer" aria-hidden="true">
-  <div class="drawer-close" id="drawerClose" title="Close">&times;</div>
+<div class="scrim" id="scrim" aria-hidden="true"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true"
+  aria-labelledby="drawerTitle" aria-hidden="true" inert>
+  <button type="button" class="drawer-close" id="drawerClose" aria-label="Close details">&times;</button>
   <div class="drawer-body" id="drawerBody"></div>
 </aside>
 
@@ -874,8 +918,11 @@ TEMPLATE = """<!DOCTYPE html>
 </script>
 <script>
   const tb = document.querySelector('#pr tbody');
-  const ths = document.querySelectorAll('#pr th');
-  let sortCol = 8, asc = false;
+  const sortButtons = [...document.querySelectorAll('#pr .sort-button')];
+  const tableStatus = document.getElementById('tableStatus');
+  let sortCol = 8;
+  let asc = false;
+
   function val(tr, i) {
     const td = tr.children[i];
     const dv = td.getAttribute('data-v');
@@ -883,52 +930,108 @@ TEMPLATE = """<!DOCTYPE html>
     if (i === 0) return parseFloat(td.textContent);
     return td.textContent.trim().toLowerCase();
   }
-  function sortBy(i) {
-    if (i === sortCol) asc = !asc; else { sortCol = i; asc = (i === 1 || i === 3); }
+
+  function sortBy(i, label) {
+    if (i === sortCol) asc = !asc;
+    else {
+      sortCol = i;
+      asc = i === 1 || i === 2 || i === 3;
+    }
     const rows = [...tb.rows];
     rows.sort((a, b) => {
-      const x = val(a, i), y = val(b, i);
+      const x = val(a, i);
+      const y = val(b, i);
       if (typeof x === 'number') return asc ? x - y : y - x;
-      return asc ? (x < y ? -1 : x > y ? 1 : 0) : (x > y ? -1 : x < y ? 1 : 0);
+      return asc
+        ? (x < y ? -1 : x > y ? 1 : 0)
+        : (x > y ? -1 : x < y ? 1 : 0);
     });
-    rows.forEach(r => tb.appendChild(r));
-    ths.forEach(t => t.classList.remove('up', 'down'));
-    ths[i].classList.add(asc ? 'up' : 'down');
+    rows.forEach(row => tb.appendChild(row));
+    sortButtons.forEach(button => {
+      button.closest('th').setAttribute('aria-sort', 'none');
+    });
+    const active = sortButtons.find(button => Number(button.dataset.column) === i);
+    if (active) active.closest('th').setAttribute('aria-sort', asc ? 'ascending' : 'descending');
+    tableStatus.textContent = label + ' sorted ' + (asc ? 'ascending' : 'descending');
   }
-  ths.forEach((th, i) => th.addEventListener('click', () => sortBy(i)));
+
+  sortButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      sortBy(Number(button.dataset.column), button.textContent.trim());
+    });
+  });
 
   // --- shared drawer (teams + QBs; opens over the page, table never shifts) ---
   const scrim = document.getElementById('scrim');
   const drawer = document.getElementById('drawer');
   const drawerBody = document.getElementById('drawerBody');
-  let lastRow = null;
-  function openDrawer(html, row) {
-    if (!html) return;
-    drawerBody.innerHTML = html;
+  const drawerClose = document.getElementById('drawerClose');
+  let returnFocus = null;
+
+  function drawerFocusables() {
+    return [...drawer.querySelectorAll(
+      'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )];
+  }
+
+  function openDrawer(content, trigger) {
+    if (!content) return;
+    returnFocus = trigger;
+    drawerBody.innerHTML = content;
     drawerBody.scrollTop = 0;
-    drawer.classList.add('open'); scrim.classList.add('open');
+    drawer.inert = false;
+    drawer.classList.add('open');
+    scrim.classList.add('open');
     drawer.setAttribute('aria-hidden', 'false');
-    if (lastRow) lastRow.classList.remove('sel');
-    lastRow = row; if (row) row.classList.add('sel');
+    scrim.setAttribute('aria-hidden', 'false');
+    drawerClose.focus();
   }
-  function closeDrawer() {
-    drawer.classList.remove('open'); scrim.classList.remove('open');
+
+  function closeDrawer(restoreFocus = true) {
+    if (!drawer.classList.contains('open')) return;
+    drawer.classList.remove('open');
+    scrim.classList.remove('open');
     drawer.setAttribute('aria-hidden', 'true');
-    if (lastRow) { lastRow.classList.remove('sel'); lastRow = null; }
+    scrim.setAttribute('aria-hidden', 'true');
+    drawer.inert = true;
+    const target = returnFocus;
+    returnFocus = null;
+    if (restoreFocus && target && document.contains(target)) target.focus();
   }
+
+  drawer.addEventListener('keydown', event => {
+    if (event.key !== 'Tab') return;
+    const focusables = drawerFocusables();
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  });
+
   function bindRows() {
-    tb.querySelectorAll('tr.teamrow').forEach(row => {
-      row.onclick = () => openDrawer(DETAILS[row.dataset.abbr], row);
+    tb.querySelectorAll('.team-trigger').forEach(trigger => {
+      trigger.addEventListener('click', () => {
+        openDrawer(DETAILS[trigger.dataset.abbr], trigger);
+      });
     });
   }
   bindRows();
-  // QB rows are static (no re-render), so bind once.
-  document.querySelectorAll('tr.qbrow').forEach(row => {
-    row.onclick = () => openDrawer(QB_DETAILS[row.dataset.qb], row);
+  document.querySelectorAll('.qb-trigger').forEach(trigger => {
+    trigger.addEventListener('click', () => {
+      openDrawer(QB_DETAILS[trigger.dataset.qb], trigger);
+    });
   });
-  scrim.addEventListener('click', closeDrawer);
-  document.getElementById('drawerClose').addEventListener('click', closeDrawer);
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+
+  scrim.addEventListener('click', () => closeDrawer());
+  drawerClose.addEventListener('click', () => closeDrawer());
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') closeDrawer();
+  });
 
   // --- snapshot dropdown (Current + archived weeks) ---
   const versionMeta = document.getElementById('versionMeta');
@@ -957,18 +1060,38 @@ TEMPLATE = """<!DOCTYPE html>
       closeDrawer();       // archived snapshots have no drawer detail
       if (cur) bindRows(); // only the live table opens the drawer
       // reset sort to Rating descending (the archived rank order)
-      sortCol = -1; asc = false; sortBy(8);
+      sortCol = -1;
+      asc = false;
+      sortBy(8, 'Rating');
     });
   }
 
   // --- tabs ---
-  document.querySelectorAll('.tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      closeDrawer();  // don't leave a team/QB drawer open across tab switches
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-      tab.classList.add('active');
-      document.getElementById('panel-' + tab.dataset.panel).classList.add('active');
+  const tabs = [...document.querySelectorAll('[role="tab"]')];
+  function activateTab(tab, moveFocus) {
+    closeDrawer(false);
+    tabs.forEach(item => {
+      const selected = item === tab;
+      item.classList.toggle('active', selected);
+      item.setAttribute('aria-selected', String(selected));
+      item.tabIndex = selected ? 0 : -1;
+      document.getElementById(item.getAttribute('aria-controls')).hidden = !selected;
+      document.getElementById(item.getAttribute('aria-controls')).classList.toggle('active', selected);
+    });
+    if (moveFocus) tab.focus();
+  }
+  tabs.forEach((tab, index) => {
+    tab.addEventListener('click', () => activateTab(tab, false));
+    tab.addEventListener('keydown', event => {
+      const keys = ['ArrowLeft', 'ArrowRight', 'Home', 'End'];
+      if (!keys.includes(event.key)) return;
+      event.preventDefault();
+      let next = index;
+      if (event.key === 'ArrowLeft') next = (index - 1 + tabs.length) % tabs.length;
+      if (event.key === 'ArrowRight') next = (index + 1) % tabs.length;
+      if (event.key === 'Home') next = 0;
+      if (event.key === 'End') next = tabs.length - 1;
+      activateTab(tabs[next], true);
     });
   });
 
