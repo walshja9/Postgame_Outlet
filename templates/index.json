@@ -44,7 +44,7 @@
         "column_alignment": "left",
         "background_style": "primary",
         "button_label": "Open the accountability ledger",
-        "button_link": "/pages/accountability-preview",
+        "button_link": "/pages/accountability",
         "color_scheme": "scheme-1",
         "columns_mobile": "1",
         "swipe_on_mobile": false,
