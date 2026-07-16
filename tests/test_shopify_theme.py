@@ -80,7 +80,7 @@ class ShopifyThemeTests(unittest.TestCase):
             types,
         )
         calls = template["sections"]["accountable_calls"]
-        self.assertEqual("/pages/accountability-preview", calls["settings"]["button_link"])
+        self.assertEqual("/pages/accountability", calls["settings"]["button_link"])
 
     def test_ratings_preview_requires_reviewed_five_and_supports_movers(self):
         path = THEME / "sections/postgame-ratings-preview.liquid"
@@ -113,8 +113,8 @@ class ShopifyThemeTests(unittest.TestCase):
         self.assertEqual(
             "https://walshja9.github.io/Postgame_Outlet/", settings["ratings_url"]
         )
-        self.assertEqual("/pages/methodology-preview", settings["methodology_link"])
-        self.assertEqual("/pages/accountability-preview", settings["accountability_link"])
+        self.assertEqual("/pages/methodology", settings["methodology_link"])
+        self.assertEqual("/pages/accountability", settings["accountability_link"])
         self.assertLess(section.index("<h1"), section.index("<iframe"))
         for value in (
             "A Power Rating estimates",
