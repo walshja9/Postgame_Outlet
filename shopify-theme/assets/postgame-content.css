@@ -9,6 +9,18 @@
   gap: 2rem;
 }
 
+.postgame-featured-story {
+  display: grid;
+  gap: 2.4rem;
+  align-items: center;
+}
+
+.postgame-featured-story img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 .postgame-card,
 .postgame-takeaway {
   border: 0.1rem solid rgba(56, 79, 111, 0.25);
@@ -35,6 +47,7 @@
 }
 
 @media screen and (min-width: 750px) {
+  .postgame-featured-story { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }
   .postgame-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .postgame-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .postgame-grid--5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }

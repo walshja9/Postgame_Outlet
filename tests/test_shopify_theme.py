@@ -54,6 +54,41 @@ class ShopifyThemeTests(unittest.TestCase):
         ):
             self.assertIn(value, script)
 
+    def test_homepage_has_approved_content_order(self):
+        template = data("templates/index.json")
+        types = [
+            template["sections"][section_id]["type"]
+            for section_id in template["order"]
+            if not template["sections"][section_id].get("disabled", False)
+        ]
+        self.assertEqual(
+            [
+                "postgame-featured-story",
+                "postgame-ratings-preview",
+                "postgame-tagged-articles",
+                "multicolumn",
+                "postgame-tagged-articles",
+                "featured-collection",
+                "apps",
+            ],
+            types,
+        )
+        calls = template["sections"]["accountable_calls"]
+        self.assertEqual("/pages/accountability", calls["settings"]["button_link"])
+
+    def test_ratings_preview_requires_reviewed_five_and_supports_movers(self):
+        path = THEME / "sections/postgame-ratings-preview.liquid"
+        self.assertTrue(path.exists(), "ratings preview section is missing")
+        section = path.read_text(encoding="utf-8")
+        for value in (
+            "team_count != 5",
+            "block.type == 'team'",
+            "block.type == 'mover'",
+            "Rating points represent neutral-field strength",
+            "View all 32 teams",
+        ):
+            self.assertIn(value, section)
+
 
 if __name__ == "__main__":
     unittest.main()
