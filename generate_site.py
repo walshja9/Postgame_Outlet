@@ -1114,13 +1114,30 @@ TEMPLATE = """<!DOCTYPE html>
     document.addEventListener('click', () => setTimeout(reportHeight, 30), true);
     // 2) Parent tells us which vertical slice of the iframe is on screen, so the
     //    drawer/scrim pin to the visible area instead of the whole tall iframe.
+    let parentSendsViewport = false;
     addEventListener('message', e => {
       const d = e.data;
       if (!d || d.type !== 'npr:viewport') return;
+      parentSendsViewport = true;
       document.body.style.setProperty('--vp-top', d.top + 'px');
       document.body.style.setProperty('--vp-h', d.height + 'px');
     });
     parent.postMessage({ type: 'npr:ready' }, '*');  // ask parent to start sending
+    // 3) Fallback for dumb parents (bare <iframe>, no bridge script): measure our
+    //    own visible slice with IntersectionObserver, which works cross-origin.
+    //    Skipped as soon as a real npr:viewport message arrives.
+    if (window.IntersectionObserver) {
+      const thresholds = [];
+      for (let i = 0; i <= 100; i++) thresholds.push(i / 100);
+      new IntersectionObserver(entries => {
+        if (parentSendsViewport) return;
+        const entry = entries[entries.length - 1];
+        const r = entry.intersectionRect, b = entry.boundingClientRect;
+        if (!r || r.height <= 0) return;
+        document.body.style.setProperty('--vp-top', Math.max(0, r.top - b.top) + 'px');
+        document.body.style.setProperty('--vp-h', r.height + 'px');
+      }, { threshold: thresholds }).observe(document.documentElement);
+    }
   }
 </script>
 </body>
