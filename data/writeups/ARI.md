@@ -4,7 +4,7 @@ Arizona grades near the bottom — below average across all three components, wi
 
 ## Quarterback
 
-Jacoby Brissett (−1.5) is priced as a below-average starter — a competent veteran the model doesn't see lifting the roster.
+Jacoby Brissett (−1.5) is priced as a below-average starter — a competent veteran the model doesn't see lifting the roster. Barring a miracle start to the season, we should be expecting Carson Beck sometime during the first 6-8 games of the season.
 
 ## What moved the number
 
