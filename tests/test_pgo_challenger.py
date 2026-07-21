@@ -150,6 +150,21 @@ def _synthetic_paths(directory, *, mutate_game=None, aliases=True, offseason_cha
     return paths
 
 
+def _add_current_roster(paths, directory, *, team="SD", player="future-qb"):
+    path = directory / "current-roster-2026.csv"
+    _write_csv(path, pgo_sources.ROSTER_COLUMNS, [{
+        "season": 2026,
+        "week": 0,
+        "team": team,
+        "position": "QB",
+        "gsis_id": f"gsis-{player}",
+        "pfr_id": f"pfr-{player}",
+        "years_exp": 9,
+        "draft_number": 1,
+    }])
+    paths[("current_roster", 2026)] = path
+
+
 def _pregame_bytes(row):
     return json.dumps(
         {
@@ -424,6 +439,74 @@ class SourceTests(unittest.TestCase):
 
 
 class FeatureTests(unittest.TestCase):
+    def test_full_locked_paths_cannot_leak_current_roster_into_history(self):
+        with tempfile.TemporaryDirectory() as temp:
+            directory = Path(temp)
+            paths = _synthetic_paths(directory)
+            historical = pgo_challenger.build_snapshot_states(
+                paths, "2013-09-08T14:00:00-04:00", 4
+            )
+            _add_current_roster(paths, directory)
+
+            with_current_source = pgo_challenger.build_snapshot_states(
+                paths, "2013-09-08T14:00:00-04:00", 4
+            )
+
+        self.assertEqual(historical, with_current_source)
+
+    def test_january_as_of_rejects_later_week_eighteen_period(self):
+        with tempfile.TemporaryDirectory() as temp:
+            directory = Path(temp)
+            paths = _synthetic_paths(directory)
+            before = pgo_challenger.build_snapshot_states(
+                paths, "2024-01-01T00:00:00-05:00", 4
+            )
+            schedule_path = paths[("schedule_results", None)]
+            with open(schedule_path, encoding="utf-8", newline="") as handle:
+                schedule = list(csv.DictReader(handle))
+            schedule.append({
+                "game_id": "future-week-18", "season": 2023, "week": 18,
+                "game_type": "REG", "gameday": "2024-01-07", "gametime": "13:00",
+                "away_team": "OAK", "home_team": "SD", "away_score": 10,
+                "home_score": 20, "location": "Home", "away_rest": 7,
+                "home_rest": 7, "away_coach": "LV Coach", "home_coach": "LAC Coach",
+            })
+            _write_csv(schedule_path, pgo_sources.SCHEDULE_COLUMNS, schedule)
+            roster_path = directory / "weekly-rosters-2023.csv"
+            _write_csv(roster_path, pgo_sources.ROSTER_COLUMNS, [{
+                "season": 2023, "week": 18, "team": "SD", "position": "QB",
+                "gsis_id": "gsis-future-week-18", "pfr_id": "pfr-future-week-18",
+                "years_exp": 9, "draft_number": 1,
+            }])
+            paths[("weekly_rosters", 2023)] = roster_path
+            injury_path = directory / "injuries-2023.csv"
+            _write_csv(injury_path, pgo_sources.INJURY_COLUMNS, [{
+                "season": 2023, "week": 18, "team": "SD",
+                "gsis_id": "gsis-future-week-18", "position": "QB",
+                "report_status": "Out", "practice_status": "",
+            }])
+            paths[("injury_reports", 2023)] = injury_path
+
+            with_future_period = pgo_challenger.build_snapshot_states(
+                paths, "2024-01-01T00:00:00-05:00", 4
+            )
+
+        self.assertEqual(before, with_future_period)
+
+    def test_current_roster_is_admissible_for_2026_offseason_snapshot(self):
+        with tempfile.TemporaryDirectory() as temp:
+            directory = Path(temp)
+            paths = _synthetic_paths(directory)
+            _add_current_roster(paths, directory)
+
+            states = pgo_challenger.build_snapshot_states(
+                paths, "2026-07-21T12:00:00-04:00", 4
+            )
+
+        self.assertAlmostEqual(
+            states["LAC"][0]["qb_experience_prior"], math.log1p(9)
+        )
+
     def test_missing_rate_still_ages_exponential_state(self):
         state = pgo_challenger._RatioState(10.0, 10.0)
 

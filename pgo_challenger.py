@@ -135,16 +135,19 @@ def build_snapshot_states(paths, as_of, half_life_games) -> dict[str, tuple[dict
     as_of_dt = _parse_datetime(as_of)
     as_of_year = as_of_dt.astimezone(EASTERN).year
     _, context, inputs = _walk(paths, half_life_games, as_of=as_of_dt)
-    available_periods = set(inputs["current_roster_periods"])
+    available_periods = set()
     for game in _load_games(paths):
-        if game["kickoff_dt"] <= as_of_dt:
+        if game["kickoff_dt"] < as_of_dt:
             available_periods.update({
                 (game["season"], game["week"], game["home"]),
                 (game["season"], game["week"], game["away"]),
             })
     periods = {}
     for season, week, team in inputs["rosters"]:
-        available = season < as_of_year or (season, week, team) in available_periods
+        key = (season, week, team)
+        available = key in available_periods or (
+            key in inputs["current_roster_periods"] and season == as_of_year
+        )
         if available and (team not in periods or (season, week) > periods[team]):
             periods[team] = (season, week)
     teams = sorted(context["seen_teams"] | set(periods))
