@@ -84,3 +84,48 @@ class WalkForwardTests(unittest.TestCase):
         predictions, _ = pgo_model.walk_forward(games, params)
 
         self.assertEqual(predictions[1].predicted, 3.0)
+
+
+class GateTests(unittest.TestCase):
+    def test_parameter_search_ignores_holdout_results(self):
+        before = [
+            pgo_model.Game("train", 2017, "2017-09-01", "B", "A", 10.0, False),
+        ]
+        good_holdout = pgo_model.Game(
+            "holdout", 2018, "2018-09-01", "B", "A", 50.0, False,
+        )
+        bad_holdout = pgo_model.Game(
+            "holdout", 2018, "2018-09-01", "B", "A", -50.0, False,
+        )
+        self.assertEqual(
+            pgo_model.select_parameters(before + [good_holdout]),
+            pgo_model.select_parameters(before + [bad_holdout]),
+        )
+
+    def test_gate_requires_aggregate_and_every_season_to_win(self):
+        aggregate = {"games": 2127, "model_mae": 10.0, "baseline_mae": 11.0}
+        seasons = [
+            {"season": 2018, "model_mae": 10.0, "baseline_mae": 11.0},
+            {"season": 2019, "model_mae": 11.1, "baseline_mae": 11.0},
+        ]
+        checks = pgo_model.gate_checks(aggregate, seasons, 32)
+        self.assertTrue(checks["aggregate_beats_baseline"])
+        self.assertFalse(checks["every_season_beats_baseline"])
+        self.assertFalse(all(checks.values()))
+
+    def test_incomplete_sample_is_held_without_public_inputs(self):
+        games = [
+            pgo_model.Game(
+                f"game-{season}", season, f"{season}-09-01",
+                "B", "A", float((season % 7) + 1), False,
+            )
+            for season in range(1999, 2026)
+        ]
+
+        report, ratings = pgo_model.build_analysis(games)
+
+        self.assertEqual(report["status"], "HOLD")
+        self.assertFalse(report["checks"]["at_least_2000_holdout_games"])
+        self.assertFalse(report["checks"]["all_32_current_teams"])
+        self.assertIn("market spreads and odds", report["scope"]["excluded"])
+        self.assertEqual(ratings, [])
