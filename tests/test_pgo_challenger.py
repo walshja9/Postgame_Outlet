@@ -557,11 +557,19 @@ class SourceTests(unittest.TestCase):
                 pgo_sources.validate_source_audit(paths)
 
     def test_team_aliases_normalize_before_identity_checks(self):
-        identities = {"LV": "Raiders", "LAC": "Chargers"}
+        expected = {
+            "OAK": "LV",
+            "SD": "LAC",
+            "ARZ": "ARI",
+            "BLT": "BAL",
+            "CLV": "CLE",
+            "HST": "HOU",
+            "SL": "LAR",
+        }
 
-        joined = [identities[pgo_sources.normalize_team(team)] for team in ("OAK", "SD")]
-
-        self.assertEqual(joined, ["Raiders", "Chargers"])
+        self.assertEqual(
+            {team: pgo_sources.normalize_team(team) for team in expected}, expected
+        )
         with self.assertRaisesRegex(ValueError, "Unknown team abbreviation: XYZ"):
             pgo_sources.normalize_team("XYZ")
 

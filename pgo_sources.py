@@ -21,6 +21,14 @@ from release_ratings import atomic_write_text
 FIRST_MODEL_SEASON = 2013
 LAST_HISTORY_SEASON = 2025
 LICENSE_URL = "https://github.com/nflverse/nflverse-data/blob/master/LICENSE.md"
+ALIASES = {
+    **ALIASES,
+    "ARZ": "ARI",
+    "BLT": "BAL",
+    "CLV": "CLE",
+    "HST": "HOU",
+    "SL": "LAR",
+}
 
 SCHEDULE_COLUMNS = (
     "game_id", "season", "week", "game_type", "gameday", "gametime",
