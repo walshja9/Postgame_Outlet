@@ -1,0 +1,103 @@
+{
+  "aggregate": {
+    "baseline_mae": 11.079,
+    "games": 2127,
+    "improvement": 0.8128,
+    "model_mae": 10.2662
+  },
+  "baseline": {
+    "home_field": 3.0
+  },
+  "checks": {
+    "aggregate_beats_baseline": true,
+    "all_32_current_teams": true,
+    "at_least_2000_holdout_games": true,
+    "every_season_beats_baseline": true
+  },
+  "format_version": 1,
+  "model": "PGO team margin v0",
+  "parameters": {
+    "home_field": 2.5,
+    "learning_rate": 0.15,
+    "margin_cap": 20.0,
+    "offseason_retention": 0.5
+  },
+  "scope": {
+    "excluded": [
+      "Sean McCabe QB/offense/defense ratings",
+      "player and unit inputs",
+      "market spreads and odds"
+    ],
+    "included": "completed regular-season team results"
+  },
+  "seasons": [
+    {
+      "baseline_mae": 10.6523,
+      "games": 256,
+      "improvement": 0.5338,
+      "model_mae": 10.1185,
+      "season": 2018
+    },
+    {
+      "baseline_mae": 11.6914,
+      "games": 256,
+      "improvement": 1.0701,
+      "model_mae": 10.6213,
+      "season": 2019
+    },
+    {
+      "baseline_mae": 11.1914,
+      "games": 256,
+      "improvement": 1.0279,
+      "model_mae": 10.1635,
+      "season": 2020
+    },
+    {
+      "baseline_mae": 12.239,
+      "games": 272,
+      "improvement": 0.9298,
+      "model_mae": 11.3091,
+      "season": 2021
+    },
+    {
+      "baseline_mae": 9.5018,
+      "games": 271,
+      "improvement": 0.5126,
+      "model_mae": 8.9892,
+      "season": 2022
+    },
+    {
+      "baseline_mae": 11.0846,
+      "games": 272,
+      "improvement": 0.6172,
+      "model_mae": 10.4674,
+      "season": 2023
+    },
+    {
+      "baseline_mae": 11.1875,
+      "games": 272,
+      "improvement": 1.0053,
+      "model_mae": 10.1822,
+      "season": 2024
+    },
+    {
+      "baseline_mae": 11.0956,
+      "games": 272,
+      "improvement": 0.8162,
+      "model_mae": 10.2794,
+      "season": 2025
+    }
+  ],
+  "source": {
+    "commit": "29102e4f32febb597750c71a27f22fb2898e3cfc",
+    "location": "https://raw.githubusercontent.com/nflverse/nfldata/29102e4f32febb597750c71a27f22fb2898e3cfc/data/games.csv",
+    "sha256": "cfb9c79a28ac1187a44be0bcfa0d8ff2f5a7ca201c5183a1dbf1e6d227d72f39"
+  },
+  "status": "PASS",
+  "windows": {
+    "evaluation": "2018-2025",
+    "ratings": "2026 preseason",
+    "training": "2002-2017",
+    "warmup": "1999-2001"
+  }
+}

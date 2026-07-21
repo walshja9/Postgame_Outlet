@@ -1,8 +1,12 @@
 import csv
+import hashlib
 import io
+import json
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
+from unittest.mock import patch
 
 import pgo_model
 
@@ -129,3 +133,74 @@ class GateTests(unittest.TestCase):
         self.assertFalse(report["checks"]["all_32_current_teams"])
         self.assertIn("market spreads and odds", report["scope"]["excluded"])
         self.assertEqual(ratings, [])
+
+    def test_hold_writes_report_but_not_ratings(self):
+        report = {"status": "HOLD"}
+        with tempfile.TemporaryDirectory() as temp:
+            written = pgo_model.write_outputs(Path(temp), report, [])
+            self.assertFalse(written)
+            self.assertTrue(Path(temp, "backtest.json").exists())
+            self.assertFalse(Path(temp, "ratings_2026_preseason.csv").exists())
+
+    def test_pass_writes_ranked_shadow_ratings(self):
+        report = {"status": "PASS"}
+        ratings = [
+            {"team": "A", "rating": 1.25},
+            {"team": "B", "rating": -1.25},
+        ]
+        with tempfile.TemporaryDirectory() as temp:
+            written = pgo_model.write_outputs(Path(temp), report, ratings)
+            with open(
+                Path(temp, "ratings_2026_preseason.csv"),
+                newline="",
+                encoding="utf-8",
+            ) as handle:
+                rows = list(csv.DictReader(handle))
+
+        self.assertTrue(written)
+        self.assertEqual(
+            rows,
+            [
+                {"rank": "1", "team": "A", "rating": "1.25"},
+                {"rank": "2", "team": "B", "rating": "-1.25"},
+            ],
+        )
+
+
+class CliTests(unittest.TestCase):
+    def test_local_source_hold_records_hash_without_ratings(self):
+        text = games_csv([
+            row(
+                f"game-{season}", season, "A", 10, "B", 20,
+                gameday=f"{season}-09-01",
+            )
+            for season in range(1999, 2026)
+        ])
+        with tempfile.TemporaryDirectory() as temp:
+            source = Path(temp, "games.csv")
+            output = Path(temp, "research")
+            source.write_text(text, encoding="utf-8")
+            expected_hash = hashlib.sha256(source.read_bytes()).hexdigest()
+
+            with redirect_stdout(io.StringIO()):
+                code = pgo_model.main([
+                    "--source", str(source),
+                    "--output-dir", str(output),
+                ])
+            report = json.loads(Path(output, "backtest.json").read_text())
+            ratings_exist = Path(
+                output, "ratings_2026_preseason.csv",
+            ).exists()
+
+        self.assertEqual(code, 1)
+        self.assertEqual(report["status"], "HOLD")
+        self.assertEqual(
+            report["source"]["sha256"],
+            expected_hash,
+        )
+        self.assertFalse(ratings_exist)
+
+    def test_pinned_source_hash_mismatch_fails_before_analysis(self):
+        with patch("pgo_model.read_source", return_value=(b"changed", "source")):
+            with self.assertRaisesRegex(ValueError, "hash does not match"):
+                pgo_model.main([])

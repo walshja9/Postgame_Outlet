@@ -1,13 +1,29 @@
 #!/usr/bin/env python3
 """Shadow-only Postgame Outlet team-margin model and backtest gate."""
 
+import argparse
 import csv
+import hashlib
 import io
 import itertools
+import json
+import sys
+import urllib.request
 from collections import defaultdict
 from dataclasses import asdict, dataclass
+from pathlib import Path
+
+from release_ratings import atomic_write_text
 
 
+SOURCE_COMMIT = "29102e4f32febb597750c71a27f22fb2898e3cfc"
+SOURCE_URL = (
+    "https://raw.githubusercontent.com/nflverse/nfldata/"
+    f"{SOURCE_COMMIT}/data/games.csv"
+)
+EXPECTED_SOURCE_SHA256 = (
+    "cfb9c79a28ac1187a44be0bcfa0d8ff2f5a7ca201c5183a1dbf1e6d227d72f39"
+)
 ALIASES = {"OAK": "LV", "SD": "LAC", "STL": "LAR", "LA": "LAR"}
 REQUIRED_COLUMNS = {
     "game_id", "season", "game_type", "gameday", "away_team",
@@ -240,3 +256,77 @@ def build_analysis(games):
         "checks": checks,
     }
     return report, shadow
+
+
+def ratings_csv(ratings):
+    output = io.StringIO(newline="")
+    writer = csv.DictWriter(output, fieldnames=("rank", "team", "rating"))
+    writer.writeheader()
+    for rank, row in enumerate(ratings, 1):
+        writer.writerow({"rank": rank, **row})
+    return output.getvalue()
+
+
+def write_outputs(output_dir, report, ratings):
+    output_dir = Path(output_dir)
+    atomic_write_text(
+        output_dir / "backtest.json",
+        json.dumps(report, indent=2, sort_keys=True) + "\n",
+    )
+    if report["status"] != "PASS":
+        return False
+    atomic_write_text(
+        output_dir / "ratings_2026_preseason.csv",
+        ratings_csv(ratings),
+    )
+    return True
+
+
+def read_source(location):
+    if location.startswith(("http://", "https://")):
+        request = urllib.request.Request(
+            location,
+            headers={"User-Agent": "PostgameOutlet-PGO/0"},
+        )
+        with urllib.request.urlopen(request, timeout=30) as response:
+            return response.read(), location
+    path = Path(location)
+    return path.read_bytes(), str(path.resolve())
+
+
+def parse_args(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--source", default=SOURCE_URL)
+    parser.add_argument("--output-dir", default="research/pgo")
+    return parser.parse_args(argv)
+
+
+def main(argv=None):
+    args = parse_args(argv)
+    raw, source = read_source(args.source)
+    source_hash = hashlib.sha256(raw).hexdigest()
+    if args.source == SOURCE_URL and source_hash != EXPECTED_SOURCE_SHA256:
+        raise ValueError("Pinned nflverse source hash does not match")
+    games = parse_games(raw.decode("utf-8-sig"))
+    report, ratings = build_analysis(games)
+    report["source"] = {
+        "location": source,
+        "commit": SOURCE_COMMIT if args.source == SOURCE_URL else "",
+        "sha256": source_hash,
+    }
+    written = write_outputs(args.output_dir, report, ratings)
+    aggregate = report["aggregate"]
+    print(
+        f"{report['status']}: PGO MAE {aggregate['model_mae']:.4f}; "
+        f"baseline {aggregate['baseline_mae']:.4f}; "
+        f"{aggregate['games']} holdout games"
+    )
+    return 0 if written else 1
+
+
+if __name__ == "__main__":
+    try:
+        raise SystemExit(main())
+    except (OSError, UnicodeError, ValueError) as error:
+        print(f"ERROR: {error}", file=sys.stderr)
+        raise SystemExit(2)
