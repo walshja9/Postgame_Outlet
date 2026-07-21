@@ -97,6 +97,14 @@ hurt) were trusted toward the roster build, hot finishers (SEA) toward the prior
 The displayed Rating is now the straight component sum, NOT a blend; the prior is
 kept only as a reference column on the website.
 
+## PGO team model (shadow only)
+
+`python pgo_model.py` runs a pinned, chronological backtest of Postgame's
+independent team-results model and writes its receipt under `research/pgo/`.
+It does not read Sean McCabe's QB/offense/defense inputs or any market line.
+A `PASS` makes the shadow ratings eligible for human review only; it does not
+publish them or add them to the ratings site.
+
 ## Notes & caveats
 
 - ESPN endpoint is undocumented/unofficial; spreads only populate close to game week.
