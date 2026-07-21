@@ -1,11 +1,14 @@
 import csv
 import gzip
 import hashlib
+import io
 import json
 import math
 import tempfile
 import unittest
+from contextlib import redirect_stderr
 from dataclasses import replace
+from decimal import Decimal
 from pathlib import Path
 from unittest.mock import patch
 
@@ -194,6 +197,138 @@ def _model_row(game_id, season, signal, margin):
         {"signal": signal},
         {},
     )
+
+
+def _fake_locked_payloads():
+    specs = pgo_sources.source_specs()
+    games = [
+        {
+            "game_id": f"game-{season}",
+            "season": season,
+            "week": 1,
+            "game_type": "REG",
+            "gameday": f"{season}-09-01",
+            "gametime": "13:00",
+            "away_team": "LAC",
+            "home_team": "LV",
+            "away_score": 20,
+            "home_score": 17 + season % 7,
+            "location": "Home",
+            "away_rest": 210,
+            "home_rest": 210,
+            "away_coach": "LAC Coach",
+            "home_coach": "LV Coach",
+        }
+        for season in range(2013, 2026)
+    ]
+
+    def rows(spec):
+        season = spec.season
+        if spec.name == "schedule_results":
+            return games
+        if spec.name == "current_roster":
+            return [
+                {
+                    "season": 2026,
+                    "week": 0,
+                    "team": team,
+                    "position": "QB",
+                    "gsis_id": f"gsis-{team}",
+                    "pfr_id": f"pfr-{team}",
+                    "years_exp": 3,
+                    "draft_number": 20,
+                }
+                for team in pgo_model.CURRENT_TEAMS
+            ]
+        if spec.name == "team_weekly_stats":
+            return [
+                {
+                    "season": season,
+                    "week": 1,
+                    "team": team,
+                    "game_id": f"game-{season}",
+                    "opponent_team": opponent,
+                    "attempts": 30,
+                    "carries": 25,
+                    "passing_epa": 3 + season % 5 + index,
+                    "rushing_epa": 1 + index,
+                    "sacks_suffered": 2 + index,
+                    "passing_interceptions": index,
+                    "fumbles_lost_total": 0,
+                    "passing_20": 3,
+                    "rushing_20": 1,
+                }
+                for index, (team, opponent) in enumerate((("LV", "LAC"), ("LAC", "LV")))
+            ]
+        if spec.name == "player_weekly_stats":
+            return [
+                {
+                    "player_id": f"gsis-{team}",
+                    "position": "QB",
+                    "season": season,
+                    "week": 1,
+                    "team": team,
+                    "attempts": 30,
+                    "passing_epa": 3 + season % 5 + index,
+                    "passing_cpoe": 1 + index,
+                    "sacks_suffered": 2 + index,
+                    "passing_interceptions": index,
+                    "sack_fumbles_lost": 0,
+                    "carries": 4,
+                    "rushing_epa": 1,
+                }
+                for index, team in enumerate(("LV", "LAC"))
+            ]
+        if spec.name == "weekly_rosters":
+            return [
+                {
+                    "season": season,
+                    "week": 1,
+                    "team": team,
+                    "position": "QB",
+                    "gsis_id": f"gsis-{team}",
+                    "pfr_id": f"pfr-{team}",
+                    "years_exp": 3,
+                    "draft_number": 20 + index,
+                }
+                for index, team in enumerate(("LV", "LAC"))
+            ]
+        if spec.name == "injury_reports":
+            return [{
+                "season": season,
+                "week": 1,
+                "team": "LV",
+                "gsis_id": "gsis-LV",
+                "position": "QB",
+                "report_status": "",
+                "practice_status": "",
+            }]
+        if spec.name == "snap_counts":
+            return [
+                {
+                    "season": season,
+                    "week": 1,
+                    "team": team,
+                    "pfr_player_id": f"pfr-{team}",
+                    "position": "QB",
+                    "offense_snaps": 25,
+                    "defense_snaps": 25,
+                }
+                for team in ("LV", "LAC")
+            ]
+        raise AssertionError(spec.name)
+
+    payloads = {}
+    for spec in specs:
+        text = io.StringIO(newline="")
+        writer = csv.DictWriter(
+            text, fieldnames=spec.required_columns, lineterminator="\n"
+        )
+        writer.writeheader()
+        writer.writerows(rows(spec))
+        data = text.getvalue().encode()
+        payloads[spec.url] = gzip.compress(data, mtime=0) if spec.url.endswith(".gz") else data
+    return payloads
 
 
 class SourceTests(unittest.TestCase):
@@ -1467,6 +1602,463 @@ class EvaluationTests(unittest.TestCase):
                 "no_sufficient_subgroup_regression"
             ]
         )
+
+
+class OutputTests(unittest.TestCase):
+    AS_OF = "2026-07-21T12:00:00-04:00"
+    RATING_COLUMNS = (
+        "rank", "team", "full_strength_rating", "performance_points",
+        "roster_coaching_points", "availability_adjustment",
+        "current_lineup_rating", "headline_view", "headline_rating", "as_of",
+    )
+
+    @staticmethod
+    def _ratings():
+        feature_names = (
+            "pgo_v0",
+            "qb_epa_per_dropback",
+            "head_coach_tenure",
+            "offense_availability",
+        )
+        preprocessor = pgo_challenger.Preprocessor(
+            feature_names,
+            np.zeros(len(feature_names)),
+            np.ones(len(feature_names)),
+            (),
+        )
+        model = np.array([1.0, 1.0, 2.0, 3.0, 4.0])
+        states = {}
+        for index, team in enumerate(pgo_model.CURRENT_TEAMS):
+            full = {
+                "pgo_v0": float(index),
+                "qb_epa_per_dropback": 0.5,
+                "head_coach_tenure": 1.0,
+                "offense_availability": 0.0,
+            }
+            current = dict(full)
+            if team == pgo_model.CURRENT_TEAMS[0]:
+                current["offense_availability"] = -0.25
+            states[team] = (full, current)
+        return pgo_challenger.build_ratings(
+            states, model, preprocessor, OutputTests.AS_OF
+        )
+
+    def test_hold_writes_diagnostics_and_removes_all_stale_ratings(self):
+        with tempfile.TemporaryDirectory() as temp:
+            output_dir = Path(temp)
+            (output_dir / "ratings_old.csv").write_text("old", encoding="utf-8")
+            (output_dir / "ratings_other.csv").write_text("other", encoding="utf-8")
+
+            written = pgo_challenger.write_research_outputs(
+                output_dir,
+                {"checks": {"source": True}},
+                {"status": "HOLD", "checks": {"gate": False}},
+                [],
+                [],
+            )
+
+            self.assertFalse(written)
+            self.assertEqual(list(output_dir.glob("ratings_*.csv")), [])
+            self.assertTrue((output_dir / "source_audit.json").is_file())
+            self.assertTrue((output_dir / "backtest.json").is_file())
+            self.assertTrue((output_dir / "validation_predictions.csv").is_file())
+
+    def test_pass_writes_32_ranked_rows_with_exact_rating_algebra(self):
+        ratings = self._ratings()
+        self.assertEqual(len(ratings), 32)
+        self.assertEqual(ratings[0]["team"], pgo_model.CURRENT_TEAMS[-1])
+        self.assertEqual([row["rank"] for row in ratings], list(range(1, 33)))
+        self.assertTrue(math.isclose(
+            sum(row["full_strength_rating"] for row in ratings),
+            0.0,
+            abs_tol=1e-9,
+        ))
+        for row in ratings:
+            self.assertEqual(row["headline_view"], "full_strength")
+            self.assertTrue(math.isclose(
+                row["performance_points"] + row["roster_coaching_points"],
+                row["full_strength_rating"],
+                abs_tol=1e-9,
+            ))
+            self.assertTrue(math.isclose(
+                row["full_strength_rating"] + row["availability_adjustment"],
+                row["current_lineup_rating"],
+                abs_tol=1e-9,
+            ))
+
+        with tempfile.TemporaryDirectory() as temp:
+            output_dir = Path(temp)
+            written = pgo_challenger.write_research_outputs(
+                output_dir,
+                {"checks": {name: True for name in pgo_challenger.AUDIT_CHECKS}},
+                {"status": "PASS", "checks": {"gate": True}},
+                [],
+                ratings,
+            )
+            with open(
+                output_dir / "ratings_2026_preseason.csv",
+                encoding="utf-8",
+                newline="",
+            ) as handle:
+                reader = csv.DictReader(handle)
+                displayed = list(reader)
+
+        self.assertTrue(written)
+        self.assertEqual(tuple(reader.fieldnames), self.RATING_COLUMNS)
+        self.assertEqual(len(displayed), 32)
+        for row in displayed:
+            full = Decimal(row["full_strength_rating"])
+            performance = Decimal(row["performance_points"])
+            roster = Decimal(row["roster_coaching_points"])
+            adjustment = Decimal(row["availability_adjustment"])
+            current = Decimal(row["current_lineup_rating"])
+            self.assertEqual(performance + roster, full)
+            self.assertEqual(full + adjustment, current)
+            self.assertEqual(Decimal(row["headline_rating"]), full)
+
+    def test_repeated_synthetic_run_is_byte_identical(self):
+        ratings = self._ratings()
+        audit = {
+            "checks": {name: True for name in pgo_challenger.AUDIT_CHECKS},
+            "coverage": {"paired_games": {"rate": 0.9999999}},
+        }
+        backtest = {
+            "status": "PASS",
+            "checks": {"gate": True},
+            "metric": 1.23456789,
+        }
+        predictions = [
+            {
+                "game_id": game_id,
+                "season": 2018,
+                "week": week,
+                "kickoff": f"2018-09-0{week}T13:00:00-04:00",
+                "actual_margin": 1.23456789,
+                "pgo_v0_prediction": 0.0,
+                "challenger_prediction": 1.0,
+                **{name: False for name in pgo_challenger.SUBGROUPS},
+                "half_life_games": 4,
+                "alpha": 1.0,
+                "delta": 1.0,
+            }
+            for game_id, week in (("later", 2), ("earlier", 1))
+        ]
+
+        with (
+            tempfile.TemporaryDirectory() as first_temp,
+            tempfile.TemporaryDirectory() as second_temp,
+        ):
+            first, second = Path(first_temp), Path(second_temp)
+            self.assertTrue(pgo_challenger.write_research_outputs(
+                first, audit, backtest, predictions, ratings
+            ))
+            self.assertTrue(pgo_challenger.write_research_outputs(
+                second, audit, backtest, predictions, ratings
+            ))
+            first_hashes = {
+                path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+                for path in first.iterdir()
+            }
+            second_hashes = {
+                path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+                for path in second.iterdir()
+            }
+
+        self.assertEqual(first_hashes, second_hashes)
+
+    def test_pass_status_cannot_override_failed_checks(self):
+        with tempfile.TemporaryDirectory() as temp:
+            output_dir = Path(temp)
+            with self.assertRaisesRegex(ValueError, "status does not match checks"):
+                pgo_challenger.write_research_outputs(
+                    output_dir,
+                    {"checks": {name: True for name in pgo_challenger.AUDIT_CHECKS}},
+                    {"status": "PASS", "checks": {"gate": False}},
+                    [],
+                    self._ratings(),
+                )
+
+            self.assertEqual(list(output_dir.glob("ratings_*.csv")), [])
+
+    def test_reproducibility_check_includes_held_ratings(self):
+        evaluation = EvaluationTests._passing_evaluation()
+        evaluation["improvement"] = dict(
+            evaluation["improvement"], mean=-0.1, lower=-0.2, upper=0.0
+        )
+        preprocessor = pgo_challenger.Preprocessor(
+            ("signal",), np.zeros(1), np.ones(1), ()
+        )
+
+        def analysis(ratings):
+            return {
+                "audit": {
+                    "source_hashes": {},
+                    "coverage": {
+                        "current_teams": {
+                            "numerator": 32,
+                            "denominator": 32,
+                            "rate": 1.0,
+                            "threshold": 1.0,
+                            "passed": True,
+                        }
+                    },
+                },
+                "evaluation": evaluation,
+                "predictions": [],
+                "ratings": ratings,
+                "parameters": pgo_challenger.ChallengerParameters(4, 1.0, 1.0),
+                "preprocessor": preprocessor,
+            }
+
+        first_ratings = self._ratings()
+        second_ratings = [dict(row) for row in first_ratings]
+        second_ratings[0]["full_strength_rating"] += 1.0
+        with patch.object(
+            pgo_challenger,
+            "_analyze_once",
+            side_effect=(analysis(first_ratings), analysis(second_ratings)),
+        ):
+            audit, backtest, _, _ = pgo_challenger._run_research_analysis(
+                {}, {}, self.AS_OF
+            )
+
+        self.assertEqual(backtest["status"], "HOLD")
+        self.assertFalse(audit["checks"]["reproducibility"])
+
+    def test_small_synthetic_pipeline_runs_end_to_end(self):
+        payloads = _fake_locked_payloads()
+        original_freeze = pgo_sources.freeze_sources
+
+        def freeze(specs, cache_dir, lock_path, frozen_at):
+            return original_freeze(
+                specs,
+                cache_dir,
+                lock_path,
+                frozen_at,
+                fetch=payloads.__getitem__,
+            )
+
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            cache_dir = root / "cache"
+            lock_path = root / "sources.lock.json"
+            output_dir = root / "output"
+            with patch.object(pgo_sources, "freeze_sources", side_effect=freeze):
+                code = pgo_challenger.main([
+                    "--freeze-sources",
+                    "--as-of", self.AS_OF,
+                    "--lock-path", str(lock_path),
+                    "--cache-dir", str(cache_dir),
+                    "--output-dir", str(output_dir),
+                ])
+            first_hashes = {
+                path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+                for path in output_dir.iterdir()
+            }
+            with patch.object(pgo_sources, "freeze_sources") as offline_freeze:
+                offline_code = pgo_challenger.main([
+                    "--as-of", self.AS_OF,
+                    "--lock-path", str(lock_path),
+                    "--cache-dir", str(cache_dir),
+                    "--output-dir", str(output_dir),
+                ])
+            second_hashes = {
+                path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+                for path in output_dir.iterdir()
+            }
+            audit = json.loads((output_dir / "source_audit.json").read_text())
+            backtest = json.loads((output_dir / "backtest.json").read_text())
+
+        self.assertEqual(code, 1)
+        self.assertEqual(offline_code, 1)
+        offline_freeze.assert_not_called()
+        self.assertEqual(first_hashes, second_hashes)
+        self.assertEqual(backtest["status"], "HOLD")
+        self.assertEqual(
+            audit["coverage"]["schedule_team_games"],
+            {
+                "numerator": 8,
+                "denominator": 8,
+                "rate": 1.0,
+                "threshold": 0.99,
+                "passed": True,
+            },
+        )
+        self.assertEqual(audit["coverage"]["qb_gsis_rows"]["numerator"], 26)
+        self.assertEqual(audit["coverage"]["snap_pfr_volume"]["denominator"], 1300.0)
+        self.assertEqual(audit["coverage"]["injury_gsis_rows"]["numerator"], 13)
+        self.assertEqual(audit["coverage"]["current_teams"]["numerator"], 32)
+        self.assertTrue(all(audit["checks"].values()))
+
+    def test_invalid_as_of_fails_before_freezing_sources(self):
+        error = io.StringIO()
+        with (
+            patch.object(pgo_sources, "freeze_sources") as freeze,
+            redirect_stderr(error),
+        ):
+            code = pgo_challenger.main([
+                "--freeze-sources",
+                "--as-of", "not-a-timestamp",
+            ])
+
+        self.assertEqual(code, 2)
+        freeze.assert_not_called()
+        self.assertTrue(error.getvalue().startswith("ERROR: "))
+
+    def test_current_team_audit_requires_2026_roster_rows(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp, "current-roster.csv")
+            _write_csv(path, pgo_sources.ROSTER_COLUMNS, [{
+                "season": 2026,
+                "week": 0,
+                "team": "LV",
+                "position": "QB",
+                "gsis_id": "gsis-LV",
+                "pfr_id": "pfr-LV",
+                "years_exp": 3,
+                "draft_number": 20,
+            }])
+            coverage = pgo_challenger._current_team_coverage(
+                {("current_roster", 2026): path},
+                {team: ({}, {}) for team in pgo_model.CURRENT_TEAMS},
+            )
+
+        self.assertEqual(coverage["numerator"], 1)
+        self.assertEqual(coverage["denominator"], 32)
+        self.assertFalse(coverage["passed"])
+
+    def test_failed_post_download_validation_preserves_prior_lock(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            lock_path = root / "sources.lock.json"
+            lock_path.write_bytes(b"prior successful lock\n")
+
+            def freeze(specs, cache_dir, target, frozen_at):
+                Path(target).write_text('{"sources": []}\n', encoding="utf-8")
+
+            error = io.StringIO()
+            with (
+                patch.object(pgo_sources, "freeze_sources", side_effect=freeze),
+                patch.object(
+                    pgo_sources,
+                    "load_locked_sources",
+                    side_effect=ValueError("post-download schema failure"),
+                ),
+                redirect_stderr(error),
+            ):
+                code = pgo_challenger.main([
+                    "--freeze-sources",
+                    "--as-of", self.AS_OF,
+                    "--lock-path", str(lock_path),
+                    "--cache-dir", str(root / "cache"),
+                    "--output-dir", str(root / "output"),
+                ])
+
+            self.assertEqual(code, 2)
+            self.assertEqual(lock_path.read_bytes(), b"prior successful lock\n")
+            self.assertEqual(error.getvalue(), "ERROR: post-download schema failure\n")
+
+    def test_malformed_lock_exits_two_without_replacing_receipts(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            output_dir = root / "output"
+            output_dir.mkdir()
+            receipt = output_dir / "backtest.json"
+            receipt.write_bytes(b"successful receipt\n")
+            error = io.StringIO()
+            with (
+                patch.object(
+                    pgo_sources,
+                    "load_locked_sources",
+                    side_effect=KeyError("name"),
+                ),
+                redirect_stderr(error),
+            ):
+                code = pgo_challenger.main([
+                    "--as-of", self.AS_OF,
+                    "--lock-path", str(root / "sources.lock.json"),
+                    "--cache-dir", str(root / "cache"),
+                    "--output-dir", str(output_dir),
+                ])
+
+            self.assertEqual(code, 2)
+            self.assertEqual(receipt.read_bytes(), b"successful receipt\n")
+            self.assertEqual(error.getvalue(), "ERROR: 'name'\n")
+
+    def test_source_check_rejects_zero_denominator_coverage(self):
+        evaluation = EvaluationTests._passing_evaluation()
+        analysis = {
+            "audit": {
+                "source_hashes": {},
+                "coverage": {
+                    "qb_gsis_rows": {
+                        "numerator": 0,
+                        "denominator": 0,
+                        "rate": 0.0,
+                        "threshold": 0.98,
+                        "passed": False,
+                    },
+                    "current_teams": {
+                        "numerator": 32,
+                        "denominator": 32,
+                        "rate": 1.0,
+                        "threshold": 1.0,
+                        "passed": True,
+                    },
+                },
+            },
+            "evaluation": evaluation,
+            "predictions": [],
+            "ratings": self._ratings(),
+            "parameters": pgo_challenger.ChallengerParameters(4, 1.0, 1.0),
+            "preprocessor": pgo_challenger.Preprocessor(
+                ("signal",), np.zeros(1), np.ones(1), ()
+            ),
+        }
+
+        audit, backtest, _, _ = pgo_challenger._finalize_analysis(
+            analysis, self.AS_OF, True
+        )
+
+        self.assertFalse(audit["checks"]["source"])
+        self.assertEqual(backtest["status"], "HOLD")
+
+    def test_cli_error_preserves_existing_successful_receipts(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            output_dir = root / "output"
+            output_dir.mkdir()
+            expected = {
+                name: f"successful {name}\n".encode()
+                for name in (
+                    "source_audit.json",
+                    "backtest.json",
+                    "validation_predictions.csv",
+                    "ratings_2026_preseason.csv",
+                )
+            }
+            for name, data in expected.items():
+                (output_dir / name).write_bytes(data)
+            error = io.StringIO()
+            with (
+                patch.object(
+                    pgo_sources,
+                    "load_locked_sources",
+                    side_effect=ValueError("locked hash changed"),
+                ),
+                redirect_stderr(error),
+            ):
+                code = pgo_challenger.main([
+                    "--as-of", self.AS_OF,
+                    "--lock-path", str(root / "sources.lock.json"),
+                    "--cache-dir", str(root / "cache"),
+                    "--output-dir", str(output_dir),
+                ])
+            actual = {name: (output_dir / name).read_bytes() for name in expected}
+
+        self.assertEqual(code, 2)
+        self.assertEqual(error.getvalue(), "ERROR: locked hash changed\n")
+        self.assertEqual(expected, actual)
 
 
 class LineupTests(unittest.TestCase):

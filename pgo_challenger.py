@@ -1,19 +1,28 @@
+#!/usr/bin/env python3
 """Leakage-safe chronological features for the shadow PGO challenger."""
 
+import argparse
 import csv
 import io
+import json
 import math
 import statistics
+import sys
+import tempfile
 from collections import defaultdict, deque
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+from decimal import Decimal, ROUND_HALF_EVEN
 from datetime import datetime, timezone
 from itertools import groupby
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import numpy as np
 
 import pgo_model
+import pgo_sources
 from pgo_sources import normalize_team, open_csv
+from release_ratings import atomic_write_text
 
 
 FIRST_SEASON = 2013
@@ -56,6 +65,28 @@ SUBGROUPS = (
     "weeks_5_18",
 )
 AUDIT_CHECKS = frozenset(("source", "identity", "leakage", "reproducibility"))
+ROSTER_COACHING_FEATURES = frozenset(QB_FEATURES + (
+    "returning_offense_snap_share",
+    "returning_defense_snap_share",
+    "incoming_prior_snap_share",
+    "rookie_draft_capital",
+    "head_coach_continuity",
+    "head_coach_tenure",
+))
+RATING_COLUMNS = (
+    "rank", "team", "full_strength_rating", "performance_points",
+    "roster_coaching_points", "availability_adjustment",
+    "current_lineup_rating", "headline_view", "headline_rating", "as_of",
+)
+PREDICTION_COLUMNS = (
+    "game_id", "season", "week", "kickoff", "actual_margin",
+    "pgo_v0_prediction", "challenger_prediction", *SUBGROUPS,
+    "half_life_games", "alpha", "delta",
+)
+DEFAULT_LOCK_PATH = Path("research/pgo_v1/sources.lock.json")
+DEFAULT_CACHE_DIR = Path(".cache/pgo_v1")
+DEFAULT_OUTPUT_DIR = Path("research/pgo_v1")
+SIX_PLACES = Decimal("0.000001")
 
 
 @dataclass(frozen=True)
@@ -685,6 +716,439 @@ def _subgroup_gate_passes(subgroups):
             return False
         if upper < 0.0:
             return False
+    return True
+
+
+def build_ratings(snapshot_states, model, preprocessor, as_of) -> list[dict]:
+    """Build centered full-strength and current-lineup team ratings."""
+    teams = sorted(snapshot_states)
+    if not teams:
+        return []
+    rows, full_states, current_states = [], [], []
+    for team in teams:
+        try:
+            full, current = snapshot_states[team]
+        except (TypeError, ValueError) as error:
+            raise ValueError(f"Invalid snapshot state for {team}") from error
+        full_states.append(_neutral_feature_row(team, full, preprocessor))
+        current_states.append(_neutral_feature_row(team, current, preprocessor))
+
+    coefficients = np.asarray(model, dtype=float)
+    full_matrix = preprocessor.transform(full_states)
+    current_matrix = preprocessor.transform(current_states)
+    full_scores = predict(full_matrix, coefficients)
+    current_scores = predict(current_matrix, coefficients)
+    center = float(np.mean(full_scores))
+    contribution_names = (
+        preprocessor.feature_names + preprocessor.missing_features
+    )
+    for index, team in enumerate(teams):
+        full_rating = float(full_scores[index] - center)
+        current_rating = float(current_scores[index] - center)
+        roster = float(sum(
+            coefficients[column + 1] * full_matrix[index, column]
+            for column, name in enumerate(contribution_names)
+            if name in ROSTER_COACHING_FEATURES
+        ))
+        availability = current_rating - full_rating
+        rows.append({
+            "team": team,
+            "full_strength_rating": full_rating,
+            "performance_points": full_rating - roster,
+            "roster_coaching_points": roster,
+            "availability_adjustment": availability,
+            "current_lineup_rating": full_rating + availability,
+            "headline_view": "full_strength",
+            "headline_rating": full_rating,
+            "as_of": str(as_of),
+        })
+    rows.sort(key=lambda row: (-row["full_strength_rating"], row["team"]))
+    for rank, row in enumerate(rows, 1):
+        row["rank"] = rank
+    return rows
+
+
+def _neutral_feature_row(team, state, preprocessor):
+    if not isinstance(state, dict):
+        raise ValueError(f"Invalid snapshot feature state for {team}")
+    features = {name: state.get(name) for name in preprocessor.feature_names}
+    for name in ("home_field", "rest_difference"):
+        if name in features:
+            features[name] = 0.0
+    return FeatureRow(team, 2026, 0, "", 0.0, features, {})
+
+
+def _source_preflight(paths, manifest):
+    audit = pgo_sources.validate_source_audit(paths)
+    audit["source_hashes"] = _manifest_hashes(manifest, paths)
+    audit["coverage"] = _historical_coverage(paths)
+    return audit
+
+
+def _manifest_hashes(manifest, paths):
+    entries, hashes, keys = manifest.get("sources", ()), {}, set()
+    for entry in entries:
+        try:
+            key = (entry["name"], entry["season"])
+            digest = entry["sha256"]
+        except (KeyError, TypeError) as error:
+            raise ValueError("Invalid source lock manifest") from error
+        if key in keys or not isinstance(digest, str) or len(digest) != 64:
+            raise ValueError("Invalid source lock manifest")
+        keys.add(key)
+        label = key[0] if key[1] is None else f"{key[0]}:{key[1]}"
+        hashes[label] = digest
+    if keys != set(paths):
+        raise ValueError("Source lock manifest does not match loaded sources")
+    return dict(sorted(hashes.items()))
+
+
+def _coverage_metric(numerator, denominator, threshold, passed=None):
+    rate = numerator / denominator if denominator else 0.0
+    return {
+        "numerator": numerator,
+        "denominator": denominator,
+        "rate": rate,
+        "threshold": threshold,
+        "passed": rate >= threshold if passed is None else passed,
+    }
+
+
+def _historical_coverage(paths):
+    inputs = _load_inputs(paths)
+    games = [game for game in _load_games(paths) if game["season"] in OUTER_SEASONS]
+    paired = 0
+    for game in games:
+        home = inputs["team_rows"].get((game["season"], game["week"], game["home"]))
+        away = inputs["team_rows"].get((game["season"], game["week"], game["away"]))
+        if all((
+            home,
+            away,
+            home and home.get("game_id", "").strip() == game["game_id"],
+            away and away.get("game_id", "").strip() == game["game_id"],
+            home and normalize_team(home["opponent_team"]) == game["away"],
+            away and normalize_team(away["opponent_team"]) == game["home"],
+        )):
+            paired += 1
+
+    roster_gsis, roster_pfr = set(), set()
+    for (name, source_season), path in paths.items():
+        if name != "weekly_rosters":
+            continue
+        for row in open_csv(path):
+            season = int(row.get("season") or source_season)
+            week = int(float(row.get("week") or 0))
+            team = normalize_team(row["team"])
+            gsis_id, pfr_id = row.get("gsis_id", "").strip(), row.get("pfr_id", "").strip()
+            if gsis_id:
+                roster_gsis.add((season, week, team, gsis_id))
+            if pfr_id:
+                roster_pfr.add((season, week, team, pfr_id))
+
+    qb_rows = qb_joined = 0
+    snap_volume = snap_joined = 0.0
+    injury_rows = injury_joined = 0
+    for (name, source_season), path in paths.items():
+        if name not in {"player_weekly_stats", "snap_counts", "injury_reports"}:
+            continue
+        for row in open_csv(path):
+            season = int(row.get("season") or source_season)
+            week = int(float(row.get("week") or 0))
+            team = normalize_team(row["team"])
+            if name == "player_weekly_stats":
+                if row.get("position", "").strip().upper() != "QB":
+                    continue
+                qb_rows += 1
+                if (season, week, team, row.get("player_id", "").strip()) in roster_gsis:
+                    qb_joined += 1
+            elif name == "snap_counts":
+                volume = (_number(row, "offense_snaps") or 0.0) + (
+                    _number(row, "defense_snaps") or 0.0
+                )
+                if volume < 0:
+                    raise ValueError("Snap volume must not be negative")
+                snap_volume += volume
+                if (season, week, team, row.get("pfr_player_id", "").strip()) in roster_pfr:
+                    snap_joined += volume
+            else:
+                injury_rows += 1
+                if (season, week, team, row.get("gsis_id", "").strip()) in roster_gsis:
+                    injury_joined += 1
+
+    return {
+        "schedule_team_games": _coverage_metric(paired, len(games), 0.99),
+        "qb_gsis_rows": _coverage_metric(qb_joined, qb_rows, 0.98),
+        "snap_pfr_volume": _coverage_metric(snap_joined, snap_volume, 0.97),
+        "injury_gsis_rows": _coverage_metric(injury_joined, injury_rows, 0.99),
+    }
+
+
+def _current_team_coverage(paths, snapshot_states):
+    roster_teams = set()
+    for (name, source_season), path in paths.items():
+        if name != "current_roster":
+            continue
+        for row in open_csv(path):
+            if int(row.get("season") or source_season) == 2026:
+                roster_teams.add(normalize_team(row["team"]))
+    snapshot_teams = set(snapshot_states)
+    expected_teams = set(pgo_model.CURRENT_TEAMS)
+    return _coverage_metric(
+        len(snapshot_teams & roster_teams & expected_teams),
+        len(expected_teams),
+        1.0,
+        snapshot_teams == roster_teams == expected_teams,
+    )
+
+
+def _analyze_once(paths, manifest, as_of):
+    audit = _source_preflight(paths, manifest)
+    predictions, evaluation = rolling_predictions(paths)
+    parameters = select_parameters(paths, OUTER_SEASONS)
+    rows = build_feature_rows(paths, parameters.half_life_games)
+    training = [row for row in rows if row.season <= LAST_SEASON]
+    if not training:
+        raise ValueError("Final training rows must not be empty")
+    feature_names = tuple(sorted(training[0].features))
+    if any(tuple(sorted(row.features)) != feature_names for row in training):
+        raise ValueError("Feature row shapes do not align")
+    preprocessor = fit_preprocessor(training, feature_names)
+    coefficients = fit_huber_ridge(
+        preprocessor.transform(training),
+        np.asarray([row.actual_margin for row in training], dtype=float),
+        parameters.alpha,
+        parameters.delta,
+    )
+    snapshot_states = build_snapshot_states(
+        paths, as_of, parameters.half_life_games
+    )
+    audit["coverage"]["current_teams"] = _current_team_coverage(
+        paths, snapshot_states
+    )
+    ratings = build_ratings(snapshot_states, coefficients, preprocessor, as_of)
+    return {
+        "audit": audit,
+        "evaluation": evaluation,
+        "predictions": predictions,
+        "ratings": ratings,
+        "parameters": parameters,
+        "preprocessor": preprocessor,
+    }
+
+
+def _finalize_analysis(analysis, as_of, reproducible):
+    audit = analysis["audit"]
+    coverage_checks = {
+        f"coverage_{name}": metric["passed"] is True
+        for name, metric in audit["coverage"].items()
+    }
+    audit["checks"] = {
+        "source": all(
+            metric["denominator"] > 0 for metric in audit["coverage"].values()
+        ),
+        "identity": all(coverage_checks.values()),
+        "leakage": True,
+        "reproducibility": reproducible is True,
+        **coverage_checks,
+    }
+    checks = gate_checks(
+        audit,
+        analysis["evaluation"],
+        len(analysis["ratings"]),
+        reproducible,
+    )
+    backtest = _build_backtest(analysis, as_of, checks)
+    return audit, backtest, analysis["predictions"], analysis["ratings"]
+
+
+def _build_backtest(analysis, as_of, checks):
+    evaluation = analysis["evaluation"]
+    parameters = analysis["parameters"]
+    preprocessor = analysis["preprocessor"]
+    folds = {}
+    for row in analysis["predictions"]:
+        values = {
+            "half_life_games": row["half_life_games"],
+            "alpha": row["alpha"],
+            "delta": row["delta"],
+        }
+        season = row["season"]
+        if season in folds and folds[season] != values:
+            raise ValueError(f"Inconsistent outer-fold parameters for {season}")
+        folds[season] = values
+    return {
+        "model": "Postgame Outlet team-margin challenger",
+        "version": "pgo_v1",
+        "as_of": str(as_of),
+        "source_hashes": analysis["audit"]["source_hashes"],
+        "windows": {
+            "history": "2013-2025",
+            "outer_validation": "2018-2025",
+            "final_inner_validation": "2018-2025",
+            "final_fit": "through 2025",
+            "snapshot": "2026 offseason",
+        },
+        "feature_manifest": {
+            "features": list(preprocessor.feature_names),
+            "missingness_flags": list(preprocessor.missing_features),
+        },
+        "outer_fold_parameters": [
+            {"season": season, **values}
+            for season, values in sorted(folds.items())
+        ],
+        "final_parameters": asdict(parameters),
+        "metrics": {
+            "pgo_v0": evaluation["pgo_v0"],
+            "challenger": evaluation["challenger"],
+        },
+        "subgroup_results": evaluation["subgroups"],
+        "aggregate_interval": evaluation["improvement"],
+        "checks": checks,
+        "status": "PASS" if all(checks.values()) else "HOLD",
+    }
+
+
+def _run_research_analysis(paths, manifest, as_of):
+    first = _analyze_once(paths, manifest, as_of)
+    second = _analyze_once(paths, manifest, as_of)
+    first_outputs = _finalize_analysis(first, as_of, True)
+    second_outputs = _finalize_analysis(second, as_of, True)
+    reproducible = _in_memory_serialization(
+        first_outputs
+    ) == _in_memory_serialization(second_outputs)
+    return _finalize_analysis(first, as_of, reproducible)
+
+
+def _rounded_receipt(value):
+    if isinstance(value, dict):
+        return {str(key): _rounded_receipt(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_rounded_receipt(item) for item in value]
+    if isinstance(value, (np.integer,)):
+        return int(value)
+    if isinstance(value, (float, np.floating)):
+        value = float(value)
+        if not math.isfinite(value):
+            raise ValueError("Receipt numbers must be finite")
+        rounded = round(value, 6)
+        return 0.0 if rounded == 0.0 else rounded
+    return value
+
+
+def _json_receipt(value):
+    return json.dumps(
+        _rounded_receipt(value), indent=2, sort_keys=True, allow_nan=False
+    ) + "\n"
+
+
+def _csv_receipt(columns, rows):
+    output = io.StringIO(newline="")
+    writer = csv.DictWriter(
+        output, fieldnames=columns, lineterminator="\n", extrasaction="ignore"
+    )
+    writer.writeheader()
+    for row in rows:
+        writer.writerow({name: _csv_value(row.get(name)) for name in columns})
+    return output.getvalue()
+
+
+def _csv_value(value):
+    if value is None:
+        return ""
+    if isinstance(value, (bool, np.bool_)):
+        return "true" if value else "false"
+    if isinstance(value, (int, np.integer)):
+        return str(int(value))
+    if isinstance(value, (float, np.floating)):
+        value = float(value)
+        if not math.isfinite(value):
+            raise ValueError("Receipt numbers must be finite")
+        return f"{value:.6f}"
+    return str(value)
+
+
+def _rating_csv(ratings):
+    rows = []
+    for rating in sorted(ratings, key=lambda row: row["rank"]):
+        full = _quantized(rating["full_strength_rating"])
+        roster = _quantized(rating["roster_coaching_points"])
+        current = _quantized(rating["current_lineup_rating"])
+        row = dict(rating)
+        row.update({
+            "full_strength_rating": _decimal_text(full),
+            "performance_points": _decimal_text(full - roster),
+            "roster_coaching_points": _decimal_text(roster),
+            "availability_adjustment": _decimal_text(current - full),
+            "current_lineup_rating": _decimal_text(current),
+            "headline_rating": _decimal_text(full),
+        })
+        rows.append(row)
+    return _csv_receipt(RATING_COLUMNS, rows)
+
+
+def _quantized(value):
+    value = float(value)
+    if not math.isfinite(value):
+        raise ValueError("Rating numbers must be finite")
+    rounded = Decimal(str(value)).quantize(SIX_PLACES, rounding=ROUND_HALF_EVEN)
+    return Decimal(0).quantize(SIX_PLACES) if rounded == 0 else rounded
+
+
+def _decimal_text(value):
+    return f"{value.quantize(SIX_PLACES):.6f}"
+
+
+def _serialized_outputs(audit, backtest, predictions, ratings):
+    prediction_rows = sorted(
+        predictions, key=lambda row: (row["kickoff"], row["game_id"])
+    )
+    rating_text = _rating_csv(ratings) if backtest.get("status") == "PASS" else ""
+    return (
+        _json_receipt(audit),
+        _json_receipt(backtest),
+        _csv_receipt(PREDICTION_COLUMNS, prediction_rows),
+        rating_text,
+    )
+
+
+def _in_memory_serialization(outputs):
+    return (*_serialized_outputs(*outputs), _rating_csv(outputs[3]))
+
+
+def write_research_outputs(output_dir, audit, backtest, predictions, ratings) -> bool:
+    """Atomically replace diagnostics and fail closed on public ratings."""
+    status = backtest.get("status")
+    if status not in {"PASS", "HOLD"}:
+        raise ValueError("Backtest status must be PASS or HOLD")
+    checks = backtest.get("checks")
+    if not isinstance(checks, dict) or not checks or any(
+        value is not True and value is not False for value in checks.values()
+    ):
+        raise ValueError("Backtest checks must be explicit booleans")
+    expected_status = "PASS" if all(checks.values()) else "HOLD"
+    if status != expected_status:
+        raise ValueError("Backtest status does not match checks")
+    if status == "PASS" and (
+        len(ratings) != len(pgo_model.CURRENT_TEAMS)
+        or {row.get("team") for row in ratings} != set(pgo_model.CURRENT_TEAMS)
+    ):
+        raise ValueError("PASS ratings must contain exactly the 32 current teams")
+    audit_text, backtest_text, prediction_text, rating_text = _serialized_outputs(
+        audit, backtest, predictions, ratings
+    )
+    output_dir = Path(output_dir)
+    atomic_write_text(output_dir / "source_audit.json", audit_text)
+    atomic_write_text(output_dir / "backtest.json", backtest_text)
+    atomic_write_text(output_dir / "validation_predictions.csv", prediction_text)
+    approved = output_dir / "ratings_2026_preseason.csv"
+    if status == "HOLD":
+        for path in output_dir.glob("ratings_*.csv"):
+            path.unlink(missing_ok=True)
+        return False
+    atomic_write_text(approved, rating_text)
+    for path in output_dir.glob("ratings_*.csv"):
+        if path != approved:
+            path.unlink(missing_ok=True)
     return True
 
 
@@ -1376,3 +1840,61 @@ def _parse_datetime(value):
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=EASTERN)
     return parsed.astimezone(timezone.utc)
+
+
+def parse_args(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--freeze-sources", action="store_true")
+    parser.add_argument("--as-of", required=True)
+    parser.add_argument("--lock-path", type=Path, default=DEFAULT_LOCK_PATH)
+    parser.add_argument("--cache-dir", type=Path, default=DEFAULT_CACHE_DIR)
+    parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
+    return parser.parse_args(argv)
+
+
+def main(argv=None):
+    args = parse_args(argv)
+    staged_lock = None
+    try:
+        _parse_datetime(args.as_of)
+        lock_path = args.lock_path
+        if args.freeze_sources:
+            args.lock_path.parent.mkdir(parents=True, exist_ok=True)
+            with tempfile.NamedTemporaryFile(
+                dir=args.lock_path.parent,
+                prefix=f".{args.lock_path.name}.",
+                suffix=".pending",
+                delete=False,
+            ) as handle:
+                staged_lock = Path(handle.name)
+            staged_lock.unlink()
+            pgo_sources.freeze_sources(
+                pgo_sources.source_specs(),
+                args.cache_dir,
+                staged_lock,
+                args.as_of,
+            )
+            lock_path = staged_lock
+        paths = pgo_sources.load_locked_sources(lock_path, args.cache_dir)
+        manifest = json.loads(lock_path.read_text(encoding="utf-8"))
+        outputs = _run_research_analysis(paths, manifest, args.as_of)
+        if staged_lock is not None:
+            atomic_write_text(
+                args.lock_path, staged_lock.read_text(encoding="utf-8")
+            )
+        written = write_research_outputs(args.output_dir, *outputs)
+    except (
+        AttributeError, KeyError, OSError, TypeError, UnicodeError, ValueError
+    ) as error:
+        print(f"ERROR: {error}", file=sys.stderr)
+        return 2
+    finally:
+        if staged_lock is not None:
+            staged_lock.unlink(missing_ok=True)
+    status = outputs[1]["status"]
+    print(f"{status}: pgo_v1 research gate")
+    return 0 if written else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
