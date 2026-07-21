@@ -55,6 +55,7 @@ SUBGROUPS = (
     "weeks_1_4",
     "weeks_5_18",
 )
+AUDIT_CHECKS = frozenset(("source", "identity", "leakage", "reproducibility"))
 
 
 @dataclass(frozen=True)
@@ -380,16 +381,7 @@ def rolling_predictions(paths) -> tuple[list[dict], dict]:
         away_full_predictions = predict(
             preprocessor.transform(away_full), coefficients
         )
-        shares = [
-            share
-            for value in fold_metadata
-            for share in (
-                value["home_returning_snap_share"],
-                value["away_returning_snap_share"],
-            )
-            if share is not None and math.isfinite(share)
-        ]
-        turnover_quartile = float(np.percentile(shares, 25)) if shares else None
+        turnover_flags, _ = _frozen_turnover_flags(validation, metadata)
         for row, predicted, home_prediction, away_prediction, value in zip(
             validation,
             predictions,
@@ -402,16 +394,7 @@ def rolling_predictions(paths) -> tuple[list[dict], dict]:
                 predicted - home_prediction <= -1.5
                 or away_prediction - predicted <= -1.5
             )
-            flags["high_roster_turnover"] = (
-                turnover_quartile is not None
-                and any(
-                    share is not None and share <= turnover_quartile
-                    for share in (
-                        value["home_returning_snap_share"],
-                        value["away_returning_snap_share"],
-                    )
-                )
-            )
+            flags["high_roster_turnover"] = turnover_flags[row.game_id]
             challenger.append({
                 "game_id": row.game_id,
                 "season": row.season,
@@ -450,6 +433,41 @@ def rolling_predictions(paths) -> tuple[list[dict], dict]:
         "subgroups": subgroup_results(challenger),
     }
     return challenger, evaluation
+
+
+def _frozen_turnover_flags(rows, metadata):
+    first_share, teams_by_game = {}, {}
+    for row in sorted(rows, key=lambda value: (value.kickoff, value.game_id)):
+        try:
+            value = metadata[row.game_id]
+            teams = (
+                (value["home_team"], value["home_returning_snap_share"]),
+                (value["away_team"], value["away_returning_snap_share"]),
+            )
+        except KeyError as error:
+            raise ValueError(f"Missing turnover metadata: {error.args[0]}") from error
+        teams_by_game[row.game_id] = tuple(team for team, _ in teams)
+        for team, share in teams:
+            if team in first_share:
+                continue
+            if share is not None:
+                share = float(share)
+                if not math.isfinite(share):
+                    raise ValueError("Returning snap shares must be finite")
+            first_share[team] = share
+    shares = [share for share in first_share.values() if share is not None]
+    quartile = float(np.percentile(shares, 25)) if shares else None
+    return {
+        game_id: (
+            quartile is not None
+            and any(
+                first_share.get(team) is not None
+                and first_share[team] <= quartile
+                for team in teams
+            )
+        )
+        for game_id, teams in teams_by_game.items()
+    }, quartile
 
 
 def metric_summary(rows, prediction_key) -> dict:
@@ -559,7 +577,7 @@ def gate_checks(audit, evaluation, ratings_count, deterministic) -> dict[str, bo
     audit_checks = audit.get("checks", audit) if isinstance(audit, dict) else {}
     subgroups = evaluation.get("subgroups", {})
     return {
-        "audit_checks_pass": bool(audit_checks) and all(
+        "audit_checks_pass": AUDIT_CHECKS <= set(audit_checks) and all(
             value is True for value in audit_checks.values()
         ),
         "all_32_current_teams": ratings_count == 32,
@@ -571,19 +589,51 @@ def gate_checks(audit, evaluation, ratings_count, deterministic) -> dict[str, bo
         "aggregate_improvement_ci_positive": (
             evaluation.get("improvement", {}).get("lower", -math.inf) > 0.0
         ),
-        "no_sufficient_subgroup_regression": (
-            set(subgroups) == set(SUBGROUPS)
-            and all(
-                result.get("status") == "INSUFFICIENT_EVIDENCE"
-                or (
-                    result.get("status") == "SUFFICIENT_EVIDENCE"
-                    and result.get("upper", -math.inf) >= 0.0
-                )
-                for result in subgroups.values()
-            )
-        ),
+        "no_sufficient_subgroup_regression": _subgroup_gate_passes(subgroups),
         "deterministic": deterministic is True,
     }
+
+
+def _subgroup_gate_passes(subgroups):
+    if set(subgroups) != set(SUBGROUPS):
+        return False
+    for result in subgroups.values():
+        count = result.get("count")
+        if isinstance(count, bool) or not isinstance(count, int) or count < 0:
+            return False
+        status = result.get("status")
+        if status == "INSUFFICIENT_EVIDENCE":
+            if count >= 100:
+                return False
+            continue
+        if status != "SUFFICIENT_EVIDENCE" or count < 100:
+            return False
+        try:
+            incumbent, challenger, improvement, lower, upper = (
+                float(result[name])
+                for name in (
+                    "pgo_v0_mae",
+                    "challenger_mae",
+                    "improvement",
+                    "lower",
+                    "upper",
+                )
+            )
+        except (KeyError, TypeError, ValueError):
+            return False
+        values = (incumbent, challenger, improvement, lower, upper)
+        if not all(math.isfinite(value) for value in values):
+            return False
+        if lower > upper or not math.isclose(
+            improvement,
+            incumbent - challenger,
+            rel_tol=1e-9,
+            abs_tol=1e-12,
+        ):
+            return False
+        if upper < 0.0:
+            return False
+    return True
 
 
 def _incumbent_predictions(paths):
@@ -746,6 +796,8 @@ def _walk(paths, half_life_games, as_of=None):
             context["evaluation_metadata"][game["game_id"]] = {
                 "home_full_features": _matchup_features(home[0], away[1], game),
                 "away_full_features": _matchup_features(home[1], away[0], game),
+                "home_team": game["home"],
+                "away_team": game["away"],
                 "home_returning_snap_share": home[2]["returning_snap_share"],
                 "away_returning_snap_share": away[2]["returning_snap_share"],
             }

@@ -966,6 +966,8 @@ class EvaluationTests(unittest.TestCase):
                     "signal": signal + (10.0 if season == 2018 else 0.0)
                 },
                 "away_full_features": dict(features),
+                "home_team": "LV",
+                "away_team": "LAC",
                 "home_returning_snap_share": 0.4,
                 "away_returning_snap_share": 0.6,
             }
@@ -995,6 +997,79 @@ class EvaluationTests(unittest.TestCase):
             for row in rows
         ])
         return path
+
+    @staticmethod
+    def _passing_evaluation():
+        subgroups = {
+            name: {"status": "INSUFFICIENT_EVIDENCE", "count": 99}
+            for name in pgo_challenger.SUBGROUPS
+        }
+        subgroups["changed_or_backup_qb"] = {
+            "status": "SUFFICIENT_EVIDENCE",
+            "count": 100,
+            "pgo_v0_mae": 10.0,
+            "challenger_mae": 9.0,
+            "improvement": 1.0,
+            "lower": -0.10,
+            "upper": 0.20,
+        }
+        return {
+            "paired_game_ids": True,
+            "pgo_v0": {"mae": 10.0},
+            "challenger": {"mae": 9.0},
+            "improvement": {"mean": 1.0, "lower": 0.10, "upper": 0.40},
+            "subgroups": subgroups,
+        }
+
+    @staticmethod
+    def _turnover_paths(directory, mutate_postgame_snaps=False):
+        paths = _synthetic_paths(directory)
+        roster_path = paths[("weekly_rosters", 2013)]
+        snap_path = paths[("snap_counts", 2013)]
+        with open(roster_path, encoding="utf-8", newline="") as handle:
+            rosters = list(csv.DictReader(handle))
+        with open(snap_path, encoding="utf-8", newline="") as handle:
+            snaps = list(csv.DictReader(handle))
+        for team, player in (("OAK", "lv-wr"), ("SD", "incoming-wr")):
+            rosters.append({
+                "season": 2013, "week": 1, "team": team, "position": "WR",
+                "gsis_id": f"gsis-{player}", "pfr_id": f"pfr-{player}",
+                "years_exp": 2, "draft_number": 100,
+            })
+            snaps.append({
+                "season": 2013, "week": 1, "team": team,
+                "pfr_player_id": f"pfr-{player}", "position": "WR",
+                "offense_snaps": 50, "defense_snaps": 0,
+            })
+        _write_csv(roster_path, pgo_sources.ROSTER_COLUMNS, rosters)
+        _write_csv(snap_path, pgo_sources.SNAP_COLUMNS, snaps)
+
+        roster_path = paths[("weekly_rosters", 2014)]
+        snap_path = paths[("snap_counts", 2014)]
+        with open(roster_path, encoding="utf-8", newline="") as handle:
+            rosters = list(csv.DictReader(handle))
+        with open(snap_path, encoding="utf-8", newline="") as handle:
+            snaps = list(csv.DictReader(handle))
+        for week, player in ((1, "lv-wr"), (2, "lv-wr"), (2, "incoming-wr")):
+            rosters.append({
+                "season": 2014, "week": week, "team": "OAK", "position": "WR",
+                "gsis_id": f"gsis-{player}", "pfr_id": f"pfr-{player}",
+                "years_exp": 3, "draft_number": 100,
+            })
+        snaps.append({
+            "season": 2014, "week": 1, "team": "OAK",
+            "pfr_player_id": "pfr-lv-wr", "position": "WR",
+            "offense_snaps": 50, "defense_snaps": 0,
+        })
+        if mutate_postgame_snaps:
+            next(
+                row for row in snaps
+                if row["week"] == "1" and row["team"] == "OAK"
+                and row["pfr_player_id"] == "pfr-lac-qb"
+            )["offense_snaps"] = 99
+        _write_csv(roster_path, pgo_sources.ROSTER_COLUMNS, rosters)
+        _write_csv(snap_path, pgo_sources.SNAP_COLUMNS, snaps)
+        return paths
 
     def test_outer_fold_never_trains_on_same_or_later_season(self):
         rows, metadata = self._fold_rows()
@@ -1170,22 +1245,107 @@ class EvaluationTests(unittest.TestCase):
             sufficient["changed_or_backup_qb"]["count"],
         )
 
+    def test_turnover_freezes_each_team_at_its_earliest_pregame_share(self):
+        with (
+            tempfile.TemporaryDirectory() as before_temp,
+            tempfile.TemporaryDirectory() as after_temp,
+        ):
+            before_rows, before_context, _ = pgo_challenger._walk(
+                self._turnover_paths(Path(before_temp)), 4
+            )
+            after_rows, after_context, _ = pgo_challenger._walk(
+                self._turnover_paths(Path(after_temp), True), 4
+            )
+
+        before_rows = [row for row in before_rows if row.season == 2014]
+        after_rows = [row for row in after_rows if row.season == 2014]
+        before_metadata = before_context["evaluation_metadata"]
+        after_metadata = after_context["evaluation_metadata"]
+        self.assertEqual(
+            before_metadata["g3"]["home_returning_snap_share"],
+            after_metadata["g3"]["home_returning_snap_share"],
+        )
+        self.assertNotEqual(
+            before_metadata["g4"]["away_returning_snap_share"],
+            after_metadata["g4"]["away_returning_snap_share"],
+        )
+
+        before_flags, before_quartile = pgo_challenger._frozen_turnover_flags(
+            before_rows, before_metadata
+        )
+        after_flags, after_quartile = pgo_challenger._frozen_turnover_flags(
+            after_rows, after_metadata
+        )
+
+        self.assertEqual(before_quartile, after_quartile)
+        self.assertEqual(before_flags, after_flags)
+        self.assertTrue(before_flags["g3"])
+        self.assertTrue(before_flags["g4"])
+
+    def test_gate_requires_complete_audit_categories(self):
+        evaluation = self._passing_evaluation()
+        full_audit = {
+            "source": True,
+            "identity": True,
+            "leakage": True,
+            "reproducibility": True,
+        }
+        missing_reproducibility = dict(full_audit)
+        missing_reproducibility.pop("reproducibility")
+
+        self.assertFalse(
+            pgo_challenger.gate_checks(
+                {"source": True}, evaluation, 32, True
+            )["audit_checks_pass"]
+        )
+        self.assertFalse(
+            pgo_challenger.gate_checks(
+                missing_reproducibility, evaluation, 32, True
+            )["audit_checks_pass"]
+        )
+
+    def test_gate_rejects_inconsistent_subgroup_evidence(self):
+        audit = {
+            "source": True,
+            "identity": True,
+            "leakage": True,
+            "reproducibility": True,
+        }
+        valid = self._passing_evaluation()
+        sufficient = valid["subgroups"]["changed_or_backup_qb"]
+        invalid = [
+            {"status": "INSUFFICIENT_EVIDENCE", "count": 100},
+            dict(sufficient, count=99),
+            dict(sufficient, improvement=2.0),
+            dict(sufficient, lower=0.30, upper=0.20),
+        ]
+        for name in (
+            "pgo_v0_mae", "challenger_mae", "improvement", "lower", "upper"
+        ):
+            missing = dict(sufficient)
+            missing.pop(name)
+            invalid.append(missing)
+            invalid.append(dict(sufficient, **{name: float("nan")}))
+
+        for evidence in invalid:
+            with self.subTest(evidence=evidence):
+                evaluation = dict(valid)
+                evaluation["subgroups"] = dict(valid["subgroups"])
+                evaluation["subgroups"]["changed_or_backup_qb"] = evidence
+                self.assertFalse(
+                    pgo_challenger.gate_checks(
+                        audit, evaluation, 32, True
+                    )["no_sufficient_subgroup_regression"]
+                )
+
     def test_gate_uses_improvement_ci_direction_correctly(self):
-        audit = {"source": True, "identity": True, "leakage": True}
-        evaluation = {
-            "paired_game_ids": True,
-            "pgo_v0": {"mae": 10.0},
-            "challenger": {"mae": 9.0},
-            "improvement": {"mean": 1.0, "lower": 0.10, "upper": 0.40},
-            "subgroups": {
-                name: {"status": "INSUFFICIENT_EVIDENCE", "count": 99}
-                for name in pgo_challenger.SUBGROUPS
-            },
+        audit = {
+            "source": True,
+            "identity": True,
+            "leakage": True,
+            "reproducibility": True,
         }
-        evaluation["subgroups"]["changed_or_backup_qb"] = {
-                    "status": "SUFFICIENT_EVIDENCE", "count": 100,
-                    "lower": -0.10, "upper": 0.20,
-        }
+        evaluation = self._passing_evaluation()
 
         positive = pgo_challenger.gate_checks(audit, evaluation, 32, True)
         self.assertTrue(all(positive.values()))
@@ -1212,8 +1372,13 @@ class EvaluationTests(unittest.TestCase):
         subgroup_loss = dict(evaluation)
         subgroup_loss["subgroups"] = dict(evaluation["subgroups"])
         subgroup_loss["subgroups"]["changed_or_backup_qb"] = {
-                "status": "SUFFICIENT_EVIDENCE", "count": 100,
-                "lower": -0.40, "upper": -0.10,
+            "status": "SUFFICIENT_EVIDENCE",
+            "count": 100,
+            "pgo_v0_mae": 10.0,
+            "challenger_mae": 9.0,
+            "improvement": 1.0,
+            "lower": -0.40,
+            "upper": -0.10,
         }
         self.assertFalse(
             pgo_challenger.gate_checks(audit, subgroup_loss, 32, True)[
