@@ -1015,9 +1015,15 @@ class EvaluationTests(unittest.TestCase):
         }
         return {
             "paired_game_ids": True,
-            "pgo_v0": {"mae": 10.0},
-            "challenger": {"mae": 9.0},
-            "improvement": {"mean": 1.0, "lower": 0.10, "upper": 0.40},
+            "pgo_v0": {"count": 100, "mae": 9.25},
+            "challenger": {"count": 100, "mae": 9.0},
+            "improvement": {
+                "mean": 0.25,
+                "lower": 0.10,
+                "upper": 0.40,
+                "samples": 10_000,
+                "seed": 20260721,
+            },
             "subgroups": subgroups,
         }
 
@@ -1206,6 +1212,8 @@ class EvaluationTests(unittest.TestCase):
         second = pgo_challenger.paired_block_bootstrap(rows, samples, seed)
 
         self.assertEqual(first, second)
+        self.assertEqual(first["samples"], samples)
+        self.assertEqual(first["seed"], seed)
         self.assertAlmostEqual(first["mean"], 14.0 / 3.0)
         self.assertAlmostEqual(first["lower"], np.percentile(expected, 2.5))
         self.assertAlmostEqual(first["upper"], np.percentile(expected, 97.5))
@@ -1338,6 +1346,79 @@ class EvaluationTests(unittest.TestCase):
                     )["no_sufficient_subgroup_regression"]
                 )
 
+    def test_gate_rejects_invalid_aggregate_counts_and_maes(self):
+        audit = {
+            "source": True,
+            "identity": True,
+            "leakage": True,
+            "reproducibility": True,
+        }
+        valid = self._passing_evaluation()
+        invalid = []
+        for side in ("pgo_v0", "challenger"):
+            missing = dict(valid[side])
+            missing.pop("count")
+            invalid.append((f"missing {side} count", side, missing))
+        invalid.extend((
+            ("unequal counts", "pgo_v0", {"count": 99, "mae": 9.25}),
+            ("zero count", "pgo_v0", {"count": 0, "mae": 9.25}),
+            ("negative count", "pgo_v0", {"count": -1, "mae": 9.25}),
+        ))
+        for side in ("pgo_v0", "challenger"):
+            for value in (-1.0, float("nan"), float("inf")):
+                invalid.append((
+                    f"invalid {side} mae {value}",
+                    side,
+                    {"count": 100, "mae": value},
+                ))
+
+        for label, side, evidence in invalid:
+            with self.subTest(label=label):
+                evaluation = dict(valid)
+                evaluation[side] = evidence
+                self.assertFalse(
+                    pgo_challenger.gate_checks(
+                        audit, evaluation, 32, True
+                    )["challenger_mae_lower"]
+                )
+
+    def test_gate_rejects_invalid_aggregate_bootstrap_evidence(self):
+        audit = {
+            "source": True,
+            "identity": True,
+            "leakage": True,
+            "reproducibility": True,
+        }
+        valid = self._passing_evaluation()
+        interval = valid["improvement"]
+        invalid = []
+        for name in ("mean", "lower", "upper", "samples", "seed"):
+            missing = dict(interval)
+            missing.pop(name)
+            invalid.append((f"missing {name}", missing))
+        for name in ("mean", "lower", "upper"):
+            for value in (float("nan"), float("inf")):
+                invalid.append((
+                    f"nonfinite {name} {value}",
+                    dict(interval, **{name: value}),
+                ))
+        invalid.extend((
+            ("lower above mean", dict(interval, lower=0.30, mean=0.20)),
+            ("mean above upper", dict(interval, mean=0.50, upper=0.40)),
+            ("wrong samples", dict(interval, samples=9_999)),
+            ("wrong seed", dict(interval, seed=1)),
+        ))
+
+        for label, evidence in invalid:
+            with self.subTest(label=label):
+                evaluation = dict(valid)
+                evaluation["improvement"] = evidence
+                self.assertFalse(
+                    pgo_challenger.gate_checks(
+                        audit, evaluation, 32, True
+                    )["aggregate_improvement_ci_positive"]
+                )
+
     def test_gate_uses_improvement_ci_direction_correctly(self):
         audit = {
             "source": True,
@@ -1362,6 +1443,7 @@ class EvaluationTests(unittest.TestCase):
         negative = dict(evaluation)
         negative["improvement"] = {
             "mean": -0.25, "lower": -0.40, "upper": -0.10,
+            "samples": 10_000, "seed": 20260721,
         }
         self.assertFalse(
             pgo_challenger.gate_checks(audit, negative, 32, True)[

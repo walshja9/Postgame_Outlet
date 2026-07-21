@@ -545,6 +545,8 @@ def paired_block_bootstrap(rows, samples=10_000, seed=20260721) -> dict:
         "mean": float(sum(map(sum, blocks)) / sum(map(len, blocks))),
         "lower": float(np.percentile(distribution, 2.5)),
         "upper": float(np.percentile(distribution, 97.5)),
+        "samples": samples,
+        "seed": seed,
     }
 
 
@@ -576,22 +578,72 @@ def subgroup_results(rows) -> dict:
 def gate_checks(audit, evaluation, ratings_count, deterministic) -> dict[str, bool]:
     audit_checks = audit.get("checks", audit) if isinstance(audit, dict) else {}
     subgroups = evaluation.get("subgroups", {})
+    mae_passes, bootstrap_passes = _aggregate_gate_checks(evaluation)
     return {
         "audit_checks_pass": AUDIT_CHECKS <= set(audit_checks) and all(
             value is True for value in audit_checks.values()
         ),
         "all_32_current_teams": ratings_count == 32,
         "paired_game_ids": evaluation.get("paired_game_ids") is True,
-        "challenger_mae_lower": (
-            evaluation.get("challenger", {}).get("mae", math.inf)
-            < evaluation.get("pgo_v0", {}).get("mae", -math.inf)
-        ),
-        "aggregate_improvement_ci_positive": (
-            evaluation.get("improvement", {}).get("lower", -math.inf) > 0.0
-        ),
+        "challenger_mae_lower": mae_passes,
+        "aggregate_improvement_ci_positive": bootstrap_passes,
         "no_sufficient_subgroup_regression": _subgroup_gate_passes(subgroups),
         "deterministic": deterministic is True,
     }
+
+
+def _aggregate_gate_checks(evaluation):
+    try:
+        incumbent = evaluation["pgo_v0"]
+        challenger = evaluation["challenger"]
+        incumbent_count = incumbent["count"]
+        challenger_count = challenger["count"]
+        incumbent_mae = incumbent["mae"]
+        challenger_mae = challenger["mae"]
+        valid_counts = all(
+            not isinstance(value, bool)
+            and isinstance(value, (int, np.integer))
+            and value > 0
+            for value in (incumbent_count, challenger_count)
+        ) and incumbent_count == challenger_count
+        valid_maes = all(
+            not isinstance(value, bool)
+            and isinstance(value, (int, float, np.integer, np.floating))
+            and math.isfinite(value)
+            and value >= 0.0
+            for value in (incumbent_mae, challenger_mae)
+        )
+        mae_passes = (
+            valid_counts and valid_maes and challenger_mae < incumbent_mae
+        )
+    except (KeyError, TypeError):
+        mae_passes = False
+
+    try:
+        improvement = evaluation["improvement"]
+        mean, lower, upper = (
+            improvement[name] for name in ("mean", "lower", "upper")
+        )
+        valid_interval = all(
+            not isinstance(value, bool)
+            and isinstance(value, (int, float, np.integer, np.floating))
+            and math.isfinite(value)
+            for value in (mean, lower, upper)
+        )
+        bootstrap_passes = (
+            valid_interval
+            and lower <= mean <= upper
+            and not isinstance(improvement["samples"], bool)
+            and isinstance(improvement["samples"], (int, np.integer))
+            and improvement["samples"] == 10_000
+            and not isinstance(improvement["seed"], bool)
+            and isinstance(improvement["seed"], (int, np.integer))
+            and improvement["seed"] == 20260721
+            and lower > 0.0
+        )
+    except (KeyError, TypeError):
+        bootstrap_passes = False
+    return mae_passes, bootstrap_passes
 
 
 def _subgroup_gate_passes(subgroups):
