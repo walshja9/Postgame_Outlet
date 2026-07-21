@@ -278,14 +278,17 @@ def select_parameters(paths, validation_seasons) -> ChallengerParameters:
     }
     for half_life in HALF_LIFE_GRID:
         rows = build_feature_rows(paths, half_life)
-        if not rows:
+        eligible_rows = [row for row in rows if row.season <= seasons[-1]]
+        if not eligible_rows:
             raise ValueError("Feature rows must not be empty")
-        feature_names = tuple(sorted(rows[0].features))
-        if any(tuple(sorted(row.features)) != feature_names for row in rows):
+        feature_names = tuple(sorted(eligible_rows[0].features))
+        if any(
+            tuple(sorted(row.features)) != feature_names for row in eligible_rows
+        ):
             raise ValueError("Feature row shapes do not align")
         for season in seasons:
-            training = [row for row in rows if row.season < season]
-            validation = [row for row in rows if row.season == season]
+            training = [row for row in eligible_rows if row.season < season]
+            validation = [row for row in eligible_rows if row.season == season]
             if len({row.season for row in training}) < 3:
                 raise ValueError(
                     "Each validation fold requires three earlier training seasons"
@@ -307,9 +310,14 @@ def select_parameters(paths, validation_seasons) -> ChallengerParameters:
                     coefficients = fit_huber_ridge(
                         x_train, y_train, alpha, delta
                     )
-                    errors[parameters].extend(
-                        np.abs(y_validation - predict(x_validation, coefficients))
-                    )
+                    validation_predictions = predict(x_validation, coefficients)
+                    with np.errstate(over="ignore", invalid="ignore"):
+                        absolute_errors = np.abs(
+                            y_validation - validation_predictions
+                        )
+                    if not np.isfinite(absolute_errors).all():
+                        raise ValueError("Prediction errors must be finite")
+                    errors[parameters].extend(absolute_errors)
     return min(
         errors,
         key=lambda parameters: (

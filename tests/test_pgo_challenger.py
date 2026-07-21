@@ -5,6 +5,7 @@ import json
 import math
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
 
@@ -848,6 +849,39 @@ class ModelTests(unittest.TestCase):
 
         self.assertEqual(first, second)
 
+    def test_unnamed_future_schema_cannot_change_selection(self):
+        history = [
+            _model_row(f"{season}-{index}", season, signal, 2.0 + 3.0 * signal)
+            for season in range(2013, 2018)
+            for index, signal in enumerate((-1.0, 0.0, 1.0))
+        ]
+        future = replace(
+            _model_row("future", 2018, 0.0, 0.0),
+            features={"signal": 0.0, "future_only": 1.0},
+        )
+
+        with patch.object(pgo_challenger, "build_feature_rows", return_value=history):
+            expected = pgo_challenger.select_parameters({}, (2016, 2017))
+        with patch.object(
+            pgo_challenger, "build_feature_rows", return_value=history + [future]
+        ):
+            actual = pgo_challenger.select_parameters({}, (2016, 2017))
+
+        self.assertEqual(actual, expected)
+        named_mismatch = [
+            replace(history[0], features={"signal": -1.0, "extra": 1.0}),
+            *history[1:],
+        ]
+        with (
+            patch.object(
+                pgo_challenger,
+                "build_feature_rows",
+                return_value=named_mismatch,
+            ),
+            self.assertRaisesRegex(ValueError, "Feature row shapes do not align"),
+        ):
+            pgo_challenger.select_parameters({}, (2016, 2017))
+
     def test_ridge_does_not_penalize_intercept(self):
         x = np.arange(-4.0, 5.0).reshape(-1, 1)
         y = 2.0 + 3.0 * x[:, 0]
@@ -892,6 +926,18 @@ class ModelTests(unittest.TestCase):
         with (
             patch.object(pgo_challenger, "build_feature_rows", return_value=rows),
             self.assertRaisesRegex(ValueError, "finite"),
+        ):
+            pgo_challenger.select_parameters({}, (2016,))
+
+    def test_nonfinite_prediction_errors_are_rejected(self):
+        rows = [
+            _model_row(str(season), season, signal, -1e307)
+            for season, signal in zip(range(2013, 2016), (-1.0, 0.0, 1.0))
+        ] + [_model_row("validation", 2016, 0.0, np.finfo(float).max)]
+
+        with (
+            patch.object(pgo_challenger, "build_feature_rows", return_value=rows),
+            self.assertRaisesRegex(ValueError, "Prediction errors must be finite"),
         ):
             pgo_challenger.select_parameters({}, (2016,))
 
