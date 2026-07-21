@@ -49,7 +49,7 @@ class SourceTests(unittest.TestCase):
             [spec.url for spec in grouped["player_weekly_stats"]],
             [
                 f"https://github.com/nflverse/nflverse-data/releases/download/"
-                f"player_stats/stats_player_week_{season}.csv.gz"
+                f"stats_player/stats_player_week_{season}.csv.gz"
                 for season in range(2013, 2026)
             ],
         )
@@ -224,6 +224,16 @@ class SourceTests(unittest.TestCase):
 
         self.assertEqual(modeled, [])
 
+    def test_header_only_source_fails_before_modeling(self):
+        with tempfile.TemporaryDirectory() as temp:
+            paths = self._write_inventory(
+                Path(temp), empty=("injury_reports", 2013)
+            )
+            with self.assertRaisesRegex(
+                ValueError, "injury_reports.*2013.*zero data rows"
+            ):
+                pgo_sources.validate_source_audit(paths)
+
     def test_team_aliases_normalize_before_identity_checks(self):
         identities = {"LV": "Raiders", "LAC": "Chargers"}
 
@@ -234,7 +244,7 @@ class SourceTests(unittest.TestCase):
             pgo_sources.normalize_team("XYZ")
 
     @staticmethod
-    def _write_inventory(directory, omit=None):
+    def _write_inventory(directory, omit=None, empty=None):
         paths = {}
         for index, spec in enumerate(pgo_sources.source_specs()):
             columns = list(spec.required_columns)
@@ -251,6 +261,7 @@ class SourceTests(unittest.TestCase):
             with open(path, "w", encoding="utf-8", newline="") as handle:
                 writer = csv.DictWriter(handle, fieldnames=columns)
                 writer.writeheader()
-                writer.writerow(row)
+                if (spec.name, spec.season) != empty:
+                    writer.writerow(row)
             paths[(spec.name, spec.season)] = path
         return paths

@@ -81,7 +81,7 @@ def source_specs() -> tuple[SourceSpec, ...]:
         (
             "player_weekly_stats",
             "https://github.com/nflverse/nflverse-data/releases/download/"
-            "player_stats/stats_player_week_{season}.csv.gz",
+            "stats_player/stats_player_week_{season}.csv.gz",
             PLAYER_COLUMNS,
         ),
         (
@@ -227,6 +227,8 @@ def validate_source_audit(paths) -> dict:
                 for column in team_columns:
                     if row[column].strip():
                         teams.add(normalize_team(row[column]))
+            if rows == 0:
+                raise ValueError(f"{_label(*key)} contains zero data rows")
         records.append({
             "name": spec.name,
             "season": spec.season,
