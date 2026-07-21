@@ -269,14 +269,16 @@ def ratings_csv(ratings):
 
 def write_outputs(output_dir, report, ratings):
     output_dir = Path(output_dir)
+    ratings_path = output_dir / "ratings_2026_preseason.csv"
     atomic_write_text(
         output_dir / "backtest.json",
         json.dumps(report, indent=2, sort_keys=True) + "\n",
     )
     if report["status"] != "PASS":
+        ratings_path.unlink(missing_ok=True)
         return False
     atomic_write_text(
-        output_dir / "ratings_2026_preseason.csv",
+        ratings_path,
         ratings_csv(ratings),
     )
     return True

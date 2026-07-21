@@ -535,7 +535,7 @@ git commit -m "Gate PGO ratings on held-out backtest"
 - Produces: `read_source(location) -> tuple[bytes, str]`.
 - Produces: `write_outputs(output_dir, report, ratings) -> bool`.
 - CLI: `python pgo_model.py [--source URL_OR_PATH] [--output-dir PATH]`.
-- Exit 0 means the gate passed and both receipts were written; exit 1 means HOLD and no ratings receipt was written.
+- Exit 0 means the gate passed and both receipts were written; exit 1 means HOLD and any stale ratings receipt was removed.
 
 - [ ] **Step 1: Add a failing fail-closed artifact test**
 
@@ -545,6 +545,10 @@ Append to `GateTests`:
     def test_hold_writes_report_but_not_ratings(self):
         report = {"status": "HOLD"}
         with tempfile.TemporaryDirectory() as temp:
+            Path(temp, "ratings_2026_preseason.csv").write_text(
+                "stale PASS output\n",
+                encoding="utf-8",
+            )
             written = pgo_model.write_outputs(Path(temp), report, [])
             self.assertFalse(written)
             self.assertTrue(Path(temp, "backtest.json").exists())
@@ -587,14 +591,16 @@ def ratings_csv(ratings):
 
 def write_outputs(output_dir, report, ratings):
     output_dir = Path(output_dir)
+    ratings_path = output_dir / "ratings_2026_preseason.csv"
     atomic_write_text(
         output_dir / "backtest.json",
         json.dumps(report, indent=2, sort_keys=True) + "\n",
     )
     if report["status"] != "PASS":
+        ratings_path.unlink(missing_ok=True)
         return False
     atomic_write_text(
-        output_dir / "ratings_2026_preseason.csv",
+        ratings_path,
         ratings_csv(ratings),
     )
     return True

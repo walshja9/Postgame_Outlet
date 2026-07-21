@@ -137,6 +137,10 @@ class GateTests(unittest.TestCase):
     def test_hold_writes_report_but_not_ratings(self):
         report = {"status": "HOLD"}
         with tempfile.TemporaryDirectory() as temp:
+            Path(temp, "ratings_2026_preseason.csv").write_text(
+                "stale PASS output\n",
+                encoding="utf-8",
+            )
             written = pgo_model.write_outputs(Path(temp), report, [])
             self.assertFalse(written)
             self.assertTrue(Path(temp, "backtest.json").exists())
