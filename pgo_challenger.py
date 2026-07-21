@@ -1,5 +1,7 @@
 """Leakage-safe chronological features for the shadow PGO challenger."""
 
+import csv
+import io
 import math
 import statistics
 from collections import defaultdict, deque
@@ -44,6 +46,15 @@ QB_FEATURES = (
 HALF_LIFE_GRID = (4, 8, 16)
 ALPHA_GRID = (1.0, 10.0, 100.0)
 DELTA_GRID = (1.0, 1.5)
+OUTER_SEASONS = tuple(range(2018, 2026))
+SUBGROUPS = (
+    "changed_or_backup_qb",
+    "major_availability_loss",
+    "head_coach_change",
+    "high_roster_turnover",
+    "weeks_1_4",
+    "weeks_5_18",
+)
 
 
 @dataclass(frozen=True)
@@ -329,6 +340,318 @@ def select_parameters(paths, validation_seasons) -> ChallengerParameters:
     )
 
 
+def rolling_predictions(paths) -> tuple[list[dict], dict]:
+    incumbent = _incumbent_predictions(paths)
+    challenger = []
+    for season in OUTER_SEASONS:
+        parameters = select_parameters(paths, range(2016, season))
+        rows, context, _ = _walk(paths, parameters.half_life_games)
+        training = [row for row in rows if row.season < season]
+        validation = [row for row in rows if row.season == season]
+        if not training or not validation:
+            raise ValueError(f"Missing challenger fold rows for {season}")
+        feature_names = tuple(sorted(training[0].features))
+        if any(tuple(sorted(row.features)) != feature_names for row in training + validation):
+            raise ValueError("Feature row shapes do not align")
+        preprocessor = fit_preprocessor(training, feature_names)
+        coefficients = fit_huber_ridge(
+            preprocessor.transform(training),
+            np.array([row.actual_margin for row in training], dtype=float),
+            parameters.alpha,
+            parameters.delta,
+        )
+        predictions = predict(preprocessor.transform(validation), coefficients)
+        metadata = context.get("evaluation_metadata", {})
+        try:
+            fold_metadata = [metadata[row.game_id] for row in validation]
+        except KeyError as error:
+            raise ValueError(f"Missing evaluation metadata: {error.args[0]}") from error
+        home_full = [
+            _feature_row(row, value["home_full_features"])
+            for row, value in zip(validation, fold_metadata)
+        ]
+        away_full = [
+            _feature_row(row, value["away_full_features"])
+            for row, value in zip(validation, fold_metadata)
+        ]
+        home_full_predictions = predict(
+            preprocessor.transform(home_full), coefficients
+        )
+        away_full_predictions = predict(
+            preprocessor.transform(away_full), coefficients
+        )
+        shares = [
+            share
+            for value in fold_metadata
+            for share in (
+                value["home_returning_snap_share"],
+                value["away_returning_snap_share"],
+            )
+            if share is not None and math.isfinite(share)
+        ]
+        turnover_quartile = float(np.percentile(shares, 25)) if shares else None
+        for row, predicted, home_prediction, away_prediction, value in zip(
+            validation,
+            predictions,
+            home_full_predictions,
+            away_full_predictions,
+            fold_metadata,
+        ):
+            flags = dict(row.subgroup_flags)
+            flags["major_availability_loss"] = (
+                predicted - home_prediction <= -1.5
+                or away_prediction - predicted <= -1.5
+            )
+            flags["high_roster_turnover"] = (
+                turnover_quartile is not None
+                and any(
+                    share is not None and share <= turnover_quartile
+                    for share in (
+                        value["home_returning_snap_share"],
+                        value["away_returning_snap_share"],
+                    )
+                )
+            )
+            challenger.append({
+                "game_id": row.game_id,
+                "season": row.season,
+                "week": row.week,
+                "kickoff": row.kickoff,
+                "actual_margin": row.actual_margin,
+                "challenger_prediction": float(predicted),
+                **flags,
+                "half_life_games": parameters.half_life_games,
+                "alpha": parameters.alpha,
+                "delta": parameters.delta,
+            })
+
+    incumbent_by_id = _unique_predictions(incumbent, "incumbent")
+    challenger_by_id = _unique_predictions(challenger, "challenger")
+    if incumbent_by_id.keys() != challenger_by_id.keys():
+        missing = sorted(challenger_by_id.keys() - incumbent_by_id.keys())
+        extra = sorted(incumbent_by_id.keys() - challenger_by_id.keys())
+        details = []
+        if missing:
+            details.append("missing incumbent: " + ", ".join(missing))
+        if extra:
+            details.append("extra incumbent: " + ", ".join(extra))
+        raise ValueError("Prediction game IDs do not match (" + "; ".join(details) + ")")
+    for row in challenger:
+        incumbent_row = incumbent_by_id[row["game_id"]]
+        if incumbent_row.actual != row["actual_margin"]:
+            raise ValueError(f"Actual margin mismatch: {row['game_id']}")
+        row["pgo_v0_prediction"] = float(incumbent_row.predicted)
+
+    evaluation = {
+        "paired_game_ids": True,
+        "pgo_v0": metric_summary(challenger, "pgo_v0_prediction"),
+        "challenger": metric_summary(challenger, "challenger_prediction"),
+        "improvement": paired_block_bootstrap(challenger),
+        "subgroups": subgroup_results(challenger),
+    }
+    return challenger, evaluation
+
+
+def metric_summary(rows, prediction_key) -> dict:
+    actual, predicted = _prediction_values(rows, prediction_key)
+    summary = _basic_metrics(actual, predicted)
+    summary["seasons"] = [
+        {
+            "season": season,
+            **_basic_metrics(
+                *zip(*[
+                    (float(row["actual_margin"]), float(row[prediction_key]))
+                    for row in rows
+                    if row["season"] == season
+                ])
+            ),
+        }
+        for season in sorted({row["season"] for row in rows})
+    ]
+    bands = (
+        ("<-7", lambda value: value < -7.0),
+        ("-7:-3", lambda value: -7.0 <= value < -3.0),
+        ("-3:3", lambda value: -3.0 <= value <= 3.0),
+        ("3:7", lambda value: 3.0 < value <= 7.0),
+        (">7", lambda value: value > 7.0),
+    )
+    calibration = []
+    for label, contains in bands:
+        selected = [
+            row for row in rows if contains(float(row["challenger_prediction"]))
+        ]
+        calibration.append({
+            "band": label,
+            "count": len(selected),
+            "mean_prediction": (
+                float(np.mean([row[prediction_key] for row in selected]))
+                if selected else None
+            ),
+            "mean_actual_margin": (
+                float(np.mean([row["actual_margin"] for row in selected]))
+                if selected else None
+            ),
+        })
+    summary["calibration_bands"] = calibration
+    return summary
+
+
+def paired_block_bootstrap(rows, samples=10_000, seed=20260721) -> dict:
+    if not isinstance(samples, int) or samples <= 0:
+        raise ValueError("samples must be a positive integer")
+    improvements = defaultdict(list)
+    for row in rows:
+        try:
+            actual = float(row["actual_margin"])
+            incumbent = float(row["pgo_v0_prediction"])
+            challenger = float(row["challenger_prediction"])
+            season, week = int(row["season"]), int(row["week"])
+        except (KeyError, TypeError, ValueError) as error:
+            raise ValueError("Bootstrap rows are invalid") from error
+        values = (actual, incumbent, challenger)
+        if not all(math.isfinite(value) for value in values):
+            raise ValueError("Bootstrap values must be finite")
+        improvements[(season, week)].append(
+            abs(actual - incumbent) - abs(actual - challenger)
+        )
+    if not improvements:
+        raise ValueError("Bootstrap rows must not be empty")
+    blocks = [np.asarray(improvements[key], dtype=float) for key in sorted(improvements)]
+    block_sums = np.asarray([block.sum() for block in blocks])
+    block_counts = np.asarray([len(block) for block in blocks])
+    draws = np.random.default_rng(seed).integers(
+        0, len(blocks), size=(samples, len(blocks))
+    )
+    distribution = block_sums[draws].sum(axis=1) / block_counts[draws].sum(axis=1)
+    return {
+        "mean": float(sum(map(sum, blocks)) / sum(map(len, blocks))),
+        "lower": float(np.percentile(distribution, 2.5)),
+        "upper": float(np.percentile(distribution, 97.5)),
+    }
+
+
+def subgroup_results(rows) -> dict:
+    results = {}
+    for name in SUBGROUPS:
+        selected = [row for row in rows if row.get(name) is True]
+        if len(selected) < 100:
+            results[name] = {
+                "status": "INSUFFICIENT_EVIDENCE",
+                "count": len(selected),
+            }
+            continue
+        incumbent = metric_summary(selected, "pgo_v0_prediction")
+        challenger = metric_summary(selected, "challenger_prediction")
+        interval = paired_block_bootstrap(selected)
+        results[name] = {
+            "status": "SUFFICIENT_EVIDENCE",
+            "count": len(selected),
+            "pgo_v0_mae": incumbent["mae"],
+            "challenger_mae": challenger["mae"],
+            "improvement": incumbent["mae"] - challenger["mae"],
+            "lower": interval["lower"],
+            "upper": interval["upper"],
+        }
+    return results
+
+
+def gate_checks(audit, evaluation, ratings_count, deterministic) -> dict[str, bool]:
+    audit_checks = audit.get("checks", audit) if isinstance(audit, dict) else {}
+    subgroups = evaluation.get("subgroups", {})
+    return {
+        "audit_checks_pass": bool(audit_checks) and all(
+            value is True for value in audit_checks.values()
+        ),
+        "all_32_current_teams": ratings_count == 32,
+        "paired_game_ids": evaluation.get("paired_game_ids") is True,
+        "challenger_mae_lower": (
+            evaluation.get("challenger", {}).get("mae", math.inf)
+            < evaluation.get("pgo_v0", {}).get("mae", -math.inf)
+        ),
+        "aggregate_improvement_ci_positive": (
+            evaluation.get("improvement", {}).get("lower", -math.inf) > 0.0
+        ),
+        "no_sufficient_subgroup_regression": (
+            set(subgroups) == set(SUBGROUPS)
+            and all(
+                result.get("status") == "INSUFFICIENT_EVIDENCE"
+                or (
+                    result.get("status") == "SUFFICIENT_EVIDENCE"
+                    and result.get("upper", -math.inf) >= 0.0
+                )
+                for result in subgroups.values()
+            )
+        ),
+        "deterministic": deterministic is True,
+    }
+
+
+def _incumbent_predictions(paths):
+    schedule = list(open_csv(paths[("schedule_results", None)]))
+    if not schedule:
+        raise ValueError("Schedule source must not be empty")
+    text = io.StringIO(newline="")
+    writer = csv.DictWriter(text, fieldnames=tuple(schedule[0]))
+    writer.writeheader()
+    writer.writerows(schedule)
+    games = pgo_model.parse_games(text.getvalue())
+    parameters = pgo_model.select_parameters(games)
+    predictions, _ = pgo_model.walk_forward(games, parameters)
+    return [value for value in predictions if value.season in OUTER_SEASONS]
+
+
+def _unique_predictions(rows, label):
+    by_id = {}
+    for row in rows:
+        game_id = row.game_id if hasattr(row, "game_id") else row["game_id"]
+        if game_id in by_id:
+            raise ValueError(f"Duplicate {label} prediction: {game_id}")
+        by_id[game_id] = row
+    return by_id
+
+
+def _feature_row(row, features):
+    return FeatureRow(
+        row.game_id,
+        row.season,
+        row.week,
+        row.kickoff,
+        row.actual_margin,
+        features,
+        row.subgroup_flags,
+    )
+
+
+def _prediction_values(rows, prediction_key):
+    if not rows:
+        raise ValueError("Metric rows must not be empty")
+    try:
+        actual = np.asarray([row["actual_margin"] for row in rows], dtype=float)
+        predicted = np.asarray([row[prediction_key] for row in rows], dtype=float)
+    except (KeyError, TypeError, ValueError) as error:
+        raise ValueError("Metric rows are invalid") from error
+    if not np.isfinite(actual).all() or not np.isfinite(predicted).all():
+        raise ValueError("Metric values must be finite")
+    return actual, predicted
+
+
+def _basic_metrics(actual, predicted):
+    actual = np.asarray(actual, dtype=float)
+    predicted = np.asarray(predicted, dtype=float)
+    errors = actual - predicted
+    absolute = np.abs(errors)
+    return {
+        "count": len(errors),
+        "mae": float(np.mean(absolute)),
+        "median_absolute_error": float(np.median(absolute)),
+        "rmse": float(np.sqrt(np.mean(errors ** 2))),
+        "miss_rate_above_14": float(np.mean(absolute > 14.0)),
+        "miss_rate_above_21": float(np.mean(absolute > 21.0)),
+        "mean_signed_error_home": float(np.mean(errors)),
+        "mean_signed_error_away": float(-np.mean(errors)),
+    }
+
+
 def _feature_matrix(rows, feature_names) -> np.ndarray:
     matrix = np.empty((len(rows), len(feature_names)), dtype=float)
     for row_index, row in enumerate(rows):
@@ -397,6 +720,7 @@ def _walk(paths, half_life_games, as_of=None):
         "coach_games": defaultdict(int),
         "prior_starter": {},
         "seen_teams": set(),
+        "evaluation_metadata": {},
         "season": None,
     }
     output = []
@@ -418,11 +742,13 @@ def _walk(paths, half_life_games, as_of=None):
                 game["away"], game["season"], game["week"],
                 game["away_coach"], game["kickoff_dt"], context, inputs,
             )
-            features = _difference(home[1], away[1])
-            features["home_field"] = 0.0 if game["neutral"] else 1.0
-            features["rest_difference"] = _rest_difference(
-                game["home_rest"], game["away_rest"]
-            )
+            features = _matchup_features(home[1], away[1], game)
+            context["evaluation_metadata"][game["game_id"]] = {
+                "home_full_features": _matchup_features(home[0], away[1], game),
+                "away_full_features": _matchup_features(home[1], away[0], game),
+                "home_returning_snap_share": home[2]["returning_snap_share"],
+                "away_returning_snap_share": away[2]["returning_snap_share"],
+            }
             starter_changed = any(
                 metadata["starter"] is not None
                 and team in context["prior_starter"]
@@ -493,6 +819,9 @@ def _team_views(team, season, week, coach, kickoff, context, inputs):
         "coach": coach,
         "coach_changed": previous_coach is not None and previous_coach != coach,
         "roster": players,
+        "returning_snap_share": _roster_share(
+            players, context["last_team"], team, None, combined, False
+        ),
     })
     full, current = lineup_views(team, {team: players}, base)
     metadata["starter"] = _best_qb([
@@ -882,6 +1211,15 @@ def _difference(home, away):
         if home[name] is not None and away[name] is not None else None
         for name in home
     }
+
+
+def _matchup_features(home, away, game):
+    features = _difference(home, away)
+    features["home_field"] = 0.0 if game["neutral"] else 1.0
+    features["rest_difference"] = _rest_difference(
+        game["home_rest"], game["away_rest"]
+    )
+    return features
 
 
 def _rest_difference(home, away):

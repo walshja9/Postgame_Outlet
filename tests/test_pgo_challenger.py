@@ -11,6 +11,7 @@ from unittest.mock import patch
 
 import numpy as np
 import pgo_challenger
+import pgo_model
 import pgo_sources
 
 
@@ -940,6 +941,285 @@ class ModelTests(unittest.TestCase):
             self.assertRaisesRegex(ValueError, "Prediction errors must be finite"),
         ):
             pgo_challenger.select_parameters({}, (2016,))
+
+
+class EvaluationTests(unittest.TestCase):
+    @staticmethod
+    def _fold_rows():
+        rows, metadata = [], {}
+        for season in range(2013, 2026):
+            game_id = f"game-{season}"
+            signal = float(season - 2013)
+            features = {"signal": signal}
+            rows.append(pgo_challenger.FeatureRow(
+                game_id, season, 1, f"{season}-09-01T13:00:00-04:00",
+                3.0 + signal, features,
+                {
+                    "changed_or_backup_qb": False,
+                    "head_coach_change": False,
+                    "weeks_1_4": True,
+                    "weeks_5_18": False,
+                },
+            ))
+            metadata[game_id] = {
+                "home_full_features": {
+                    "signal": signal + (10.0 if season == 2018 else 0.0)
+                },
+                "away_full_features": dict(features),
+                "home_returning_snap_share": 0.4,
+                "away_returning_snap_share": 0.6,
+            }
+        return rows, metadata
+
+    @staticmethod
+    def _schedule_path(directory, rows):
+        path = directory / "schedule.csv"
+        _write_csv(path, pgo_sources.SCHEDULE_COLUMNS, [
+            {
+                "game_id": row.game_id,
+                "season": row.season,
+                "week": row.week,
+                "game_type": "REG",
+                "gameday": f"{row.season}-09-01",
+                "gametime": "13:00",
+                "away_team": "LAC",
+                "home_team": "LV",
+                "away_score": 20,
+                "home_score": 20 + row.actual_margin,
+                "location": "Home",
+                "away_rest": 7,
+                "home_rest": 7,
+                "away_coach": "Away Coach",
+                "home_coach": "Home Coach",
+            }
+            for row in rows
+        ])
+        return path
+
+    def test_outer_fold_never_trains_on_same_or_later_season(self):
+        rows, metadata = self._fold_rows()
+        selected_for, trained_on = [], []
+        original_fit = pgo_challenger.fit_preprocessor
+
+        def select(_paths, seasons):
+            selected_for.append(tuple(seasons))
+            return pgo_challenger.ChallengerParameters(4, 1.0, 1.0)
+
+        def capture_fit(training, names):
+            trained_on.append(tuple(row.season for row in training))
+            return original_fit(training, names)
+
+        with tempfile.TemporaryDirectory() as temp:
+            paths = {
+                ("schedule_results", None): self._schedule_path(Path(temp), rows)
+            }
+            with (
+                patch.object(pgo_challenger, "select_parameters", side_effect=select),
+                patch.object(
+                    pgo_challenger,
+                    "_walk",
+                    return_value=(rows, {"evaluation_metadata": metadata}, {}),
+                ),
+                patch.object(
+                    pgo_challenger, "fit_preprocessor", side_effect=capture_fit
+                ),
+            ):
+                predictions, _ = pgo_challenger.rolling_predictions(paths)
+
+        self.assertEqual(
+            selected_for,
+            [tuple(range(2016, season)) for season in range(2018, 2026)],
+        )
+        self.assertEqual(len(trained_on), 8)
+        for outer_season, training_seasons in zip(range(2018, 2026), trained_on):
+            self.assertTrue(training_seasons)
+            self.assertLess(max(training_seasons), outer_season)
+        self.assertEqual(
+            [row["season"] for row in predictions], list(range(2018, 2026))
+        )
+        self.assertTrue(predictions[0]["major_availability_loss"])
+        self.assertTrue(all(row["high_roster_turnover"] for row in predictions))
+
+    def test_challenger_and_v0_require_identical_game_ids(self):
+        rows, metadata = self._fold_rows()
+        incumbent = [
+            pgo_model.Prediction(
+                row.game_id, row.season, row.actual_margin, row.actual_margin
+            )
+            for row in rows
+            if 2018 <= row.season <= 2024
+        ]
+        with (
+            patch.object(
+                pgo_challenger,
+                "select_parameters",
+                return_value=pgo_challenger.ChallengerParameters(4, 1.0, 1.0),
+            ),
+            patch.object(
+                pgo_challenger,
+                "_walk",
+                return_value=(rows, {"evaluation_metadata": metadata}, {}),
+            ),
+            patch.object(
+                pgo_challenger, "_incumbent_predictions", return_value=incumbent
+            ),
+            self.assertRaisesRegex(ValueError, "game-2025"),
+        ):
+            pgo_challenger.rolling_predictions({})
+
+    def test_metric_summary_reports_required_secondary_metrics(self):
+        rows = [
+            {
+                "game_id": "a", "season": 2018, "week": 1,
+                "actual_margin": 10.0, "challenger_prediction": 8.0,
+            },
+            {
+                "game_id": "b", "season": 2018, "week": 2,
+                "actual_margin": -5.0, "challenger_prediction": -10.0,
+            },
+            {
+                "game_id": "c", "season": 2019, "week": 1,
+                "actual_margin": 0.0, "challenger_prediction": 20.0,
+            },
+        ]
+
+        summary = pgo_challenger.metric_summary(rows, "challenger_prediction")
+
+        self.assertEqual(summary["count"], 3)
+        self.assertEqual(summary["mae"], 9.0)
+        self.assertEqual(summary["median_absolute_error"], 5.0)
+        self.assertAlmostEqual(summary["rmse"], math.sqrt(143.0))
+        self.assertAlmostEqual(summary["miss_rate_above_14"], 1.0 / 3.0)
+        self.assertEqual(summary["miss_rate_above_21"], 0.0)
+        self.assertAlmostEqual(summary["mean_signed_error_home"], -13.0 / 3.0)
+        self.assertAlmostEqual(summary["mean_signed_error_away"], 13.0 / 3.0)
+        self.assertEqual(
+            [season["season"] for season in summary["seasons"]], [2018, 2019]
+        )
+        self.assertEqual(
+            [band["band"] for band in summary["calibration_bands"]],
+            ["<-7", "-7:-3", "-3:3", "3:7", ">7"],
+        )
+
+    def test_paired_block_bootstrap_is_seeded_and_week_blocked(self):
+        rows = [
+            {
+                "game_id": "a", "season": 2018, "week": 1,
+                "actual_margin": 0.0, "pgo_v0_prediction": 1.0,
+                "challenger_prediction": 0.0,
+            },
+            {
+                "game_id": "b", "season": 2018, "week": 1,
+                "actual_margin": 0.0, "pgo_v0_prediction": 3.0,
+                "challenger_prediction": 0.0,
+            },
+            {
+                "game_id": "c", "season": 2018, "week": 2,
+                "actual_margin": 0.0, "pgo_v0_prediction": 10.0,
+                "challenger_prediction": 0.0,
+            },
+        ]
+        samples, seed = 20, 7
+        draws = np.random.default_rng(seed).integers(0, 2, size=(samples, 2))
+        blocks = (np.array([1.0, 3.0]), np.array([10.0]))
+        expected = np.array([
+            np.concatenate([blocks[index] for index in draw]).mean()
+            for draw in draws
+        ])
+
+        first = pgo_challenger.paired_block_bootstrap(rows, samples, seed)
+        second = pgo_challenger.paired_block_bootstrap(rows, samples, seed)
+
+        self.assertEqual(first, second)
+        self.assertAlmostEqual(first["mean"], 14.0 / 3.0)
+        self.assertAlmostEqual(first["lower"], np.percentile(expected, 2.5))
+        self.assertAlmostEqual(first["upper"], np.percentile(expected, 97.5))
+
+    def test_subgroups_freeze_before_scoring_and_require_100_games(self):
+        def row(index):
+            return {
+                "game_id": str(index), "season": 2018, "week": index + 1,
+                "actual_margin": 0.0, "pgo_v0_prediction": 2.0,
+                "challenger_prediction": 1.0,
+                "changed_or_backup_qb": True,
+                "major_availability_loss": False,
+                "head_coach_change": False,
+                "high_roster_turnover": False,
+                "weeks_1_4": False,
+                "weeks_5_18": False,
+            }
+
+        rows = [row(index) for index in range(99)]
+        insufficient = pgo_challenger.subgroup_results(rows)
+        self.assertEqual(
+            insufficient["changed_or_backup_qb"]["status"],
+            "INSUFFICIENT_EVIDENCE",
+        )
+
+        rows.append(row(99))
+        sufficient = pgo_challenger.subgroup_results(rows)
+        mutated = [dict(value, challenger_prediction=1000.0) for value in rows]
+        rescored = pgo_challenger.subgroup_results(mutated)
+
+        self.assertEqual(sufficient["changed_or_backup_qb"]["count"], 100)
+        self.assertEqual(
+            sufficient["changed_or_backup_qb"]["status"], "SUFFICIENT_EVIDENCE"
+        )
+        self.assertEqual(
+            rescored["changed_or_backup_qb"]["count"],
+            sufficient["changed_or_backup_qb"]["count"],
+        )
+
+    def test_gate_uses_improvement_ci_direction_correctly(self):
+        audit = {"source": True, "identity": True, "leakage": True}
+        evaluation = {
+            "paired_game_ids": True,
+            "pgo_v0": {"mae": 10.0},
+            "challenger": {"mae": 9.0},
+            "improvement": {"mean": 1.0, "lower": 0.10, "upper": 0.40},
+            "subgroups": {
+                name: {"status": "INSUFFICIENT_EVIDENCE", "count": 99}
+                for name in pgo_challenger.SUBGROUPS
+            },
+        }
+        evaluation["subgroups"]["changed_or_backup_qb"] = {
+                    "status": "SUFFICIENT_EVIDENCE", "count": 100,
+                    "lower": -0.10, "upper": 0.20,
+        }
+
+        positive = pgo_challenger.gate_checks(audit, evaluation, 32, True)
+        self.assertTrue(all(positive.values()))
+
+        incomplete = dict(evaluation)
+        incomplete["subgroups"] = dict(evaluation["subgroups"])
+        incomplete["subgroups"].pop("high_roster_turnover")
+        self.assertFalse(
+            pgo_challenger.gate_checks(audit, incomplete, 32, True)[
+                "no_sufficient_subgroup_regression"
+            ]
+        )
+
+        negative = dict(evaluation)
+        negative["improvement"] = {
+            "mean": -0.25, "lower": -0.40, "upper": -0.10,
+        }
+        self.assertFalse(
+            pgo_challenger.gate_checks(audit, negative, 32, True)[
+                "aggregate_improvement_ci_positive"
+            ]
+        )
+
+        subgroup_loss = dict(evaluation)
+        subgroup_loss["subgroups"] = dict(evaluation["subgroups"])
+        subgroup_loss["subgroups"]["changed_or_backup_qb"] = {
+                "status": "SUFFICIENT_EVIDENCE", "count": 100,
+                "lower": -0.40, "upper": -0.10,
+        }
+        self.assertFalse(
+            pgo_challenger.gate_checks(audit, subgroup_loss, 32, True)[
+                "no_sufficient_subgroup_regression"
+            ]
+        )
 
 
 class LineupTests(unittest.TestCase):
