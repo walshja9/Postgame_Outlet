@@ -424,6 +424,81 @@ class SourceTests(unittest.TestCase):
 
 
 class FeatureTests(unittest.TestCase):
+    def test_missing_rate_still_ages_exponential_state(self):
+        state = pgo_challenger._RatioState(10.0, 10.0)
+
+        aged = state.update(None, 0.0, 0.5)
+        updated = aged.update(0.0, 10.0, 0.5)
+
+        self.assertEqual(aged, pgo_challenger._RatioState(5.0, 5.0))
+        self.assertAlmostEqual(updated.value, 0.2)
+
+    def test_equivalent_as_of_offsets_build_identical_snapshot(self):
+        with tempfile.TemporaryDirectory() as temp:
+            paths = _synthetic_paths(Path(temp))
+
+            eastern = pgo_challenger.build_snapshot_states(
+                paths, "2013-09-08T13:30:00-04:00", 4
+            )
+            mountain = pgo_challenger.build_snapshot_states(
+                paths, "2013-09-08T11:30:00-06:00", 4
+            )
+
+        self.assertEqual(eastern, mountain)
+
+    def test_injury_revision_after_kickoff_rejected_across_offsets(self):
+        with tempfile.TemporaryDirectory() as temp:
+            paths = _synthetic_paths(Path(temp))
+            injury_path = paths[("injury_reports", 2013)]
+            _write_csv(
+                injury_path,
+                (*pgo_sources.INJURY_COLUMNS, "date_modified"),
+                [{
+                    "season": 2013, "week": 1, "team": "SD",
+                    "gsis_id": "gsis-lac-qb", "position": "QB",
+                    "report_status": "Questionable", "practice_status": "",
+                    "date_modified": "2013-09-01T11:30:00-06:00",
+                }],
+            )
+
+            with self.assertRaisesRegex(ValueError, "Injury revision after kickoff"):
+                pgo_challenger.build_feature_rows(paths, 4)
+
+    def test_snapshot_as_of_week_two_ignores_later_roster_and_injury(self):
+        with tempfile.TemporaryDirectory() as temp:
+            paths = _synthetic_paths(Path(temp))
+            roster_path = paths[("weekly_rosters", 2013)]
+            with open(roster_path, encoding="utf-8", newline="") as handle:
+                rosters = list(csv.DictReader(handle))
+            rosters.append({
+                "season": 2013,
+                "week": 3,
+                "team": "SD",
+                "position": "QB",
+                "gsis_id": "gsis-lac-qb",
+                "pfr_id": "pfr-lac-qb",
+                "years_exp": 3,
+                "draft_number": 20,
+            })
+            _write_csv(roster_path, pgo_sources.ROSTER_COLUMNS, rosters)
+            injury_path = paths[("injury_reports", 2013)]
+            _write_csv(injury_path, pgo_sources.INJURY_COLUMNS, [{
+                "season": 2013,
+                "week": 3,
+                "team": "SD",
+                "gsis_id": "gsis-lac-qb",
+                "position": "QB",
+                "report_status": "Out",
+                "practice_status": "Did Not Participate",
+            }])
+
+            states = pgo_challenger.build_snapshot_states(
+                paths, "2013-09-08T14:00:00-04:00", 4
+            )
+
+        full, current = states["LAC"]
+        self.assertEqual(full, current)
+
     def test_current_game_stats_cannot_change_its_own_features(self):
         with tempfile.TemporaryDirectory() as before_temp, tempfile.TemporaryDirectory() as after_temp:
             before = pgo_challenger.build_feature_rows(
@@ -435,6 +510,47 @@ class FeatureTests(unittest.TestCase):
 
         self.assertEqual(_pregame_bytes(before[0]), _pregame_bytes(after[0]))
         self.assertNotEqual(before[0].actual_margin, after[0].actual_margin)
+
+    def test_changed_qb_flag_uses_prior_completed_game_starter(self):
+        with tempfile.TemporaryDirectory() as temp:
+            paths = _synthetic_paths(Path(temp))
+            roster_path = paths[("weekly_rosters", 2013)]
+            with open(roster_path, encoding="utf-8", newline="") as handle:
+                rosters = list(csv.DictReader(handle))
+            rosters.extend({
+                "season": 2013,
+                "week": week,
+                "team": "SD",
+                "position": "QB",
+                "gsis_id": "gsis-a-modeled",
+                "pfr_id": "pfr-a-modeled",
+                "years_exp": 3,
+                "draft_number": 1,
+            } for week in (1, 2))
+            _write_csv(roster_path, pgo_sources.ROSTER_COLUMNS, rosters)
+            player_path = paths[("player_weekly_stats", 2013)]
+            with open(player_path, encoding="utf-8", newline="") as handle:
+                players = list(csv.DictReader(handle))
+            players.append({
+                "player_id": "gsis-a-modeled",
+                "position": "QB",
+                "season": 2013,
+                "week": 1,
+                "team": "SD",
+                "attempts": 1,
+                "passing_epa": -10,
+                "passing_cpoe": -20,
+                "sacks_suffered": 0,
+                "passing_interceptions": 0,
+                "sack_fumbles_lost": 0,
+                "carries": 0,
+                "rushing_epa": 0,
+            })
+            _write_csv(player_path, pgo_sources.PLAYER_COLUMNS, players)
+
+            rows = pgo_challenger.build_feature_rows(paths, 4)
+
+        self.assertFalse(rows[1].subgroup_flags["changed_or_backup_qb"])
 
     def test_current_game_stats_change_only_later_features(self):
         with tempfile.TemporaryDirectory() as before_temp, tempfile.TemporaryDirectory() as after_temp:
@@ -490,6 +606,87 @@ class FeatureTests(unittest.TestCase):
         )
         self.assertEqual(_pregame_bytes(changed[2]), _pregame_bytes(changed_result[2]))
 
+    def test_snap_window_advances_when_rostered_player_has_no_snap_row(self):
+        with tempfile.TemporaryDirectory() as temp:
+            paths = _synthetic_paths(Path(temp))
+            schedule_path = paths[("schedule_results", None)]
+            with open(schedule_path, encoding="utf-8", newline="") as handle:
+                schedule = list(csv.DictReader(handle))
+            dates = ("2013-09-15", "2013-09-22", "2013-09-29", "2013-10-06")
+            for week, day in zip(range(3, 7), dates):
+                schedule.append({
+                    "game_id": f"zero-{week}", "season": 2013, "week": week,
+                    "game_type": "REG", "gameday": day, "gametime": "13:00",
+                    "away_team": "SD", "home_team": "OAK", "away_score": 10,
+                    "home_score": 20, "location": "Home", "away_rest": 7,
+                    "home_rest": 7, "away_coach": "LAC Coach",
+                    "home_coach": "LV Coach",
+                })
+            _write_csv(schedule_path, pgo_sources.SCHEDULE_COLUMNS, schedule)
+
+            team_path = paths[("team_weekly_stats", 2013)]
+            with open(team_path, encoding="utf-8", newline="") as handle:
+                team_rows = list(csv.DictReader(handle))
+            roster_path = paths[("weekly_rosters", 2013)]
+            with open(roster_path, encoding="utf-8", newline="") as handle:
+                rosters = list(csv.DictReader(handle))
+            snap_path = paths[("snap_counts", 2013)]
+            with open(snap_path, encoding="utf-8", newline="") as handle:
+                snaps = list(csv.DictReader(handle))
+            rosters.append({
+                "season": 2013, "week": 1, "team": "OAK", "position": "WR",
+                "gsis_id": "gsis-stale", "pfr_id": "pfr-stale",
+                "years_exp": 2, "draft_number": 50,
+            })
+            snaps.append({
+                "season": 2013, "week": 1, "team": "OAK",
+                "pfr_player_id": "pfr-stale", "position": "WR",
+                "offense_snaps": 50, "defense_snaps": 0,
+            })
+            for week in range(3, 7):
+                for team, opponent in (("OAK", "SD"), ("SD", "OAK")):
+                    team_rows.append({
+                        "season": 2013, "week": week, "team": team,
+                        "game_id": f"zero-{week}", "opponent_team": opponent,
+                        "attempts": 20, "carries": 20, "passing_epa": 1,
+                        "rushing_epa": 1, "sacks_suffered": 1,
+                        "passing_interceptions": 0, "fumbles_lost_total": 0,
+                        "passing_20": 1, "rushing_20": 1,
+                    })
+                    qb = "lv-old" if team == "OAK" else "lac-qb"
+                    rosters.append({
+                        "season": 2013, "week": week, "team": team,
+                        "position": "QB", "gsis_id": f"gsis-{qb}",
+                        "pfr_id": f"pfr-{qb}", "years_exp": 3,
+                        "draft_number": 20,
+                    })
+                    snaps.append({
+                        "season": 2013, "week": week, "team": team,
+                        "pfr_player_id": f"pfr-{qb}", "position": "QB",
+                        "offense_snaps": 50, "defense_snaps": 0,
+                    })
+                rosters.append({
+                    "season": 2013, "week": week, "team": "OAK",
+                    "position": "WR", "gsis_id": "gsis-stale",
+                    "pfr_id": "pfr-stale", "years_exp": 2,
+                    "draft_number": 50,
+                })
+            _write_csv(team_path, pgo_sources.TEAM_COLUMNS, team_rows)
+            _write_csv(roster_path, pgo_sources.ROSTER_COLUMNS, rosters)
+            _write_csv(snap_path, pgo_sources.SNAP_COLUMNS, snaps)
+            injury_path = paths[("injury_reports", 2013)]
+            _write_csv(injury_path, pgo_sources.INJURY_COLUMNS, [{
+                "season": 2013, "week": 6, "team": "OAK",
+                "gsis_id": "gsis-stale", "position": "WR",
+                "report_status": "Out", "practice_status": "",
+            }])
+
+            states = pgo_challenger.build_snapshot_states(
+                paths, "2013-10-06T14:00:00-04:00", 4
+            )
+
+        self.assertEqual(states["LV"][1]["offense_availability"], 0.0)
+
 
 class LineupTests(unittest.TestCase):
     @staticmethod
@@ -528,6 +725,44 @@ class LineupTests(unittest.TestCase):
         self.assertEqual(full, current)
         self.assertEqual(current["qb_current_minus_full"], 0.0)
         self.assertEqual(current["offense_availability"], 0.0)
+
+    def test_doubtful_backup_consumes_only_its_probability_mass(self):
+        snapshot = {
+            "LV": {
+                "starter": {
+                    "position": "QB", "qb_value": 1.0, "probability": 0.0,
+                    "offense_snap_share": 0.8, "defense_snap_share": 0.0,
+                },
+                "doubtful-backup": {
+                    "position": "QB", "qb_value": 0.8, "probability": 0.25,
+                    "offense_snap_share": 0.1, "defense_snap_share": 0.0,
+                },
+                "healthy-backup": {
+                    "position": "QB", "qb_value": 0.2, "probability": 1.0,
+                    "offense_snap_share": 0.1, "defense_snap_share": 0.0,
+                },
+            }
+        }
+
+        _, current = pgo_challenger.lineup_views("LV", snapshot, {})
+
+        self.assertAlmostEqual(current["qb_epa_per_dropback"], 0.35)
+        self.assertAlmostEqual(current["qb_current_minus_full"], -0.65)
+
+    def test_missing_replacement_probability_mass_stays_missing(self):
+        snapshot = {
+            "LV": {
+                "starter": {
+                    "position": "QB", "qb_value": 1.0, "probability": 0.0,
+                    "offense_snap_share": 1.0, "defense_snap_share": 0.0,
+                }
+            }
+        }
+
+        _, current = pgo_challenger.lineup_views("LV", snapshot, {})
+
+        self.assertIsNone(current["qb_epa_per_dropback"])
+        self.assertIsNone(current["qb_current_minus_full"])
 
     def test_out_qb_uses_replacement_quality(self):
         full, current = pgo_challenger.lineup_views(

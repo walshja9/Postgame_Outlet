@@ -4,8 +4,9 @@ import math
 import statistics
 from collections import defaultdict, deque
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from itertools import groupby
+from zoneinfo import ZoneInfo
 
 import pgo_model
 from pgo_sources import normalize_team, open_csv
@@ -14,6 +15,7 @@ from pgo_sources import normalize_team, open_csv
 FIRST_SEASON = 2013
 LAST_SEASON = 2025
 QB_PRIOR_DROPBACKS = 200.0
+EASTERN = ZoneInfo("America/New_York")
 V0_PARAMETERS = pgo_model.Parameters(0.15, 0.5, 2.5, 20.0)
 PERFORMANCE_FEATURES = (
     "passing_epa_per_play_for",
@@ -56,11 +58,12 @@ class _RatioState:
     denominator: float = 0.0
 
     def update(self, numerator, denominator, decay):
+        aged = _RatioState(self.numerator * decay, self.denominator * decay)
         if numerator is None or denominator is None or denominator <= 0:
-            return self
+            return aged
         return _RatioState(
-            self.numerator * decay + numerator,
-            self.denominator * decay + denominator,
+            aged.numerator + numerator,
+            aged.denominator + denominator,
         )
 
     @property
@@ -96,9 +99,8 @@ def lineup_views(team, snapshot, state) -> tuple[dict[str, float], dict[str, flo
     full = dict(base)
     qbs = [(player_id, player) for player_id, player in players.items()
            if player.get("position", "").strip().upper() == "QB"]
-    starter = _best_qb(qbs)
-    replacements = [item for item in qbs if item != starter and _probability(item[1]) > 0]
-    replacement = _best_qb(replacements)
+    depth_chart = sorted(qbs, key=lambda item: (-_qb_sort_value(item[1]), item[0]))
+    starter = depth_chart[0] if depth_chart else None
 
     for name in QB_FEATURES:
         full[name] = _qb_feature(starter[1], name) if starter else None
@@ -108,19 +110,14 @@ def lineup_views(team, snapshot, state) -> tuple[dict[str, float], dict[str, flo
 
     current = dict(full)
     if starter:
-        probability = _probability(starter[1])
         for name in QB_FEATURES:
-            current[name] = _mix(
-                full[name],
-                _qb_feature(replacement[1], name) if replacement else (
-                    0.0 if name == "qb_epa_per_dropback" else None
-                ),
-                probability,
-            )
+            current[name] = _expected_qb_feature(depth_chart, name)
         full_value = full["qb_epa_per_dropback"]
         current_value = current["qb_epa_per_dropback"]
         if full_value is not None and current_value is not None:
             current["qb_current_minus_full"] = current_value - full_value
+        else:
+            current["qb_current_minus_full"] = None
 
     offense = _unavailable_share(players.values(), "offense_snap_share")
     defense = _unavailable_share(players.values(), "defense_snap_share")
@@ -136,15 +133,24 @@ def build_feature_rows(paths, half_life_games) -> list[FeatureRow]:
 
 def build_snapshot_states(paths, as_of, half_life_games) -> dict[str, tuple[dict, dict]]:
     as_of_dt = _parse_datetime(as_of)
+    as_of_year = as_of_dt.astimezone(EASTERN).year
     _, context, inputs = _walk(paths, half_life_games, as_of=as_of_dt)
+    available_periods = set(inputs["current_roster_periods"])
+    for game in _load_games(paths):
+        if game["kickoff_dt"] <= as_of_dt:
+            available_periods.update({
+                (game["season"], game["week"], game["home"]),
+                (game["season"], game["week"], game["away"]),
+            })
     periods = {}
     for season, week, team in inputs["rosters"]:
-        if season <= as_of_dt.year and (team not in periods or (season, week) > periods[team]):
+        available = season < as_of_year or (season, week, team) in available_periods
+        if available and (team not in periods or (season, week) > periods[team]):
             periods[team] = (season, week)
     teams = sorted(context["seen_teams"] | set(periods))
     states = {}
     for team in teams:
-        season, week = periods.get(team, (as_of_dt.year, 0))
+        season, week = periods.get(team, (as_of_year, 0))
         coach = context["coaches"].get(team, "")
         full, current, _ = _team_views(
             team, season, week, coach, as_of_dt, context, inputs
@@ -207,7 +213,8 @@ def _walk(paths, half_life_games, as_of=None):
                 for team, metadata in ((game["home"], home[2]), (game["away"], away[2]))
             )
             availability_changed = any(
-                view[1]["qb_current_minus_full"] < -1e-12
+                view[1]["qb_current_minus_full"] is not None
+                and view[1]["qb_current_minus_full"] < -1e-12
                 for view in (home, away)
             )
             output.append(FeatureRow(
@@ -369,16 +376,26 @@ def _update_after_game(game, home, away, context, inputs, decay):
         for name, (numerator, denominator) in _observations(own, other).items():
             previous = context["ratios"][team].get(name, _RatioState())
             context["ratios"][team][name] = previous.update(numerator, denominator, decay)
+        completed_starter, completed_dropbacks = None, 0.0
         for row in inputs["players"].get((game["season"], game["week"], team), ()):
             if row.get("position", "").strip().upper() != "QB":
                 continue
             raw_id = row.get("player_id", "").strip()
             player_id = metadata["gsis_ids"].get(raw_id, raw_id)
+            dropbacks = _sum(row, "attempts", "sacks_suffered")
+            if dropbacks is None:
+                dropbacks = _number(row, "attempts") or 0.0
+            if dropbacks > completed_dropbacks or (
+                dropbacks == completed_dropbacks and completed_starter is not None
+                and player_id < completed_starter
+            ):
+                completed_starter, completed_dropbacks = player_id, dropbacks
             _accumulate_qb(row, context["qb_history"][player_id])
             _accumulate_qb(row, context["qb_population"])
         snap_rows = inputs["snaps"].get((game["season"], game["week"], team), ())
         offense_total = max((_number(row, "offense_snaps") or 0.0 for row in snap_rows), default=0.0)
         defense_total = max((_number(row, "defense_snaps") or 0.0 for row in snap_rows), default=0.0)
+        snap_shares = {}
         for row in snap_rows:
             pfr_id = row.get("pfr_player_id", "").strip()
             player_id = metadata["pfr_ids"].get(pfr_id)
@@ -386,19 +403,24 @@ def _update_after_game(game, home, away, context, inputs, decay):
                 continue
             offense = _number(row, "offense_snaps")
             defense = _number(row, "defense_snaps")
-            if offense is not None and offense_total > 0:
-                context["snap_history"][player_id]["offense"].append(offense / offense_total)
-            if defense is not None and defense_total > 0:
-                context["snap_history"][player_id]["defense"].append(defense / defense_total)
+            snap_shares[player_id] = (
+                offense / offense_total if offense is not None and offense_total > 0 else offense,
+                defense / defense_total if defense is not None and defense_total > 0 else defense,
+            )
         for player_id in metadata["roster"]:
+            offense, defense = snap_shares.get(player_id, (0.0, 0.0))
+            if offense is not None:
+                context["snap_history"][player_id]["offense"].append(offense)
+            if defense is not None:
+                context["snap_history"][player_id]["defense"].append(defense)
             context["last_team"][player_id] = team
         coach = metadata["coach"]
         if context["coaches"].get(team) != coach:
             context["coach_games"][(team, coach)] = 0
         context["coach_games"][(team, coach)] += 1
         context["coaches"][team] = coach
-        if metadata["starter"]:
-            context["prior_starter"][team] = metadata["starter"]
+        if completed_starter:
+            context["prior_starter"][team] = completed_starter
         context["seen_teams"].add(team)
 
     predicted = (
@@ -485,6 +507,7 @@ def _load_inputs(paths):
     inputs = {
         "team_rows": {}, "players": defaultdict(list),
         "rosters": defaultdict(list), "injuries": {}, "snaps": defaultdict(list),
+        "current_roster_periods": set(),
     }
     for (name, source_season), path in paths.items():
         if name not in {
@@ -507,6 +530,8 @@ def _load_inputs(paths):
                 inputs["players"][key].append(row)
             elif name in {"weekly_rosters", "current_roster"}:
                 inputs["rosters"][key].append(row)
+                if name == "current_roster":
+                    inputs["current_roster_periods"].add(key)
             elif name == "injury_reports":
                 injury_key = (*key, row.get("gsis_id", "").strip())
                 if injury_key in inputs["injuries"]:
@@ -544,7 +569,7 @@ def _load_games(paths):
             "season": season,
             "week": int(float(row["week"])),
             "kickoff_dt": kickoff_dt,
-            "kickoff": kickoff_dt.isoformat(timespec="minutes"),
+            "kickoff": kickoff_dt.astimezone(EASTERN).isoformat(timespec="minutes"),
             "home": home,
             "away": away,
             "margin": float(row["home_score"]) - float(row["away_score"]),
@@ -590,14 +615,17 @@ def _probability(player):
     return value
 
 
-def _mix(first, second, weight):
-    if weight == 1.0:
-        return first
-    if weight == 0.0:
-        return second
-    if first is None or second is None:
-        return None
-    return weight * first + (1.0 - weight) * second
+def _expected_qb_feature(depth_chart, name):
+    total, remaining = 0.0, 1.0
+    for _, player in depth_chart:
+        weight = remaining * _probability(player)
+        value = _qb_feature(player, name)
+        if weight and value is None:
+            return None
+        if value is not None:
+            total += weight * value
+        remaining -= weight
+    return None if remaining > 1e-12 else total
 
 
 def _unavailable_share(players, name):
@@ -674,7 +702,8 @@ def _kickoff(day, time):
     day, time = day.strip(), time.strip()
     for pattern in ("%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %I:%M %p"):
         try:
-            return datetime.strptime(f"{day} {time or '00:00'}", pattern)
+            local = datetime.strptime(f"{day} {time or '00:00'}", pattern)
+            return local.replace(tzinfo=EASTERN).astimezone(timezone.utc)
         except ValueError:
             pass
     raise ValueError(f"Invalid kickoff: {day} {time}")
@@ -685,4 +714,6 @@ def _parse_datetime(value):
         parsed = value
     else:
         parsed = datetime.fromisoformat(str(value).strip().replace("Z", "+00:00"))
-    return parsed.replace(tzinfo=None)
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=EASTERN)
+    return parsed.astimezone(timezone.utc)
