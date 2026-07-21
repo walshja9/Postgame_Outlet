@@ -8,6 +8,8 @@ from datetime import datetime, timezone
 from itertools import groupby
 from zoneinfo import ZoneInfo
 
+import numpy as np
+
 import pgo_model
 from pgo_sources import normalize_team, open_csv
 
@@ -39,6 +41,9 @@ QB_FEATURES = (
     "qb_experience_prior",
     "qb_draft_prior",
 )
+HALF_LIFE_GRID = (4, 8, 16)
+ALPHA_GRID = (1.0, 10.0, 100.0)
+DELTA_GRID = (1.0, 1.5)
 
 
 @dataclass(frozen=True)
@@ -50,6 +55,33 @@ class FeatureRow:
     actual_margin: float
     features: dict[str, float | None]
     subgroup_flags: dict[str, bool]
+
+
+@dataclass(frozen=True)
+class Preprocessor:
+    feature_names: tuple[str, ...]
+    medians: np.ndarray
+    scales: np.ndarray
+    missing_features: tuple[str, ...]
+
+    def transform(self, rows) -> np.ndarray:
+        raw = _feature_matrix(rows, self.feature_names)
+        missing = np.isnan(raw)
+        filled = np.where(missing, self.medians, raw)
+        output = (filled - self.medians) / self.scales
+        if self.missing_features:
+            indices = [self.feature_names.index(name) for name in self.missing_features]
+            output = np.column_stack((output, missing[:, indices]))
+        if not np.isfinite(output).all():
+            raise ValueError("Preprocessed features must be finite")
+        return output
+
+
+@dataclass(frozen=True)
+class ChallengerParameters:
+    half_life_games: int
+    alpha: float
+    delta: float
 
 
 @dataclass(frozen=True)
@@ -160,6 +192,180 @@ def build_snapshot_states(paths, as_of, half_life_games) -> dict[str, tuple[dict
         )
         states[team] = (full, current)
     return states
+
+
+def fit_preprocessor(rows, feature_names) -> Preprocessor:
+    if not rows:
+        raise ValueError("Training rows must not be empty")
+    feature_names = tuple(feature_names)
+    raw = _feature_matrix(rows, feature_names)
+    medians = np.array([
+        np.median(column[~np.isnan(column)])
+        if np.any(~np.isnan(column)) else np.nan
+        for column in raw.T
+    ])
+    if not np.isfinite(medians).all():
+        raise ValueError("Training features must contain a finite value")
+    filled = np.where(np.isnan(raw), medians, raw)
+    scales = filled.std(axis=0)
+    scales[scales == 0.0] = 1.0
+    if not np.isfinite(scales).all():
+        raise ValueError("Training feature scales must be finite")
+    missing_features = tuple(
+        name for index, name in enumerate(feature_names)
+        if np.isnan(raw[:, index]).any()
+    )
+    return Preprocessor(feature_names, medians, scales, missing_features)
+
+
+def fit_huber_ridge(x, y, alpha, delta, max_iter=50, tolerance=1e-8) -> np.ndarray:
+    x, y = _model_inputs(x, y)
+    if not np.isfinite(alpha) or alpha <= 0:
+        raise ValueError("alpha must be positive and finite")
+    if not np.isfinite(delta) or delta <= 0:
+        raise ValueError("delta must be positive and finite")
+    if not isinstance(max_iter, int) or max_iter <= 0:
+        raise ValueError("max_iter must be a positive integer")
+    if not np.isfinite(tolerance) or tolerance <= 0:
+        raise ValueError("tolerance must be positive and finite")
+    design = np.column_stack((np.ones(len(x)), x))
+    coefficients = _ridge_solution(design, y, alpha, np.ones(len(x)))
+    for _ in range(max_iter):
+        residuals = y - design @ coefficients
+        scale = 1.4826 * np.median(
+            np.abs(residuals - np.median(residuals))
+        )
+        if scale <= np.finfo(float).eps:
+            return coefficients
+        absolute = np.abs(residuals)
+        weights = np.ones(len(x))
+        nonzero = absolute > 0.0
+        weights[nonzero] = np.minimum(
+            1.0, delta * scale / absolute[nonzero]
+        )
+        updated = _ridge_solution(design, y, alpha, weights)
+        if np.max(np.abs(updated - coefficients)) < tolerance:
+            return updated
+        coefficients = updated
+    return coefficients
+
+
+def predict(x, coefficients) -> np.ndarray:
+    try:
+        x = np.asarray(x, dtype=float)
+        coefficients = np.asarray(coefficients, dtype=float)
+    except (TypeError, ValueError) as error:
+        raise ValueError("Model inputs must be numeric") from error
+    if x.ndim != 2 or coefficients.ndim != 1 or len(coefficients) != x.shape[1] + 1:
+        raise ValueError("Model input shapes do not align")
+    if not np.isfinite(x).all() or not np.isfinite(coefficients).all():
+        raise ValueError("Model inputs must be finite")
+    output = np.column_stack((np.ones(len(x)), x)) @ coefficients
+    if not np.isfinite(output).all():
+        raise ValueError("Predictions must be finite")
+    return output
+
+
+def select_parameters(paths, validation_seasons) -> ChallengerParameters:
+    seasons = tuple(sorted(set(validation_seasons)))
+    if not seasons:
+        raise ValueError("validation_seasons must not be empty")
+    errors = {
+        ChallengerParameters(half_life, alpha, delta): []
+        for half_life in HALF_LIFE_GRID
+        for alpha in ALPHA_GRID
+        for delta in DELTA_GRID
+    }
+    for half_life in HALF_LIFE_GRID:
+        rows = build_feature_rows(paths, half_life)
+        if not rows:
+            raise ValueError("Feature rows must not be empty")
+        feature_names = tuple(sorted(rows[0].features))
+        if any(tuple(sorted(row.features)) != feature_names for row in rows):
+            raise ValueError("Feature row shapes do not align")
+        for season in seasons:
+            training = [row for row in rows if row.season < season]
+            validation = [row for row in rows if row.season == season]
+            if len({row.season for row in training}) < 3:
+                raise ValueError(
+                    "Each validation fold requires three earlier training seasons"
+                )
+            if not validation:
+                raise ValueError(f"No feature rows for validation season {season}")
+            preprocessor = fit_preprocessor(training, feature_names)
+            x_train = preprocessor.transform(training)
+            x_validation = preprocessor.transform(validation)
+            y_train = np.array([row.actual_margin for row in training], dtype=float)
+            y_validation = np.array(
+                [row.actual_margin for row in validation], dtype=float
+            )
+            if not np.isfinite(y_validation).all():
+                raise ValueError("Validation targets must be finite")
+            for alpha in ALPHA_GRID:
+                for delta in DELTA_GRID:
+                    parameters = ChallengerParameters(half_life, alpha, delta)
+                    coefficients = fit_huber_ridge(
+                        x_train, y_train, alpha, delta
+                    )
+                    errors[parameters].extend(
+                        np.abs(y_validation - predict(x_validation, coefficients))
+                    )
+    return min(
+        errors,
+        key=lambda parameters: (
+            float(np.mean(errors[parameters])),
+            parameters.half_life_games,
+            parameters.alpha,
+            parameters.delta,
+        ),
+    )
+
+
+def _feature_matrix(rows, feature_names) -> np.ndarray:
+    matrix = np.empty((len(rows), len(feature_names)), dtype=float)
+    for row_index, row in enumerate(rows):
+        for column_index, name in enumerate(feature_names):
+            try:
+                value = row.features[name]
+            except (AttributeError, KeyError) as error:
+                raise ValueError("Feature row shapes do not align") from error
+            if value is None:
+                matrix[row_index, column_index] = np.nan
+                continue
+            try:
+                value = float(value)
+            except (TypeError, ValueError) as error:
+                raise ValueError(f"Feature {name} must be numeric") from error
+            if not math.isfinite(value):
+                raise ValueError(f"Feature {name} must be finite")
+            matrix[row_index, column_index] = value
+    return matrix
+
+
+def _model_inputs(x, y):
+    try:
+        x = np.asarray(x, dtype=float)
+        y = np.asarray(y, dtype=float)
+    except (TypeError, ValueError) as error:
+        raise ValueError("Model inputs must be numeric") from error
+    if x.ndim != 2 or y.ndim != 1 or len(x) != len(y):
+        raise ValueError("Model input shapes do not align")
+    if not len(x):
+        raise ValueError("Training rows must not be empty")
+    if not np.isfinite(x).all() or not np.isfinite(y).all():
+        raise ValueError("Model inputs must be finite")
+    return x, y
+
+
+def _ridge_solution(design, y, alpha, weights):
+    penalty = np.diag([0.0] + [alpha] * (design.shape[1] - 1))
+    coefficients = np.linalg.solve(
+        design.T @ (design * weights[:, None]) + penalty,
+        design.T @ (weights * y),
+    )
+    if not np.isfinite(coefficients).all():
+        raise ValueError("Model coefficients must be finite")
+    return coefficients
 
 
 def _walk(paths, half_life_games, as_of=None):

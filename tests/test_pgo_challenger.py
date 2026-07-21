@@ -6,7 +6,9 @@ import math
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
+import numpy as np
 import pgo_challenger
 import pgo_sources
 
@@ -178,6 +180,18 @@ def _pregame_bytes(row):
         sort_keys=True,
         separators=(",", ":"),
     ).encode()
+
+
+def _model_row(game_id, season, signal, margin):
+    return pgo_challenger.FeatureRow(
+        game_id,
+        season,
+        1,
+        f"{season}-09-01T13:00-04:00",
+        margin,
+        {"signal": signal},
+        {},
+    )
 
 
 class SourceTests(unittest.TestCase):
@@ -769,6 +783,117 @@ class FeatureTests(unittest.TestCase):
             )
 
         self.assertEqual(states["LV"][1]["offense_availability"], 0.0)
+
+
+class ModelTests(unittest.TestCase):
+    def test_imputation_and_scaling_use_training_rows_only(self):
+        training = [
+            pgo_challenger.FeatureRow(
+                "one", 2013, 1, "2013-09-01T13:00-04:00", 0.0,
+                {"signal": 1.0, "constant": 5.0}, {},
+            ),
+            pgo_challenger.FeatureRow(
+                "two", 2014, 1, "2014-09-01T13:00-04:00", 0.0,
+                {"signal": None, "constant": 5.0}, {},
+            ),
+            pgo_challenger.FeatureRow(
+                "three", 2015, 1, "2015-09-01T13:00-04:00", 0.0,
+                {"signal": 3.0, "constant": 5.0}, {},
+            ),
+        ]
+        before = training + [
+            pgo_challenger.FeatureRow(
+                "future", 2020, 1, "2020-09-01T13:00-04:00", 0.0,
+                {"signal": 10.0, "constant": 5.0}, {},
+            )
+        ]
+        after = training + [
+            pgo_challenger.FeatureRow(
+                "future", 2020, 1, "2020-09-01T13:00-04:00", 0.0,
+                {"signal": 1_000_000.0, "constant": -1_000_000.0}, {},
+            )
+        ]
+
+        first = pgo_challenger.fit_preprocessor(
+            [row for row in before if row.season < 2020],
+            ("signal", "constant"),
+        )
+        second = pgo_challenger.fit_preprocessor(
+            [row for row in after if row.season < 2020],
+            ("signal", "constant"),
+        )
+
+        np.testing.assert_array_equal(first.medians, second.medians)
+        np.testing.assert_array_equal(first.scales, second.scales)
+        np.testing.assert_allclose(first.medians, [2.0, 5.0])
+        np.testing.assert_allclose(first.scales, [np.sqrt(2.0 / 3.0), 1.0])
+        self.assertEqual(first.missing_features, ("signal",))
+        transformed = first.transform(training)
+        self.assertEqual(transformed.shape, (3, 3))
+        np.testing.assert_array_equal(transformed[:, -1], [0.0, 1.0, 0.0])
+
+    def test_future_rows_cannot_change_selected_parameters(self):
+        history = [
+            _model_row(f"{season}-{index}", season, signal, 2.0 + 3.0 * signal)
+            for season in range(2013, 2018)
+            for index, signal in enumerate((-2.0, -1.0, 0.0, 1.0, 2.0))
+        ]
+        before = history + [_model_row("future", 2018, 50.0, 152.0)]
+        after = history + [_model_row("future", 2018, 50.0, -1_000_000.0)]
+
+        with patch.object(pgo_challenger, "build_feature_rows", return_value=before):
+            first = pgo_challenger.select_parameters({}, (2016, 2017))
+        with patch.object(pgo_challenger, "build_feature_rows", return_value=after):
+            second = pgo_challenger.select_parameters({}, (2016, 2017))
+
+        self.assertEqual(first, second)
+
+    def test_ridge_does_not_penalize_intercept(self):
+        x = np.arange(-4.0, 5.0).reshape(-1, 1)
+        y = 2.0 + 3.0 * x[:, 0]
+
+        coefficients = pgo_challenger.fit_huber_ridge(
+            x, y, alpha=1_000_000.0, delta=1.0
+        )
+
+        self.assertAlmostEqual(coefficients[0], 2.0)
+
+    def test_huber_fit_downweights_one_large_outlier(self):
+        x = np.arange(11.0).reshape(-1, 1)
+        y = 2.0 + 3.0 * x[:, 0]
+        y[-1] = 200.0
+        ordinary_slope = np.linalg.lstsq(
+            np.column_stack((np.ones(len(x)), x)), y, rcond=None
+        )[0][1]
+
+        robust_slope = pgo_challenger.fit_huber_ridge(
+            x, y, alpha=1e-9, delta=1.0
+        )[1]
+
+        self.assertLess(abs(robust_slope - 3.0), abs(ordinary_slope - 3.0))
+
+    def test_invalid_model_inputs_are_rejected(self):
+        with self.assertRaises(ValueError):
+            pgo_challenger.fit_preprocessor([], ("signal",))
+        with self.assertRaises(ValueError):
+            pgo_challenger.fit_huber_ridge(
+                np.ones((2, 1)), np.ones(3), alpha=1.0, delta=1.0
+            )
+        with self.assertRaises(ValueError):
+            pgo_challenger.fit_huber_ridge(
+                np.ones((2, 1)), np.ones(2), alpha=0.0, delta=1.0
+            )
+        with self.assertRaises(ValueError):
+            pgo_challenger.predict(np.ones((2, 1)), np.ones(3))
+        rows = [
+            _model_row(str(season), season, float(season - 2013), 1.0)
+            for season in range(2013, 2016)
+        ] + [_model_row("validation", 2016, 3.0, float("nan"))]
+        with (
+            patch.object(pgo_challenger, "build_feature_rows", return_value=rows),
+            self.assertRaisesRegex(ValueError, "finite"),
+        ):
+            pgo_challenger.select_parameters({}, (2016,))
 
 
 class LineupTests(unittest.TestCase):
