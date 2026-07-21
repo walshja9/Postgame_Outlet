@@ -1703,8 +1703,18 @@ def _load_inputs(paths):
                     inputs["current_roster_periods"].add(key)
             elif name == "injury_reports":
                 injury_key = (*key, row.get("gsis_id", "").strip())
-                if injury_key in inputs["injuries"]:
-                    raise ValueError(f"Duplicate injury row: {season} week {week} {team}")
+                existing = inputs["injuries"].get(injury_key)
+                if existing is not None:
+                    previous = existing.get("date_modified", "").strip()
+                    current = row.get("date_modified", "").strip()
+                    if not previous or not current:
+                        raise ValueError(f"Duplicate injury row: {season} week {week} {team}")
+                    previous_time = _parse_datetime(previous)
+                    current_time = _parse_datetime(current)
+                    if current_time == previous_time:
+                        raise ValueError(f"Duplicate injury row: {season} week {week} {team}")
+                    if current_time < previous_time:
+                        continue
                 inputs["injuries"][injury_key] = row
             elif name == "snap_counts":
                 inputs["snaps"][key].append(row)

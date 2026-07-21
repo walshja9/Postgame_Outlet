@@ -706,6 +706,57 @@ class FeatureTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "Injury revision after kickoff"):
                 pgo_challenger.build_feature_rows(paths, 4)
 
+    def test_timestamped_injury_revisions_keep_latest(self):
+        with tempfile.TemporaryDirectory() as temp:
+            paths = _synthetic_paths(Path(temp))
+            injury_path = paths[("injury_reports", 2013)]
+            columns = (*pgo_sources.INJURY_COLUMNS, "date_modified")
+            rows = [{
+                "season": 2013, "week": 1, "team": "SD",
+                "gsis_id": "gsis-lac-qb", "position": "QB",
+                "report_status": status, "practice_status": "",
+                "date_modified": modified,
+            } for status, modified in (
+                ("Out", "2013-09-01T16:00:00Z"),
+                ("Questionable", "2013-09-01T10:00:00Z"),
+            )]
+            _write_csv(injury_path, columns, rows)
+
+            injury = pgo_challenger._load_inputs(paths)["injuries"][
+                (2013, 1, "LAC", "gsis-lac-qb")
+            ]
+
+        self.assertEqual(injury["report_status"], "Out")
+
+    def test_ambiguous_injury_revisions_are_rejected(self):
+        cases = (
+            (pgo_sources.INJURY_COLUMNS, "", ""),
+            ((*pgo_sources.INJURY_COLUMNS, "date_modified"), "bad", "later"),
+            (
+                (*pgo_sources.INJURY_COLUMNS, "date_modified"),
+                "2013-09-01T10:00:00Z",
+                "2013-09-01T10:00:00Z",
+            ),
+        )
+        for columns, first_modified, second_modified in cases:
+            with self.subTest(first_modified=first_modified, second_modified=second_modified):
+                with tempfile.TemporaryDirectory() as temp:
+                    paths = _synthetic_paths(Path(temp))
+                    injury_path = paths[("injury_reports", 2013)]
+                    rows = [{
+                        "season": 2013, "week": 1, "team": "SD",
+                        "gsis_id": "gsis-lac-qb", "position": "QB",
+                        "report_status": status, "practice_status": "",
+                        **({"date_modified": modified} if "date_modified" in columns else {}),
+                    } for status, modified in (
+                        ("Questionable", first_modified),
+                        ("Out", second_modified),
+                    )]
+                    _write_csv(injury_path, columns, rows)
+
+                    with self.assertRaises(ValueError):
+                        pgo_challenger._load_inputs(paths)
+
     def test_snapshot_as_of_week_two_ignores_later_roster_and_injury(self):
         with tempfile.TemporaryDirectory() as temp:
             paths = _synthetic_paths(Path(temp))
