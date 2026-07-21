@@ -1645,17 +1645,34 @@ class OutputTests(unittest.TestCase):
 
     @staticmethod
     def _passing_audit():
+        coverage = {
+            name: {
+                "numerator": 1,
+                "denominator": 1,
+                "rate": 1.0,
+                "threshold": threshold,
+                "passed": True,
+            }
+            for name, threshold in (
+                ("schedule_team_games", 0.99),
+                ("qb_gsis_rows", 0.98),
+                ("snap_pfr_volume", 0.97),
+                ("injury_gsis_rows", 0.99),
+            )
+        }
+        coverage["current_teams"] = {
+            "numerator": 32,
+            "denominator": 32,
+            "rate": 1.0,
+            "threshold": 1.0,
+            "passed": True,
+        }
         return {
-            "checks": {name: True for name in pgo_challenger.AUDIT_CHECKS},
-            "coverage": {
-                "current_teams": {
-                    "numerator": 32,
-                    "denominator": 32,
-                    "rate": 1.0,
-                    "threshold": 1.0,
-                    "passed": True,
-                }
+            "checks": {
+                **{name: True for name in pgo_challenger.AUDIT_CHECKS},
+                **{f"coverage_{name}": True for name in coverage},
             },
+            "coverage": coverage,
         }
 
     @staticmethod
@@ -1791,7 +1808,7 @@ class OutputTests(unittest.TestCase):
     def test_repeated_synthetic_run_is_byte_identical(self):
         ratings = self._ratings()
         audit = self._passing_audit()
-        audit["coverage"]["paired_games"] = {"rate": 0.9999999}
+        audit["serialization_probe"] = {"rate": 0.9999999}
         backtest = {
             "status": "PASS",
             "checks": {"gate": True},
@@ -1861,6 +1878,29 @@ class OutputTests(unittest.TestCase):
         failed_granular = self._passing_audit()
         failed_granular["checks"]["coverage_qb_gsis_rows"] = False
         cases["failed granular check"] = failed_granular
+        reviewer_case = self._passing_audit()
+        reviewer_case["coverage"]["qb_gsis_rows"]["passed"] = False
+        reviewer_case["checks"].pop("coverage_qb_gsis_rows")
+        cases["false QB coverage with omitted check"] = reviewer_case
+        missing_coverage = self._passing_audit()
+        missing_coverage["coverage"].pop("qb_gsis_rows")
+        cases["missing coverage receipt"] = missing_coverage
+        unexpected_coverage = self._passing_audit()
+        unexpected_coverage["coverage"]["unexpected"] = {
+            "numerator": 1,
+            "denominator": 1,
+            "rate": 1.0,
+            "threshold": 1.0,
+            "passed": True,
+        }
+        unexpected_coverage["checks"]["coverage_unexpected"] = True
+        cases["unexpected coverage receipt"] = unexpected_coverage
+        missing_granular = self._passing_audit()
+        missing_granular["checks"].pop("coverage_qb_gsis_rows")
+        cases["missing granular check"] = missing_granular
+        mismatched_metric = self._passing_audit()
+        mismatched_metric["coverage"]["qb_gsis_rows"]["passed"] = False
+        cases["false metric with true granular check"] = mismatched_metric
         incomplete_teams = self._passing_audit()
         incomplete_teams["coverage"]["current_teams"] = {
             "numerator": 31,

@@ -65,6 +65,13 @@ SUBGROUPS = (
     "weeks_5_18",
 )
 AUDIT_CHECKS = frozenset(("source", "identity", "leakage", "reproducibility"))
+COVERAGE_NAMES = frozenset((
+    "schedule_team_games",
+    "qb_gsis_rows",
+    "snap_pfr_volume",
+    "injury_gsis_rows",
+    "current_teams",
+))
 ROSTER_COACHING_FEATURES = frozenset(QB_FEATURES + (
     "returning_offense_snap_share",
     "returning_defense_snap_share",
@@ -1175,9 +1182,21 @@ def _pass_audit_is_valid(audit):
     ):
         return False
     coverage = audit.get("coverage")
-    current = coverage.get("current_teams") if isinstance(coverage, dict) else None
-    if not isinstance(current, dict):
+    if not isinstance(coverage, dict) or set(coverage) != COVERAGE_NAMES:
         return False
+    granular = {
+        name.removeprefix("coverage_")
+        for name in checks
+        if name.startswith("coverage_")
+    }
+    if granular != COVERAGE_NAMES or any(
+        not isinstance(coverage[name], dict)
+        or coverage[name].get("passed") is not True
+        or checks.get(f"coverage_{name}") is not True
+        for name in COVERAGE_NAMES
+    ):
+        return False
+    current = coverage["current_teams"]
     numeric = tuple(current.get(name) for name in (
         "numerator", "denominator", "rate", "threshold"
     ))
