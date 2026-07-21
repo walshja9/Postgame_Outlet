@@ -1643,6 +1643,78 @@ class OutputTests(unittest.TestCase):
             states, model, preprocessor, OutputTests.AS_OF
         )
 
+    @staticmethod
+    def _passing_audit():
+        return {
+            "checks": {name: True for name in pgo_challenger.AUDIT_CHECKS},
+            "coverage": {
+                "current_teams": {
+                    "numerator": 32,
+                    "denominator": 32,
+                    "rate": 1.0,
+                    "threshold": 1.0,
+                    "passed": True,
+                }
+            },
+        }
+
+    @staticmethod
+    def _locked_manifest(frozen_at=None):
+        return {
+            "sources": [
+                {
+                    "name": spec.name,
+                    "season": spec.season,
+                    "url": spec.url,
+                    "sha256": "0" * 64,
+                    "bytes": 1,
+                    "frozen_at": frozen_at or OutputTests.AS_OF,
+                }
+                for spec in pgo_sources.source_specs()
+            ]
+        }
+
+    def test_manifest_rejects_wrong_inventory_url_before_analysis(self):
+        manifest = self._locked_manifest()
+        manifest["sources"][0]["url"] = "https://example.test/wrong.csv"
+        paths = {
+            (entry["name"], entry["season"]): Path("unused")
+            for entry in manifest["sources"]
+        }
+
+        with (
+            patch.object(pgo_sources, "validate_source_audit", return_value={}),
+            patch.object(pgo_challenger, "_historical_coverage", return_value={}),
+            patch.object(pgo_challenger, "rolling_predictions") as analysis,
+            self.assertRaisesRegex(ValueError, "source URL"),
+        ):
+            pgo_challenger._analyze_once(paths, manifest, self.AS_OF)
+
+        analysis.assert_not_called()
+
+    def test_manifest_freeze_time_must_match_as_of_instant(self):
+        paths = {
+            (spec.name, spec.season): Path("unused")
+            for spec in pgo_sources.source_specs()
+        }
+        with (
+            patch.object(pgo_sources, "validate_source_audit", return_value={}),
+            patch.object(pgo_challenger, "_historical_coverage", return_value={}),
+        ):
+            with self.assertRaisesRegex(ValueError, "frozen_at"):
+                pgo_challenger._source_preflight(
+                    paths,
+                    self._locked_manifest("2026-07-21T15:59:59+00:00"),
+                    self.AS_OF,
+                )
+            audit = pgo_challenger._source_preflight(
+                paths,
+                self._locked_manifest("2026-07-21T16:00:00+00:00"),
+                self.AS_OF,
+            )
+
+        self.assertEqual(len(audit["source_hashes"]), len(paths))
+
     def test_hold_writes_diagnostics_and_removes_all_stale_ratings(self):
         with tempfile.TemporaryDirectory() as temp:
             output_dir = Path(temp)
@@ -1690,7 +1762,7 @@ class OutputTests(unittest.TestCase):
             output_dir = Path(temp)
             written = pgo_challenger.write_research_outputs(
                 output_dir,
-                {"checks": {name: True for name in pgo_challenger.AUDIT_CHECKS}},
+                self._passing_audit(),
                 {"status": "PASS", "checks": {"gate": True}},
                 [],
                 ratings,
@@ -1718,10 +1790,8 @@ class OutputTests(unittest.TestCase):
 
     def test_repeated_synthetic_run_is_byte_identical(self):
         ratings = self._ratings()
-        audit = {
-            "checks": {name: True for name in pgo_challenger.AUDIT_CHECKS},
-            "coverage": {"paired_games": {"rate": 0.9999999}},
-        }
+        audit = self._passing_audit()
+        audit["coverage"]["paired_games"] = {"rate": 0.9999999}
         backtest = {
             "status": "PASS",
             "checks": {"gate": True},
@@ -1772,13 +1842,63 @@ class OutputTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "status does not match checks"):
                 pgo_challenger.write_research_outputs(
                     output_dir,
-                    {"checks": {name: True for name in pgo_challenger.AUDIT_CHECKS}},
+                    self._passing_audit(),
                     {"status": "PASS", "checks": {"gate": False}},
                     [],
                     self._ratings(),
                 )
 
             self.assertEqual(list(output_dir.glob("ratings_*.csv")), [])
+
+    def test_pass_rejects_contradictory_audit_before_replacing_receipts(self):
+        cases = {}
+        missing_source = self._passing_audit()
+        missing_source["checks"].pop("source")
+        cases["missing mandatory check"] = missing_source
+        failed_identity = self._passing_audit()
+        failed_identity["checks"]["identity"] = False
+        cases["failed identity"] = failed_identity
+        failed_granular = self._passing_audit()
+        failed_granular["checks"]["coverage_qb_gsis_rows"] = False
+        cases["failed granular check"] = failed_granular
+        incomplete_teams = self._passing_audit()
+        incomplete_teams["coverage"]["current_teams"] = {
+            "numerator": 31,
+            "denominator": 32,
+            "rate": 31 / 32,
+            "threshold": 1.0,
+            "passed": False,
+        }
+        cases["incomplete current teams"] = incomplete_teams
+
+        for label, audit in cases.items():
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as temp:
+                output_dir = Path(temp)
+                expected = {
+                    name: f"successful {name}\n".encode()
+                    for name in (
+                        "source_audit.json",
+                        "backtest.json",
+                        "validation_predictions.csv",
+                        "ratings_2026_preseason.csv",
+                    )
+                }
+                for name, data in expected.items():
+                    (output_dir / name).write_bytes(data)
+
+                with self.assertRaisesRegex(ValueError, "PASS audit evidence"):
+                    pgo_challenger.write_research_outputs(
+                        output_dir,
+                        audit,
+                        {"status": "PASS", "checks": {"gate": True}},
+                        [],
+                        self._ratings(),
+                    )
+
+                self.assertEqual(
+                    expected,
+                    {name: (output_dir / name).read_bytes() for name in expected},
+                )
 
     def test_reproducibility_check_includes_held_ratings(self):
         evaluation = EvaluationTests._passing_evaluation()
@@ -2059,6 +2179,45 @@ class OutputTests(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertEqual(error.getvalue(), "ERROR: locked hash changed\n")
         self.assertEqual(expected, actual)
+
+    def test_cli_csv_and_overflow_errors_exit_two_and_preserve_receipts(self):
+        for raised in (csv.Error("malformed CSV"), OverflowError("number too large")):
+            with self.subTest(error=type(raised).__name__), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                output_dir = root / "output"
+                output_dir.mkdir()
+                expected = {
+                    name: f"successful {name}\n".encode()
+                    for name in (
+                        "source_audit.json",
+                        "backtest.json",
+                        "validation_predictions.csv",
+                        "ratings_2026_preseason.csv",
+                    )
+                }
+                for name, data in expected.items():
+                    (output_dir / name).write_bytes(data)
+                error = io.StringIO()
+                with (
+                    patch.object(
+                        pgo_sources,
+                        "load_locked_sources",
+                        side_effect=raised,
+                    ),
+                    redirect_stderr(error),
+                ):
+                    code = pgo_challenger.main([
+                        "--as-of", self.AS_OF,
+                        "--lock-path", str(root / "sources.lock.json"),
+                        "--cache-dir", str(root / "cache"),
+                        "--output-dir", str(output_dir),
+                    ])
+                actual = {
+                    name: (output_dir / name).read_bytes() for name in expected
+                }
+                self.assertEqual(code, 2)
+                self.assertEqual(error.getvalue(), f"ERROR: {raised}\n")
+                self.assertEqual(expected, actual)
 
 
 class LineupTests(unittest.TestCase):

@@ -778,27 +778,37 @@ def _neutral_feature_row(team, state, preprocessor):
     return FeatureRow(team, 2026, 0, "", 0.0, features, {})
 
 
-def _source_preflight(paths, manifest):
+def _source_preflight(paths, manifest, as_of):
     audit = pgo_sources.validate_source_audit(paths)
-    audit["source_hashes"] = _manifest_hashes(manifest, paths)
+    audit["source_hashes"] = _manifest_hashes(manifest, paths, as_of)
     audit["coverage"] = _historical_coverage(paths)
     return audit
 
 
-def _manifest_hashes(manifest, paths):
+def _manifest_hashes(manifest, paths, as_of):
+    expected = {
+        (spec.name, spec.season): spec for spec in pgo_sources.source_specs()
+    }
+    frozen_at = _parse_datetime(as_of)
     entries, hashes, keys = manifest.get("sources", ()), {}, set()
     for entry in entries:
         try:
             key = (entry["name"], entry["season"])
             digest = entry["sha256"]
+            url = entry["url"]
+            entry_frozen_at = entry["frozen_at"]
         except (KeyError, TypeError) as error:
             raise ValueError("Invalid source lock manifest") from error
         if key in keys or not isinstance(digest, str) or len(digest) != 64:
             raise ValueError("Invalid source lock manifest")
+        if key not in expected or url != expected[key].url:
+            raise ValueError("Locked source URL does not match source inventory")
+        if _parse_datetime(entry_frozen_at) != frozen_at:
+            raise ValueError("Locked source frozen_at does not match --as-of")
         keys.add(key)
         label = key[0] if key[1] is None else f"{key[0]}:{key[1]}"
         hashes[label] = digest
-    if keys != set(paths):
+    if keys != set(paths) or keys != set(expected):
         raise ValueError("Source lock manifest does not match loaded sources")
     return dict(sorted(hashes.items()))
 
@@ -902,7 +912,7 @@ def _current_team_coverage(paths, snapshot_states):
 
 
 def _analyze_once(paths, manifest, as_of):
-    audit = _source_preflight(paths, manifest)
+    audit = _source_preflight(paths, manifest, as_of)
     predictions, evaluation = rolling_predictions(paths)
     parameters = select_parameters(paths, OUTER_SEASONS)
     rows = build_feature_rows(paths, parameters.half_life_games)
@@ -1128,6 +1138,8 @@ def write_research_outputs(output_dir, audit, backtest, predictions, ratings) ->
     expected_status = "PASS" if all(checks.values()) else "HOLD"
     if status != expected_status:
         raise ValueError("Backtest status does not match checks")
+    if status == "PASS" and not _pass_audit_is_valid(audit):
+        raise ValueError("PASS audit evidence is incomplete or contradictory")
     if status == "PASS" and (
         len(ratings) != len(pgo_model.CURRENT_TEAMS)
         or {row.get("team") for row in ratings} != set(pgo_model.CURRENT_TEAMS)
@@ -1150,6 +1162,30 @@ def write_research_outputs(output_dir, audit, backtest, predictions, ratings) ->
         if path != approved:
             path.unlink(missing_ok=True)
     return True
+
+
+def _pass_audit_is_valid(audit):
+    if not isinstance(audit, dict):
+        return False
+    checks = audit.get("checks")
+    if (
+        not isinstance(checks, dict)
+        or not AUDIT_CHECKS <= set(checks)
+        or any(value is not True for value in checks.values())
+    ):
+        return False
+    coverage = audit.get("coverage")
+    current = coverage.get("current_teams") if isinstance(coverage, dict) else None
+    if not isinstance(current, dict):
+        return False
+    numeric = tuple(current.get(name) for name in (
+        "numerator", "denominator", "rate", "threshold"
+    ))
+    return (
+        not any(isinstance(value, bool) for value in numeric)
+        and numeric == (32, 32, 1.0, 1.0)
+        and current.get("passed") is True
+    )
 
 
 def _incumbent_predictions(paths):
@@ -1884,7 +1920,8 @@ def main(argv=None):
             )
         written = write_research_outputs(args.output_dir, *outputs)
     except (
-        AttributeError, KeyError, OSError, TypeError, UnicodeError, ValueError
+        AttributeError, csv.Error, KeyError, OSError, OverflowError, TypeError,
+        UnicodeError, ValueError,
     ) as error:
         print(f"ERROR: {error}", file=sys.stderr)
         return 2
