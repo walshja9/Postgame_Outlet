@@ -156,8 +156,10 @@ class _RatioState:
 def availability_probability(report_status, practice_status) -> float:
     report = (report_status or "").strip()
     practice = (practice_status or "").strip()
-    reports = {"out": 0.0, "doubtful": 0.25, "questionable": 0.70}
-    if report:
+    reports = {
+        "out": 0.0, "doubtful": 0.25, "questionable": 0.70, "probable": 1.0,
+    }
+    if report and report.casefold() != "note":
         try:
             return reports[report.casefold()]
         except KeyError as error:
@@ -165,8 +167,12 @@ def availability_probability(report_status, practice_status) -> float:
     practices = {
         "": 1.0,
         "did not participate": 0.70,
+        "did not participate in practice": 0.70,
         "limited participation": 0.90,
+        "limited participation in practice": 0.90,
         "full participation": 1.0,
+        "full participation in practice": 1.0,
+        "out (definitely will not play)": 0.0,
     }
     try:
         return practices[practice.casefold()]

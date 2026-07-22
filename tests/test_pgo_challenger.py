@@ -2429,8 +2429,49 @@ class LineupTests(unittest.TestCase):
             pgo_challenger.availability_probability("", "Full Participation"),
             1.0,
         )
+        self.assertEqual(
+            pgo_challenger.availability_probability("Probable", ""), 1.0
+        )
+        self.assertEqual(
+            pgo_challenger.availability_probability(
+                "", "Did Not Participate In Practice"
+            ),
+            0.70,
+        )
+        self.assertEqual(
+            pgo_challenger.availability_probability(
+                "", "Limited Participation In Practice"
+            ),
+            0.90,
+        )
+        self.assertEqual(
+            pgo_challenger.availability_probability(
+                "", "Full Participation In Practice"
+            ),
+            1.0,
+        )
+        self.assertEqual(
+            pgo_challenger.availability_probability(
+                "", "Out (Definitely Will Not Play)"
+            ),
+            0.0,
+        )
+        self.assertEqual(
+            pgo_challenger.availability_probability(
+                "Note", "Did Not Participate In Practice"
+            ),
+            0.70,
+        )
+        self.assertEqual(
+            pgo_challenger.availability_probability(
+                "Questionable", "Out (Definitely Will Not Play)"
+            ),
+            0.70,
+        )
         with self.assertRaisesRegex(ValueError, "Unknown injury report status"):
-            pgo_challenger.availability_probability("Probable", "")
+            pgo_challenger.availability_probability("Unknown", "")
+        with self.assertRaisesRegex(ValueError, "Unknown practice status"):
+            pgo_challenger.availability_probability("", "Unknown")
 
         snapshot = {
             "LV": {
