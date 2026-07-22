@@ -125,6 +125,18 @@ class ComparisonTests(unittest.TestCase):
         )
         self.assertEqual(output.count('<link rel="icon" href="data:,">'), 1)
 
+    def test_comparison_team_labels_have_contrasting_backgrounds(self):
+        self.assertIn(
+            "#panel-comparison .comparison-table thead th:first-child {\n"
+            "  background:var(--ink);",
+            pgo_comparison.MODEL_CSS,
+        )
+        self.assertIn(
+            "#panel-comparison .comparison-table tbody th:first-child {\n"
+            "  background:var(--panel); color:var(--ink);",
+            pgo_comparison.MODEL_CSS,
+        )
+
     def test_cli_rejects_output_outside_preview_root(self):
         with redirect_stderr(io.StringIO()):
             code = pgo_comparison.main(["--output", "docs/index.html"])

@@ -229,8 +229,15 @@ MODEL_CSS = """
 #panel-comparison .comparison-summary { color:var(--mut); max-width:78ch; }
 #panel-comparison .comparison-table th:first-child,
 #panel-comparison .comparison-table td:first-child { text-align:left; }
-#panel-comparison .comparison-table th:first-child {
-  position:sticky; left:0; background:var(--panel); z-index:1;
+#panel-comparison .comparison-table thead th:first-child,
+#panel-comparison .comparison-table tbody th:first-child {
+  position:sticky; left:0; z-index:1;
+}
+#panel-comparison .comparison-table thead th:first-child {
+  background:var(--ink);
+}
+#panel-comparison .comparison-table tbody th:first-child {
+  background:var(--panel); color:var(--ink);
 }
 #panel-comparison .comparison-links { margin-top:16px; }
 @media (max-width:680px) {
