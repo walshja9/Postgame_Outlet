@@ -105,6 +105,17 @@ It does not read Sean McCabe's QB/offense/defense inputs or any market line.
 A `PASS` makes the shadow ratings eligible for human review only; it does not
 publish them or add them to the ratings site.
 
+## PGO forward-looking challenger (shadow only)
+
+Install its single dependency with `python -m pip install -r requirements-pgo.txt`.
+`python pgo_challenger.py --freeze-sources --as-of <ISO-8601>` explicitly
+freezes a research snapshot; later `python pgo_challenger.py --as-of <same value>`
+runs offline from the lock. Outputs stay in `research/pgo_v1/`.
+
+`PASS` permits private prospective shadow tracking only. `HOLD` writes diagnostics
+and no ratings. Neither result publishes or changes McCabe ratings, Shopify, or
+GitHub Pages.
+
 ## Notes & caveats
 
 - ESPN endpoint is undocumented/unofficial; spreads only populate close to game week.
