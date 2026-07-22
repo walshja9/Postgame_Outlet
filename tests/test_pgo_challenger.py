@@ -688,25 +688,39 @@ class FeatureTests(unittest.TestCase):
 
         self.assertEqual(eastern, mountain)
 
-    def test_injury_revision_after_kickoff_rejected_across_offsets(self):
+    def test_injury_revision_after_kickoff_is_ignored_and_audited(self):
         with tempfile.TemporaryDirectory() as temp:
             paths = _synthetic_paths(Path(temp))
             injury_path = paths[("injury_reports", 2013)]
-            _write_csv(
-                injury_path,
-                (*pgo_sources.INJURY_COLUMNS, "date_modified"),
-                [{
-                    "season": 2013, "week": 1, "team": "SD",
-                    "gsis_id": "gsis-lac-qb", "position": "QB",
-                    "report_status": "Questionable", "practice_status": "",
-                    "date_modified": "2013-09-01T11:30:00-06:00",
-                }],
+            columns = (*pgo_sources.INJURY_COLUMNS, "date_modified")
+            pregame = {
+                "season": 2013, "week": 2, "team": "SD",
+                "gsis_id": "gsis-lac-qb", "position": "QB",
+                "report_status": "Out", "practice_status": "",
+                "date_modified": "2013-09-08T16:00:00Z",
+            }
+            postgame = {**pregame, "report_status": "Questionable",
+                        "date_modified": "2013-09-08T11:30:00-06:00"}
+            _write_csv(injury_path, columns, [pregame, postgame])
+
+            contaminated = pgo_challenger.build_feature_rows(paths, 4)
+            timing = pgo_challenger._injury_timing_audit(
+                paths, pgo_challenger._load_inputs(paths)
             )
+            _write_csv(injury_path, columns, [pregame])
+            clean = pgo_challenger.build_feature_rows(paths, 4)
 
-            with self.assertRaisesRegex(ValueError, "Injury revision after kickoff"):
-                pgo_challenger.build_feature_rows(paths, 4)
+        self.assertEqual(contaminated, clean)
+        self.assertEqual(timing, {
+            "post_kickoff_rows_ignored": 1,
+            "rows": [{
+                "season": 2013, "week": 2, "team": "LAC",
+                "gsis_id": "gsis-lac-qb",
+                "date_modified": "2013-09-08T11:30:00-06:00",
+            }],
+        })
 
-    def test_timestamped_injury_revisions_keep_latest(self):
+    def test_timestamped_injury_revisions_are_preserved_in_order(self):
         with tempfile.TemporaryDirectory() as temp:
             paths = _synthetic_paths(Path(temp))
             injury_path = paths[("injury_reports", 2013)]
@@ -722,11 +736,14 @@ class FeatureTests(unittest.TestCase):
             )]
             _write_csv(injury_path, columns, rows)
 
-            injury = pgo_challenger._load_inputs(paths)["injuries"][
+            revisions = pgo_challenger._load_inputs(paths)["injuries"][
                 (2013, 1, "LAC", "gsis-lac-qb")
             ]
 
-        self.assertEqual(injury["report_status"], "Out")
+        self.assertEqual(
+            [revision["report_status"] for revision in revisions],
+            ["Questionable", "Out"],
+        )
 
     def test_ambiguous_injury_revisions_are_rejected(self):
         cases = (
@@ -1878,6 +1895,10 @@ class OutputTests(unittest.TestCase):
                 pgo_challenger, "_load_inputs",
                 return_value={"identity_resolution": {}},
             ),
+            patch.object(
+                pgo_challenger, "_injury_timing_audit",
+                return_value={"post_kickoff_rows_ignored": 0, "rows": []},
+            ),
         ):
             with self.assertRaisesRegex(ValueError, "frozen_at"):
                 pgo_challenger._source_preflight(
@@ -2209,6 +2230,10 @@ class OutputTests(unittest.TestCase):
         self.assertEqual(audit["coverage"]["snap_pfr_volume"]["denominator"], 1300.0)
         self.assertEqual(audit["coverage"]["injury_gsis_rows"]["numerator"], 13)
         self.assertEqual(audit["coverage"]["current_teams"]["numerator"], 32)
+        self.assertEqual(audit["injury_timing"], {
+            "post_kickoff_rows_ignored": 0,
+            "rows": [],
+        })
         self.assertTrue(all(audit["checks"].values()))
 
     def test_invalid_as_of_fails_before_freezing_sources(self):

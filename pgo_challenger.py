@@ -797,6 +797,7 @@ def _source_preflight(paths, manifest, as_of):
     inputs = _load_inputs(paths)
     audit["identity_resolution"] = inputs["identity_resolution"]
     audit["coverage"] = _historical_coverage(paths, inputs)
+    audit["injury_timing"] = _injury_timing_audit(paths, inputs)
     return audit
 
 
@@ -906,6 +907,28 @@ def _historical_coverage(paths, inputs=None):
         "snap_pfr_volume": _coverage_metric(snap_joined, snap_volume, 0.97),
         "injury_gsis_rows": _coverage_metric(injury_joined, injury_rows, 0.99),
     }
+
+
+def _injury_timing_audit(paths, inputs):
+    kickoffs = {
+        (game["season"], game["week"], team): game["kickoff_dt"]
+        for game in _load_games(paths)
+        for team in (game["home"], game["away"])
+    }
+    rows = []
+    for (season, week, team, gsis_id), revisions in sorted(inputs["injuries"].items()):
+        kickoff = kickoffs.get((season, week, team))
+        for injury in revisions:
+            modified = injury.get("date_modified", "").strip()
+            if modified and kickoff and _parse_datetime(modified) > kickoff:
+                rows.append({
+                    "season": season,
+                    "week": week,
+                    "team": team,
+                    "gsis_id": gsis_id,
+                    "date_modified": modified,
+                })
+    return {"post_kickoff_rows_ignored": len(rows), "rows": rows}
 
 
 def _current_team_coverage(paths, snapshot_states):
@@ -1487,11 +1510,14 @@ def _players_for_team(team, season, week, kickoff, roster_rows, context, inputs)
         offense = statistics.median(history["offense"]) if history and history["offense"] else None
         defense = statistics.median(history["defense"]) if history and history["defense"] else None
         probability = 1.0
-        injury = inputs["injuries"].get((season, week, team, gsis_id)) if gsis_id else None
+        revisions = inputs["injuries"].get((season, week, team, gsis_id), ())
+        injury = None
+        for revision in reversed(revisions):
+            modified = revision.get("date_modified", "").strip()
+            if not modified or _parse_datetime(modified) <= kickoff:
+                injury = revision
+                break
         if injury:
-            modified = injury.get("date_modified", "").strip()
-            if modified and _parse_datetime(modified) > kickoff:
-                raise ValueError(f"Injury revision after kickoff: {season} week {week} {team} {gsis_id}")
             probability = availability_probability(
                 injury.get("report_status"), injury.get("practice_status")
             )
@@ -1689,7 +1715,7 @@ def _accumulate_qb(row, target):
 def _load_inputs(paths):
     inputs = {
         "team_rows": {}, "players": defaultdict(list),
-        "rosters": defaultdict(list), "injuries": {}, "snaps": defaultdict(list),
+        "rosters": defaultdict(list), "injuries": defaultdict(list), "snaps": defaultdict(list),
         "current_roster_periods": set(),
     }
     roster_rows = {}
@@ -1749,21 +1775,26 @@ def _load_inputs(paths):
                     inputs["current_roster_periods"].add(key)
             elif name == "injury_reports":
                 injury_key = (*key, row.get("gsis_id", "").strip())
-                existing = inputs["injuries"].get(injury_key)
-                if existing is not None:
-                    previous = existing.get("date_modified", "").strip()
-                    current = row.get("date_modified", "").strip()
-                    if not previous or not current:
+                revisions = inputs["injuries"][injury_key]
+                current = row.get("date_modified", "").strip()
+                if revisions:
+                    previous = [
+                        revision.get("date_modified", "").strip()
+                        for revision in revisions
+                    ]
+                    if not current or not all(previous):
                         raise ValueError(f"Duplicate injury row: {season} week {week} {team}")
-                    previous_time = _parse_datetime(previous)
-                    current_time = _parse_datetime(current)
-                    if current_time == previous_time:
+                    if _parse_datetime(current) in map(_parse_datetime, previous):
                         raise ValueError(f"Duplicate injury row: {season} week {week} {team}")
-                    if current_time < previous_time:
-                        continue
-                inputs["injuries"][injury_key] = row
+                revisions.append(row)
             elif name == "snap_counts":
                 inputs["snaps"][key].append(row)
+    for revisions in inputs["injuries"].values():
+        revisions.sort(key=lambda injury: (
+            _parse_datetime(injury["date_modified"])
+            if injury.get("date_modified", "").strip()
+            else datetime.min.replace(tzinfo=timezone.utc)
+        ))
     colliding_gsis = sorted({
         gsis_id
         for (_, _, gsis_id), smart_ids in roster_gsis_periods.items()
