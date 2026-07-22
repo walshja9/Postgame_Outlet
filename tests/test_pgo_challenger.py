@@ -1872,7 +1872,14 @@ class OutputTests(unittest.TestCase):
         "rank", "team", "full_strength_rating", "performance_points",
         "roster_coaching_points", "availability_adjustment",
         "current_lineup_rating", "headline_view", "headline_rating", "as_of",
+        "validation_status", "status_reason",
     )
+
+    @staticmethod
+    def _gate_checks(**overrides):
+        checks = {name: True for name in pgo_challenger.GATE_CHECK_NAMES}
+        checks.update(overrides)
+        return checks
 
     @staticmethod
     def _ratings():
@@ -2002,25 +2009,72 @@ class OutputTests(unittest.TestCase):
 
         self.assertEqual(len(audit["source_hashes"]), len(paths))
 
-    def test_hold_writes_diagnostics_and_removes_all_stale_ratings(self):
+    def test_release_classification_separates_integrity_from_statistics(self):
+        self.assertEqual(
+            pgo_challenger.classify_release(self._gate_checks()), "PASS"
+        )
+        self.assertEqual(
+            pgo_challenger.classify_release(
+                self._gate_checks(aggregate_improvement_ci_positive=False)
+            ),
+            "HOLD",
+        )
+        self.assertEqual(
+            pgo_challenger.classify_release(
+                self._gate_checks(audit_checks_pass=False)
+            ),
+            "BLOCKED",
+        )
+
+    def test_statistical_hold_writes_experimental_ratings(self):
+        checks = self._gate_checks(aggregate_improvement_ci_positive=False)
+        backtest = {
+            "status": "HOLD",
+            "publication_status": "EXPERIMENTAL",
+            "failed_checks": ["aggregate_improvement_ci_positive"],
+            "checks": checks,
+        }
         with tempfile.TemporaryDirectory() as temp:
             output_dir = Path(temp)
             (output_dir / "ratings_old.csv").write_text("old", encoding="utf-8")
-            (output_dir / "ratings_other.csv").write_text("other", encoding="utf-8")
+            passed = pgo_challenger.write_research_outputs(
+                output_dir, self._passing_audit(), backtest, [], self._ratings()
+            )
+            with open(
+                output_dir / "ratings_2026_preseason.csv",
+                encoding="utf-8",
+                newline="",
+            ) as handle:
+                rows = list(csv.DictReader(handle))
 
-            written = pgo_challenger.write_research_outputs(
+        self.assertFalse(passed)
+        self.assertEqual(len(rows), 32)
+        self.assertEqual({row["validation_status"] for row in rows}, {"EXPERIMENTAL"})
+        self.assertEqual(
+            {row["status_reason"] for row in rows},
+            {"Historical HOLD: aggregate_improvement_ci_positive"},
+        )
+
+    def test_blocked_run_removes_stale_ratings(self):
+        checks = self._gate_checks(audit_checks_pass=False)
+        with tempfile.TemporaryDirectory() as temp:
+            output_dir = Path(temp)
+            (output_dir / "ratings_old.csv").write_text("old", encoding="utf-8")
+            passed = pgo_challenger.write_research_outputs(
                 output_dir,
-                {"checks": {"source": True}},
-                {"status": "HOLD", "checks": {"gate": False}},
+                {"checks": {"source": False}},
+                {
+                    "status": "BLOCKED",
+                    "publication_status": "BLOCKED",
+                    "failed_checks": ["audit_checks_pass"],
+                    "checks": checks,
+                },
                 [],
                 [],
             )
-
-            self.assertFalse(written)
+            self.assertFalse(passed)
             self.assertEqual(list(output_dir.glob("ratings_*.csv")), [])
-            self.assertTrue((output_dir / "source_audit.json").is_file())
             self.assertTrue((output_dir / "backtest.json").is_file())
-            self.assertTrue((output_dir / "validation_predictions.csv").is_file())
 
     def test_pass_writes_32_ranked_rows_with_exact_rating_algebra(self):
         ratings = self._ratings()
@@ -2047,10 +2101,16 @@ class OutputTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temp:
             output_dir = Path(temp)
+            checks = self._gate_checks()
             written = pgo_challenger.write_research_outputs(
                 output_dir,
                 self._passing_audit(),
-                {"status": "PASS", "checks": {"gate": True}},
+                {
+                    "status": "PASS",
+                    "publication_status": "VALIDATED",
+                    "failed_checks": [],
+                    "checks": checks,
+                },
                 [],
                 ratings,
             )
@@ -2065,6 +2125,13 @@ class OutputTests(unittest.TestCase):
         self.assertTrue(written)
         self.assertEqual(tuple(reader.fieldnames), self.RATING_COLUMNS)
         self.assertEqual(len(displayed), 32)
+        self.assertEqual(
+            {row["validation_status"] for row in displayed}, {"VALIDATED"}
+        )
+        self.assertEqual(
+            {row["status_reason"] for row in displayed},
+            {"All historical gates passed"},
+        )
         for row in displayed:
             full = Decimal(row["full_strength_rating"])
             performance = Decimal(row["performance_points"])
@@ -2081,7 +2148,9 @@ class OutputTests(unittest.TestCase):
         audit["serialization_probe"] = {"rate": 0.9999999}
         backtest = {
             "status": "PASS",
-            "checks": {"gate": True},
+            "publication_status": "VALIDATED",
+            "failed_checks": [],
+            "checks": self._gate_checks(),
             "metric": 1.23456789,
         }
         predictions = [
@@ -2124,13 +2193,19 @@ class OutputTests(unittest.TestCase):
         self.assertEqual(first_hashes, second_hashes)
 
     def test_pass_status_cannot_override_failed_checks(self):
+        checks = self._gate_checks(aggregate_improvement_ci_positive=False)
         with tempfile.TemporaryDirectory() as temp:
             output_dir = Path(temp)
             with self.assertRaisesRegex(ValueError, "status does not match checks"):
                 pgo_challenger.write_research_outputs(
                     output_dir,
                     self._passing_audit(),
-                    {"status": "PASS", "checks": {"gate": False}},
+                    {
+                        "status": "PASS",
+                        "publication_status": "VALIDATED",
+                        "failed_checks": ["aggregate_improvement_ci_positive"],
+                        "checks": checks,
+                    },
                     [],
                     self._ratings(),
                 )
@@ -2184,6 +2259,7 @@ class OutputTests(unittest.TestCase):
         for label, audit in cases.items():
             with self.subTest(label=label), tempfile.TemporaryDirectory() as temp:
                 output_dir = Path(temp)
+                checks = self._gate_checks()
                 expected = {
                     name: f"successful {name}\n".encode()
                     for name in (
@@ -2200,7 +2276,12 @@ class OutputTests(unittest.TestCase):
                     pgo_challenger.write_research_outputs(
                         output_dir,
                         audit,
-                        {"status": "PASS", "checks": {"gate": True}},
+                        {
+                            "status": "PASS",
+                            "publication_status": "VALIDATED",
+                            "failed_checks": [],
+                            "checks": checks,
+                        },
                         [],
                         self._ratings(),
                     )
@@ -2252,7 +2333,7 @@ class OutputTests(unittest.TestCase):
                 {}, {}, self.AS_OF
             )
 
-        self.assertEqual(backtest["status"], "HOLD")
+        self.assertEqual(backtest["status"], "BLOCKED")
         self.assertFalse(audit["checks"]["reproducibility"])
 
     def test_small_synthetic_pipeline_runs_end_to_end(self):
@@ -2464,7 +2545,7 @@ class OutputTests(unittest.TestCase):
         )
 
         self.assertFalse(audit["checks"]["source"])
-        self.assertEqual(backtest["status"], "HOLD")
+        self.assertEqual(backtest["status"], "BLOCKED")
 
     def test_cli_error_preserves_existing_successful_receipts(self):
         with tempfile.TemporaryDirectory() as temp:

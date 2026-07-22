@@ -72,6 +72,23 @@ COVERAGE_NAMES = frozenset((
     "injury_gsis_rows",
     "current_teams",
 ))
+INTEGRITY_GATE_NAMES = frozenset((
+    "audit_checks_pass",
+    "all_32_current_teams",
+    "paired_game_ids",
+    "deterministic",
+))
+STATISTICAL_GATE_NAMES = frozenset((
+    "challenger_mae_lower",
+    "aggregate_improvement_ci_positive",
+    "no_sufficient_subgroup_regression",
+))
+GATE_CHECK_NAMES = INTEGRITY_GATE_NAMES | STATISTICAL_GATE_NAMES
+PUBLICATION_STATUS = {
+    "BLOCKED": "BLOCKED",
+    "HOLD": "EXPERIMENTAL",
+    "PASS": "VALIDATED",
+}
 ROSTER_COACHING_FEATURES = frozenset(QB_FEATURES + (
     "returning_offense_snap_share",
     "returning_defense_snap_share",
@@ -84,6 +101,7 @@ RATING_COLUMNS = (
     "rank", "team", "full_strength_rating", "performance_points",
     "roster_coaching_points", "availability_adjustment",
     "current_lineup_rating", "headline_view", "headline_rating", "as_of",
+    "validation_status", "status_reason",
 )
 PREDICTION_COLUMNS = (
     "game_id", "season", "week", "kickoff", "actual_margin",
@@ -94,6 +112,16 @@ DEFAULT_LOCK_PATH = Path("research/pgo_v1/sources.lock.json")
 DEFAULT_CACHE_DIR = Path(".cache/pgo_v1")
 DEFAULT_OUTPUT_DIR = Path("research/pgo_v1")
 SIX_PLACES = Decimal("0.000001")
+
+
+def classify_release(checks) -> str:
+    if not isinstance(checks, dict) or set(checks) != GATE_CHECK_NAMES:
+        raise ValueError("Backtest checks do not match the release contract")
+    if any(type(value) is not bool for value in checks.values()):
+        raise ValueError("Backtest checks must be explicit booleans")
+    if not all(checks[name] for name in INTEGRITY_GATE_NAMES):
+        return "BLOCKED"
+    return "PASS" if all(checks.values()) else "HOLD"
 
 
 @dataclass(frozen=True)
@@ -1065,6 +1093,8 @@ def _build_backtest(analysis, as_of, checks):
         if season in folds and folds[season] != values:
             raise ValueError(f"Inconsistent outer-fold parameters for {season}")
         folds[season] = values
+    status = classify_release(checks)
+    failed_checks = sorted(name for name, passed in checks.items() if not passed)
     return {
         "model": "Postgame Outlet team-margin challenger",
         "version": "pgo_v1",
@@ -1093,7 +1123,9 @@ def _build_backtest(analysis, as_of, checks):
         "subgroup_results": evaluation["subgroups"],
         "aggregate_interval": evaluation["improvement"],
         "checks": checks,
-        "status": "PASS" if all(checks.values()) else "HOLD",
+        "failed_checks": failed_checks,
+        "publication_status": PUBLICATION_STATUS[status],
+        "status": status,
     }
 
 
@@ -1156,7 +1188,14 @@ def _csv_value(value):
     return str(value)
 
 
-def _rating_csv(ratings):
+def _rating_csv(ratings, backtest):
+    status = backtest["status"]
+    failed_checks = backtest.get("failed_checks", [])
+    reason = (
+        "All historical gates passed"
+        if status == "PASS"
+        else "Historical HOLD: " + ", ".join(failed_checks)
+    )
     rows = []
     for rating in sorted(ratings, key=lambda row: row["rank"]):
         full = _quantized(rating["full_strength_rating"])
@@ -1170,6 +1209,8 @@ def _rating_csv(ratings):
             "availability_adjustment": _decimal_text(current - full),
             "current_lineup_rating": _decimal_text(current),
             "headline_rating": _decimal_text(full),
+            "validation_status": PUBLICATION_STATUS[status],
+            "status_reason": reason,
         })
         rows.append(row)
     return _csv_receipt(RATING_COLUMNS, rows)
@@ -1191,7 +1232,11 @@ def _serialized_outputs(audit, backtest, predictions, ratings):
     prediction_rows = sorted(
         predictions, key=lambda row: (row["kickoff"], row["game_id"])
     )
-    rating_text = _rating_csv(ratings) if backtest.get("status") == "PASS" else ""
+    rating_text = (
+        _rating_csv(ratings, backtest)
+        if backtest.get("status") in {"HOLD", "PASS"}
+        else ""
+    )
     return (
         _json_receipt(audit),
         _json_receipt(backtest),
@@ -1201,25 +1246,24 @@ def _serialized_outputs(audit, backtest, predictions, ratings):
 
 
 def _in_memory_serialization(outputs):
-    return (*_serialized_outputs(*outputs), _rating_csv(outputs[3]))
+    return _serialized_outputs(*outputs)
 
 
 def write_research_outputs(output_dir, audit, backtest, predictions, ratings) -> bool:
     """Atomically replace diagnostics and fail closed on public ratings."""
     status = backtest.get("status")
-    if status not in {"PASS", "HOLD"}:
-        raise ValueError("Backtest status must be PASS or HOLD")
     checks = backtest.get("checks")
-    if not isinstance(checks, dict) or not checks or any(
-        value is not True and value is not False for value in checks.values()
-    ):
-        raise ValueError("Backtest checks must be explicit booleans")
-    expected_status = "PASS" if all(checks.values()) else "HOLD"
+    expected_status = classify_release(checks)
+    failed_checks = sorted(name for name, passed in checks.items() if not passed)
     if status != expected_status:
         raise ValueError("Backtest status does not match checks")
-    if status == "PASS" and not _pass_audit_is_valid(audit):
+    if backtest.get("publication_status") != PUBLICATION_STATUS[status]:
+        raise ValueError("Backtest publication status does not match release status")
+    if backtest.get("failed_checks") != failed_checks:
+        raise ValueError("Backtest failed checks do not match checks")
+    if status in {"HOLD", "PASS"} and not _release_audit_is_valid(audit):
         raise ValueError("PASS audit evidence is incomplete or contradictory")
-    if status == "PASS" and (
+    if status in {"HOLD", "PASS"} and (
         len(ratings) != len(pgo_model.CURRENT_TEAMS)
         or {row.get("team") for row in ratings} != set(pgo_model.CURRENT_TEAMS)
     ):
@@ -1232,7 +1276,7 @@ def write_research_outputs(output_dir, audit, backtest, predictions, ratings) ->
     atomic_write_text(output_dir / "backtest.json", backtest_text)
     atomic_write_text(output_dir / "validation_predictions.csv", prediction_text)
     approved = output_dir / "ratings_2026_preseason.csv"
-    if status == "HOLD":
+    if status == "BLOCKED":
         for path in output_dir.glob("ratings_*.csv"):
             path.unlink(missing_ok=True)
         return False
@@ -1240,10 +1284,10 @@ def write_research_outputs(output_dir, audit, backtest, predictions, ratings) ->
     for path in output_dir.glob("ratings_*.csv"):
         if path != approved:
             path.unlink(missing_ok=True)
-    return True
+    return status == "PASS"
 
 
-def _pass_audit_is_valid(audit):
+def _release_audit_is_valid(audit):
     if not isinstance(audit, dict):
         return False
     checks = audit.get("checks")
@@ -2120,7 +2164,7 @@ def main(argv=None):
             atomic_write_text(
                 args.lock_path, staged_lock.read_text(encoding="utf-8")
             )
-        written = write_research_outputs(args.output_dir, *outputs)
+        write_research_outputs(args.output_dir, *outputs)
     except (
         AttributeError, csv.Error, KeyError, OSError, OverflowError, TypeError,
         UnicodeError, ValueError,
@@ -2132,7 +2176,7 @@ def main(argv=None):
             staged_lock.unlink(missing_ok=True)
     status = outputs[1]["status"]
     print(f"{status}: pgo_v1 research gate")
-    return 0 if written else 1
+    return {"PASS": 0, "HOLD": 1, "BLOCKED": 2}[status]
 
 
 if __name__ == "__main__":
