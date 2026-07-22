@@ -873,13 +873,18 @@ def _historical_coverage(paths, inputs=None):
             paired += 1
 
     roster_gsis, roster_pfr = set(), set()
-    for (name, source_season), path in paths.items():
-        if name != "weekly_rosters":
+    roster_names, ambiguous_roster_names = set(), set()
+    for (season, week, team), rows in inputs["rosters"].items():
+        if not FIRST_SEASON <= season <= LAST_SEASON:
             continue
-        for row in open_csv(path):
-            season = int(row.get("season") or source_season)
-            week = int(float(row.get("week") or 0))
-            team = normalize_team(row["team"])
+        name_ids, ambiguous_names = _unique_roster_name_ids(
+            rows, inputs.get("colliding_gsis", ())
+        )
+        roster_names.update((season, week, team, name) for name in name_ids)
+        ambiguous_roster_names.update(
+            (season, week, team, name) for name in ambiguous_names
+        )
+        for row in rows:
             gsis_id, pfr_id = row.get("gsis_id", "").strip(), row.get("pfr_id", "").strip()
             if gsis_id:
                 roster_gsis.add((season, week, team, gsis_id))
@@ -887,7 +892,8 @@ def _historical_coverage(paths, inputs=None):
                 roster_pfr.add((season, week, team, pfr_id))
 
     qb_rows = qb_joined = 0
-    snap_volume = snap_joined = 0.0
+    snap_volume = snap_joined = snap_pfr_joined = snap_name_joined = 0.0
+    snap_name_ambiguous = snap_name_unmatched = 0.0
     injury_rows = injury_joined = 0
     for (name, source_season), path in paths.items():
         if name not in {"player_weekly_stats", "snap_counts", "injury_reports"}:
@@ -909,17 +915,37 @@ def _historical_coverage(paths, inputs=None):
                 if volume < 0:
                     raise ValueError("Snap volume must not be negative")
                 snap_volume += volume
-                if (season, week, team, row.get("pfr_player_id", "").strip()) in roster_pfr:
+                pfr_key = (season, week, team, row.get("pfr_player_id", "").strip())
+                name_key = (
+                    season, week, team, _normalize_player_name(row.get("player", ""))
+                )
+                if pfr_key in roster_pfr:
+                    snap_pfr_joined += volume
                     snap_joined += volume
+                elif name_key in roster_names:
+                    snap_name_joined += volume
+                    snap_joined += volume
+                elif name_key in ambiguous_roster_names:
+                    snap_name_ambiguous += volume
+                else:
+                    snap_name_unmatched += volume
             else:
                 injury_rows += 1
                 if (season, week, team, row.get("gsis_id", "").strip()) in roster_gsis:
                     injury_joined += 1
 
+    snap_coverage = _coverage_metric(snap_joined, snap_volume, 0.97)
+    snap_coverage.update({
+        "direct_pfr_volume": snap_pfr_joined,
+        "exact_name_volume": snap_name_joined,
+        "ambiguous_name_volume": snap_name_ambiguous,
+        "unmatched_name_volume": snap_name_unmatched,
+        "rejected_name_volume": snap_name_ambiguous + snap_name_unmatched,
+    })
     return {
         "schedule_team_games": _coverage_metric(paired, len(games), 0.99),
         "qb_gsis_rows": _coverage_metric(qb_joined, qb_rows, 0.98),
-        "snap_pfr_volume": _coverage_metric(snap_joined, snap_volume, 0.97),
+        "snap_pfr_volume": snap_coverage,
         "injury_gsis_rows": _coverage_metric(injury_joined, injury_rows, 0.99),
     }
 
@@ -1503,16 +1529,13 @@ def _team_views(team, season, week, coach, kickoff, context, inputs):
 
 def _players_for_team(team, season, week, kickoff, roster_rows, context, inputs):
     players, gsis_ids, pfr_ids = {}, {}, {}
+    name_ids, _ = _unique_roster_name_ids(
+        roster_rows, inputs.get("colliding_gsis", ())
+    )
     for row in roster_rows:
         gsis_id = row.get("gsis_id", "").strip()
         pfr_id = row.get("pfr_id", "").strip()
-        if gsis_id in inputs.get("colliding_gsis", ()):
-            smart_id = row.get("smart_id", "").strip()
-            if not smart_id:
-                raise ValueError(f"Colliding GSIS ID missing smart_id: {gsis_id}")
-            player_id = f"{gsis_id}:{smart_id}"
-        else:
-            player_id = gsis_id or (f"pfr:{pfr_id}" if pfr_id else "")
+        player_id = _roster_player_id(row, inputs.get("colliding_gsis", ()))
         if not player_id:
             continue
         if player_id in players:
@@ -1547,7 +1570,41 @@ def _players_for_team(team, season, week, kickoff, roster_rows, context, inputs)
             "years_exp": years_exp,
             **qb,
         }
-    return players, {"gsis_ids": gsis_ids, "pfr_ids": pfr_ids}
+    return players, {
+        "gsis_ids": gsis_ids,
+        "pfr_ids": pfr_ids,
+        "name_ids": name_ids,
+    }
+
+
+def _normalize_player_name(value):
+    return " ".join((value or "").casefold().split())
+
+
+def _roster_player_id(row, colliding_gsis):
+    gsis_id = row.get("gsis_id", "").strip()
+    pfr_id = row.get("pfr_id", "").strip()
+    if gsis_id in colliding_gsis:
+        smart_id = row.get("smart_id", "").strip()
+        if not smart_id:
+            raise ValueError(f"Colliding GSIS ID missing smart_id: {gsis_id}")
+        return f"{gsis_id}:{smart_id}"
+    return gsis_id or (f"pfr:{pfr_id}" if pfr_id else "")
+
+
+def _unique_roster_name_ids(rows, colliding_gsis):
+    names, ambiguous = {}, set()
+    for row in rows:
+        name = _normalize_player_name(row.get("full_name", ""))
+        player_id = _roster_player_id(row, colliding_gsis)
+        if not name or not player_id or name in ambiguous:
+            continue
+        if name in names and names[name] != player_id:
+            del names[name]
+            ambiguous.add(name)
+        else:
+            names[name] = player_id
+    return names, ambiguous
 
 
 def _qb_features(player_id, years_exp, draft_number, context):
@@ -1622,7 +1679,9 @@ def _update_after_game(game, home, away, context, inputs, decay):
         snap_shares = {}
         for row in snap_rows:
             pfr_id = row.get("pfr_player_id", "").strip()
-            player_id = metadata["pfr_ids"].get(pfr_id)
+            player_id = metadata["pfr_ids"].get(pfr_id) or metadata[
+                "name_ids"
+            ].get(_normalize_player_name(row.get("player", "")))
             if not player_id:
                 continue
             offense = _number(row, "offense_snaps")
@@ -1826,6 +1885,11 @@ def _load_inputs(paths):
         "status_only_roster_rows_collapsed": collapsed_roster_rows,
         "simultaneous_gsis_collisions": colliding_gsis,
         "collision_key": "gsis_id:smart_id",
+        "snap_name_fallback": {
+            "scope": "season-week-team",
+            "normalization": "casefold and collapse whitespace",
+            "ambiguous_names": "rejected",
+        },
     }
     return inputs
 

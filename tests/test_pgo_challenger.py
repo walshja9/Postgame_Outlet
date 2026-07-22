@@ -435,7 +435,7 @@ class SourceTests(unittest.TestCase):
                 "passing_interceptions", "sack_fumbles_lost", "carries", "rushing_epa",
             ),
             "weekly_rosters": (
-                "season", "week", "team", "position", "gsis_id", "pfr_id",
+                "season", "week", "team", "position", "full_name", "gsis_id", "pfr_id",
                 "smart_id", "years_exp", "draft_number",
             ),
             "injury_reports": (
@@ -443,11 +443,11 @@ class SourceTests(unittest.TestCase):
                 "practice_status",
             ),
             "snap_counts": (
-                "season", "week", "team", "pfr_player_id", "position",
+                "season", "week", "team", "player", "pfr_player_id", "position",
                 "offense_snaps", "defense_snaps",
             ),
             "current_roster": (
-                "season", "week", "team", "position", "gsis_id", "pfr_id",
+                "season", "week", "team", "position", "full_name", "gsis_id", "pfr_id",
                 "smart_id", "years_exp", "draft_number",
             ),
         }
@@ -1013,6 +1013,94 @@ class FeatureTests(unittest.TestCase):
             stable[2].features["head_coach_continuity"],
         )
         self.assertEqual(_pregame_bytes(changed[2]), _pregame_bytes(changed_result[2]))
+
+    def test_snap_identity_uses_only_unique_same_team_week_names(self):
+        results = {}
+        for resolution in ("unique", "ambiguous", "unmatched"):
+            with tempfile.TemporaryDirectory() as temp:
+                paths = _synthetic_paths(Path(temp), offseason_change=False)
+                roster_path = paths[("weekly_rosters", 2013)]
+                with open(roster_path, encoding="utf-8", newline="") as handle:
+                    rosters = list(csv.DictReader(handle))
+                target = next(
+                    row for row in rosters
+                    if row["week"] == "1" and row["team"] == "OAK"
+                )
+                target["pfr_id"] = ""
+                target["full_name"] = "  Alex   Example  "
+                if resolution == "ambiguous":
+                    rosters.append({
+                        **target,
+                        "gsis_id": "gsis-other-player",
+                        "smart_id": "smart-other-player",
+                        "full_name": "Alex Example",
+                    })
+                _write_csv(
+                    roster_path,
+                    tuple(dict.fromkeys((*pgo_sources.ROSTER_COLUMNS, "full_name"))),
+                    rosters,
+                )
+
+                snap_path = paths[("snap_counts", 2013)]
+                with open(snap_path, encoding="utf-8", newline="") as handle:
+                    snaps = list(csv.DictReader(handle))
+                target_snap = next(
+                    row for row in snaps
+                    if row["week"] == "1" and row["team"] == "OAK"
+                )
+                target_snap["pfr_player_id"] = "unlisted-pfr-id"
+                target_snap["player"] = (
+                    "unmatched player" if resolution == "unmatched" else "alex example"
+                )
+                _write_csv(
+                    snap_path,
+                    tuple(dict.fromkeys((*pgo_sources.SNAP_COLUMNS, "player"))),
+                    snaps,
+                )
+
+                rows = pgo_challenger.build_feature_rows(paths, 4)
+                coverage = pgo_challenger._historical_coverage(paths)[
+                    "snap_pfr_volume"
+                ]
+                if resolution == "unique":
+                    policy = pgo_challenger._load_inputs(paths)[
+                        "identity_resolution"
+                    ]["snap_name_fallback"]
+                results[resolution] = (
+                    rows[2].features["returning_offense_snap_share"], coverage
+                )
+
+        unique_feature, unique_coverage = results["unique"]
+        self.assertEqual(unique_feature, 0.0)
+        self.assertEqual(unique_coverage["numerator"], 400.0)
+        self.assertEqual(unique_coverage["direct_pfr_volume"], 350.0)
+        self.assertEqual(unique_coverage["exact_name_volume"], 50.0)
+        self.assertEqual(unique_coverage["ambiguous_name_volume"], 0.0)
+        self.assertEqual(unique_coverage["unmatched_name_volume"], 0.0)
+        self.assertEqual(unique_coverage["rejected_name_volume"], 0.0)
+        self.assertEqual(policy, {
+            "scope": "season-week-team",
+            "normalization": "casefold and collapse whitespace",
+            "ambiguous_names": "rejected",
+        })
+
+        ambiguous_feature, ambiguous_coverage = results["ambiguous"]
+        self.assertIsNone(ambiguous_feature)
+        self.assertEqual(ambiguous_coverage["numerator"], 350.0)
+        self.assertEqual(ambiguous_coverage["direct_pfr_volume"], 350.0)
+        self.assertEqual(ambiguous_coverage["exact_name_volume"], 0.0)
+        self.assertEqual(ambiguous_coverage["ambiguous_name_volume"], 50.0)
+        self.assertEqual(ambiguous_coverage["unmatched_name_volume"], 0.0)
+        self.assertEqual(ambiguous_coverage["rejected_name_volume"], 50.0)
+
+        unmatched_feature, unmatched_coverage = results["unmatched"]
+        self.assertIsNone(unmatched_feature)
+        self.assertEqual(unmatched_coverage["numerator"], 350.0)
+        self.assertEqual(unmatched_coverage["direct_pfr_volume"], 350.0)
+        self.assertEqual(unmatched_coverage["exact_name_volume"], 0.0)
+        self.assertEqual(unmatched_coverage["ambiguous_name_volume"], 0.0)
+        self.assertEqual(unmatched_coverage["unmatched_name_volume"], 50.0)
+        self.assertEqual(unmatched_coverage["rejected_name_volume"], 50.0)
 
     def test_snap_window_advances_when_rostered_player_has_no_snap_row(self):
         with tempfile.TemporaryDirectory() as temp:

@@ -46,7 +46,7 @@ PLAYER_COLUMNS = (
     "sack_fumbles_lost", "carries", "rushing_epa",
 )
 ROSTER_COLUMNS = (
-    "season", "week", "team", "position", "gsis_id", "pfr_id",
+    "season", "week", "team", "position", "full_name", "gsis_id", "pfr_id",
     "smart_id", "years_exp", "draft_number",
 )
 INJURY_COLUMNS = (
@@ -54,7 +54,7 @@ INJURY_COLUMNS = (
     "practice_status",
 )
 SNAP_COLUMNS = (
-    "season", "week", "team", "pfr_player_id", "position",
+    "season", "week", "team", "player", "pfr_player_id", "position",
     "offense_snaps", "defense_snaps",
 )
 NOT_ADMITTED = (
