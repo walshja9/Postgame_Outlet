@@ -512,6 +512,23 @@ class SourceTests(unittest.TestCase):
             sorted(f"{entry['sha256']}.csv.gz" for entry in expected["sources"]),
         )
 
+    def test_freeze_rejects_schedule_bytes_that_do_not_match_pinned_hash(self):
+        spec = next(
+            spec for spec in pgo_sources.source_specs()
+            if (spec.name, spec.season) == ("schedule_results", None)
+        )
+        with tempfile.TemporaryDirectory() as temp:
+            cache_dir = Path(temp, "cache")
+            lock_path = Path(temp, "sources.lock.json")
+            with self.assertRaisesRegex(ValueError, "schedule_results.*pinned"):
+                pgo_sources.freeze_sources(
+                    (spec,), cache_dir, lock_path, "frozen",
+                    fetch=lambda _: b"not the pinned schedule",
+                )
+
+            self.assertFalse(lock_path.exists())
+            self.assertEqual(list(cache_dir.iterdir()), [])
+
     def test_locked_loader_rejects_changed_bytes(self):
         spec = pgo_sources.SourceSpec(
             "team_weekly_stats",
@@ -665,6 +682,42 @@ class FeatureTests(unittest.TestCase):
         self.assertAlmostEqual(
             states["LAC"][0]["qb_experience_prior"], math.log1p(9)
         )
+
+    def test_preseason_snapshot_uses_scheduled_current_season_coach(self):
+        rows = [
+            {
+                "game_id": "2025-completed", "season": 2025, "week": 18,
+                "game_type": "REG", "gameday": "2026-01-04",
+                "gametime": "13:00", "away_team": "LAC", "home_team": "LV",
+                "away_score": 17, "home_score": 24, "location": "Home",
+                "away_rest": 7, "home_rest": 7,
+                "away_coach": "LAC Coach", "home_coach": "Old LV Coach",
+            },
+            {
+                "game_id": "2026-opener", "season": 2026, "week": 1,
+                "game_type": "REG", "gameday": "2026-09-13",
+                "gametime": "13:00", "away_team": "LAC", "home_team": "LV",
+                "away_score": "", "home_score": "", "location": "Home",
+                "away_rest": 210, "home_rest": 210,
+                "away_coach": "LAC Coach", "home_coach": "New LV Coach",
+            },
+        ]
+        with tempfile.TemporaryDirectory() as temp:
+            schedule_path = Path(temp, "schedule.csv")
+            _write_csv(schedule_path, pgo_sources.SCHEDULE_COLUMNS, rows)
+            paths = {("schedule_results", None): schedule_path}
+            preseason = pgo_challenger.build_snapshot_states(
+                paths, "2026-07-21T12:00:00-04:00", 4
+            )
+            rows[1]["away_score"], rows[1]["home_score"] = 99, 0
+            _write_csv(schedule_path, pgo_sources.SCHEDULE_COLUMNS, rows)
+            mutated = pgo_challenger.build_snapshot_states(
+                paths, "2026-07-21T12:00:00-04:00", 4
+            )
+
+        self.assertEqual(preseason, mutated)
+        self.assertEqual(preseason["LV"][0]["head_coach_continuity"], 0.0)
+        self.assertEqual(preseason["LV"][0]["head_coach_tenure"], 0.0)
 
     def test_missing_rate_still_ages_exponential_state(self):
         state = pgo_challenger._RatioState(10.0, 10.0)
@@ -1579,6 +1632,34 @@ class EvaluationTests(unittest.TestCase):
             ["<-7", "-7:-3", "-3:3", "3:7", ">7"],
         )
 
+    def test_metric_summary_bands_use_requested_prediction(self):
+        rows = [
+            {
+                "game_id": "a", "season": 2018, "actual_margin": 0.0,
+                "pgo_v0_prediction": -10.0, "challenger_prediction": 0.0,
+            },
+            {
+                "game_id": "b", "season": 2018, "actual_margin": 0.0,
+                "pgo_v0_prediction": -5.0, "challenger_prediction": 5.0,
+            },
+            {
+                "game_id": "c", "season": 2018, "actual_margin": 0.0,
+                "pgo_v0_prediction": 10.0, "challenger_prediction": 0.0,
+            },
+        ]
+
+        v0 = pgo_challenger.metric_summary(rows, "pgo_v0_prediction")
+        v1 = pgo_challenger.metric_summary(rows, "challenger_prediction")
+
+        self.assertEqual(
+            [band["count"] for band in v0["calibration_bands"]],
+            [1, 1, 0, 0, 1],
+        )
+        self.assertEqual(
+            [band["count"] for band in v1["calibration_bands"]],
+            [0, 0, 2, 1, 0],
+        )
+
     def test_paired_block_bootstrap_is_seeded_and_week_blocked(self):
         rows = [
             {
@@ -1952,7 +2033,11 @@ class OutputTests(unittest.TestCase):
                     "name": spec.name,
                     "season": spec.season,
                     "url": spec.url,
-                    "sha256": "0" * 64,
+                    "sha256": (
+                        pgo_sources.EXPECTED_SOURCE_SHA256
+                        if (spec.name, spec.season) == ("schedule_results", None)
+                        else "0" * 64
+                    ),
                     "bytes": 1,
                     "frozen_at": frozen_at or OutputTests.AS_OF,
                 }
@@ -1977,6 +2062,33 @@ class OutputTests(unittest.TestCase):
             pgo_challenger._analyze_once(paths, manifest, self.AS_OF)
 
         analysis.assert_not_called()
+
+    def test_manifest_rejects_unpinned_schedule_hash_before_analysis(self):
+        manifest = self._locked_manifest()
+        schedule = next(
+            entry for entry in manifest["sources"]
+            if (entry["name"], entry["season"]) == ("schedule_results", None)
+        )
+        schedule["sha256"] = "f" * 64
+        paths = {
+            (entry["name"], entry["season"]): Path("unused")
+            for entry in manifest["sources"]
+        }
+
+        with (
+            patch.object(pgo_sources, "validate_source_audit", return_value={}),
+            patch.object(
+                pgo_challenger, "_load_inputs",
+                return_value={"identity_resolution": {}},
+            ),
+            patch.object(pgo_challenger, "_historical_coverage", return_value={}),
+            patch.object(
+                pgo_challenger, "_injury_timing_audit",
+                return_value={"post_kickoff_rows_ignored": 0, "rows": []},
+            ),
+            self.assertRaisesRegex(ValueError, "schedule_results.*pinned"),
+        ):
+            pgo_challenger._source_preflight(paths, manifest, self.AS_OF)
 
     def test_manifest_freeze_time_must_match_as_of_instant(self):
         paths = {
@@ -2339,6 +2451,11 @@ class OutputTests(unittest.TestCase):
     def test_small_synthetic_pipeline_runs_end_to_end(self):
         payloads = _fake_locked_payloads()
         original_freeze = pgo_sources.freeze_sources
+        schedule_spec = next(
+            spec for spec in pgo_sources.source_specs()
+            if (spec.name, spec.season) == ("schedule_results", None)
+        )
+        schedule_hash = hashlib.sha256(payloads[schedule_spec.url]).hexdigest()
 
         def freeze(specs, cache_dir, lock_path, frozen_at):
             return original_freeze(
@@ -2354,7 +2471,12 @@ class OutputTests(unittest.TestCase):
             cache_dir = root / "cache"
             lock_path = root / "sources.lock.json"
             output_dir = root / "output"
-            with patch.object(pgo_sources, "freeze_sources", side_effect=freeze):
+            with (
+                patch.object(
+                    pgo_sources, "EXPECTED_SOURCE_SHA256", schedule_hash
+                ),
+                patch.object(pgo_sources, "freeze_sources", side_effect=freeze),
+            ):
                 code = pgo_challenger.main([
                     "--freeze-sources",
                     "--as-of", self.AS_OF,
@@ -2366,7 +2488,12 @@ class OutputTests(unittest.TestCase):
                 path.name: hashlib.sha256(path.read_bytes()).hexdigest()
                 for path in output_dir.iterdir()
             }
-            with patch.object(pgo_sources, "freeze_sources") as offline_freeze:
+            with (
+                patch.object(
+                    pgo_sources, "EXPECTED_SOURCE_SHA256", schedule_hash
+                ),
+                patch.object(pgo_sources, "freeze_sources") as offline_freeze,
+            ):
                 offline_code = pgo_challenger.main([
                     "--as-of", self.AS_OF,
                     "--lock-path", str(lock_path),

@@ -147,6 +147,8 @@ def freeze_sources(
         if not isinstance(data, bytes):
             raise TypeError(f"Fetcher returned non-bytes for {_label(*key)}")
         digest = hashlib.sha256(data).hexdigest()
+        if key == ("schedule_results", None) and digest != EXPECTED_SOURCE_SHA256:
+            raise ValueError("schedule_results does not match pinned SHA-256")
         cache_path = cache_dir / f"{digest}{_csv_extension(spec.url)}"
         cache_path.write_bytes(data)
         entries.append({

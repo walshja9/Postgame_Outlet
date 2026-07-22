@@ -252,12 +252,27 @@ def build_snapshot_states(paths, as_of, half_life_games) -> dict[str, tuple[dict
     as_of_year = as_of_dt.astimezone(EASTERN).year
     _, context, inputs = _walk(paths, half_life_games, as_of=as_of_dt)
     available_periods = set()
+    completed_current_teams = set()
     for game in _load_games(paths):
         if game["kickoff_dt"] < as_of_dt:
             available_periods.update({
                 (game["season"], game["week"], game["home"]),
                 (game["season"], game["week"], game["away"]),
             })
+            if game["season"] == as_of_year:
+                completed_current_teams.update((game["home"], game["away"]))
+    scheduled_coaches = {}
+    for row in open_csv(paths[("schedule_results", None)]):
+        if row.get("game_type") != "REG" or int(row["season"]) != as_of_year:
+            continue
+        kickoff = _kickoff(row.get("gameday", ""), row.get("gametime", ""))
+        for team, coach in (
+            (normalize_team(row["home_team"]), row.get("home_coach", "").strip()),
+            (normalize_team(row["away_team"]), row.get("away_coach", "").strip()),
+        ):
+            candidate = (kickoff, row["game_id"].strip(), coach)
+            if team not in scheduled_coaches or candidate < scheduled_coaches[team]:
+                scheduled_coaches[team] = candidate
     periods = {}
     for season, week, team in inputs["rosters"]:
         key = (season, week, team)
@@ -271,6 +286,8 @@ def build_snapshot_states(paths, as_of, half_life_games) -> dict[str, tuple[dict
     for team in teams:
         season, week = periods.get(team, (as_of_year, 0))
         coach = context["coaches"].get(team, "")
+        if team not in completed_current_teams and team in scheduled_coaches:
+            coach = scheduled_coaches[team][2]
         full, current, _ = _team_views(
             team, season, week, coach, as_of_dt, context, inputs
         )
@@ -568,7 +585,7 @@ def metric_summary(rows, prediction_key) -> dict:
     calibration = []
     for label, contains in bands:
         selected = [
-            row for row in rows if contains(float(row["challenger_prediction"]))
+            row for row in rows if contains(float(row[prediction_key]))
         ]
         calibration.append({
             "band": label,
@@ -862,6 +879,11 @@ def _manifest_hashes(manifest, paths, as_of):
             raise ValueError("Invalid source lock manifest")
         if key not in expected or url != expected[key].url:
             raise ValueError("Locked source URL does not match source inventory")
+        if (
+            key == ("schedule_results", None)
+            and digest != pgo_sources.EXPECTED_SOURCE_SHA256
+        ):
+            raise ValueError("schedule_results does not match pinned SHA-256")
         if _parse_datetime(entry_frozen_at) != frozen_at:
             raise ValueError("Locked source frozen_at does not match --as-of")
         keys.add(key)
