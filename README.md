@@ -53,6 +53,18 @@ Generation stops if any row in `data/ratings.csv` has `needs_review=Y`. Clear
 those flags through editorial review; never bypass the gate. The default command
 writes a private preview and does not replace the GitHub Pages artifact.
 
+## Independent PGO model comparison (private preview)
+
+`python pgo_challenger.py --as-of 2026-07-21T12:00:00-04:00` rebuilds the
+locked pgo_v1 receipt. Exit `0` is validated `PASS`, exit `1` is an honest
+statistical `HOLD`, and exit `2` is `BLOCKED`. An integrity-eligible `HOLD`
+writes 32 ratings labeled `EXPERIMENTAL`; `BLOCKED` writes no ratings.
+
+`python pgo_comparison.py` compares the eligible PGO snapshot with Sean
+McCabe's reviewed ratings and writes a dated private page under
+`output/pgo-comparison-preview/`. It never changes `docs/index.html` or any
+live service. PGO v0 remains backtest evidence only.
+
 ## Team write-ups (click-to-expand on the site)
 
 Every team row in the generated ratings artifact expands (click it) to show a QB/Off/Def bar
