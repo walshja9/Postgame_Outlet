@@ -1,17 +1,19 @@
 # Independent Forward-Looking PGO Model Design
 
-**Status:** Approved design; written specification awaiting final review
-**Date:** July 21, 2026
+**Status:** Revised publication contract awaiting final review
+**Date:** July 22, 2026
 **Product:** Postgame Outlet
 **Model:** Independent, forward-looking NFL team Power Rating challenger
 
 ## 1. Decision
 
-Postgame Outlet will develop a new shadow-only challenger to the existing PGO
+Postgame Outlet will develop a research-first challenger to the existing PGO
 team-results model. The challenger will remain completely independent from Sean
 McCabe's ratings while adding objective, forward-looking information about
 quarterbacks, roster continuity, injuries, coaching changes, and team
-performance.
+performance. An integrity-eligible challenger may be shown as experimental
+while its statistical result remains `HOLD`; only `PASS` may be described as
+validated.
 
 The model will produce one neutral-field team-strength rating in points, plus
 the two values needed to explain it:
@@ -50,7 +52,8 @@ that may be compared but are not blended.
 - Using betting markets as model inputs
 - Scraping or training on PFF data from a personal subscription
 - Assigning manual player, coach, or scheme grades
-- Producing public ratings, articles, predictions, or betting recommendations
+- Publishing unreviewed model output or presenting a `HOLD` model as validated
+- Producing betting recommendations
 - Replacing the existing PGO v0 model before the challenger passes its gates
 - Building a real-time service, database, dashboard, or automated publishing job
 - Modeling subjective scheme taxonomies in the first version
@@ -332,8 +335,19 @@ For every gate, MAE improvement means `PGO v0 MAE - challenger MAE`; positive is
 better. The paired bootstrap resamples season-week blocks while preserving the
 v0 and challenger errors for the same games.
 
-Any failed condition produces `HOLD`. A hold writes the diagnostic backtest
-receipt but removes or declines to write the current ratings artifact.
+Conditions 1 and 2 are integrity eligibility requirements. Conditions 3 through
+5 determine statistical validation. The release classification is:
+
+| Classification | Meaning | Ratings artifact |
+| --- | --- | --- |
+| `BLOCKED` | A source, identity, leakage, coverage, 32-team, or reproducibility requirement failed. | Not written; any stale artifact is removed. |
+| `EXPERIMENTAL` / `HOLD` | Every integrity requirement passed, but at least one statistical validation condition failed. | Written with the status and failed conditions embedded in the receipt and every presentation. |
+| `VALIDATED` / `PASS` | Every integrity and statistical validation condition passed. | Written and eligible to be described as validated. |
+
+`HOLD` controls the claim, not visibility. It prohibits the words `validated`,
+`proven`, or `official PGO model`, but it does not hide an otherwise sound model
+or its disagreement with McCabe. Public visibility still requires manual review
+and separate publication authorization.
 
 ### 9.5 Prospective gate
 
@@ -342,9 +356,10 @@ holdout for this new design. They support rolling historical validation.
 
 The 2026 regular season is the first genuine prospective shadow evaluation.
 Predictions and assumed lineups are locked before kickoff and graded afterward.
-Historical `PASS` permits shadow ratings and prospective tracking only; it does
-not authorize public integration. Public use requires a separate decision after
-the prospective evidence is reviewed.
+Historical `PASS` permits the validated designation. An integrity-eligible
+historical `HOLD` permits only an experimental comparison with the hold reason
+visible. Neither status authorizes public integration by itself; that remains a
+separate editorial and production decision.
 
 ## 10. Snapshot and update behavior
 
@@ -368,15 +383,41 @@ research directory. The minimum artifacts are:
 
 - `backtest.json`: model version, source hashes, coverage, feature manifest,
   parameters, metrics, subgroup results, confidence intervals, checks, and
-  `PASS` or `HOLD`
+  `BLOCKED`, `HOLD`, or `PASS` classification with its reasons
 - `validation_predictions.csv`: game identifier, kickoff, actual margin, PGO v0
   prediction, challenger prediction, and frozen subgroup flags
 - `ratings_<snapshot>.csv`: rank, team, full-strength rating, availability
-  adjustment, current-lineup rating, headline view, and as-of timestamp; written
-  only after historical `PASS`
+  adjustment, current-lineup rating, headline view, as-of timestamp, validation
+  status, and status reason; written after `PASS` or an integrity-eligible
+  statistical `HOLD`, never after `BLOCKED`
 
 The implementation plan chooses the exact versioned directory and model name.
 Artifacts never overwrite the existing `research/pgo/` v0 receipts.
+
+### 11.1 Public comparison contract
+
+If separately authorized for preview or publication, the team-rating comparison
+belongs inside the Power Ratings experience and follows these rules:
+
+1. McCabe remains the named human Power Ratings product. PGO v1 is labeled as
+   an independent statistical model and is never blended into McCabe's rating.
+2. Until historical `PASS`, every PGO v1 heading, table, and detail view says
+   **Experimental model — HOLD** and links to the failed gate explanation.
+3. The 32-team comparison shows McCabe rank and rating beside PGO v1
+   full-strength rank and rating, availability adjustment, current-lineup rank
+   and rating, and rank disagreement. A raw rating difference is shown only when
+   both editions explicitly use the same neutral-field point scale.
+4. PGO v0 appears only in methodology and backtest evidence as the benchmark. It
+   is not presented as a third current ranking.
+5. The comparison displays each edition's as-of time, the PGO model version,
+   the backtest result and confidence interval, and links to methodology and the
+   immutable receipt.
+6. Only a manually reviewed McCabe edition and a manually reviewed,
+   integrity-eligible PGO v1 snapshot may enter the comparison. Missing or
+   review-flagged input suppresses the affected comparison rather than silently
+   reusing stale values.
+7. This module compares overall team ratings. It does not become the Postgame
+   Prediction Lab, produce a matchup line, or add a market leg.
 
 ## 12. Data-quality and failure behavior
 
@@ -390,7 +431,10 @@ The run fails closed when:
 - A source changes schema without an explicit compatible parser update.
 - Fewer than 32 current teams receive a valid rating.
 - Repeating the same run does not produce identical artifacts.
-- The historical gate returns `HOLD`.
+- A run is classified `BLOCKED` by the release rules above.
+
+A statistical `HOLD` alone does not fail artifact generation. It forces the
+experimental label and preserves the failed conditions in the receipt.
 
 Missing values never become zero implicitly. A model may use an imputed value and
 missingness indicator only when that behavior was learned and validated during
@@ -412,7 +456,9 @@ The implementation plan must include focused checks for:
 - Chronological split isolation
 - Paired metric and confidence-interval calculations
 - Required-source and schema failures
-- `HOLD` removal of stale ratings
+- `BLOCKED` removal of stale ratings
+- Experimental `HOLD` artifact generation and mandatory status fields
+- `PASS`-only validated labeling
 - Deterministic repeated output
 - Production-isolation diff
 
@@ -453,7 +499,12 @@ The design is implemented successfully only when:
 - Rating receipts explain performance, roster/coaching, and availability movement.
 - The historical gate compares the challenger with PGO v0 on identical games.
 - All gate calculations and confidence intervals are reproducible.
-- `HOLD` cannot leave a stale challenger ratings artifact.
+- `BLOCKED` cannot leave a stale challenger ratings artifact.
+- An integrity-eligible statistical `HOLD` produces an explicitly experimental
+  ratings artifact without weakening or relabeling the historical gate.
+- Only `PASS` permits the challenger to be described as validated.
+- The McCabe-versus-PGO comparison keeps both products separate, uses PGO v0
+  only as backtest evidence, and exposes status, time, methodology, and receipts.
 - The current PGO v0 receipts and every production surface remain unchanged.
 - The 2026 prospective predictions can be locked and graded without rewriting
   their original inputs.
@@ -480,4 +531,5 @@ in force when a source is admitted.
 This specification authorizes implementation planning only. It does not
 authorize model implementation, data acquisition requiring new terms, use of
 Sean's PFF credentials, production integration, publishing, deployment, or any
-change to a live service.
+change to a live service. The experimental publication contract above defines
+what may be built after approval; it is not itself authorization to publish.
