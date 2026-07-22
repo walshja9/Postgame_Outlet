@@ -434,7 +434,7 @@ def rolling_predictions(paths) -> tuple[list[dict], dict]:
             fold_metadata,
         ):
             flags = dict(row.subgroup_flags)
-            flags["major_availability_loss"] = (
+            flags["major_availability_loss"] = bool(
                 predicted - home_prediction <= -1.5
                 or away_prediction - predicted <= -1.5
             )
@@ -798,6 +798,21 @@ def _source_preflight(paths, manifest, as_of):
     audit["identity_resolution"] = inputs["identity_resolution"]
     audit["coverage"] = _historical_coverage(paths, inputs)
     audit["injury_timing"] = _injury_timing_audit(paths, inputs)
+    audit["source_limitations"] = [
+        {
+            "source": "injury_reports",
+            "season": 2025,
+            "missing_optional_field": "date_modified",
+            "effect": (
+                "Revision timing cannot be validated; the frozen weekly row is "
+                "treated as the final official pregame report."
+            ),
+        }
+        for source in audit.get("sources", ())
+        if source["name"] == "injury_reports"
+        and source["season"] == 2025
+        and "date_modified" not in source["columns"]
+    ]
     return audit
 
 

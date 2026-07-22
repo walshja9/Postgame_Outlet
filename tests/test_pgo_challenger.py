@@ -1427,7 +1427,7 @@ class EvaluationTests(unittest.TestCase):
         self.assertEqual(
             [row["season"] for row in predictions], list(range(2018, 2026))
         )
-        self.assertTrue(predictions[0]["major_availability_loss"])
+        self.assertIs(predictions[0]["major_availability_loss"], True)
         self.assertTrue(all(row["high_roster_turnover"] for row in predictions))
 
     def test_challenger_and_v0_require_identical_game_ids(self):
@@ -2234,6 +2234,15 @@ class OutputTests(unittest.TestCase):
             "post_kickoff_rows_ignored": 0,
             "rows": [],
         })
+        self.assertEqual(audit["source_limitations"], [{
+            "source": "injury_reports",
+            "season": 2025,
+            "missing_optional_field": "date_modified",
+            "effect": (
+                "Revision timing cannot be validated; the frozen weekly row is "
+                "treated as the final official pregame report."
+            ),
+        }])
         self.assertTrue(all(audit["checks"].values()))
 
     def test_invalid_as_of_fails_before_freezing_sources(self):
