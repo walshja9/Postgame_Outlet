@@ -334,6 +334,14 @@
     "weekly_rosters:2024": "074ecaeb9325de943c11f7bbc941425626985090ef8386f90cd837fa5cb5d4b3",
     "weekly_rosters:2025": "c2f7a1ffebe06058400af1989d1cd2900cc5c9659f084623708a06d4e28de35b"
   },
+  "source_limitations": [
+    {
+      "effect": "Revision timing cannot be validated; the frozen weekly row is treated as the final official pregame report.",
+      "missing_optional_field": "date_modified",
+      "season": 2025,
+      "source": "injury_reports"
+    }
+  ],
   "sources": [
     {
       "columns": [

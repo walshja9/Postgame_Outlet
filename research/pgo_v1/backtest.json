@@ -493,8 +493,13 @@
       "upper": 0.213281
     },
     "major_availability_loss": {
-      "count": 0,
-      "status": "INSUFFICIENT_EVIDENCE"
+      "challenger_mae": 10.566593,
+      "count": 618,
+      "improvement": 0.268834,
+      "lower": 0.087639,
+      "pgo_v0_mae": 10.835427,
+      "status": "SUFFICIENT_EVIDENCE",
+      "upper": 0.454156
     },
     "weeks_1_4": {
       "challenger_mae": 10.041648,
