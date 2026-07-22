@@ -113,6 +113,18 @@ class ComparisonTests(unittest.TestCase):
         self.assertIn('aria-controls="panel-comparison"', output)
         self.assertIn("<style>base", output)
 
+    def test_injection_suppresses_browser_favicon_request(self):
+        base = (
+            "<html><head><style>base</style></head><body>"
+            '<button type="button" class="tab" id="tab-method">Methodology</button>'
+            '<section class="panel" id="panel-method">Method</section>'
+            "</body></html>"
+        )
+        output = pgo_comparison.inject_comparison(
+            base, '<section id="panel-comparison">Rows</section>'
+        )
+        self.assertEqual(output.count('<link rel="icon" href="data:,">'), 1)
+
     def test_cli_rejects_output_outside_preview_root(self):
         with redirect_stderr(io.StringIO()):
             code = pgo_comparison.main(["--output", "docs/index.html"])

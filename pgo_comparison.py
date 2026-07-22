@@ -331,7 +331,9 @@ def inject_comparison(base_html, panel_html):
     )
     if any(base_html.count(marker) != 1 for marker in markers):
         raise ValueError("Base ratings template markers changed")
-    output = base_html.replace("</style>", MODEL_CSS + "\n</style>", 1)
+    output = base_html.replace(
+        "</style>", MODEL_CSS + '\n</style>\n<link rel="icon" href="data:,">', 1
+    )
     output = output.replace(markers[1], COMPARISON_TAB + "    " + markers[1], 1)
     output = output.replace(markers[2], panel_html + "\n  " + markers[2], 1)
     return output
