@@ -16,6 +16,9 @@
     "no_sufficient_subgroup_regression": true,
     "paired_game_ids": true
   },
+  "failed_checks": [
+    "aggregate_improvement_ci_positive"
+  ],
   "feature_manifest": {
     "features": [
       "defense_availability",
@@ -399,6 +402,7 @@
       "season": 2025
     }
   ],
+  "publication_status": "EXPERIMENTAL",
   "source_hashes": {
     "current_roster:2026": "6bd436cd5029af07f1761ef368c88318d392c20ada6fba0f5bc8b88128d05a3d",
     "injury_reports:2013": "b84c71cf23be81375bbca62f7d2c51d53fa75330fbcf9f598ec4ac17fea7d8be",
