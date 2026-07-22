@@ -222,33 +222,33 @@
       "calibration_bands": [
         {
           "band": "<-7",
-          "count": 121,
-          "mean_actual_margin": -7.900826,
-          "mean_prediction": -7.178754
+          "count": 63,
+          "mean_actual_margin": -11.126984,
+          "mean_prediction": -9.066734
         },
         {
           "band": "-7:-3",
-          "count": 288,
-          "mean_actual_margin": -5.378472,
-          "mean_prediction": -2.750645
+          "count": 194,
+          "mean_actual_margin": -6.113402,
+          "mean_prediction": -4.727651
         },
         {
           "band": "-3:3",
-          "count": 803,
-          "mean_actual_margin": -0.805729,
-          "mean_prediction": 1.047069
+          "count": 890,
+          "mean_actual_margin": -1.180899,
+          "mean_prediction": 0.312124
         },
         {
           "band": "3:7",
-          "count": 524,
-          "mean_actual_margin": 4.994275,
-          "mean_prediction": 4.822313
+          "count": 608,
+          "mean_actual_margin": 3.976974,
+          "mean_prediction": 4.813909
         },
         {
           "band": ">7",
-          "count": 391,
-          "mean_actual_margin": 9.923274,
-          "mean_prediction": 9.482099
+          "count": 372,
+          "mean_actual_margin": 10.389785,
+          "mean_prediction": 9.941116
         }
       ],
       "count": 2127,
