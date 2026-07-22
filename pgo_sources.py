@@ -47,7 +47,7 @@ PLAYER_COLUMNS = (
 )
 ROSTER_COLUMNS = (
     "season", "week", "team", "position", "gsis_id", "pfr_id",
-    "years_exp", "draft_number",
+    "smart_id", "years_exp", "draft_number",
 )
 INJURY_COLUMNS = (
     "season", "week", "team", "gsis_id", "position", "report_status",

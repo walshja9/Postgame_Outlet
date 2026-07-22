@@ -794,7 +794,9 @@ def _neutral_feature_row(team, state, preprocessor):
 def _source_preflight(paths, manifest, as_of):
     audit = pgo_sources.validate_source_audit(paths)
     audit["source_hashes"] = _manifest_hashes(manifest, paths, as_of)
-    audit["coverage"] = _historical_coverage(paths)
+    inputs = _load_inputs(paths)
+    audit["identity_resolution"] = inputs["identity_resolution"]
+    audit["coverage"] = _historical_coverage(paths, inputs)
     return audit
 
 
@@ -837,8 +839,8 @@ def _coverage_metric(numerator, denominator, threshold, passed=None):
     }
 
 
-def _historical_coverage(paths):
-    inputs = _load_inputs(paths)
+def _historical_coverage(paths, inputs=None):
+    inputs = _load_inputs(paths) if inputs is None else inputs
     games = [game for game in _load_games(paths) if game["season"] in OUTER_SEASONS]
     paired = 0
     for game in games:
@@ -1466,7 +1468,13 @@ def _players_for_team(team, season, week, kickoff, roster_rows, context, inputs)
     for row in roster_rows:
         gsis_id = row.get("gsis_id", "").strip()
         pfr_id = row.get("pfr_id", "").strip()
-        player_id = gsis_id or (f"pfr:{pfr_id}" if pfr_id else "")
+        if gsis_id in inputs.get("colliding_gsis", ()):
+            smart_id = row.get("smart_id", "").strip()
+            if not smart_id:
+                raise ValueError(f"Colliding GSIS ID missing smart_id: {gsis_id}")
+            player_id = f"{gsis_id}:{smart_id}"
+        else:
+            player_id = gsis_id or (f"pfr:{pfr_id}" if pfr_id else "")
         if not player_id:
             continue
         if player_id in players:
@@ -1684,6 +1692,10 @@ def _load_inputs(paths):
         "rosters": defaultdict(list), "injuries": {}, "snaps": defaultdict(list),
         "current_roster_periods": set(),
     }
+    roster_rows = {}
+    roster_gsis_periods = defaultdict(set)
+    roster_gsis_teams = defaultdict(set)
+    collapsed_roster_rows = 0
     for (name, source_season), path in paths.items():
         if name not in {
             "team_weekly_stats", "player_weekly_stats", "weekly_rosters",
@@ -1704,6 +1716,34 @@ def _load_inputs(paths):
             elif name == "player_weekly_stats":
                 inputs["players"][key].append(row)
             elif name in {"weekly_rosters", "current_roster"}:
+                gsis_id = row.get("gsis_id", "").strip()
+                pfr_id = row.get("pfr_id", "").strip()
+                raw_player_id = gsis_id or (f"pfr:{pfr_id}" if pfr_id else "")
+                if raw_player_id:
+                    roster_key = (*key, raw_player_id)
+                    existing = roster_rows.get(roster_key)
+                    if existing is not None:
+                        prior = {
+                            name: value for name, value in existing.items()
+                            if name != "status"
+                        }
+                        current = {
+                            name: value for name, value in row.items()
+                            if name != "status"
+                        }
+                        if current != prior:
+                            raise ValueError(
+                                f"Conflicting roster rows: {season} week {week} "
+                                f"{team} {raw_player_id}"
+                            )
+                        collapsed_roster_rows += 1
+                        continue
+                    roster_rows[roster_key] = row
+                    smart_id = row.get("smart_id", "").strip()
+                    if gsis_id:
+                        roster_gsis_teams[(season, week, gsis_id)].add(team)
+                        if smart_id:
+                            roster_gsis_periods[(season, week, gsis_id)].add(smart_id)
                 inputs["rosters"][key].append(row)
                 if name == "current_roster":
                     inputs["current_roster_periods"].add(key)
@@ -1724,6 +1764,23 @@ def _load_inputs(paths):
                 inputs["injuries"][injury_key] = row
             elif name == "snap_counts":
                 inputs["snaps"][key].append(row)
+    colliding_gsis = sorted({
+        gsis_id
+        for (_, _, gsis_id), smart_ids in roster_gsis_periods.items()
+        if len(smart_ids) > 1
+    })
+    for (season, week, _team, _player_id), row in roster_rows.items():
+        gsis_id = row.get("gsis_id", "").strip()
+        smart_id = row.get("smart_id", "").strip()
+        multiple_teams = len(roster_gsis_teams[(season, week, gsis_id)]) > 1
+        if not smart_id and (gsis_id in colliding_gsis or multiple_teams):
+            raise ValueError(f"Colliding GSIS ID missing smart_id: {gsis_id}")
+    inputs["colliding_gsis"] = frozenset(colliding_gsis)
+    inputs["identity_resolution"] = {
+        "status_only_roster_rows_collapsed": collapsed_roster_rows,
+        "simultaneous_gsis_collisions": colliding_gsis,
+        "collision_key": "gsis_id:smart_id",
+    }
     return inputs
 
 

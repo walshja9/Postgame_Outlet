@@ -51,7 +51,7 @@ All downloaded bytes are hashed before decompression. The lock manifest is sorte
 | Schedule/results | 1999-2026 snapshot | existing `pgo_model.SOURCE_URL` and `EXPECTED_SOURCE_SHA256` | `game_id`, `season`, `week`, `game_type`, `gameday`, `gametime`, `away_team`, `home_team`, `away_score`, `home_score`, `location`, `away_rest`, `home_rest`, `away_coach`, `home_coach` |
 | Team weekly stats | 2013-2025 | `https://github.com/nflverse/nflverse-data/releases/download/stats_team/stats_team_week_{season}.csv.gz` | `season`, `week`, `team`, `game_id`, `opponent_team`, `attempts`, `carries`, `passing_epa`, `rushing_epa`, `sacks_suffered`, `passing_interceptions`, `fumbles_lost_total`, `passing_20`, `rushing_20` |
 | Player weekly stats | 2013-2025 | `https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_{season}.csv.gz` | `player_id`, `position`, `season`, `week`, `team`, `attempts`, `passing_epa`, `passing_cpoe`, `sacks_suffered`, `passing_interceptions`, `sack_fumbles_lost`, `carries`, `rushing_epa` |
-| Weekly rosters | 2013-2025 | `https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_{season}.csv` | `season`, `week`, `team`, `position`, `gsis_id`, `pfr_id`, `years_exp`, `draft_number` |
+| Weekly rosters | 2013-2025 | `https://github.com/nflverse/nflverse-data/releases/download/weekly_rosters/roster_weekly_{season}.csv` | `season`, `week`, `team`, `position`, `gsis_id`, `pfr_id`, `smart_id`, `years_exp`, `draft_number` |
 | Injury reports | 2013-2025 | `https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_{season}.csv` | `season`, `week`, `team`, `gsis_id`, `position`, `report_status`, `practice_status` |
 | Snap counts | 2013-2025 | `https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_{season}.csv` | `season`, `week`, `team`, `pfr_player_id`, `position`, `offense_snaps`, `defense_snaps` |
 | Current roster | 2026 | `https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv.gz` | roster columns above |
@@ -60,13 +60,14 @@ Attribution in `source_audit.json` is `nflverse-data`, license `CC BY 4.0`, with
 
 ### Identity and source gates
 
-- Normalize `OAK -> LV`, `SD -> LAC`, `STL -> LAR`, and `LA -> LAR` before joins.
+- Normalize `OAK -> LV`, `SD -> LAC`, `STL -> LAR`, `LA -> LAR`, `ARZ -> ARI`, `BLT -> BAL`, `CLV -> CLE`, `HST -> HOU`, and `SL -> LAR` before joins.
+- Collapse repeated roster membership rows only when every source value except unused `status` is identical. When one GSIS ID maps to distinct `smart_id` values in the same season-week, use `gsis_id:smart_id` internally while preserving team-scoped GSIS/PFR joins; a colliding row without `smart_id` is an error. Record both resolutions in `source_audit.json`.
 - Require one schedule row and exactly two team-stat rows for at least 99% of 2018-2025 evaluation games.
 - Require at least 98% of QB player-stat rows to join a weekly roster by `gsis_id` after aliases.
 - Require at least 97% of non-special-teams snap volume to join a roster by `(season, team, pfr_id)`.
 - Require at least 99% of injury rows with a nonblank `gsis_id` to join the weekly roster.
 - Require exactly the 32 `pgo_model.CURRENT_TEAMS` in the 2026 snapshot.
-- Missing source files, hash drift, duplicate keys, schema drift, below-threshold joins, or an unhandled numeric value fail the run before fitting.
+- Missing source files, hash drift, conflicting duplicate keys, schema drift, below-threshold joins, or an unhandled numeric value fail the run before fitting.
 
 ### Pregame feature contract
 

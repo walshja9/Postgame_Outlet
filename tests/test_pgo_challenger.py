@@ -436,7 +436,7 @@ class SourceTests(unittest.TestCase):
             ),
             "weekly_rosters": (
                 "season", "week", "team", "position", "gsis_id", "pfr_id",
-                "years_exp", "draft_number",
+                "smart_id", "years_exp", "draft_number",
             ),
             "injury_reports": (
                 "season", "week", "team", "gsis_id", "position", "report_status",
@@ -448,7 +448,7 @@ class SourceTests(unittest.TestCase):
             ),
             "current_roster": (
                 "season", "week", "team", "position", "gsis_id", "pfr_id",
-                "years_exp", "draft_number",
+                "smart_id", "years_exp", "draft_number",
             ),
         }
         for name, named_specs in grouped.items():
@@ -756,6 +756,104 @@ class FeatureTests(unittest.TestCase):
 
                     with self.assertRaises(ValueError):
                         pgo_challenger._load_inputs(paths)
+
+
+    def test_status_only_roster_duplicates_collapse_but_conflicts_fail(self):
+        with tempfile.TemporaryDirectory() as temp:
+            paths = _synthetic_paths(Path(temp))
+            roster_path = paths[("weekly_rosters", 2013)]
+            with open(roster_path, encoding="utf-8", newline="") as handle:
+                rosters = list(csv.DictReader(handle))
+            columns = tuple(dict.fromkeys((
+                *pgo_sources.ROSTER_COLUMNS, "status", "smart_id", "full_name"
+            )))
+            original = rosters[0]
+            original.update({
+                "status": "TRC", "smart_id": "smart-lv", "full_name": "LV QB",
+            })
+            duplicate = {**original, "status": "ACT"}
+            _write_csv(roster_path, columns, [*rosters, duplicate])
+
+            inputs = pgo_challenger._load_inputs(paths)
+            matching = [
+                row for row in inputs["rosters"][(2013, 1, "LV")]
+                if row["gsis_id"] == original["gsis_id"]
+            ]
+
+            self.assertEqual(len(matching), 1)
+            self.assertEqual(
+                inputs["identity_resolution"]["status_only_roster_rows_collapsed"],
+                1,
+            )
+
+            conflict = {**duplicate, "years_exp": "99"}
+            _write_csv(roster_path, columns, [*rosters, conflict])
+            with self.assertRaisesRegex(ValueError, "Conflicting roster rows"):
+                pgo_challenger._load_inputs(paths)
+
+    def test_simultaneous_gsis_collision_uses_smart_identity(self):
+        with tempfile.TemporaryDirectory() as temp:
+            paths = _synthetic_paths(Path(temp))
+            roster_path = paths[("weekly_rosters", 2013)]
+            with open(roster_path, encoding="utf-8", newline="") as handle:
+                rosters = list(csv.DictReader(handle))
+            columns = tuple(dict.fromkeys((
+                *pgo_sources.ROSTER_COLUMNS, "status", "smart_id", "full_name"
+            )))
+            for row in rosters:
+                row.setdefault("status", "ACT")
+                if row["season"] == "2013" and row["week"] == "1":
+                    row["gsis_id"] = "gsis-shared"
+                    if row["team"] == "OAK":
+                        row["smart_id"] = "smart-lv"
+                        row["full_name"] = "LV Player"
+                    elif row["team"] == "SD":
+                        row["smart_id"] = "smart-lac"
+                        row["full_name"] = "LAC Player"
+            _write_csv(roster_path, columns, rosters)
+
+            inputs = pgo_challenger._load_inputs(paths)
+            context = {
+                "snap_history": {}, "qb_history": {}, "qb_population": {},
+            }
+            lv_players, lv_ids = pgo_challenger._players_for_team(
+                "LV", 2013, 1, pgo_challenger._parse_datetime(
+                    "2013-09-01T13:00:00-04:00"
+                ), inputs["rosters"][(2013, 1, "LV")], context, inputs,
+            )
+            lac_players, lac_ids = pgo_challenger._players_for_team(
+                "LAC", 2013, 1, pgo_challenger._parse_datetime(
+                    "2013-09-01T13:00:00-04:00"
+                ), inputs["rosters"][(2013, 1, "LAC")], context, inputs,
+            )
+
+            self.assertEqual(
+                inputs["identity_resolution"]["simultaneous_gsis_collisions"],
+                ["gsis-shared"],
+            )
+            self.assertTrue(set(lv_players).isdisjoint(lac_players))
+            self.assertEqual(set(lv_players), {"gsis-shared:smart-lv"})
+            self.assertEqual(set(lac_players), {"gsis-shared:smart-lac"})
+            self.assertEqual(
+                lv_ids["gsis_ids"]["gsis-shared"], "gsis-shared:smart-lv",
+            )
+            self.assertEqual(
+                lac_ids["gsis_ids"]["gsis-shared"], "gsis-shared:smart-lac",
+            )
+
+            invalid_rosters = [dict(row) for row in rosters]
+            for row in invalid_rosters:
+                if (
+                    row["season"] == "2013"
+                    and row["week"] == "1"
+                    and row["team"] == "SD"
+                ):
+                    row["gsis_id"] = "gsis-shared"
+                    row["smart_id"] = ""
+                    break
+            _write_csv(roster_path, columns, invalid_rosters)
+            with self.assertRaisesRegex(ValueError, "missing smart_id"):
+                pgo_challenger._load_inputs(paths)
 
     def test_snapshot_as_of_week_two_ignores_later_roster_and_injury(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -1776,6 +1874,10 @@ class OutputTests(unittest.TestCase):
         with (
             patch.object(pgo_sources, "validate_source_audit", return_value={}),
             patch.object(pgo_challenger, "_historical_coverage", return_value={}),
+            patch.object(
+                pgo_challenger, "_load_inputs",
+                return_value={"identity_resolution": {}},
+            ),
         ):
             with self.assertRaisesRegex(ValueError, "frozen_at"):
                 pgo_challenger._source_preflight(
