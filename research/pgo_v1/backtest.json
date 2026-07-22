@@ -1,16 +1,16 @@
 {
   "aggregate_interval": {
-    "lower": -0.011615,
-    "mean": 0.077546,
+    "lower": -0.024395,
+    "mean": 0.060977,
     "samples": 10000,
     "seed": 20260721,
-    "upper": 0.164653
+    "upper": 0.144917
   },
   "as_of": "2026-07-21T12:00:00-04:00",
   "checks": {
     "aggregate_improvement_ci_positive": false,
     "all_32_current_teams": true,
-    "audit_checks_pass": false,
+    "audit_checks_pass": true,
     "challenger_mae_lower": true,
     "deterministic": true,
     "no_sufficient_subgroup_regression": true,
@@ -87,130 +87,130 @@
       "calibration_bands": [
         {
           "band": "<-7",
-          "count": 128,
-          "mean_actual_margin": -8.40625,
-          "mean_prediction": -9.290476
+          "count": 121,
+          "mean_actual_margin": -7.900826,
+          "mean_prediction": -9.362672
         },
         {
           "band": "-7:-3",
-          "count": 289,
-          "mean_actual_margin": -5.311419,
-          "mean_prediction": -4.708088
+          "count": 288,
+          "mean_actual_margin": -5.378472,
+          "mean_prediction": -4.741442
         },
         {
           "band": "-3:3",
-          "count": 805,
-          "mean_actual_margin": -0.606211,
-          "mean_prediction": 0.183814
+          "count": 803,
+          "mean_actual_margin": -0.805729,
+          "mean_prediction": 0.142991
         },
         {
           "band": "3:7",
-          "count": 512,
-          "mean_actual_margin": 4.980469,
-          "mean_prediction": 4.870796
+          "count": 524,
+          "mean_actual_margin": 4.994275,
+          "mean_prediction": 4.826991
         },
         {
           "band": ">7",
-          "count": 393,
-          "mean_actual_margin": 9.908397,
-          "mean_prediction": 10.298725
+          "count": 391,
+          "mean_actual_margin": 9.923274,
+          "mean_prediction": 10.265985
         }
       ],
       "count": 2127,
-      "mae": 10.188604,
-      "mean_signed_error_away": 0.373483,
-      "mean_signed_error_home": -0.373483,
-      "median_absolute_error": 8.000302,
-      "miss_rate_above_14": 0.270804,
-      "miss_rate_above_21": 0.112835,
-      "rmse": 13.155151,
+      "mae": 10.205173,
+      "mean_signed_error_away": 0.38305,
+      "mean_signed_error_home": -0.38305,
+      "median_absolute_error": 8.062619,
+      "miss_rate_above_14": 0.273155,
+      "miss_rate_above_21": 0.115186,
+      "rmse": 13.171276,
       "seasons": [
         {
           "count": 256,
-          "mae": 10.225888,
-          "mean_signed_error_away": 0.290207,
-          "mean_signed_error_home": -0.290207,
-          "median_absolute_error": 7.685913,
-          "miss_rate_above_14": 0.269531,
-          "miss_rate_above_21": 0.117188,
-          "rmse": 13.436474,
+          "mae": 10.207804,
+          "mean_signed_error_away": 0.22718,
+          "mean_signed_error_home": -0.22718,
+          "median_absolute_error": 7.722673,
+          "miss_rate_above_14": 0.28125,
+          "miss_rate_above_21": 0.121094,
+          "rmse": 13.376297,
           "season": 2018
         },
         {
           "count": 256,
-          "mae": 10.56086,
-          "mean_signed_error_away": 2.54632,
-          "mean_signed_error_home": -2.54632,
-          "median_absolute_error": 8.017301,
-          "miss_rate_above_14": 0.328125,
-          "miss_rate_above_21": 0.117188,
-          "rmse": 13.590766,
+          "mae": 10.611377,
+          "mean_signed_error_away": 2.552927,
+          "mean_signed_error_home": -2.552927,
+          "median_absolute_error": 8.150006,
+          "miss_rate_above_14": 0.316406,
+          "miss_rate_above_21": 0.121094,
+          "rmse": 13.640749,
           "season": 2019
         },
         {
           "count": 256,
-          "mae": 10.06787,
-          "mean_signed_error_away": 1.960711,
-          "mean_signed_error_home": -1.960711,
-          "median_absolute_error": 8.505059,
-          "miss_rate_above_14": 0.238281,
+          "mae": 10.078725,
+          "mean_signed_error_away": 1.977205,
+          "mean_signed_error_home": -1.977205,
+          "median_absolute_error": 8.283443,
+          "miss_rate_above_14": 0.25,
           "miss_rate_above_21": 0.097656,
-          "rmse": 13.021309,
+          "rmse": 13.002396,
           "season": 2020
         },
         {
           "count": 272,
-          "mae": 11.165644,
-          "mean_signed_error_away": 0.018624,
-          "mean_signed_error_home": -0.018624,
-          "median_absolute_error": 8.45719,
-          "miss_rate_above_14": 0.297794,
+          "mae": 11.204073,
+          "mean_signed_error_away": 0.083014,
+          "mean_signed_error_home": -0.083014,
+          "median_absolute_error": 8.778363,
+          "miss_rate_above_14": 0.316176,
           "miss_rate_above_21": 0.143382,
-          "rmse": 14.211695,
+          "rmse": 14.260603,
           "season": 2021
         },
         {
           "count": 271,
-          "mae": 8.906019,
-          "mean_signed_error_away": -0.422328,
-          "mean_signed_error_home": 0.422328,
-          "median_absolute_error": 7.279534,
-          "miss_rate_above_14": 0.210332,
-          "miss_rate_above_21": 0.081181,
-          "rmse": 11.597134,
+          "mae": 8.940145,
+          "mean_signed_error_away": -0.381108,
+          "mean_signed_error_home": 0.381108,
+          "median_absolute_error": 7.605688,
+          "miss_rate_above_14": 0.206642,
+          "miss_rate_above_21": 0.084871,
+          "rmse": 11.636609,
           "season": 2022
         },
         {
           "count": 272,
-          "mae": 10.392569,
-          "mean_signed_error_away": -0.869337,
-          "mean_signed_error_home": 0.869337,
-          "median_absolute_error": 7.800768,
-          "miss_rate_above_14": 0.283088,
-          "miss_rate_above_21": 0.117647,
-          "rmse": 13.501081,
+          "mae": 10.37765,
+          "mean_signed_error_away": -0.905038,
+          "mean_signed_error_home": 0.905038,
+          "median_absolute_error": 7.9719,
+          "miss_rate_above_14": 0.279412,
+          "miss_rate_above_21": 0.121324,
+          "rmse": 13.530695,
           "season": 2023
         },
         {
           "count": 272,
-          "mae": 9.851933,
-          "mean_signed_error_away": -0.018984,
-          "mean_signed_error_home": 0.018984,
-          "median_absolute_error": 7.496855,
-          "miss_rate_above_14": 0.257353,
+          "mae": 9.892942,
+          "mean_signed_error_away": 0.004654,
+          "mean_signed_error_home": -0.004654,
+          "median_absolute_error": 7.650208,
+          "miss_rate_above_14": 0.261029,
           "miss_rate_above_21": 0.136029,
-          "rmse": 12.819203,
+          "rmse": 12.865766,
           "season": 2024
         },
         {
           "count": 272,
-          "mae": 10.350322,
-          "mean_signed_error_away": -0.303992,
-          "mean_signed_error_home": 0.303992,
-          "median_absolute_error": 8.728321,
-          "miss_rate_above_14": 0.283088,
-          "miss_rate_above_21": 0.091912,
-          "rmse": 12.936861,
+          "mae": 10.340627,
+          "mean_signed_error_away": -0.285002,
+          "mean_signed_error_home": 0.285002,
+          "median_absolute_error": 8.5947,
+          "miss_rate_above_14": 0.275735,
+          "miss_rate_above_21": 0.095588,
+          "rmse": 12.925943,
           "season": 2025
         }
       ]
@@ -219,33 +219,33 @@
       "calibration_bands": [
         {
           "band": "<-7",
-          "count": 128,
-          "mean_actual_margin": -8.40625,
-          "mean_prediction": -7.008213
+          "count": 121,
+          "mean_actual_margin": -7.900826,
+          "mean_prediction": -7.178754
         },
         {
           "band": "-7:-3",
-          "count": 289,
-          "mean_actual_margin": -5.311419,
-          "mean_prediction": -2.714975
+          "count": 288,
+          "mean_actual_margin": -5.378472,
+          "mean_prediction": -2.750645
         },
         {
           "band": "-3:3",
-          "count": 805,
-          "mean_actual_margin": -0.606211,
-          "mean_prediction": 1.139717
+          "count": 803,
+          "mean_actual_margin": -0.805729,
+          "mean_prediction": 1.047069
         },
         {
           "band": "3:7",
-          "count": 512,
-          "mean_actual_margin": 4.980469,
-          "mean_prediction": 4.804565
+          "count": 524,
+          "mean_actual_margin": 4.994275,
+          "mean_prediction": 4.822313
         },
         {
           "band": ">7",
-          "count": 393,
-          "mean_actual_margin": 9.908397,
-          "mean_prediction": 9.462198
+          "count": 391,
+          "mean_actual_margin": 9.923274,
+          "mean_prediction": 9.482099
         }
       ],
       "count": 2127,
@@ -471,53 +471,53 @@
   "status": "HOLD",
   "subgroup_results": {
     "changed_or_backup_qb": {
-      "challenger_mae": 10.082964,
+      "challenger_mae": 10.116747,
       "count": 1561,
-      "improvement": 0.088442,
-      "lower": -0.01583,
+      "improvement": 0.054659,
+      "lower": -0.045523,
       "pgo_v0_mae": 10.171406,
       "status": "SUFFICIENT_EVIDENCE",
-      "upper": 0.189692
+      "upper": 0.152126
     },
     "head_coach_change": {
       "count": 67,
       "status": "INSUFFICIENT_EVIDENCE"
     },
     "high_roster_turnover": {
-      "challenger_mae": 10.046798,
-      "count": 960,
-      "improvement": 0.086788,
-      "lower": -0.043184,
-      "pgo_v0_mae": 10.133586,
+      "challenger_mae": 10.23359,
+      "count": 949,
+      "improvement": 0.099705,
+      "lower": -0.017194,
+      "pgo_v0_mae": 10.333295,
       "status": "SUFFICIENT_EVIDENCE",
-      "upper": 0.213281
+      "upper": 0.212943
     },
     "major_availability_loss": {
-      "challenger_mae": 10.566593,
-      "count": 618,
-      "improvement": 0.268834,
-      "lower": 0.087639,
-      "pgo_v0_mae": 10.835427,
+      "challenger_mae": 10.84701,
+      "count": 393,
+      "improvement": 0.3153,
+      "lower": 0.104533,
+      "pgo_v0_mae": 11.16231,
       "status": "SUFFICIENT_EVIDENCE",
-      "upper": 0.454156
+      "upper": 0.525985
     },
     "weeks_1_4": {
-      "challenger_mae": 10.041648,
+      "challenger_mae": 10.0602,
       "count": 509,
-      "improvement": 0.015265,
-      "lower": -0.208758,
+      "improvement": -0.003287,
+      "lower": -0.241818,
       "pgo_v0_mae": 10.056913,
       "status": "SUFFICIENT_EVIDENCE",
-      "upper": 0.205813
+      "upper": 0.20676
     },
     "weeks_5_18": {
-      "challenger_mae": 10.234834,
+      "challenger_mae": 10.250779,
       "count": 1618,
-      "improvement": 0.097139,
-      "lower": 0.00294,
+      "improvement": 0.081194,
+      "lower": -0.006924,
       "pgo_v0_mae": 10.331973,
       "status": "SUFFICIENT_EVIDENCE",
-      "upper": 0.191301
+      "upper": 0.166545
     }
   },
   "version": "pgo_v1",

@@ -20,8 +20,8 @@
     "coverage_injury_gsis_rows": true,
     "coverage_qb_gsis_rows": true,
     "coverage_schedule_team_games": true,
-    "coverage_snap_pfr_volume": false,
-    "identity": false,
+    "coverage_snap_pfr_volume": true,
+    "identity": true,
     "leakage": true,
     "reproducibility": true,
     "source": true
@@ -56,11 +56,16 @@
       "threshold": 0.99
     },
     "snap_pfr_volume": {
+      "ambiguous_name_volume": 242.0,
       "denominator": 10413784.0,
-      "numerator": 6389933.0,
-      "passed": false,
-      "rate": 0.613603,
-      "threshold": 0.97
+      "direct_pfr_volume": 6389933.0,
+      "exact_name_volume": 3872810.0,
+      "numerator": 10262743.0,
+      "passed": true,
+      "rate": 0.985496,
+      "rejected_name_volume": 151041.0,
+      "threshold": 0.97,
+      "unmatched_name_volume": 150799.0
     }
   },
   "earliest_modeling_season": 2013,
@@ -69,6 +74,11 @@
     "simultaneous_gsis_collisions": [
       "00-0035718"
     ],
+    "snap_name_fallback": {
+      "ambiguous_names": "rejected",
+      "normalization": "casefold and collapse whitespace",
+      "scope": "season-week-team"
+    },
     "status_only_roster_rows_collapsed": 5381
   },
   "injury_timing": {
