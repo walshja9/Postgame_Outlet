@@ -269,16 +269,17 @@ def render_comparison_panel(rows, receipt):
     )
     body = "\n".join(
         "<tr>"
-        f'<th scope="row">{html.escape(row["team"])}</th>'
-        f'<td>{row["mccabe_rank"]}</td>'
-        f'<td>{_signed(row["mccabe_rating"])}</td>'
-        f'<td>{row["full_strength_rank"]}</td>'
-        f'<td>{_signed(row["full_strength_rating"])}</td>'
-        f'<td>{_signed(row["availability_adjustment"])}</td>'
-        f'<td>{row["current_lineup_rank"]}</td>'
-        f'<td>{_signed(row["current_lineup_rating"])}</td>'
-        f'<td>{row["rank_disagreement"]:+d}</td>'
-        f'<td>{_signed(row["rating_disagreement"])}</td>'
+        f'<th scope="row" data-sort="{html.escape(row["team"].casefold())}">'
+        f'{html.escape(row["team"])}</th>'
+        f'<td data-sort="{row["mccabe_rank"]}">{row["mccabe_rank"]}</td>'
+        f'<td data-sort="{row["mccabe_rating"]}">{_signed(row["mccabe_rating"])}</td>'
+        f'<td data-sort="{row["full_strength_rank"]}">{row["full_strength_rank"]}</td>'
+        f'<td data-sort="{row["full_strength_rating"]}">{_signed(row["full_strength_rating"])}</td>'
+        f'<td data-sort="{row["availability_adjustment"]}">{_signed(row["availability_adjustment"])}</td>'
+        f'<td data-sort="{row["current_lineup_rank"]}">{row["current_lineup_rank"]}</td>'
+        f'<td data-sort="{row["current_lineup_rating"]}">{_signed(row["current_lineup_rating"])}</td>'
+        f'<td data-sort="{row["rank_disagreement"]}">{row["rank_disagreement"]:+d}</td>'
+        f'<td data-sort="{row["rating_disagreement"]}">{_signed(row["rating_disagreement"])}</td>'
         "</tr>"
         for row in rows
     )
@@ -299,15 +300,21 @@ def render_comparison_panel(rows, receipt):
       {html.escape(receipt["mccabe_published_at"])}.<br>
       PGO {html.escape(receipt["version"])} as of
       {html.escape(str(receipt["as_of"]))}. {html.escape(reason)}.</p>
+    <p class="visually-hidden comparison-sort-status" role="status" aria-live="polite"></p>
     <div class="table-shell">
       <table class="comparison-table">
         <caption class="visually-hidden">All 32 NFL teams comparing McCabe and PGO ratings</caption>
         <thead><tr>
-          <th scope="col">Team</th><th scope="col">McCabe #</th>
-          <th scope="col">McCabe</th><th scope="col">PGO full #</th>
-          <th scope="col">PGO full</th><th scope="col">Avail.</th>
-          <th scope="col">PGO today #</th><th scope="col">PGO today</th>
-          <th scope="col">Rank gap</th><th scope="col">Rating gap</th>
+          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="0">Team</button></th>
+          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="1">McCabe #</button></th>
+          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="2">McCabe</button></th>
+          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="3">PGO full #</button></th>
+          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="4">PGO full</button></th>
+          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="5">Avail.</button></th>
+          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="6">PGO today #</button></th>
+          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="7">PGO today</button></th>
+          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="8">Rank gap</button></th>
+          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="9">Rating gap</button></th>
         </tr></thead>
         <tbody>{body}</tbody>
       </table>
@@ -330,11 +337,61 @@ COMPARISON_TAB = """
 """
 
 
+COMPARISON_SCRIPT = """
+<script>
+  (() => {
+    const panel = document.querySelector('#panel-comparison');
+    const body = panel && panel.querySelector('.comparison-table tbody');
+    const status = panel && panel.querySelector('.comparison-sort-status');
+    const buttons = panel ? [...panel.querySelectorAll('.comparison-table .sort-button')] : [];
+    if (!body || !status || buttons.length === 0) return;
+
+    let activeColumn = null;
+    let ascending = true;
+
+    function value(row, index) {
+      const raw = row.children[index].dataset.sort;
+      const numeric = index !== 0;
+      return numeric ? Number(raw) : raw;
+    }
+
+    buttons.forEach(button => {
+      button.addEventListener('click', () => {
+        const column = Number(button.dataset.column);
+        ascending = column === activeColumn ? !ascending : true;
+        activeColumn = column;
+        [...body.rows].sort((a, b) => {
+          const left = value(a, column);
+          const right = value(b, column);
+          const order = typeof left === 'number'
+            ? left - right
+            : left.localeCompare(right);
+          const directed = ascending ? order : -order;
+          return directed || a.children[0].dataset.sort.localeCompare(
+            b.children[0].dataset.sort
+          );
+        }).forEach(row => body.appendChild(row));
+        buttons.forEach(candidate => {
+          candidate.closest('th').setAttribute('aria-sort', 'none');
+        });
+        button.closest('th').setAttribute(
+          'aria-sort', ascending ? 'ascending' : 'descending'
+        );
+        status.textContent = button.textContent.trim() + ' sorted '
+          + (ascending ? 'ascending' : 'descending');
+      });
+    });
+  })();
+</script>
+"""
+
+
 def inject_comparison(base_html, panel_html):
     markers = (
         "</style>",
         '<button type="button" class="tab" id="tab-method"',
         '<section class="panel" id="panel-method"',
+        "</body>",
     )
     if any(base_html.count(marker) != 1 for marker in markers):
         raise ValueError("Base ratings template markers changed")
@@ -343,6 +400,7 @@ def inject_comparison(base_html, panel_html):
     )
     output = output.replace(markers[1], COMPARISON_TAB + "    " + markers[1], 1)
     output = output.replace(markers[2], panel_html + "\n  " + markers[2], 1)
+    output = output.replace("</body>", COMPARISON_SCRIPT + "\n</body>", 1)
     return output
 
 

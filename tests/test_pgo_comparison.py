@@ -99,6 +99,40 @@ class ComparisonTests(unittest.TestCase):
         self.assertNotIn(">PGO v0<", panel)
         self.assertNotIn(">Market<", panel)
 
+    def test_generated_comparison_is_sortable_and_accessible(self):
+        panel = pgo_comparison.render_comparison_panel(
+            [{
+                "team": "Buffalo Bills", "mccabe_rank": 1,
+                "mccabe_rating": 7.0, "full_strength_rank": 2,
+                "full_strength_rating": 0.5, "availability_adjustment": 2.0,
+                "current_lineup_rank": 1, "current_lineup_rating": 2.5,
+                "rank_disagreement": 1, "rating_disagreement": -6.5,
+            }],
+            self._held_receipt(),
+        )
+        base = (
+            "<html><head><style>base</style></head><body>"
+            '<button type="button" class="tab" id="tab-method">Methodology</button>'
+            '<section class="panel" id="panel-method">Method</section>'
+            "</body></html>"
+        )
+        output = pgo_comparison.inject_comparison(base, panel)
+
+        self.assertEqual(panel.count('class="sort-button"'), 10)
+        self.assertEqual(panel.count('aria-sort="none"'), 10)
+        self.assertEqual(panel.count("data-sort="), 10)
+        self.assertIn('data-sort="buffalo bills"', panel)
+        self.assertIn('data-sort="-6.5"', panel)
+        self.assertIn(
+            'class="visually-hidden comparison-sort-status"', panel
+        )
+        self.assertIn("document.querySelector('#panel-comparison')", output)
+        self.assertIn("const numeric = index !== 0;", output)
+        self.assertIn(
+            "a.children[0].dataset.sort.localeCompare(",
+            output,
+        )
+
     def test_injection_adds_one_accessible_tab_and_preserves_base_page(self):
         base = (
             "<html><style>base</style><body>"
