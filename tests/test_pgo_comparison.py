@@ -3,12 +3,34 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr
 from pathlib import Path
+from unittest.mock import patch
 
 import pgo_challenger
 import pgo_comparison
 
 
 class ComparisonTests(unittest.TestCase):
+    @staticmethod
+    def _base_html():
+        return (
+            '<html><head><meta name="description" content="Sean McCabe’s board">'
+            "<style>base</style></head><body>"
+            '<div class="updated">By Sean McCabe &middot; Edition</div>'
+            '    <button type="button" class="tab active" id="tab-ratings" '
+            'role="tab" aria-selected="true" aria-controls="panel-ratings" '
+            'tabindex="0" data-panel="ratings">Power Ratings</button>'
+            '<button type="button" class="tab" id="tab-qbs" role="tab" '
+            'aria-selected="false" aria-controls="panel-qbs" tabindex="-1" '
+            'data-panel="qbs" style="display:block">QB Ratings</button>'
+            '<button type="button" class="tab" id="tab-method" role="tab" '
+            'aria-selected="false" aria-controls="panel-method" tabindex="-1" '
+            'data-panel="method">Methodology</button>'
+            '  <section class="panel active" id="panel-ratings" '
+            'role="tabpanel">McCabe</section>'
+            '<section class="panel" id="panel-method">Method</section>'
+            "</body></html>"
+        )
+
     @staticmethod
     def _held_receipt():
         checks = {name: True for name in pgo_challenger.GATE_CHECK_NAMES}
@@ -98,6 +120,64 @@ class ComparisonTests(unittest.TestCase):
         self.assertIn("-0.024 to +0.145", panel)
         self.assertNotIn(">PGO v0<", panel)
         self.assertNotIn(">Market<", panel)
+        self.assertIn(
+            "https://github.com/walshja9/Postgame_Outlet/blob/main/research/pgo_v1/backtest.json",
+            panel,
+        )
+        self.assertIn(
+            "https://github.com/walshja9/Postgame_Outlet/blob/main/docs/superpowers/specs/2026-07-21-independent-forward-looking-pgo-model-design.md",
+            panel,
+        )
+
+    def test_pgo_is_primary_and_rows_start_in_pgo_rank_order(self):
+        rows = [
+            {
+                "team": "Buffalo Bills", "mccabe_rank": 1,
+                "mccabe_rating": 7.0, "full_strength_rank": 2,
+                "full_strength_rating": 0.5, "availability_adjustment": 2.0,
+                "current_lineup_rank": 1, "current_lineup_rating": 2.5,
+                "rank_disagreement": 1, "rating_disagreement": -6.5,
+            },
+            {
+                "team": "Miami Dolphins", "mccabe_rank": 2,
+                "mccabe_rating": -4.5, "full_strength_rank": 1,
+                "full_strength_rating": 1.0, "availability_adjustment": -2.0,
+                "current_lineup_rank": 2, "current_lineup_rating": -1.0,
+                "rank_disagreement": -1, "rating_disagreement": 5.5,
+            },
+        ]
+        panel = pgo_comparison.render_comparison_panel(
+            rows, self._held_receipt()
+        )
+
+        output = pgo_comparison.inject_comparison(self._base_html(), panel)
+
+        self.assertLess(
+            output.index('id="tab-comparison"'),
+            output.index('id="tab-ratings"'),
+        )
+        self.assertIn(
+            'class="tab active" id="tab-comparison"', output
+        )
+        self.assertIn(
+            'aria-selected="true" aria-controls="panel-comparison"', output
+        )
+        self.assertIn(
+            'class="panel active" id="panel-comparison"', output
+        )
+        self.assertIn(
+            'class="panel" id="panel-ratings" hidden', output
+        )
+        self.assertIn(">McCabe Ratings</button>", output)
+        self.assertIn(">McCabe QBs</button>", output)
+        self.assertIn(">McCabe Method</button>", output)
+        self.assertIn("By Postgame Outlet Model", output)
+        self.assertIn(
+            "Postgame Outlet’s independent PGO v1", output
+        )
+        self.assertLess(panel.index("Miami Dolphins"), panel.index("Buffalo Bills"))
+        self.assertEqual(panel.count('aria-sort="ascending"'), 1)
+        self.assertEqual(panel.count('aria-sort="none"'), 9)
 
     def test_generated_comparison_is_sortable_and_accessible(self):
         panel = pgo_comparison.render_comparison_panel(
@@ -110,16 +190,12 @@ class ComparisonTests(unittest.TestCase):
             }],
             self._held_receipt(),
         )
-        base = (
-            "<html><head><style>base</style></head><body>"
-            '<button type="button" class="tab" id="tab-method">Methodology</button>'
-            '<section class="panel" id="panel-method">Method</section>'
-            "</body></html>"
-        )
+        base = self._base_html()
         output = pgo_comparison.inject_comparison(base, panel)
 
         self.assertEqual(panel.count('class="sort-button"'), 10)
-        self.assertEqual(panel.count('aria-sort="none"'), 10)
+        self.assertEqual(panel.count('aria-sort="ascending"'), 1)
+        self.assertEqual(panel.count('aria-sort="none"'), 9)
         self.assertEqual(panel.count("data-sort="), 10)
         self.assertIn('data-sort="buffalo bills"', panel)
         self.assertIn('data-sort="-6.5"', panel)
@@ -134,12 +210,7 @@ class ComparisonTests(unittest.TestCase):
         )
 
     def test_injection_adds_one_accessible_tab_and_preserves_base_page(self):
-        base = (
-            "<html><style>base</style><body>"
-            '<button type="button" class="tab" id="tab-method">Methodology</button>'
-            '<section class="panel" id="panel-method">Method</section>'
-            "</body></html>"
-        )
+        base = self._base_html()
         panel = '<section id="panel-comparison">Rows</section>'
         output = pgo_comparison.inject_comparison(base, panel)
         self.assertEqual(output.count('id="tab-comparison"'), 1)
@@ -148,12 +219,7 @@ class ComparisonTests(unittest.TestCase):
         self.assertIn("<style>base", output)
 
     def test_injection_suppresses_browser_favicon_request(self):
-        base = (
-            "<html><head><style>base</style></head><body>"
-            '<button type="button" class="tab" id="tab-method">Methodology</button>'
-            '<section class="panel" id="panel-method">Method</section>'
-            "</body></html>"
-        )
+        base = self._base_html()
         output = pgo_comparison.inject_comparison(
             base, '<section id="panel-comparison">Rows</section>'
         )
@@ -175,3 +241,14 @@ class ComparisonTests(unittest.TestCase):
         with redirect_stderr(io.StringIO()):
             code = pgo_comparison.main(["--output", "docs/index.html"])
         self.assertEqual(code, 1)
+
+    def test_cli_publish_targets_only_docs_index(self):
+        with patch.object(pgo_comparison, "atomic_write_text") as write:
+            code = pgo_comparison.main(["--publish"])
+
+        self.assertEqual(code, 0)
+        target = Path(write.call_args.args[0]).resolve()
+        self.assertEqual(
+            target,
+            (pgo_comparison.HERE / "docs" / "index.html").resolve(),
+        )

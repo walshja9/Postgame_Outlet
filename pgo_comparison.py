@@ -22,6 +22,7 @@ MCCABE_PATH = HERE / "data" / "ratings.csv"
 MODEL_PATH = HERE / "research" / "pgo_v1" / "ratings_2026_preseason.csv"
 BACKTEST_PATH = HERE / "research" / "pgo_v1" / "backtest.json"
 SNAPSHOTS_PATH = HERE / "data" / "snapshots.json"
+PUBLIC_OUTPUT = HERE / "docs" / "index.html"
 MCCABE_SNAPSHOT_LABEL = "Preseason 2026"
 MODEL_NUMBER_FIELDS = (
     "full_strength_rating",
@@ -253,6 +254,10 @@ def _signed(value):
 
 
 def render_comparison_panel(rows, receipt):
+    rows = sorted(
+        rows,
+        key=lambda row: (row["full_strength_rank"], row["team"]),
+    )
     interval = receipt["aggregate_interval"]
     metrics = receipt["metrics"]
     label = (
@@ -271,13 +276,13 @@ def render_comparison_panel(rows, receipt):
         "<tr>"
         f'<th scope="row" data-sort="{html.escape(row["team"].casefold())}">'
         f'{html.escape(row["team"])}</th>'
-        f'<td data-sort="{row["mccabe_rank"]}">{row["mccabe_rank"]}</td>'
-        f'<td data-sort="{row["mccabe_rating"]}">{_signed(row["mccabe_rating"])}</td>'
         f'<td data-sort="{row["full_strength_rank"]}">{row["full_strength_rank"]}</td>'
         f'<td data-sort="{row["full_strength_rating"]}">{_signed(row["full_strength_rating"])}</td>'
         f'<td data-sort="{row["availability_adjustment"]}">{_signed(row["availability_adjustment"])}</td>'
         f'<td data-sort="{row["current_lineup_rank"]}">{row["current_lineup_rank"]}</td>'
         f'<td data-sort="{row["current_lineup_rating"]}">{_signed(row["current_lineup_rating"])}</td>'
+        f'<td data-sort="{row["mccabe_rank"]}">{row["mccabe_rank"]}</td>'
+        f'<td data-sort="{row["mccabe_rating"]}">{_signed(row["mccabe_rating"])}</td>'
         f'<td data-sort="{row["rank_disagreement"]}">{row["rank_disagreement"]:+d}</td>'
         f'<td data-sort="{row["rating_disagreement"]}">{_signed(row["rating_disagreement"])}</td>'
         "</tr>"
@@ -290,11 +295,11 @@ def render_comparison_panel(rows, receipt):
         f'{interval["lower"]:+.3f} to {interval["upper"]:+.3f}.'
     )
     return f"""
-  <section class="panel" id="panel-comparison" role="tabpanel"
-    aria-labelledby="tab-comparison" hidden>
+  <section class="panel active" id="panel-comparison" role="tabpanel"
+    aria-labelledby="tab-comparison">
     <div class="model-status">{html.escape(label)}</div>
-    <h2>McCabe vs. the independent PGO model</h2>
-    <p>Two independent ratings of overall team strength. They are compared, never blended.</p>
+    <h2>PGO v1 Power Ratings</h2>
+    <p>Postgame Outlet's independent statistical rating, compared with McCabe's human rating and never blended.</p>
     <p class="comparison-summary">{html.escape(summary)}<br>
       McCabe {html.escape(receipt["mccabe_edition"])} locked
       {html.escape(receipt["mccabe_published_at"])}.<br>
@@ -306,13 +311,13 @@ def render_comparison_panel(rows, receipt):
         <caption class="visually-hidden">All 32 NFL teams comparing McCabe and PGO ratings</caption>
         <thead><tr>
           <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="0">Team</button></th>
-          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="1">McCabe #</button></th>
-          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="2">McCabe</button></th>
-          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="3">PGO full #</button></th>
-          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="4">PGO full</button></th>
-          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="5">Avail.</button></th>
-          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="6">PGO today #</button></th>
-          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="7">PGO today</button></th>
+          <th scope="col" aria-sort="ascending"><button type="button" class="sort-button" data-column="1">PGO full #</button></th>
+          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="2">PGO full</button></th>
+          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="3">Avail.</button></th>
+          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="4">PGO today #</button></th>
+          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="5">PGO today</button></th>
+          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="6">McCabe #</button></th>
+          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="7">McCabe</button></th>
           <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="8">Rank gap</button></th>
           <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="9">Rating gap</button></th>
         </tr></thead>
@@ -322,18 +327,18 @@ def render_comparison_panel(rows, receipt):
     <p class="legend">Positive rank gap means PGO ranks the team lower.
       Positive rating gap means PGO rates the team higher.</p>
     <p class="comparison-links">
-      <a href="/research/pgo_v1/backtest.json">Backtest receipt</a>
+      <a href="https://github.com/walshja9/Postgame_Outlet/blob/main/research/pgo_v1/backtest.json">Backtest receipt</a>
       &middot;
-      <a href="/docs/superpowers/specs/2026-07-21-independent-forward-looking-pgo-model-design.md">Methodology and release rules</a>
+      <a href="https://github.com/walshja9/Postgame_Outlet/blob/main/docs/superpowers/specs/2026-07-21-independent-forward-looking-pgo-model-design.md">Methodology and release rules</a>
     </p>
   </section>
 """
 
 
 COMPARISON_TAB = """
-    <button type="button" class="tab" id="tab-comparison" role="tab"
-      aria-selected="false" aria-controls="panel-comparison" tabindex="-1"
-      data-panel="comparison">Model comparison</button>
+    <button type="button" class="tab active" id="tab-comparison" role="tab"
+      aria-selected="true" aria-controls="panel-comparison" tabindex="0"
+      data-panel="comparison">PGO Model</button>
 """
 
 
@@ -346,7 +351,7 @@ COMPARISON_SCRIPT = """
     const buttons = panel ? [...panel.querySelectorAll('.comparison-table .sort-button')] : [];
     if (!body || !status || buttons.length === 0) return;
 
-    let activeColumn = null;
+    let activeColumn = 1;
     let ascending = true;
 
     function value(row, index) {
@@ -387,35 +392,84 @@ COMPARISON_SCRIPT = """
 
 
 def inject_comparison(base_html, panel_html):
+    rating_tab = (
+        '    <button type="button" class="tab active" id="tab-ratings"'
+    )
+    rating_panel = (
+        '  <section class="panel active" id="panel-ratings"'
+    )
+    fixed_replacements = (
+        (
+            '<meta name="description" content="Sean McCabe’s',
+            '<meta name="description" content="Postgame Outlet’s independent PGO v1',
+        ),
+        (
+            '<div class="updated">By Sean McCabe &middot;',
+            '<div class="updated">By Postgame Outlet Model &middot;',
+        ),
+        (
+            'aria-selected="true" aria-controls="panel-ratings" tabindex="0"',
+            'aria-selected="false" aria-controls="panel-ratings" tabindex="-1"',
+        ),
+        (
+            'data-panel="ratings">Power Ratings</button>',
+            'data-panel="ratings">McCabe Ratings</button>',
+        ),
+        (">QB Ratings</button>", ">McCabe QBs</button>"),
+        (">Methodology</button>", ">McCabe Method</button>"),
+    )
     markers = (
         "</style>",
-        '<button type="button" class="tab" id="tab-method"',
-        '<section class="panel" id="panel-method"',
         "</body>",
+        rating_tab,
+        rating_panel,
+        *(old for old, _new in fixed_replacements),
     )
     if any(base_html.count(marker) != 1 for marker in markers):
         raise ValueError("Base ratings template markers changed")
     output = base_html.replace(
         "</style>", MODEL_CSS + '\n</style>\n<link rel="icon" href="data:,">', 1
     )
-    output = output.replace(markers[1], COMPARISON_TAB + "    " + markers[1], 1)
-    output = output.replace(markers[2], panel_html + "\n  " + markers[2], 1)
+    for old, new in fixed_replacements:
+        output = output.replace(old, new, 1)
+    output = output.replace(
+        rating_tab,
+        COMPARISON_TAB
+        + '    <button type="button" class="tab" id="tab-ratings"',
+        1,
+    )
+    output = output.replace(
+        rating_panel,
+        panel_html
+        + '\n  <section class="panel" id="panel-ratings" hidden',
+        1,
+    )
     output = output.replace("</body>", COMPARISON_SCRIPT + "\n</body>", 1)
     return output
 
 
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path, default=default_preview_path())
+    destination = parser.add_mutually_exclusive_group()
+    destination.add_argument(
+        "--output", type=Path, default=default_preview_path()
+    )
+    destination.add_argument(
+        "--publish",
+        action="store_true",
+        help="write the reviewed combined page to docs/index.html",
+    )
     return parser.parse_args(argv)
 
 
 def main(argv=None):
     args = parse_args(argv)
     try:
-        output = args.output.resolve()
+        output = (
+            PUBLIC_OUTPUT if args.publish else args.output
+        ).resolve()
         preview_root = (HERE / "output").resolve()
-        if preview_root not in output.parents:
+        if not args.publish and preview_root not in output.parents:
             raise ValueError("Comparison output must stay under output/")
         comparison_rows, receipt = load_comparison_rows(
             MCCABE_PATH, MODEL_PATH, BACKTEST_PATH

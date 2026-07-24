@@ -65,6 +65,17 @@ McCabe's reviewed ratings and writes a dated private page under
 `output/pgo-comparison-preview/`. It never changes `docs/index.html` or any
 live service. PGO v0 remains backtest evidence only.
 
+After editorial review and explicit publication approval, the fixed-destination
+release command is:
+
+```bash
+python pgo_comparison.py --publish
+```
+
+It writes only `docs/index.html`. PGO v1 remains labeled
+`Experimental model — HOLD`; the command does not modify Shopify or any rating
+input.
+
 ## Team write-ups (click-to-expand on the site)
 
 Every team row in the generated ratings artifact expands (click it) to show a QB/Off/Def bar
