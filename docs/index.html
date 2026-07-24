@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>2026 Preseason NFL Power Ratings | Postgame Outlet</title>
-<meta name="description" content="Sean McCabe’s 2026 Preseason NFL Power Ratings, expressed as neutral-field points above or below a league-average team.">
+<meta name="description" content="Postgame Outlet’s independent PGO v1 2026 Preseason NFL Power Ratings, expressed as neutral-field points above or below a league-average team.">
 <link rel="canonical" href="https://postgameoutlet.com/pages/power-ratings">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -251,29 +251,130 @@
   @media (prefers-reduced-motion:reduce) {
     *, *::before, *::after { scroll-behavior:auto !important; transition:none !important; }
   }
+
+#panel-comparison .model-status {
+  display:inline-block; margin:0 0 12px; padding:6px 10px;
+  border:1px solid var(--orange); border-radius:999px;
+  color:var(--ink); font-weight:700;
+}
+#panel-comparison .comparison-summary { color:var(--mut); max-width:78ch; }
+#panel-comparison .comparison-table th:first-child,
+#panel-comparison .comparison-table td:first-child { text-align:left; }
+#panel-comparison .comparison-table thead th:first-child,
+#panel-comparison .comparison-table tbody th:first-child {
+  position:sticky; left:0; z-index:1;
+}
+#panel-comparison .comparison-table thead th:first-child {
+  background:var(--ink);
+}
+#panel-comparison .comparison-table tbody th:first-child {
+  background:var(--panel); color:var(--ink);
+}
+#panel-comparison .comparison-links { margin-top:16px; }
+@media (max-width:680px) {
+  #panel-comparison .comparison-table { font-size:12px; }
+  #panel-comparison .comparison-table th,
+  #panel-comparison .comparison-table td { padding:8px 7px; }
+}
+
 </style>
+<link rel="icon" href="data:,">
 </head>
 <body>
 <div class="hero">
   <header>
     <h1>NFL Power Ratings <span class="accent">2026</span></h1>
     <div class="sub">Preseason &middot; roster-based, points vs. a league-average team (0.0)</div>
-    <div class="updated">By Sean McCabe &middot; 2026 Preseason &middot; Updated <time datetime="2026-07-21T12:07:13-04:00">July 21, 2026</time></div>
+    <div class="updated">By Postgame Outlet Model &middot; 2026 Preseason &middot; Updated <time datetime="2026-07-24T12:33:41-04:00">July 24, 2026</time></div>
   </header>
 </div>
 <div class="wrap">
   <div class="tabs" role="tablist" aria-label="Ratings views">
-    <button type="button" class="tab active" id="tab-ratings" role="tab"
-      aria-selected="true" aria-controls="panel-ratings" tabindex="0"
-      data-panel="ratings">Power Ratings</button>
+
+    <button type="button" class="tab active" id="tab-comparison" role="tab"
+      aria-selected="true" aria-controls="panel-comparison" tabindex="0"
+      data-panel="comparison">PGO Model</button>
+    <button type="button" class="tab" id="tab-ratings" role="tab"
+      aria-selected="false" aria-controls="panel-ratings" tabindex="-1"
+      data-panel="ratings">McCabe Ratings</button>
     <button type="button" class="tab" id="tab-qbs" role="tab"
       aria-selected="false" aria-controls="panel-qbs" tabindex="-1"
-      data-panel="qbs" style="display:block">QB Ratings</button>
+      data-panel="qbs" style="display:block">McCabe QBs</button>
     <button type="button" class="tab" id="tab-method" role="tab"
       aria-selected="false" aria-controls="panel-method" tabindex="-1"
-      data-panel="method">Methodology</button>
+      data-panel="method">McCabe Method</button>
   </div>
-  <section class="panel active" id="panel-ratings" role="tabpanel" aria-labelledby="tab-ratings">
+
+  <section class="panel active" id="panel-comparison" role="tabpanel"
+    aria-labelledby="tab-comparison">
+    <div class="model-status">Experimental model — HOLD</div>
+    <h2>PGO v1 Power Ratings</h2>
+    <p>Postgame Outlet's independent statistical rating, compared with McCabe's human rating and never blended.</p>
+    <p class="comparison-summary">Backtest: v1 MAE 10.205 vs v0 10.266; improvement +0.061, 95% CI -0.024 to +0.145.<br>
+      McCabe Preseason 2026 locked
+      2026-07-16T11:22:52-04:00.<br>
+      PGO pgo_v1 as of
+      2026-07-21T12:00:00-04:00. Hold reason: aggregate improvement ci positive.</p>
+    <p class="visually-hidden comparison-sort-status" role="status" aria-live="polite"></p>
+    <div class="table-shell">
+      <table class="comparison-table">
+        <caption class="visually-hidden">All 32 NFL teams comparing McCabe and PGO ratings</caption>
+        <thead><tr>
+          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="0">Team</button></th>
+          <th scope="col" aria-sort="ascending"><button type="button" class="sort-button" data-column="1">PGO full #</button></th>
+          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="2">PGO full</button></th>
+          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="3">Avail.</button></th>
+          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="4">PGO today #</button></th>
+          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="5">PGO today</button></th>
+          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="6">McCabe #</button></th>
+          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="7">McCabe</button></th>
+          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="8">Rank gap</button></th>
+          <th scope="col" aria-sort="none"><button type="button" class="sort-button" data-column="9">Rating gap</button></th>
+        </tr></thead>
+        <tbody><tr><th scope="row" data-sort="new england patriots">New England Patriots</th><td data-sort="1">1</td><td data-sort="7.000331">+7.0</td><td data-sort="0.0">+0.0</td><td data-sort="1">1</td><td data-sort="7.000331">+7.0</td><td data-sort="8">8</td><td data-sort="4.0">+4.0</td><td data-sort="-7">-7</td><td data-sort="3.000331">+3.0</td></tr>
+<tr><th scope="row" data-sort="los angeles rams">Los Angeles Rams</th><td data-sort="2">2</td><td data-sort="6.653245">+6.7</td><td data-sort="0.0">+0.0</td><td data-sort="2">2</td><td data-sort="6.653245">+6.7</td><td data-sort="1">1</td><td data-sort="7.5">+7.5</td><td data-sort="1">+1</td><td data-sort="-0.8467549999999999">-0.8</td></tr>
+<tr><th scope="row" data-sort="seattle seahawks">Seattle Seahawks</th><td data-sort="3">3</td><td data-sort="6.41118">+6.4</td><td data-sort="0.0">+0.0</td><td data-sort="3">3</td><td data-sort="6.41118">+6.4</td><td data-sort="3">3</td><td data-sort="6.0">+6.0</td><td data-sort="0">+0</td><td data-sort="0.4111799999999999">+0.4</td></tr>
+<tr><th scope="row" data-sort="jacksonville jaguars">Jacksonville Jaguars</th><td data-sort="4">4</td><td data-sort="6.281377">+6.3</td><td data-sort="0.0">+0.0</td><td data-sort="4">4</td><td data-sort="6.281377">+6.3</td><td data-sort="11">11</td><td data-sort="3.0">+3.0</td><td data-sort="-7">-7</td><td data-sort="3.281377">+3.3</td></tr>
+<tr><th scope="row" data-sort="baltimore ravens">Baltimore Ravens</th><td data-sort="5">5</td><td data-sort="5.220027">+5.2</td><td data-sort="0.0">+0.0</td><td data-sort="5">5</td><td data-sort="5.220027">+5.2</td><td data-sort="4">4</td><td data-sort="5.5">+5.5</td><td data-sort="1">+1</td><td data-sort="-0.279973">-0.3</td></tr>
+<tr><th scope="row" data-sort="buffalo bills">Buffalo Bills</th><td data-sort="6">6</td><td data-sort="4.383434">+4.4</td><td data-sort="0.0">+0.0</td><td data-sort="6">6</td><td data-sort="4.383434">+4.4</td><td data-sort="2">2</td><td data-sort="7.0">+7.0</td><td data-sort="4">+4</td><td data-sort="-2.6165659999999997">-2.6</td></tr>
+<tr><th scope="row" data-sort="san francisco 49ers">San Francisco 49ers</th><td data-sort="7">7</td><td data-sort="4.134241">+4.1</td><td data-sort="0.0">+0.0</td><td data-sort="7">7</td><td data-sort="4.134241">+4.1</td><td data-sort="7">7</td><td data-sort="4.5">+4.5</td><td data-sort="0">+0</td><td data-sort="-0.3657589999999997">-0.4</td></tr>
+<tr><th scope="row" data-sort="denver broncos">Denver Broncos</th><td data-sort="8">8</td><td data-sort="3.547832">+3.5</td><td data-sort="0.0">+0.0</td><td data-sort="8">8</td><td data-sort="3.547832">+3.5</td><td data-sort="17">17</td><td data-sort="1.5">+1.5</td><td data-sort="-9">-9</td><td data-sort="2.047832">+2.0</td></tr>
+<tr><th scope="row" data-sort="philadelphia eagles">Philadelphia Eagles</th><td data-sort="9">9</td><td data-sort="3.383078">+3.4</td><td data-sort="0.0">+0.0</td><td data-sort="9">9</td><td data-sort="3.383078">+3.4</td><td data-sort="14">14</td><td data-sort="2.5">+2.5</td><td data-sort="-5">-5</td><td data-sort="0.8830779999999998">+0.9</td></tr>
+<tr><th scope="row" data-sort="houston texans">Houston Texans</th><td data-sort="10">10</td><td data-sort="3.28796">+3.3</td><td data-sort="0.0">+0.0</td><td data-sort="10">10</td><td data-sort="3.28796">+3.3</td><td data-sort="10">10</td><td data-sort="3.0">+3.0</td><td data-sort="0">+0</td><td data-sort="0.28796">+0.3</td></tr>
+<tr><th scope="row" data-sort="pittsburgh steelers">Pittsburgh Steelers</th><td data-sort="11">11</td><td data-sort="3.207418">+3.2</td><td data-sort="0.0">+0.0</td><td data-sort="11">11</td><td data-sort="3.207418">+3.2</td><td data-sort="22">22</td><td data-sort="0.0">+0.0</td><td data-sort="-11">-11</td><td data-sort="3.207418">+3.2</td></tr>
+<tr><th scope="row" data-sort="detroit lions">Detroit Lions</th><td data-sort="12">12</td><td data-sort="2.349763">+2.3</td><td data-sort="0.0">+0.0</td><td data-sort="12">12</td><td data-sort="2.349763">+2.3</td><td data-sort="13">13</td><td data-sort="3.0">+3.0</td><td data-sort="-1">-1</td><td data-sort="-0.6502370000000002">-0.7</td></tr>
+<tr><th scope="row" data-sort="chicago bears">Chicago Bears</th><td data-sort="13">13</td><td data-sort="1.655672">+1.7</td><td data-sort="0.0">+0.0</td><td data-sort="13">13</td><td data-sort="1.655672">+1.7</td><td data-sort="12">12</td><td data-sort="3.0">+3.0</td><td data-sort="1">+1</td><td data-sort="-1.344328">-1.3</td></tr>
+<tr><th scope="row" data-sort="los angeles chargers">Los Angeles Chargers</th><td data-sort="14">14</td><td data-sort="1.620201">+1.6</td><td data-sort="0.0">+0.0</td><td data-sort="14">14</td><td data-sort="1.620201">+1.6</td><td data-sort="6">6</td><td data-sort="5.0">+5.0</td><td data-sort="8">+8</td><td data-sort="-3.379799">-3.4</td></tr>
+<tr><th scope="row" data-sort="green bay packers">Green Bay Packers</th><td data-sort="15">15</td><td data-sort="1.041742">+1.0</td><td data-sort="0.0">+0.0</td><td data-sort="15">15</td><td data-sort="1.041742">+1.0</td><td data-sort="19">19</td><td data-sort="1.0">+1.0</td><td data-sort="-4">-4</td><td data-sort="0.041741999999999946">+0.0</td></tr>
+<tr><th scope="row" data-sort="minnesota vikings">Minnesota Vikings</th><td data-sort="16">16</td><td data-sort="0.378569">+0.4</td><td data-sort="0.0">+0.0</td><td data-sort="16">16</td><td data-sort="0.378569">+0.4</td><td data-sort="20">20</td><td data-sort="1.0">+1.0</td><td data-sort="-4">-4</td><td data-sort="-0.6214310000000001">-0.6</td></tr>
+<tr><th scope="row" data-sort="kansas city chiefs">Kansas City Chiefs</th><td data-sort="17">17</td><td data-sort="-0.010951">-0.0</td><td data-sort="0.0">+0.0</td><td data-sort="17">17</td><td data-sort="-0.010951">-0.0</td><td data-sort="9">9</td><td data-sort="4.0">+4.0</td><td data-sort="8">+8</td><td data-sort="-4.010951">-4.0</td></tr>
+<tr><th scope="row" data-sort="new york giants">New York Giants</th><td data-sort="18">18</td><td data-sort="-0.373842">-0.4</td><td data-sort="0.0">+0.0</td><td data-sort="18">18</td><td data-sort="-0.373842">-0.4</td><td data-sort="26">26</td><td data-sort="-1.0">-1.0</td><td data-sort="-8">-8</td><td data-sort="0.626158">+0.6</td></tr>
+<tr><th scope="row" data-sort="atlanta falcons">Atlanta Falcons</th><td data-sort="19">19</td><td data-sort="-0.563609">-0.6</td><td data-sort="0.0">+0.0</td><td data-sort="19">19</td><td data-sort="-0.563609">-0.6</td><td data-sort="27">27</td><td data-sort="-1.0">-1.0</td><td data-sort="-8">-8</td><td data-sort="0.436391">+0.4</td></tr>
+<tr><th scope="row" data-sort="cincinnati bengals">Cincinnati Bengals</th><td data-sort="20">20</td><td data-sort="-0.619954">-0.6</td><td data-sort="0.0">+0.0</td><td data-sort="20">20</td><td data-sort="-0.619954">-0.6</td><td data-sort="5">5</td><td data-sort="5.0">+5.0</td><td data-sort="15">+15</td><td data-sort="-5.619954">-5.6</td></tr>
+<tr><th scope="row" data-sort="tampa bay buccaneers">Tampa Bay Buccaneers</th><td data-sort="21">21</td><td data-sort="-1.896737">-1.9</td><td data-sort="0.0">+0.0</td><td data-sort="21">21</td><td data-sort="-1.896737">-1.9</td><td data-sort="15">15</td><td data-sort="2.5">+2.5</td><td data-sort="6">+6</td><td data-sort="-4.396737">-4.4</td></tr>
+<tr><th scope="row" data-sort="indianapolis colts">Indianapolis Colts</th><td data-sort="22">22</td><td data-sort="-2.218812">-2.2</td><td data-sort="0.0">+0.0</td><td data-sort="22">22</td><td data-sort="-2.218812">-2.2</td><td data-sort="23">23</td><td data-sort="-0.5">-0.5</td><td data-sort="-1">-1</td><td data-sort="-1.7188119999999998">-1.7</td></tr>
+<tr><th scope="row" data-sort="new orleans saints">New Orleans Saints</th><td data-sort="23">23</td><td data-sort="-2.638712">-2.6</td><td data-sort="0.0">+0.0</td><td data-sort="23">23</td><td data-sort="-2.638712">-2.6</td><td data-sort="25">25</td><td data-sort="-0.5">-0.5</td><td data-sort="-2">-2</td><td data-sort="-2.138712">-2.1</td></tr>
+<tr><th scope="row" data-sort="carolina panthers">Carolina Panthers</th><td data-sort="24">24</td><td data-sort="-2.786581">-2.8</td><td data-sort="0.0">+0.0</td><td data-sort="24">24</td><td data-sort="-2.786581">-2.8</td><td data-sort="21">21</td><td data-sort="0.5">+0.5</td><td data-sort="3">+3</td><td data-sort="-3.286581">-3.3</td></tr>
+<tr><th scope="row" data-sort="dallas cowboys">Dallas Cowboys</th><td data-sort="25">25</td><td data-sort="-3.452152">-3.5</td><td data-sort="0.0">+0.0</td><td data-sort="25">25</td><td data-sort="-3.452152">-3.5</td><td data-sort="16">16</td><td data-sort="2.0">+2.0</td><td data-sort="9">+9</td><td data-sort="-5.452152">-5.5</td></tr>
+<tr><th scope="row" data-sort="miami dolphins">Miami Dolphins</th><td data-sort="26">26</td><td data-sort="-3.513128">-3.5</td><td data-sort="0.0">+0.0</td><td data-sort="26">26</td><td data-sort="-3.513128">-3.5</td><td data-sort="31">31</td><td data-sort="-4.5">-4.5</td><td data-sort="-5">-5</td><td data-sort="0.986872">+1.0</td></tr>
+<tr><th scope="row" data-sort="washington commanders">Washington Commanders</th><td data-sort="27">27</td><td data-sort="-3.795889">-3.8</td><td data-sort="0.0">+0.0</td><td data-sort="27">27</td><td data-sort="-3.795889">-3.8</td><td data-sort="18">18</td><td data-sort="1.0">+1.0</td><td data-sort="9">+9</td><td data-sort="-4.795889">-4.8</td></tr>
+<tr><th scope="row" data-sort="cleveland browns">Cleveland Browns</th><td data-sort="28">28</td><td data-sort="-5.036372">-5.0</td><td data-sort="0.0">+0.0</td><td data-sort="28">28</td><td data-sort="-5.036372">-5.0</td><td data-sort="28">28</td><td data-sort="-2.5">-2.5</td><td data-sort="0">+0</td><td data-sort="-2.536372">-2.5</td></tr>
+<tr><th scope="row" data-sort="arizona cardinals">Arizona Cardinals</th><td data-sort="29">29</td><td data-sort="-6.416585">-6.4</td><td data-sort="0.0">+0.0</td><td data-sort="29">29</td><td data-sort="-6.416585">-6.4</td><td data-sort="29">29</td><td data-sort="-3.5">-3.5</td><td data-sort="0">+0</td><td data-sort="-2.9165850000000004">-2.9</td></tr>
+<tr><th scope="row" data-sort="las vegas raiders">Las Vegas Raiders</th><td data-sort="30">30</td><td data-sort="-7.494448">-7.5</td><td data-sort="0.0">+0.0</td><td data-sort="30">30</td><td data-sort="-7.494448">-7.5</td><td data-sort="30">30</td><td data-sort="-4.0">-4.0</td><td data-sort="0">+0</td><td data-sort="-3.494448">-3.5</td></tr>
+<tr><th scope="row" data-sort="tennessee titans">Tennessee Titans</th><td data-sort="31">31</td><td data-sort="-7.5888">-7.6</td><td data-sort="0.0">+0.0</td><td data-sort="31">31</td><td data-sort="-7.5888">-7.6</td><td data-sort="24">24</td><td data-sort="-0.5">-0.5</td><td data-sort="7">+7</td><td data-sort="-7.0888">-7.1</td></tr>
+<tr><th scope="row" data-sort="new york jets">New York Jets</th><td data-sort="32">32</td><td data-sort="-12.149499">-12.1</td><td data-sort="0.0">+0.0</td><td data-sort="32">32</td><td data-sort="-12.149499">-12.1</td><td data-sort="32">32</td><td data-sort="-5.5">-5.5</td><td data-sort="0">+0</td><td data-sort="-6.6494990000000005">-6.6</td></tr></tbody>
+      </table>
+    </div>
+    <p class="legend">Positive rank gap means PGO ranks the team lower.
+      Positive rating gap means PGO rates the team higher.</p>
+    <p class="comparison-links">
+      <a href="https://github.com/walshja9/Postgame_Outlet/blob/main/research/pgo_v1/backtest.json">Backtest receipt</a>
+      &middot;
+      <a href="https://github.com/walshja9/Postgame_Outlet/blob/main/docs/superpowers/specs/2026-07-21-independent-forward-looking-pgo-model-design.md">Methodology and release rules</a>
+    </p>
+  </section>
+
+  <section class="panel" id="panel-ratings" hidden role="tabpanel" aria-labelledby="tab-ratings">
   <h2 class="visually-hidden">NFL team ratings board</h2>
   <div class="weekbar">
     <label for="ver">Snapshot</label>
@@ -1015,5 +1116,52 @@
     }
   }
 </script>
+
+<script>
+  (() => {
+    const panel = document.querySelector('#panel-comparison');
+    const body = panel && panel.querySelector('.comparison-table tbody');
+    const status = panel && panel.querySelector('.comparison-sort-status');
+    const buttons = panel ? [...panel.querySelectorAll('.comparison-table .sort-button')] : [];
+    if (!body || !status || buttons.length === 0) return;
+
+    let activeColumn = 1;
+    let ascending = true;
+
+    function value(row, index) {
+      const raw = row.children[index].dataset.sort;
+      const numeric = index !== 0;
+      return numeric ? Number(raw) : raw;
+    }
+
+    buttons.forEach(button => {
+      button.addEventListener('click', () => {
+        const column = Number(button.dataset.column);
+        ascending = column === activeColumn ? !ascending : true;
+        activeColumn = column;
+        [...body.rows].sort((a, b) => {
+          const left = value(a, column);
+          const right = value(b, column);
+          const order = typeof left === 'number'
+            ? left - right
+            : left.localeCompare(right);
+          const directed = ascending ? order : -order;
+          return directed || a.children[0].dataset.sort.localeCompare(
+            b.children[0].dataset.sort
+          );
+        }).forEach(row => body.appendChild(row));
+        buttons.forEach(candidate => {
+          candidate.closest('th').setAttribute('aria-sort', 'none');
+        });
+        button.closest('th').setAttribute(
+          'aria-sort', ascending ? 'ascending' : 'descending'
+        );
+        status.textContent = button.textContent.trim() + ' sorted '
+          + (ascending ? 'ascending' : 'descending');
+      });
+    });
+  })();
+</script>
+
 </body>
 </html>
