@@ -271,6 +271,23 @@ class MatchupComparisonTests(unittest.TestCase):
         self.assertNotIn("docs/index.html", html)
         self.assertNotIn("data/ratings.csv", html)
 
+    def test_renders_numeric_market_without_details(self):
+        html = pgo_matchup_comparison.render_preview(
+            [{
+                "date": "2026-09-13T17:00:00Z", "prime": False,
+                "home": "Buffalo Bills", "away": "Miami Dolphins",
+                "market": -3.0, "details": None, "mccabe_line": -3.5,
+                "pgo_line": -2.5, "mccabe_edge": 0.5, "pgo_edge": -0.5,
+            }], {
+                "artifact_path": self.ratings_path, "as_of": self.AS_OF,
+                "validation_status": "EXPERIMENTAL", "display_status": "HOLD",
+            }, year=2026, week=1,
+            captured_at=datetime(2026, 9, 1, 12, tzinfo=UTC),
+            source_url=spreads.ENDPOINT,
+        )
+
+        self.assertIn(f"<td>{spreads.fmt_spread('Buffalo Bills', -3.0)}</td>", html)
+
     def test_preview_escapes_year_and_week_in_header(self):
         html = pgo_matchup_comparison.render_preview(
             [], {
@@ -319,6 +336,28 @@ class MatchupComparisonTests(unittest.TestCase):
         self.assertTrue(output.is_file())
         self.assertIn("Private", output.read_text(encoding="utf-8"))
         self.assertEqual(public_index.read_text(encoding="utf-8"), before)
+
+    def test_cli_uses_custom_ratings_sibling_receipt_by_default(self):
+        custom = self.directory / "custom"
+        custom.mkdir()
+        ratings = custom / "ratings.csv"
+        receipt = custom / "backtest.json"
+        ratings.write_text(self.ratings_path.read_text(encoding="utf-8"), encoding="utf-8")
+        self._write_receipt(receipt)
+        output = self.directory / "output" / "preview.html"
+
+        with (
+            patch.object(pgo_matchup_comparison, "OUTPUT_ROOT", self.directory / "output"),
+            patch.object(pgo_matchup_comparison.spreads, "fetch_week", return_value=self.payload),
+            patch.object(pgo_matchup_comparison.spreads, "load_ratings", return_value=self.mccabe_ratings),
+            patch.object(pgo_matchup_comparison.spreads, "load_hfa", return_value=({}, 1.5)),
+        ):
+            result = pgo_matchup_comparison.main([
+                "--pgo-ratings", str(ratings), "--output", str(output),
+            ])
+
+        self.assertEqual(result, 0)
+        self.assertTrue(output.is_file())
 
     def test_cli_rejects_an_output_outside_private_root_before_writing(self):
         output = self.directory / "public.html"

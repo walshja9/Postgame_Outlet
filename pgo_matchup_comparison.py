@@ -175,7 +175,7 @@ def render_preview(rows, metadata, *, year, week, captured_at, source_url):
     body = []
     for row in rows:
         matchup = f'{row["away"]} @ {row["home"]}' + (" ★" if row["prime"] else "")
-        market = row.get("details") or "Unavailable"
+        market = row.get("details") or _display_line(row["home"], row.get("market"))
         body.append(
             "<tr>"
             f'<td class="left">{escape(matchup)}</td>'
@@ -218,7 +218,7 @@ def main(argv=None):
     parser.add_argument("week", nargs="?", type=int, default=1)
     parser.add_argument("year", nargs="?", type=int, default=2026)
     parser.add_argument("--pgo-ratings", default=PGO_RATINGS_PATH)
-    parser.add_argument("--pgo-receipt", default=PGO_RECEIPT_PATH)
+    parser.add_argument("--pgo-receipt")
     parser.add_argument("--output")
     args = parser.parse_args(argv)
     try:
