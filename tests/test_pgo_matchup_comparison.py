@@ -153,10 +153,11 @@ class MatchupComparisonTests(unittest.TestCase):
     def test_builds_two_independent_half_point_lines_and_edges(self):
         pgo_ratings = self._ratings()
         pgo_ratings.update({"Buffalo Bills": 3.0, "Miami Dolphins": 2.0})
+        mccabe_ratings = {**self.mccabe_ratings, "Buffalo Bills": 6.1}
 
         rows = pgo_matchup_comparison.build_matchup_rows(
-            self.payload, self.mccabe_ratings, pgo_ratings,
-            {"Buffalo Bills": 1.0}, 1.5,
+            self.payload, mccabe_ratings, pgo_ratings,
+            {"Buffalo Bills": 1.0}, 2.0,
         )
 
         bills = rows[0]
@@ -182,22 +183,25 @@ class MatchupComparisonTests(unittest.TestCase):
     def test_build_rows_rejects_invalid_or_unmatched_events(self):
         cases = []
         duplicate = {"events": [self.payload["events"][0], self.payload["events"][0]]}
-        cases.append(("duplicate event", duplicate, self._ratings(), "duplicate"))
+        cases.append(("duplicate event", duplicate, self.mccabe_ratings, self._ratings(), "duplicate"))
         unknown = json.loads(json.dumps(self.payload))
         unknown["events"][0]["competitions"][0]["competitors"][0]["team"]["displayName"] = "Unknown Team"
-        cases.append(("unknown team", unknown, self._ratings(), "unknown"))
+        cases.append(("unknown team", unknown, self.mccabe_ratings, self._ratings(), "unknown"))
         malformed = json.loads(json.dumps(self.payload))
         malformed["events"][0]["competitions"][0]["odds"][0]["spread"] = "BUF -3"
-        cases.append(("malformed market", malformed, self._ratings(), "market"))
+        cases.append(("malformed market", malformed, self.mccabe_ratings, self._ratings(), "market"))
         missing_join = self._ratings()
         missing_join.pop("Miami Dolphins")
-        cases.append(("unmatched model join", self.payload, missing_join, "unmatched"))
+        cases.append(("unmatched PGO model join", self.payload, self.mccabe_ratings, missing_join, "unmatched"))
+        missing_mccabe = dict(self.mccabe_ratings)
+        missing_mccabe.pop("Miami Dolphins")
+        cases.append(("unmatched McCabe model join", self.payload, missing_mccabe, self._ratings(), "unmatched"))
 
-        for name, payload, pgo_ratings, error in cases:
+        for name, payload, mccabe_ratings, pgo_ratings, error in cases:
             with self.subTest(name=name):
                 with self.assertRaisesRegex(ValueError, error):
                     pgo_matchup_comparison.build_matchup_rows(
-                        payload, self.mccabe_ratings, pgo_ratings, {}, 1.5,
+                        payload, mccabe_ratings, pgo_ratings, {}, 1.5,
                     )
 
     def test_renders_private_preview_with_hold_context_and_unavailable_cells(self):
