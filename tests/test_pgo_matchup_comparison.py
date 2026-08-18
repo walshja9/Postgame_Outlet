@@ -271,6 +271,22 @@ class MatchupComparisonTests(unittest.TestCase):
         self.assertNotIn("docs/index.html", html)
         self.assertNotIn("data/ratings.csv", html)
 
+    def test_preview_escapes_year_and_week_in_header(self):
+        html = pgo_matchup_comparison.render_preview(
+            [], {
+                "artifact_path": self.ratings_path,
+                "as_of": self.AS_OF,
+                "validation_status": "EXPERIMENTAL",
+                "display_status": "HOLD",
+            }, year='<year>', week='<week>',
+            captured_at=datetime(2026, 9, 1, 12, tzinfo=UTC),
+            source_url=spreads.ENDPOINT,
+        )
+
+        self.assertIn("&lt;year&gt; NFL Week &lt;week&gt;", html)
+        self.assertNotIn("<year>", html)
+        self.assertNotIn("<week>", html)
+
     def test_preview_paths_stay_private(self):
         path = pgo_matchup_comparison.default_preview_path(
             datetime(2026, 9, 1, 12, tzinfo=UTC),

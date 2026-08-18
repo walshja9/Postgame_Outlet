@@ -192,7 +192,7 @@ def render_preview(rows, metadata, *, year, week, captured_at, source_url):
     return f"""<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\">
 <title>Private PGO Matchup Preview</title><style>
 body{{background:#0e1117;color:#e6edf3;font:15px -apple-system,Segoe UI,Roboto,sans-serif}}.wrap{{max-width:1280px;margin:24px auto;padding:0 16px}}table{{width:100%;border-collapse:collapse;background:#161b22;border:1px solid #283041}}th,td{{padding:9px 12px;text-align:right;border-bottom:1px solid #283041;vertical-align:top}}th{{background:#11161f;color:#8b949e;font-size:11px;text-transform:uppercase}}.left{{text-align:left}}.sub{{color:#8b949e;font-size:13px}}small{{color:#8b949e}}
-</style></head><body><div class=\"wrap\"><h1>Private preview: {year} NFL Week {week}</h1>
+</style></head><body><div class=\"wrap\"><h1>Private preview: {escape(str(year))} NFL Week {escape(str(week))}</h1>
 <p class=\"sub\">McCabe, PGO, and market numbers are independent matchup lines, not league ranks or a blended rating.</p>
 <p class=\"sub\">PGO artifact: {escape(str(metadata['artifact_path']))}<br>As of: {escape(str(metadata['as_of']))}<br>Validation: {escape(str(metadata['display_status']))} ({escape(str(metadata['validation_status']))})<br>HOLD reason: {escape(str(metadata.get('status_reason') or 'None'))}<br>Failed checks: {escape(failed)}<br>ESPN URL: {escape(source_url)}<br>UTC capture: {escape(captured)}</p>
 <table><thead><tr><th class=\"left\">Matchup</th><th>Kickoff</th><th>McCabe line</th><th>PGO fair line</th><th>Market</th><th>McCabe edge</th><th>PGO edge</th><th>Market source / capture</th></tr></thead><tbody>{''.join(body)}</tbody></table></div></body></html>"""
