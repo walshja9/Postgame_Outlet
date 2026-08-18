@@ -55,6 +55,15 @@ writes a private preview and does not replace the GitHub Pages artifact.
 
 ## Independent PGO model comparison (private preview)
 
+### Matchup preview
+
+```bash
+python pgo_matchup_comparison.py 1 2026 --pgo-ratings research/pgo_v1/ratings_2026_preseason.csv
+```
+
+This writes a private `output/pgo-matchup-preview/<date>/index.html`; it does
+not publish. The current experimental/HOLD receipt is non-certifying.
+
 `python pgo_challenger.py --as-of 2026-07-21T12:00:00-04:00` rebuilds the
 locked pgo_v1 receipt. Exit `0` is validated `PASS`, exit `1` is an honest
 statistical `HOLD`, and exit `2` is `BLOCKED`. An integrity-eligible `HOLD`
