@@ -20,6 +20,58 @@ _EXPECTED_TEAM_COUNT = 32
 _EXPECTED_TEAMS = frozenset(_TEAM_BY_ABBR.values())
 
 
+def build_matchup_rows(payload, mccabe_ratings, pgo_ratings, hfa, default_hfa):
+    """Build comparable, home-relative rows from the shared spread parser."""
+    for event in payload.get("events", []):
+        try:
+            competition = event["competitions"][0]
+            teams = {
+                competitor["homeAway"]: competitor["team"]["displayName"]
+                for competitor in competition["competitors"]
+            }
+            home, away = teams["home"], teams["away"]
+        except (IndexError, KeyError, TypeError) as error:
+            raise ValueError("invalid event teams") from error
+        if home not in _EXPECTED_TEAMS or away not in _EXPECTED_TEAMS:
+            raise ValueError("unknown event team")
+        for odds in competition.get("odds") or []:
+            if not isinstance(odds, dict):
+                raise ValueError("invalid market spread")
+            market = odds.get("spread")
+            if market is not None and (isinstance(market, bool) or not isinstance(market, (int, float))
+                                       or not math.isfinite(market)):
+                raise ValueError("invalid market spread")
+
+    def index_games(ratings, label):
+        indexed = {}
+        for game in spreads.parse_games(payload, ratings, hfa, default_hfa):
+            key = (game["date"], game["home"], game["away"])
+            if key in indexed:
+                raise ValueError(f"duplicate {label} game key")
+            indexed[key] = game
+        return indexed
+
+    mccabe_games = index_games(mccabe_ratings, "McCabe")
+    pgo_games = index_games(pgo_ratings, "PGO")
+    if mccabe_games.keys() != pgo_games.keys():
+        raise ValueError("unmatched model game keys")
+
+    rows = []
+    for key in sorted(mccabe_games):
+        mccabe_game, pgo_game = mccabe_games[key], pgo_games[key]
+        market = mccabe_game["market"]
+        rows.append({
+            "date": mccabe_game["date"], "prime": mccabe_game["prime"],
+            "home": mccabe_game["home"], "away": mccabe_game["away"],
+            "market": market, "details": mccabe_game["details"],
+            "mccabe_line": mccabe_game["my_spread"], "pgo_line": pgo_game["my_spread"],
+            "mccabe_edge": None if market is None else round(market - mccabe_game["my_spread"], 1),
+            "pgo_edge": None if market is None else round(market - pgo_game["my_spread"], 1),
+            "mccabe_hfa": mccabe_game["hfa"], "pgo_hfa": pgo_game["hfa"],
+        })
+    return rows
+
+
 def load_pgo_ratings(path, receipt_path=None):
     """Load one validated-or-held PGO ratings artifact without publishing it."""
     artifact_path = Path(path)
