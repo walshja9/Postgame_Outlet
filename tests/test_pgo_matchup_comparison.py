@@ -73,7 +73,7 @@ class MatchupComparisonTests(unittest.TestCase):
 
     def _write_receipt(self, path=None, **overrides):
         receipt = {
-            "status": "HOLD",
+            "status": "PASS",
             "as_of": self.AS_OF,
             "checks": {"audit_complete": True},
             "failed_checks": [],
@@ -141,6 +141,7 @@ class MatchupComparisonTests(unittest.TestCase):
 
     def test_failed_receipt_checks_remain_hold(self):
         self._write_receipt(
+            status="HOLD",
             checks={"audit_complete": False},
             failed_checks=["audit_complete"],
         )
@@ -149,6 +150,35 @@ class MatchupComparisonTests(unittest.TestCase):
 
         self.assertEqual(metadata["display_status"], "HOLD")
         self.assertEqual(metadata["failed_checks"], ["audit_complete"])
+
+    def test_validated_csv_with_failed_receipt_checks_remains_hold(self):
+        self._write_ratings([
+            {**row, "validation_status": "VALIDATED"} for row in self.rows
+        ])
+        self._write_receipt(
+            status="HOLD",
+            checks={"audit_complete": False},
+            failed_checks=["audit_complete"],
+        )
+
+        _, metadata = pgo_matchup_comparison.load_pgo_ratings(self.ratings_path)
+
+        self.assertEqual(metadata["display_status"], "HOLD")
+
+    def test_loader_accepts_real_shaped_receipt_without_optional_status(self):
+        real_receipt = json.loads(
+            (Path(pgo_matchup_comparison.__file__).resolve().parent
+             / "research" / "pgo_v1" / "backtest.json").read_text(encoding="utf-8")
+        )
+        real_receipt.pop("status")
+        self.receipt_path.write_text(json.dumps(real_receipt), encoding="utf-8")
+        self._write_ratings([
+            {**row, "as_of": real_receipt["as_of"]} for row in self.rows
+        ])
+
+        _, metadata = pgo_matchup_comparison.load_pgo_ratings(self.ratings_path)
+
+        self.assertEqual(metadata["display_status"], "HOLD")
 
     def test_builds_two_independent_half_point_lines_and_edges(self):
         pgo_ratings = self._ratings()

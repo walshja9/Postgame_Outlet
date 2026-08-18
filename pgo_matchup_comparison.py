@@ -16,6 +16,8 @@ ENDPOINT = spreads.ENDPOINT
 
 _REQUIRED_COLUMNS = {"team", "headline_rating", "as_of", "validation_status"}
 _TEAM_BY_ABBR = {abbreviation: team for team, abbreviation in spreads.ABBR.items()}
+_EXPECTED_TEAM_COUNT = 32
+_EXPECTED_TEAMS = frozenset(_TEAM_BY_ABBR.values())
 
 
 def load_pgo_ratings(path, receipt_path=None):
@@ -53,8 +55,8 @@ def load_pgo_ratings(path, receipt_path=None):
         if "status_reason" in fields:
             reasons.add(row.get("status_reason", ""))
 
-    if len(ratings) != len(_TEAM_BY_ABBR):
-        raise ValueError(f"{artifact_path}: requires {len(_TEAM_BY_ABBR)} teams, found {len(ratings)}")
+    if len(ratings) != _EXPECTED_TEAM_COUNT or set(ratings) != _EXPECTED_TEAMS:
+        raise ValueError(f"{artifact_path}: requires the expected {_EXPECTED_TEAM_COUNT} current teams, found {len(ratings)}")
     if len(as_of_values) != 1:
         raise ValueError(f"{artifact_path}: inconsistent as_of values")
     if statuses - {"EXPERIMENTAL", "VALIDATED"} or len(statuses) != 1:
@@ -82,9 +84,9 @@ def load_pgo_ratings(path, receipt_path=None):
     if failed_checks != expected_failed:
         raise ValueError(f"{receipt_path}: receipt failed_checks do not match checks")
     status = receipt.get("status")
-    expected_receipt_status = "HOLD" if validation_status == "EXPERIMENTAL" else "PASS"
-    if status != expected_receipt_status:
-        raise ValueError(f"{receipt_path}: receipt status does not match {validation_status}")
+    expected_receipt_status = "HOLD" if failed_checks else "PASS"
+    if "status" in receipt and status != expected_receipt_status:
+        raise ValueError(f"{receipt_path}: receipt status does not match checks")
 
     return ratings, {
         "artifact_path": str(artifact_path),
