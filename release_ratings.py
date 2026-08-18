@@ -5,6 +5,13 @@ import os
 import tempfile
 
 
+RATING_COMPONENTS = ("qb_value", "off_value", "def_value")
+
+
+def rating_total(row):
+    return sum(float(row.get(name) or 0) for name in RATING_COMPONENTS)
+
+
 def load_release_rows(path):
     with open(path, newline="", encoding="utf-8") as handle:
         reader = csv.DictReader(handle)

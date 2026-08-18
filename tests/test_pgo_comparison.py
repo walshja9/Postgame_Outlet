@@ -5,10 +5,6 @@ from contextlib import redirect_stderr
 from pathlib import Path
 from unittest.mock import patch
 
-try:  # pgo_challenger pulls in numpy, absent in the board-publish CI
-    import numpy  # noqa: F401
-except ImportError:
-    raise unittest.SkipTest("numpy not installed — skipping PGO comparison tests")
 import pgo_challenger
 import pgo_comparison
 
@@ -57,6 +53,7 @@ class ComparisonTests(unittest.TestCase):
                 "lower": -0.024395,
                 "upper": 0.144917,
             },
+            "receipt_ref": "test-receipt-ref",
         }
 
     def test_mccabe_review_flag_blocks_comparison(self):
@@ -125,7 +122,7 @@ class ComparisonTests(unittest.TestCase):
         self.assertNotIn(">PGO v0<", panel)
         self.assertNotIn(">Market<", panel)
         self.assertIn(
-            "https://github.com/walshja9/Postgame_Outlet/blob/main/research/pgo_v1/backtest.json",
+            "https://github.com/walshja9/Postgame_Outlet/blob/test-receipt-ref/research/pgo_v1/backtest.json",
             panel,
         )
         self.assertIn(
@@ -136,6 +133,41 @@ class ComparisonTests(unittest.TestCase):
             panel.count('target="_blank" rel="noopener noreferrer"'),
             2,
         )
+
+    def test_receipt_link_does_not_fall_back_to_main(self):
+        receipt = self._held_receipt()
+        receipt.pop("receipt_ref")
+        panel = pgo_comparison.render_comparison_panel([], receipt)
+        self.assertIn("Backtest receipt available on publish", panel)
+        self.assertNotIn("/blob/main/research/pgo_v1/backtest.json", panel)
+
+    def test_publish_requires_receipt_and_ratings_at_same_commit(self):
+        with patch.object(
+            pgo_comparison,
+            "immutable_git_ref",
+            side_effect=["a" * 40, "b" * 40],
+        ):
+            with self.assertRaisesRegex(ValueError, "same Git commit"):
+                pgo_comparison.require_immutable_artifacts(
+                    pgo_comparison.BACKTEST_PATH,
+                    pgo_comparison.MODEL_PATH,
+                )
+
+    def test_preview_does_not_require_immutable_receipt(self):
+        receipt = self._held_receipt()
+        receipt.pop("receipt_ref")
+        with (
+            patch.object(
+                pgo_comparison,
+                "load_comparison_rows",
+                return_value=([], receipt),
+            ) as load,
+            patch.object(pgo_comparison, "atomic_write_text"),
+        ):
+            code = pgo_comparison.main(["--output", "output/preview.html"])
+
+        self.assertEqual(code, 0)
+        self.assertFalse(load.call_args.kwargs["require_immutable"])
 
     def test_pgo_is_primary_and_rows_start_in_pgo_rank_order(self):
         rows = [
@@ -233,6 +265,23 @@ class ComparisonTests(unittest.TestCase):
         )
         self.assertEqual(output.count('<link rel="icon" href="data:,">'), 1)
 
+    def test_refresh_mccabe_preserves_existing_pgo_panel(self):
+        published = pgo_comparison.inject_comparison(
+            self._base_html(),
+            '<section class="panel active" id="panel-comparison" role="tabpanel">'
+            'Approved PGO</section>',
+        )
+        current_base = self._base_html().replace(
+            'id="panel-ratings" role="tabpanel">McCabe</section>',
+            'id="panel-ratings" role="tabpanel">Updated McCabe</section>',
+        )
+
+        output = pgo_comparison.refresh_mccabe_page(current_base, published)
+
+        self.assertIn("Approved PGO", output)
+        self.assertIn("Updated McCabe", output)
+        self.assertEqual(output.count('id="panel-comparison"'), 1)
+
     def test_comparison_team_labels_have_contrasting_backgrounds(self):
         self.assertIn(
             "#panel-comparison .comparison-table thead th:first-child {\n"
@@ -251,7 +300,14 @@ class ComparisonTests(unittest.TestCase):
         self.assertEqual(code, 1)
 
     def test_cli_publish_targets_only_docs_index(self):
-        with patch.object(pgo_comparison, "atomic_write_text") as write:
+        with (
+            patch.object(
+                pgo_comparison,
+                "load_comparison_rows",
+                return_value=([], self._held_receipt()),
+            ),
+            patch.object(pgo_comparison, "atomic_write_text") as write,
+        ):
             code = pgo_comparison.main(["--publish"])
 
         self.assertEqual(code, 0)
