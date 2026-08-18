@@ -4,6 +4,7 @@ import tempfile
 import unittest
 from datetime import UTC, datetime
 from pathlib import Path
+from unittest.mock import patch
 
 import pgo_matchup_comparison
 import spreads
@@ -248,7 +249,7 @@ class MatchupComparisonTests(unittest.TestCase):
             "date": "2026-09-13T17:00:00Z", "prime": False,
             "home": "Kansas City Chiefs", "away": "Denver Broncos",
             "market": None, "details": None, "mccabe_line": -3.5,
-            "pgo_line": -2.5, "mccabe_edge": None, "pgo_edge": None,
+            "pgo_line": -2.5, "mccabe_edge": 0.5, "pgo_edge": -0.5,
         }]
 
         html = pgo_matchup_comparison.render_preview(
@@ -264,6 +265,8 @@ class MatchupComparisonTests(unittest.TestCase):
         self.assertIn(self.AS_OF, html)
         self.assertIn("Experimental shadow model.", html)
         self.assertIn("Unavailable", html)
+        self.assertIn("<td>+0.5</td>", html)
+        self.assertIn("<td>-0.5</td>", html)
         self.assertIn("Denver Broncos", html)
         self.assertNotIn("docs/index.html", html)
         self.assertNotIn("data/ratings.csv", html)
@@ -279,6 +282,49 @@ class MatchupComparisonTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(ValueError, "output"):
             pgo_matchup_comparison.write_preview("<p>private</p>", self.directory / "index.html")
+
+    def test_cli_writes_one_private_preview_from_one_fetch(self):
+        output = self.directory / "output" / "preview.html"
+        public_index = Path(pgo_matchup_comparison.__file__).resolve().parent / "docs" / "index.html"
+        before = public_index.read_text(encoding="utf-8")
+        with (
+            patch.object(pgo_matchup_comparison, "OUTPUT_ROOT", self.directory / "output"),
+            patch.object(pgo_matchup_comparison.spreads, "fetch_week", return_value=self.payload) as fetch,
+            patch.object(pgo_matchup_comparison.spreads, "load_ratings", return_value=self.mccabe_ratings),
+            patch.object(pgo_matchup_comparison.spreads, "load_hfa", return_value=({}, 1.5)),
+        ):
+            result = pgo_matchup_comparison.main([
+                "1", "2026", "--pgo-ratings", str(self.ratings_path),
+                "--pgo-receipt", str(self.receipt_path), "--output", str(output),
+            ])
+
+        self.assertEqual(result, 0)
+        self.assertEqual(fetch.call_count, 1)
+        self.assertTrue(output.is_file())
+        self.assertIn("Private", output.read_text(encoding="utf-8"))
+        self.assertEqual(public_index.read_text(encoding="utf-8"), before)
+
+    def test_cli_rejects_an_output_outside_private_root_before_writing(self):
+        output = self.directory / "public.html"
+        with (
+            patch.object(pgo_matchup_comparison, "OUTPUT_ROOT", self.directory / "output"),
+            patch.object(pgo_matchup_comparison.spreads, "fetch_week", return_value=self.payload),
+            patch.object(pgo_matchup_comparison.spreads, "load_ratings", return_value=self.mccabe_ratings),
+            patch.object(pgo_matchup_comparison.spreads, "load_hfa", return_value=({}, 1.5)),
+        ):
+            result = pgo_matchup_comparison.main([
+                "--pgo-ratings", str(self.ratings_path), "--pgo-receipt", str(self.receipt_path),
+                "--output", str(output),
+            ])
+
+        self.assertEqual(result, 1)
+        self.assertFalse(output.exists())
+
+    def test_cli_returns_nonzero_when_fetch_fails(self):
+        with patch.object(pgo_matchup_comparison.spreads, "fetch_week", side_effect=RuntimeError("offline")):
+            result = pgo_matchup_comparison.main([])
+
+        self.assertEqual(result, 1)
 
 
 if __name__ == "__main__":

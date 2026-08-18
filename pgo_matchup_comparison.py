@@ -1,10 +1,15 @@
 """Private PGO matchup preview adapter."""
 
+import argparse
 import csv
+from datetime import UTC, datetime
+from html import escape
 import json
 import math
 from pathlib import Path
+import sys
 
+from release_ratings import atomic_write_text
 import spreads
 
 
@@ -150,3 +155,90 @@ def load_pgo_ratings(path, receipt_path=None):
         "failed_checks": failed_checks,
         "checks": checks,
     }
+
+
+def _captured_utc(captured_at):
+    return captured_at.astimezone(UTC).isoformat().replace("+00:00", "Z")
+
+
+def _display_line(home, value):
+    return "Unavailable" if value is None else spreads.fmt_spread(home, value)
+
+
+def _display_edge(value):
+    return "Unavailable" if value is None else f"{value:+.1f}"
+
+
+def render_preview(rows, metadata, *, year, week, captured_at, source_url):
+    """Render a self-contained private comparison preview."""
+    captured = _captured_utc(captured_at)
+    body = []
+    for row in rows:
+        matchup = f'{row["away"]} @ {row["home"]}' + (" ★" if row["prime"] else "")
+        market = row.get("details") or "Unavailable"
+        body.append(
+            "<tr>"
+            f'<td class="left">{escape(matchup)}</td>'
+            f"<td>{escape(str(row['date']))}</td>"
+            f"<td>{escape(_display_line(row['home'], row['mccabe_line']))}</td>"
+            f"<td>{escape(_display_line(row['home'], row['pgo_line']))}</td>"
+            f"<td>{escape(market)}</td>"
+            f"<td>{escape(_display_edge(row['mccabe_edge']))}</td>"
+            f"<td>{escape(_display_edge(row['pgo_edge']))}</td>"
+            f'<td>{escape(source_url)}<br><small>{escape(captured)}</small></td>'
+            "</tr>"
+        )
+    failed = ", ".join(metadata.get("failed_checks") or []) or "None"
+    return f"""<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\">
+<title>Private PGO Matchup Preview</title><style>
+body{{background:#0e1117;color:#e6edf3;font:15px -apple-system,Segoe UI,Roboto,sans-serif}}.wrap{{max-width:1280px;margin:24px auto;padding:0 16px}}table{{width:100%;border-collapse:collapse;background:#161b22;border:1px solid #283041}}th,td{{padding:9px 12px;text-align:right;border-bottom:1px solid #283041;vertical-align:top}}th{{background:#11161f;color:#8b949e;font-size:11px;text-transform:uppercase}}.left{{text-align:left}}.sub{{color:#8b949e;font-size:13px}}small{{color:#8b949e}}
+</style></head><body><div class=\"wrap\"><h1>Private preview: {year} NFL Week {week}</h1>
+<p class=\"sub\">McCabe, PGO, and market numbers are independent matchup lines, not league ranks or a blended rating.</p>
+<p class=\"sub\">PGO artifact: {escape(str(metadata['artifact_path']))}<br>As of: {escape(str(metadata['as_of']))}<br>Validation: {escape(str(metadata['display_status']))} ({escape(str(metadata['validation_status']))})<br>HOLD reason: {escape(str(metadata.get('status_reason') or 'None'))}<br>Failed checks: {escape(failed)}<br>ESPN URL: {escape(source_url)}<br>UTC capture: {escape(captured)}</p>
+<table><thead><tr><th class=\"left\">Matchup</th><th>Kickoff</th><th>McCabe line</th><th>PGO fair line</th><th>Market</th><th>McCabe edge</th><th>PGO edge</th><th>Market source / capture</th></tr></thead><tbody>{''.join(body)}</tbody></table></div></body></html>"""
+
+
+def default_preview_path(captured_at):
+    date = captured_at.astimezone(UTC).date().isoformat()
+    return OUTPUT_ROOT / "pgo-matchup-preview" / date / "index.html"
+
+
+def write_preview(html, path):
+    candidate = Path(path).resolve()
+    root = OUTPUT_ROOT.resolve()
+    try:
+        candidate.relative_to(root)
+    except ValueError as error:
+        raise ValueError("preview output must remain under output/") from error
+    atomic_write_text(candidate, html)
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description="Write a private PGO matchup preview.")
+    parser.add_argument("week", nargs="?", type=int, default=1)
+    parser.add_argument("year", nargs="?", type=int, default=2026)
+    parser.add_argument("--pgo-ratings", default=PGO_RATINGS_PATH)
+    parser.add_argument("--pgo-receipt", default=PGO_RECEIPT_PATH)
+    parser.add_argument("--output")
+    args = parser.parse_args(argv)
+    try:
+        captured_at = datetime.now(UTC)
+        payload = spreads.fetch_week(args.week, args.year)
+        mccabe_ratings = spreads.load_ratings()
+        hfa, default_hfa = spreads.load_hfa()
+        pgo_ratings, metadata = load_pgo_ratings(args.pgo_ratings, args.pgo_receipt)
+        rows = build_matchup_rows(payload, mccabe_ratings, pgo_ratings, hfa, default_hfa)
+        output = Path(args.output) if args.output else default_preview_path(captured_at)
+        write_preview(render_preview(
+            rows, metadata, year=args.year, week=args.week,
+            captured_at=captured_at, source_url=ENDPOINT.format(year=args.year, week=args.week),
+        ), output)
+    except Exception as error:  # CLI boundary: fetch, validation, and write failures are nonzero.
+        print(f"preview failed: {error}", file=sys.stderr)
+        return 1
+    print(f"wrote private preview: {Path(output).resolve()}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
