@@ -949,7 +949,9 @@ class FeatureTests(unittest.TestCase):
             })
             _write_csv(roster_path, pgo_sources.ROSTER_COLUMNS, rosters)
             injury_path = paths[("injury_reports", 2013)]
-            _write_csv(injury_path, pgo_sources.INJURY_COLUMNS, [{
+            with open(injury_path, encoding="utf-8", newline="") as handle:
+                injuries = list(csv.DictReader(handle))
+            injuries.append({
                 "season": 2013,
                 "week": 3,
                 "team": "SD",
@@ -957,7 +959,8 @@ class FeatureTests(unittest.TestCase):
                 "position": "QB",
                 "report_status": "Out",
                 "practice_status": "Did Not Participate",
-            }])
+            })
+            _write_csv(injury_path, pgo_sources.INJURY_COLUMNS, injuries)
             snap_path = paths[("snap_counts", 2013)]
             with open(snap_path, encoding="utf-8", newline="") as handle:
                 snaps = list(csv.DictReader(handle))
