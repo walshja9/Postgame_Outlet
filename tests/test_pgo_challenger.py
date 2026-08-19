@@ -931,6 +931,9 @@ class FeatureTests(unittest.TestCase):
     def test_snapshot_as_of_week_two_ignores_later_roster_and_injury(self):
         with tempfile.TemporaryDirectory() as temp:
             paths = _synthetic_paths(Path(temp))
+            historical = pgo_challenger.build_snapshot_states(
+                paths, "2013-09-08T14:00:00-04:00", 4
+            )
             roster_path = paths[("weekly_rosters", 2013)]
             with open(roster_path, encoding="utf-8", newline="") as handle:
                 rosters = list(csv.DictReader(handle))
@@ -955,12 +958,26 @@ class FeatureTests(unittest.TestCase):
                 "report_status": "Out",
                 "practice_status": "Did Not Participate",
             }])
+            snap_path = paths[("snap_counts", 2013)]
+            with open(snap_path, encoding="utf-8", newline="") as handle:
+                snaps = list(csv.DictReader(handle))
+            snaps.append({
+                "season": 2013,
+                "week": 3,
+                "team": "SD",
+                "pfr_player_id": "pfr-lac-qb",
+                "position": "QB",
+                "offense_snaps": 99,
+                "defense_snaps": 0,
+            })
+            _write_csv(snap_path, pgo_sources.SNAP_COLUMNS, snaps)
 
-            states = pgo_challenger.build_snapshot_states(
+            with_current_source = pgo_challenger.build_snapshot_states(
                 paths, "2013-09-08T14:00:00-04:00", 4
             )
 
-        full, current = states["LAC"]
+        self.assertEqual(historical, with_current_source)
+        full, current = historical["LAC"]
         self.assertEqual(full, current)
 
     def test_current_game_stats_cannot_change_its_own_features(self):
@@ -2524,6 +2541,12 @@ class OutputTests(unittest.TestCase):
         offline_freeze.assert_not_called()
         self.assertEqual(first_hashes, second_hashes)
         self.assertEqual(backtest["status"], "HOLD")
+        features = set(backtest["feature_manifest"]["features"])
+        self.assertTrue({
+            "offense_availability_concentration",
+            "defense_availability_concentration",
+            "qb_depth_uncertainty",
+        }.issubset(features))
         self.assertEqual(
             audit["coverage"]["schedule_team_games"],
             {
@@ -2791,6 +2814,61 @@ class LineupTests(unittest.TestCase):
                 },
             }
         }
+
+    def test_availability_concentration_squares_prior_snap_share(self):
+        concentrated = [
+            {"offense_snap_share": 0.8, "probability": 0.0},
+        ]
+        diffuse = [
+            {"offense_snap_share": 0.4, "probability": 0.0},
+            {"offense_snap_share": 0.4, "probability": 0.0},
+        ]
+
+        concentrated_value = pgo_challenger._unavailable_concentration(
+            concentrated, "offense_snap_share"
+        )
+        diffuse_value = pgo_challenger._unavailable_concentration(
+            diffuse, "offense_snap_share"
+        )
+
+        self.assertAlmostEqual(concentrated_value, 0.64)
+        self.assertAlmostEqual(diffuse_value, 0.32)
+        self.assertGreater(concentrated_value, diffuse_value)
+        self.assertIsNone(
+            pgo_challenger._unavailable_concentration(
+                [{"probability": 0.0}], "offense_snap_share"
+            )
+        )
+
+    def test_qb_depth_uncertainty_uses_existing_probability_weights(self):
+        depth_chart = [
+            ("starter", {"qb_value": 1.0, "probability": 0.5}),
+            ("backup", {"qb_value": 0.0, "probability": 1.0}),
+        ]
+
+        self.assertAlmostEqual(
+            pgo_challenger._expected_qb_uncertainty(depth_chart), 0.25
+        )
+
+    def test_qb_depth_uncertainty_stays_missing_when_probability_mass_is_unmodeled(self):
+        depth_chart = [
+            ("starter", {"qb_value": 1.0, "probability": 0.0}),
+        ]
+
+        self.assertIsNone(pgo_challenger._expected_qb_uncertainty(depth_chart))
+
+    def test_lineup_fragility_features_are_zero_when_everyone_is_available(self):
+        full, current = pgo_challenger.lineup_views(
+            "LV", self._snapshot(starter_probability=1.0), {}
+        )
+
+        for name in (
+            "offense_availability_concentration",
+            "defense_availability_concentration",
+            "qb_depth_uncertainty",
+        ):
+            self.assertEqual(full[name], 0.0)
+            self.assertEqual(current[name], 0.0)
 
     def test_active_player_has_zero_availability_adjustment(self):
         full, current = pgo_challenger.lineup_views(
