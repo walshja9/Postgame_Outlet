@@ -223,6 +223,9 @@ def lineup_views(team, snapshot, state) -> tuple[dict[str, float], dict[str, flo
     full["qb_current_minus_full"] = 0.0
     full["offense_availability"] = 0.0
     full["defense_availability"] = 0.0
+    full["offense_availability_concentration"] = 0.0
+    full["defense_availability_concentration"] = 0.0
+    full["qb_depth_uncertainty"] = 0.0
 
     current = dict(full)
     if starter:
@@ -239,6 +242,11 @@ def lineup_views(team, snapshot, state) -> tuple[dict[str, float], dict[str, flo
     defense = _unavailable_share(players.values(), "defense_snap_share")
     current["offense_availability"] = -offense if offense is not None else None
     current["defense_availability"] = -defense if defense is not None else None
+    offense = _unavailable_concentration(players.values(), "offense_snap_share")
+    defense = _unavailable_concentration(players.values(), "defense_snap_share")
+    current["offense_availability_concentration"] = -offense if offense is not None else None
+    current["defense_availability_concentration"] = -defense if defense is not None else None
+    current["qb_depth_uncertainty"] = _expected_qb_uncertainty(depth_chart)
     return full, current
 
 
@@ -2046,6 +2054,24 @@ def _expected_qb_feature(depth_chart, name):
     return None if remaining > 1e-12 else total
 
 
+def _expected_qb_uncertainty(depth_chart):
+    weighted = []
+    remaining = 1.0
+    for _, player in depth_chart:
+        weight = remaining * _probability(player)
+        value = _qb_feature(player, "qb_epa_per_dropback")
+        if weight and value is None:
+            return None
+        if weight:
+            weighted.append((weight, float(value)))
+        remaining -= weight
+    if remaining > 1e-12 or not weighted:
+        return None
+    total = sum(weight for weight, _ in weighted)
+    mean = sum(weight * value for weight, value in weighted) / total
+    return sum(weight * (value - mean) ** 2 for weight, value in weighted) / total
+
+
 def _unavailable_share(players, name):
     total = 0.0
     for player in players:
@@ -2056,6 +2082,19 @@ def _unavailable_share(players, name):
         if share is None:
             return None
         total += float(share) * missing
+    return total
+
+
+def _unavailable_concentration(players, name):
+    total = 0.0
+    for player in players:
+        missing = 1.0 - _probability(player)
+        if not missing:
+            continue
+        share = player.get(name)
+        if share is None:
+            return None
+        total += float(share) ** 2 * missing
     return total
 
 
