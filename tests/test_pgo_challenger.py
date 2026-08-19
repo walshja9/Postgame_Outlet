@@ -1303,6 +1303,15 @@ class ModelTests(unittest.TestCase):
 
         self.assertEqual(first, second)
 
+    def test_parameter_grid_matches_validation_design(self):
+        self.assertEqual(pgo_challenger.HALF_LIFE_GRID, (2, 4, 8, 16, 32))
+        self.assertEqual(
+            pgo_challenger.ALPHA_GRID, (0.25, 1.0, 10.0, 100.0)
+        )
+        self.assertEqual(
+            pgo_challenger.DELTA_GRID, (0.75, 1.0, 1.5)
+        )
+
     def test_unnamed_future_schema_cannot_change_selection(self):
         history = [
             _model_row(f"{season}-{index}", season, signal, 2.0 + 3.0 * signal)
