@@ -52,9 +52,9 @@ QB_FEATURES = (
     "qb_experience_prior",
     "qb_draft_prior",
 )
-HALF_LIFE_GRID = (4, 8, 16)
-ALPHA_GRID = (1.0, 10.0, 100.0)
-DELTA_GRID = (1.0, 1.5)
+HALF_LIFE_GRID = (2, 4, 8, 16, 32)
+ALPHA_GRID = (0.25, 1.0, 10.0, 100.0)
+DELTA_GRID = (0.75, 1.0, 1.5)
 OUTER_SEASONS = tuple(range(2018, 2026))
 SUBGROUPS = (
     "changed_or_backup_qb",
