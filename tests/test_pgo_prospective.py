@@ -187,6 +187,8 @@ class ProspectiveGradeTests(unittest.TestCase):
         cases.append((changed_team, "locked home team:"))
         changed_kickoff = [{**self.results[0], "kickoff": "2026-09-13T13:01:00-04:00"}, self.results[1]]
         cases.append((changed_kickoff, "locked kickoff:"))
+        changed_game_type = [{**self.results[0], "game_type": "POST"}, self.results[1]]
+        cases.append((changed_game_type, "locked game type:"))
         non_final = [{**self.results[0], "finalized_at": ""}, self.results[1]]
         cases.append((non_final, "Result not finalized:"))
 
