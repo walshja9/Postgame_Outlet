@@ -246,6 +246,7 @@ def lock_games(schedule_snapshot, model_state, as_of):
         },
         "games": games,
     }
+    body["prediction_integrity_sha256"] = _prediction_integrity_hash(games)
     body["artifact_sha256"] = _artifact_hash(body)
     return body
 
@@ -275,6 +276,19 @@ def _artifact_hash(lock):
     return hashlib.sha256(_canonical(payload).encode("utf-8")).hexdigest()
 
 
+def _prediction_integrity_hash(games):
+    return hashlib.sha256(_canonical([
+        {
+            key: game[key]
+            for key in (
+                "game_id", "pgo_v0_prediction", "challenger_prediction",
+                "challenger_full_strength_prediction", "subgroup_flags",
+            )
+        }
+        for game in games
+    ]).encode("utf-8")).hexdigest()
+
+
 def serialize_lock(lock):
     return _canonical(lock) + "\n"
 
@@ -298,6 +312,279 @@ def write_lock(output_dir, lock):
     atomic_write_text(lock_path, serialize_lock(lock))
     atomic_write_text(output_dir / "prospective_predictions.csv", _prediction_csv(lock))
     return lock_path
+
+
+GRADE_RESULT_COLUMNS = (
+    "game_id", "season", "week", "kickoff", "home", "away", "game_type",
+    "location", "home_rest", "away_rest", "pgo_v0_prediction",
+    "challenger_prediction", "challenger_full_strength_prediction",
+    "subgroup_flags", "home_score", "away_score", "finalized_at",
+    "actual_margin", "pgo_v0_absolute_error", "challenger_absolute_error",
+    "improvement",
+)
+
+
+def _verify_lock(lock):
+    if not isinstance(lock, dict) or lock.get("status") != LOCK_STATUS:
+        raise ValueError("Lock status is not LOCKED:")
+    games = lock.get("games")
+    if not isinstance(games, list) or not games:
+        raise ValueError("Lock games are missing:")
+    seen = set()
+    for game in games:
+        if not isinstance(game, dict):
+            raise ValueError("Invalid locked game:")
+        game_id = str(game.get("game_id", "")).strip()
+        if not game_id or game_id in seen:
+            raise ValueError(f"Duplicate locked game: {game_id}")
+        seen.add(game_id)
+        if game.get("game_type") != "REG":
+            raise ValueError(f"Locked game is not regular season: {game_id}")
+        for name in ("home", "away", "kickoff", "location"):
+            if not str(game.get(name, "")).strip():
+                raise ValueError(f"Locked game metadata missing: {game_id}")
+        for name in ("pgo_v0_prediction", "challenger_prediction",
+                     "challenger_full_strength_prediction"):
+            _finite(game.get(name), f"locked {name}")
+        _strict_flags(game.get("subgroup_flags", {}), game_id)
+    prediction_hash = str(lock.get("prediction_integrity_sha256", "")).strip()
+    if prediction_hash and _prediction_integrity_hash(games) != prediction_hash:
+        raise ValueError("Locked prediction integrity:")
+    artifact_hash = str(lock.get("artifact_sha256", "")).strip()
+    if not artifact_hash or _artifact_hash(lock) != artifact_hash:
+        raise ValueError("Lock artifact hash mismatch:")
+    return games
+
+
+def _normalize_result(result):
+    if not isinstance(result, dict):
+        raise ValueError("Invalid result row:")
+    game_id = str(result.get("game_id", "")).strip()
+    if not game_id:
+        raise ValueError("Missing result game ID:")
+    if not str(result.get("kickoff", "")).strip():
+        raise ValueError(f"Missing result kickoff: {game_id}")
+    if not str(result.get("game_type", "")).strip():
+        raise ValueError(f"Missing result game type: {game_id}")
+    try:
+        home = pgo_sources.normalize_team(
+            result.get("home_team", result.get("home", ""))
+        )
+        away = pgo_sources.normalize_team(
+            result.get("away_team", result.get("away", ""))
+        )
+    except (TypeError, ValueError) as error:
+        raise ValueError(f"Invalid result teams: {game_id}") from error
+    finalized_at = str(result.get("finalized_at", "") or "").strip()
+    if not finalized_at:
+        raise ValueError(f"Result not finalized: {game_id}")
+    try:
+        finalized_at = _timestamp(finalized_at)
+    except ValueError as error:
+        raise ValueError(f"Result not finalized: {game_id}") from error
+    scores = {}
+    for name in ("home_score", "away_score"):
+        value = result.get(name)
+        try:
+            value = float(value)
+        except (TypeError, ValueError) as error:
+            raise ValueError(f"Result not finalized: {game_id}") from error
+        if not math.isfinite(value) or value < 0:
+            raise ValueError(f"Result not finalized: {game_id}")
+        scores[name] = int(value) if value.is_integer() else value
+    normalized = {
+        "game_id": game_id,
+        "home_team": home,
+        "away_team": away,
+        "home_score": scores["home_score"],
+        "away_score": scores["away_score"],
+        "finalized_at": finalized_at,
+    }
+    for name in ("season", "week"):
+        if str(result.get(name, "")).strip():
+            try:
+                normalized[name] = int(result[name])
+            except (TypeError, ValueError) as error:
+                raise ValueError(f"Invalid result {name}: {game_id}") from error
+    normalized["kickoff"] = _timestamp(result["kickoff"])
+    normalized["game_type"] = str(result["game_type"]).strip().upper()
+    return normalized
+
+
+def _result_hash(rows):
+    return hashlib.sha256(_canonical(rows).encode("utf-8")).hexdigest()
+
+
+def grade_locked_games(lock, results):
+    """Validate finalized results and grade the immutable prospective lock."""
+    games = _verify_lock(lock)
+    if not isinstance(results, list):
+        raise ValueError("Results must be a list:")
+    locked_by_id = {game["game_id"]: game for game in games}
+    result_by_id = {}
+    normalized_results = []
+    for raw in results:
+        result = _normalize_result(raw)
+        game_id = result["game_id"]
+        if game_id in result_by_id:
+            raise ValueError(f"Duplicate result: {game_id}")
+        if game_id not in locked_by_id:
+            raise ValueError(f"Unexpected result: {game_id}")
+        locked = locked_by_id[game_id]
+        if result["home_team"] != locked["home"]:
+            raise ValueError(f"locked home team: {game_id}")
+        if result["away_team"] != locked["away"]:
+            raise ValueError(f"locked away team: {game_id}")
+        if _parse_datetime(result["kickoff"]) != _parse_datetime(locked["kickoff"]):
+            raise ValueError(f"locked kickoff: {game_id}")
+        if result["game_type"] != locked["game_type"]:
+            raise ValueError(f"locked game type: {game_id}")
+        for name in ("season", "week"):
+            if name in result and result[name] != locked[name]:
+                raise ValueError(f"locked {name}: {game_id}")
+        result_by_id[game_id] = result
+        normalized_results.append(result)
+    missing = sorted(set(locked_by_id) - set(result_by_id))
+    if missing:
+        raise ValueError(f"Missing locked result: {missing[0]}")
+    normalized_results.sort(key=lambda row: row["game_id"])
+
+    rows = []
+    for locked in sorted(games, key=lambda game: (game["kickoff"], game["game_id"])):
+        result = result_by_id[locked["game_id"]]
+        actual = float(result["home_score"] - result["away_score"])
+        row = {
+            **locked,
+            "home_score": result["home_score"],
+            "away_score": result["away_score"],
+            "finalized_at": result["finalized_at"],
+            "actual_margin": actual,
+        }
+        row["pgo_v0_absolute_error"] = abs(actual - row["pgo_v0_prediction"])
+        row["challenger_absolute_error"] = abs(actual - row["challenger_prediction"])
+        row["improvement"] = row["pgo_v0_absolute_error"] - row["challenger_absolute_error"]
+        row.update(row["subgroup_flags"])
+        rows.append(row)
+
+    pgo_v0 = pgo_challenger.metric_summary(rows, "pgo_v0_prediction")
+    challenger = pgo_challenger.metric_summary(rows, "challenger_prediction")
+    improvement = pgo_challenger.paired_block_bootstrap(
+        rows, samples=10_000, seed=20260721
+    )
+    subgroups = pgo_challenger.subgroup_results(rows)
+    checks = {
+        "lock_artifact_integrity": True,
+        "result_integrity": True,
+        "counts_match": len(rows) == len(games),
+        "challenger_mae_lower": challenger["mae"] < pgo_v0["mae"],
+        "aggregate_improvement_ci_positive": improvement["lower"] > 0.0,
+        "no_sufficient_subgroup_regression": pgo_challenger._subgroup_gate_passes(subgroups),
+    }
+    integrity = ("lock_artifact_integrity", "result_integrity", "counts_match")
+    status = (
+        "BLOCKED" if not all(checks[name] for name in integrity)
+        else "PASS" if all(checks.values()) else "HOLD"
+    )
+    feature_state = lock.get("model_state", {}).get("challenger", {})
+    receipt = {
+        "schema_version": SCHEMA_VERSION,
+        "status": status,
+        "publication_status": {"PASS": "VALIDATED", "HOLD": "EXPERIMENTAL", "BLOCKED": "BLOCKED"}[status],
+        "as_of": lock.get("as_of"),
+        "lock_sha256": lock["artifact_sha256"],
+        "results_sha256": _result_hash(normalized_results),
+        "schedule_snapshot_sha256": lock.get("schedule_snapshot_sha256"),
+        "source_lock_sha256": lock.get("source_lock_sha256"),
+        "source_hashes": deepcopy(lock.get("source_hashes", {})),
+        "feature_manifest": {
+            "features": list(feature_state.get("feature_names", [])),
+            "missingness_flags": list(feature_state.get("missing_features", [])),
+        },
+        "counts": {"locked_games": len(games), "graded_games": len(rows)},
+        "metrics": {
+            "pgo_v0": pgo_v0, "challenger": challenger,
+            "pgo_v0_mae": pgo_v0["mae"], "challenger_mae": challenger["mae"],
+        },
+        "bootstrap": improvement,
+        "aggregate_interval": improvement,
+        "subgroup_results": subgroups,
+        "checks": checks,
+        "failed_checks": sorted(name for name, passed in checks.items() if not passed),
+        "rows": rows,
+    }
+    return receipt
+
+
+def serialize_grade(receipt, rows):
+    receipt_text = _canonical(receipt) + "\n"
+    output = io.StringIO(newline="")
+    writer = csv.DictWriter(output, fieldnames=GRADE_RESULT_COLUMNS, lineterminator="\n")
+    writer.writeheader()
+    for row in rows:
+        item = dict(row)
+        item["subgroup_flags"] = json.dumps(
+            {name: bool(row.get(name)) for name in pgo_challenger.SUBGROUPS},
+            sort_keys=True, separators=(",", ":"),
+        )
+        writer.writerow({name: item.get(name, "") for name in GRADE_RESULT_COLUMNS})
+    return receipt_text, output.getvalue()
+
+
+def write_grade(output_dir, receipt, rows):
+    output_dir = Path(output_dir)
+    receipt_text, results_text = serialize_grade(receipt, rows)
+    receipt_path = output_dir / "prospective_receipt.json"
+    atomic_write_text(receipt_path, receipt_text)
+    atomic_write_text(output_dir / "prospective_results.csv", results_text)
+    return receipt_path
+
+
+def _load_results(path):
+    try:
+        with Path(path).open(encoding="utf-8-sig", newline="") as handle:
+            reader = csv.DictReader(handle)
+            if not reader.fieldnames:
+                raise ValueError("Results CSV has no header")
+            return list(reader)
+    except (OSError, csv.Error) as error:
+        raise ValueError(f"Unable to read results CSV: {path}") from error
+
+
+def _blocked_receipt(lock, results_path, error):
+    lock = lock if isinstance(lock, dict) else {}
+    try:
+        results_hash = hashlib.sha256(Path(results_path).read_bytes()).hexdigest()
+    except OSError:
+        results_hash = ""
+    checks = {
+        "lock_artifact_integrity": False,
+        "result_integrity": False,
+        "counts_match": False,
+        "challenger_mae_lower": False,
+        "aggregate_improvement_ci_positive": False,
+        "no_sufficient_subgroup_regression": False,
+    }
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "status": "BLOCKED",
+        "publication_status": "BLOCKED",
+        "as_of": lock.get("as_of"),
+        "lock_sha256": lock.get("artifact_sha256", ""),
+        "results_sha256": results_hash,
+        "schedule_snapshot_sha256": lock.get("schedule_snapshot_sha256"),
+        "source_lock_sha256": lock.get("source_lock_sha256"),
+        "source_hashes": deepcopy(lock.get("source_hashes", {})),
+        "feature_manifest": {},
+        "counts": {"locked_games": len(lock.get("games", [])) if isinstance(lock.get("games"), list) else 0, "graded_games": 0},
+        "metrics": {},
+        "bootstrap": {},
+        "aggregate_interval": {},
+        "subgroup_results": {},
+        "checks": checks,
+        "failed_checks": sorted(checks),
+        "error": str(error),
+        "rows": [],
+    }
 
 
 def _snapshot_states_with_schedule(paths, schedule_rows, as_of, half_life, context, inputs):
@@ -546,6 +833,17 @@ def _cli_lock(args):
     return 0
 
 
+def _cli_grade(args):
+    lock = {}
+    try:
+        lock = json.loads(Path(args.lock_file).read_text(encoding="utf-8"))
+        receipt = grade_locked_games(lock, _load_results(args.results_path))
+    except (OSError, TypeError, ValueError, json.JSONDecodeError) as error:
+        receipt = _blocked_receipt(lock, args.results_path, error)
+    write_grade(args.output_dir, receipt, receipt["rows"])
+    return 0 if receipt["status"] == "PASS" else 1
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -555,10 +853,15 @@ def main(argv=None):
     lock.add_argument("--cache-dir", type=Path, required=True)
     lock.add_argument("--schedule-snapshot", type=Path, required=True)
     lock.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
+    grade = subparsers.add_parser("grade")
+    grade.add_argument("--lock-file", type=Path, required=True)
+    grade.add_argument("--results-path", type=Path, required=True)
+    grade.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     args = parser.parse_args(argv)
     if args.command == "lock":
-        _cli_lock(args)
-    return 0
+        return _cli_lock(args)
+    elif args.command == "grade":
+        return _cli_grade(args)
 
 
 if __name__ == "__main__":

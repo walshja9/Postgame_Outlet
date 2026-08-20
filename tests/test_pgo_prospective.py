@@ -1,5 +1,6 @@
 import hashlib
 import csv
+import json
 import math
 import tempfile
 import unittest
@@ -206,6 +207,23 @@ class ProspectiveGradeTests(unittest.TestCase):
         self.assertEqual(receipt["bootstrap"]["seed"], 20260721)
         self.assertEqual([row["actual_margin"] for row in receipt["rows"]], [3.0, -4.0])
 
+    def test_grade_holds_when_statistical_gates_fail(self):
+        results = [
+            {**self.results[0], "home_score": "14", "away_score": "10"},
+            {**self.results[1], "home_score": "17", "away_score": "25"},
+        ]
+        receipt = pgo_prospective.grade_locked_games(self.lock, results)
+        self.assertEqual(receipt["status"], "HOLD")
+        self.assertEqual(receipt["publication_status"], "EXPERIMENTAL")
+        self.assertIn("challenger_mae_lower", receipt["failed_checks"])
+        self.assertIn("aggregate_improvement_ci_positive", receipt["failed_checks"])
+
+    def test_grade_serialization_is_deterministic(self):
+        receipt = pgo_prospective.grade_locked_games(self.lock, self.results)
+        first = pgo_prospective.serialize_grade(receipt, receipt["rows"])
+        second = pgo_prospective.serialize_grade(receipt, receipt["rows"])
+        self.assertEqual(first, second)
+
     def test_grade_rejects_tampered_or_incomplete_results(self):
         cases = []
         cases.append((self.results[:1], "Missing locked result:"))
@@ -219,12 +237,35 @@ class ProspectiveGradeTests(unittest.TestCase):
         cases.append((changed_kickoff, "locked kickoff:"))
         changed_game_type = [{**self.results[0], "game_type": "POST"}, self.results[1]]
         cases.append((changed_game_type, "locked game type:"))
+        missing_kickoff = [{key: value for key, value in self.results[0].items() if key != "kickoff"}, self.results[1]]
+        cases.append((missing_kickoff, "Missing result kickoff:"))
+        missing_game_type = [{key: value for key, value in self.results[0].items() if key != "game_type"}, self.results[1]]
+        cases.append((missing_game_type, "Missing result game type:"))
         non_final = [{**self.results[0], "finalized_at": ""}, self.results[1]]
         cases.append((non_final, "Result not finalized:"))
 
         for results, prefix in cases:
             with self.subTest(prefix=prefix), self.assertRaisesRegex(ValueError, f"^{prefix}"):
                 pgo_prospective.grade_locked_games(self.lock, results)
+
+    def test_cli_writes_blocked_receipt_on_integrity_failure(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            lock_path = pgo_prospective.write_lock(root / "lock", self.lock)
+            results_path = root / "results.csv"
+            results_path.write_text(
+                "game_id,home_team,away_team,home_score,away_score,finalized_at\n"
+                "2026_01_NYJ_BUF,BUF,NYJ,24,21,2026-09-13T17:00:00-04:00\n",
+                encoding="utf-8",
+            )
+            output_dir = root / "grade"
+            args = SimpleNamespace(
+                lock_file=lock_path, results_path=results_path, output_dir=output_dir,
+            )
+            self.assertEqual(pgo_prospective._cli_grade(args), 1)
+            receipt = json.loads((output_dir / "prospective_receipt.json").read_text(encoding="utf-8"))
+            self.assertEqual(receipt["status"], "BLOCKED")
+            self.assertEqual(receipt["publication_status"], "BLOCKED")
 
     def test_grade_rejects_tampered_lock_prediction_and_hash(self):
         changed_prediction = deepcopy(self.lock)
