@@ -82,14 +82,18 @@ class ProspectiveLockTests(unittest.TestCase):
         self.assertEqual(first["schedule_snapshot_sha256"], self.schedule["sha256"])
         self.assertEqual(first["source_lock_sha256"], self.model_state["source_lock_sha256"])
         self.assertEqual(len(first["games"]), 2)
-        self.assertEqual(
-            set(first["games"][0]),
+        self.assertTrue(
             {
                 "game_id", "season", "week", "kickoff", "home", "away",
+                "game_type", "location", "home_rest", "away_rest",
                 "pgo_v0_prediction", "challenger_prediction",
                 "challenger_full_strength_prediction", "subgroup_flags",
-            },
+            }.issubset(first["games"][0])
         )
+        self.assertEqual(first["games"][0]["game_type"], "REG")
+        self.assertEqual(first["games"][0]["location"], "Home")
+        self.assertEqual(first["games"][0]["home_rest"], 7)
+        self.assertEqual(first["games"][0]["away_rest"], 7)
         self.assertNotIn("actual_margin", first["games"][0])
 
     def test_lock_rejects_invalid_pregame_rows(self):
@@ -113,6 +117,17 @@ class ProspectiveLockTests(unittest.TestCase):
         non_finite = deepcopy(self.model_state)
         non_finite["predictions"]["2026_01_NYJ_BUF"]["challenger_prediction"] = math.nan
         cases.append((self.schedule, non_finite, "Non-finite prediction:"))
+
+        post_kickoff_revision = deepcopy(self.model_state)
+        post_kickoff_revision["source_revisions"] = [
+            {
+                "source": "injury_reports",
+                "game_id": "2026_01_NYJ_BUF",
+                "available_at": "2026-09-13T13:01:00-04:00",
+                "sha256": _sha256("late-injury-revision"),
+            }
+        ]
+        cases.append((self.schedule, post_kickoff_revision, "Post-kickoff source revision:"))
 
         for schedule, state, prefix in cases:
             with self.subTest(prefix=prefix), self.assertRaisesRegex(ValueError, f"^{prefix}"):
@@ -178,6 +193,17 @@ class ProspectiveGradeTests(unittest.TestCase):
         for results, prefix in cases:
             with self.subTest(prefix=prefix), self.assertRaisesRegex(ValueError, f"^{prefix}"):
                 pgo_prospective.grade_locked_games(self.lock, results)
+
+    def test_grade_rejects_tampered_lock_prediction_and_hash(self):
+        changed_prediction = deepcopy(self.lock)
+        changed_prediction["games"][0]["challenger_prediction"] = 99.0
+        with self.assertRaisesRegex(ValueError, "^Locked prediction integrity:"):
+            pgo_prospective.grade_locked_games(changed_prediction, self.results)
+
+        changed_hash = deepcopy(self.lock)
+        changed_hash["artifact_sha256"] = _sha256("tampered-lock-artifact")
+        with self.assertRaisesRegex(ValueError, "^Lock artifact hash mismatch:"):
+            pgo_prospective.grade_locked_games(changed_hash, self.results)
 
 
 class ProspectiveArtifactSafetyTests(unittest.TestCase):
