@@ -81,8 +81,14 @@ finite.
 The results CSV must contain exactly one finalized row per locked game:
 
 ```text
-game_id,home_team,away_team,home_score,away_score,finalized_at
+game_id,home_team,away_team,kickoff,game_type,home_score,away_score,finalized_at
 ```
+
+`kickoff` and `game_type` are required identity fields and must match the
+immutable lock exactly; omitting either field is an integrity failure. The
+Python grading API fails closed with an error, while the CLI writes a
+`BLOCKED` receipt and exits nonzero so the failure is observable without being
+treated as evidence.
 
 The grader calculates actual margins, challenger and PGO v0 absolute errors,
 MAE, paired week-block bootstrap improvement using `10_000` samples and seed

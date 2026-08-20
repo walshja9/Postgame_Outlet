@@ -193,8 +193,9 @@ interval lower bound is above zero, and no sufficient subgroup regresses.
 
 Use \`PASS\` when every prospective integrity/statistical check passes, \`HOLD\`
 when integrity passes but a statistical check fails, and \`BLOCKED\` for any
-integrity failure. Include failed checks, lock hash, results hash, source
-hashes, sample count, seed, feature manifest, and publication status
+integrity failure. The Python API fails closed on integrity errors; the CLI
+writes a `BLOCKED` receipt and exits nonzero. Include failed checks, lock hash,
+results hash, source hashes, sample count, seed, feature manifest, and publication status
 (\`VALIDATED\` only for \`PASS\`, \`EXPERIMENTAL\` for \`HOLD\`).
 
 - [ ] **Step 4: Run focused tests and commit**
