@@ -265,22 +265,83 @@ class ComparisonTests(unittest.TestCase):
         )
         self.assertEqual(output.count('<link rel="icon" href="data:,">'), 1)
 
-    def test_refresh_mccabe_preserves_existing_pgo_panel(self):
+    def test_refresh_mccabe_updates_only_current_mccabe_fields(self):
+        stale_rows = [
+            {
+                "team": "Los Angeles Rams", "mccabe_rank": 1,
+                "mccabe_rating": 7.5, "full_strength_rank": 2,
+                "full_strength_rating": 6.653245,
+                "availability_adjustment": 0.0,
+                "current_lineup_rank": 2, "current_lineup_rating": 6.653245,
+                "rank_disagreement": 1,
+                "rating_disagreement": -0.846755,
+            },
+            {
+                "team": "San Francisco 49ers", "mccabe_rank": 7,
+                "mccabe_rating": 4.5, "full_strength_rank": 7,
+                "full_strength_rating": 4.134241,
+                "availability_adjustment": 0.0,
+                "current_lineup_rank": 7, "current_lineup_rating": 4.134241,
+                "rank_disagreement": 0,
+                "rating_disagreement": -0.365759,
+            },
+            {
+                "team": "New Orleans Saints", "mccabe_rank": 25,
+                "mccabe_rating": -0.5, "full_strength_rank": 23,
+                "full_strength_rating": -2.638712,
+                "availability_adjustment": 0.0,
+                "current_lineup_rank": 23, "current_lineup_rating": -2.638712,
+                "rank_disagreement": -2,
+                "rating_disagreement": -2.138712,
+            },
+        ]
+        current_rows = [
+            {"team": "Los Angeles Rams", "abbr": "LAR", "rank": 1, "rating": 7.3},
+            {"team": "San Francisco 49ers", "abbr": "SF", "rank": 9, "rating": 3.2},
+            {"team": "New Orleans Saints", "abbr": "NO", "rank": 25, "rating": -0.8},
+        ]
         published = pgo_comparison.inject_comparison(
             self._base_html(),
-            '<section class="panel active" id="panel-comparison" role="tabpanel">'
-            'Approved PGO</section>',
+            pgo_comparison.render_comparison_panel(stale_rows, self._held_receipt()),
         )
         current_base = self._base_html().replace(
             'id="panel-ratings" role="tabpanel">McCabe</section>',
             'id="panel-ratings" role="tabpanel">Updated McCabe</section>',
         )
 
-        output = pgo_comparison.refresh_mccabe_page(current_base, published)
+        with (
+            patch.object(pgo_comparison, "load_mccabe_rows", return_value=current_rows),
+            patch.object(
+                pgo_comparison,
+                "mccabe_source_timestamp",
+                return_value="2026-08-18T02:09:47-07:00",
+            ),
+        ):
+            output = pgo_comparison.refresh_mccabe_page(current_base, published)
+            rerun = pgo_comparison.refresh_mccabe_page(current_base, output)
 
-        self.assertIn("Approved PGO", output)
-        self.assertIn("Updated McCabe", output)
-        self.assertEqual(output.count('id="panel-comparison"'), 1)
+        self.assertEqual(output, rerun)
+        self.assertIn('data-sort="1">1</td><td data-sort="7.3">+7.3', output)
+        self.assertIn('data-sort="9">9</td><td data-sort="3.2">+3.2', output)
+        self.assertIn('data-sort="25">25</td><td data-sort="-0.8">-0.8', output)
+        self.assertIn('>+1</td><td data-sort="-0.6467549999999997">-0.6', output)
+        self.assertIn('>-2</td><td data-sort="0.9342410000000001">+0.9', output)
+        self.assertIn('>-2</td><td data-sort="-1.838712">-1.8', output)
+        self.assertNotIn('data-sort="7.5">+7.5', output)
+        self.assertNotIn('data-sort="4.5">+4.5', output)
+        self.assertNotIn('data-sort="-0.5">-0.5', output)
+        self.assertIn('data-sort="6.653245">+6.7', output)
+        self.assertIn('data-sort="4.134241">+4.1', output)
+        self.assertIn('data-sort="-2.638712">-2.6', output)
+        self.assertIn("Experimental model", output)
+        self.assertIn("HOLD", output)
+        self.assertIn("test-receipt-ref", output)
+        self.assertIn("PGO pgo_v1 as of", output)
+        self.assertIn("2026-07-21T12:00:00-04:00", output)
+        self.assertIn("Current McCabe ratings from data/ratings.csv as of", output)
+        self.assertIn("2026-08-18T02:09:47-07:00", output)
+        self.assertIn("Historical Preseason 2026 snapshot locked", output)
+        self.assertIn("2026-07-16T11:22:52-04:00", output)
 
     def test_comparison_team_labels_have_contrasting_backgrounds(self):
         self.assertIn(
