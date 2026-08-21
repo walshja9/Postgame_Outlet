@@ -521,6 +521,17 @@ def extract_comparison_panel(existing_html):
 def mccabe_source_timestamp(path):
     try:
         relative = Path(path).resolve().relative_to(HERE.resolve()).as_posix()
+        history = subprocess.run(
+            ["git", "rev-parse", "--is-shallow-repository"],
+            cwd=HERE,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        if history.stdout.strip().lower() == "true":
+            raise ValueError(
+                "Current McCabe source timestamp requires full Git history"
+            )
         result = subprocess.run(
             ["git", "log", "-1", "--format=%cI", "--", relative],
             cwd=HERE,
@@ -528,7 +539,9 @@ def mccabe_source_timestamp(path):
             capture_output=True,
             text=True,
         )
-    except (OSError, subprocess.CalledProcessError, ValueError) as error:
+    except ValueError:
+        raise
+    except (OSError, subprocess.CalledProcessError) as error:
         raise ValueError("Could not determine the current McCabe source timestamp") from error
     timestamp = result.stdout.strip()
     if not timestamp:
