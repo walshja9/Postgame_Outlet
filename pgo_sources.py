@@ -24,6 +24,7 @@ LICENSE_URL = "https://github.com/nflverse/nflverse-data/blob/master/LICENSE.md"
 ALIASES = {
     **ALIASES,
     "ARZ": "ARI",
+    "AZ": "ARI",
     "BLT": "BAL",
     "CLV": "CLE",
     "HST": "HOU",

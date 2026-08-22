@@ -4,6 +4,7 @@
 import argparse
 import csv
 import io
+import hashlib
 import json
 import math
 import statistics
@@ -55,6 +56,8 @@ QB_FEATURES = (
 HALF_LIFE_GRID = (2, 4, 8, 16, 32)
 ALPHA_GRID = (0.25, 1.0, 10.0, 100.0)
 DELTA_GRID = (0.75, 1.0, 1.5)
+ROLE_ALPHA = 10.0
+ROLE_DELTA = 1.0
 OUTER_SEASONS = tuple(range(2018, 2026))
 SUBGROUPS = (
     "changed_or_backup_qb",
@@ -103,6 +106,57 @@ RATING_COLUMNS = (
     "current_lineup_rating", "headline_view", "headline_rating", "as_of",
     "validation_status", "status_reason",
 )
+AVAILABILITY_COLUMNS = (
+    "team", "gsis_id", "player", "availability_probability",
+    "offense_snap_share_low", "offense_snap_share_base",
+    "offense_snap_share_high", "defense_snap_share_low",
+    "defense_snap_share_base", "defense_snap_share_high",
+    "source_as_of", "source_note", "role_note",
+)
+ROLE_SCENARIOS = ("low", "base", "high")
+ROLE_FEATURE_NAMES = (
+    "position_quarterback", "position_skill", "position_line",
+    "position_defense", "years_exp", "prior_offense_snap_share",
+    "prior_defense_snap_share", "prior_offense_missing",
+    "prior_defense_missing", "prior_starter",
+)
+ROLE_POSITION_GROUPS = {
+    "QB": "quarterback",
+    "RB": "skill",
+    "FB": "skill",
+    "WR": "skill",
+    "TE": "skill",
+    "OL": "line",
+    "C": "line",
+    "G": "line",
+    "T": "line",
+    "OT": "line",
+    "OG": "line",
+    "LT": "line",
+    "LG": "line",
+    "RG": "line",
+    "RT": "line",
+    "DE": "defense",
+    "DT": "defense",
+    "DL": "defense",
+    "NT": "defense",
+    "EDGE": "defense",
+    "LB": "defense",
+    "ILB": "defense",
+    "MLB": "defense",
+    "OLB": "defense",
+    "CB": "defense",
+    "DB": "defense",
+    "S": "defense",
+    "FS": "defense",
+    "SS": "defense",
+}
+GENERIC_ROLE_PRIORS = {
+    "quarterback": ((0.75, 0.90, 1.00), (0.00, 0.00, 0.00)),
+    "skill": ((0.15, 0.30, 0.45), (0.00, 0.00, 0.00)),
+    "line": ((0.60, 0.80, 1.00), (0.00, 0.00, 0.00)),
+    "defense": ((0.00, 0.00, 0.00), (0.15, 0.30, 0.45)),
+}
 PREDICTION_COLUMNS = (
     "game_id", "season", "week", "kickoff", "actual_margin",
     "pgo_v0_prediction", "challenger_prediction", *SUBGROUPS,
@@ -153,6 +207,28 @@ class Preprocessor:
         if not np.isfinite(output).all():
             raise ValueError("Preprocessed features must be finite")
         return output
+
+
+@dataclass(frozen=True)
+class RoleTrainingRow:
+    player_id: str
+    kickoff: str
+    features: dict[str, float | None]
+    target_offense_snap_share: float | None
+    target_defense_snap_share: float | None
+    availability_probability: float
+
+
+@dataclass(frozen=True)
+class RoleModel:
+    preprocessor: Preprocessor
+    coefficients: np.ndarray
+
+
+@dataclass(frozen=True)
+class RoleModels:
+    offense: RoleModel | None
+    defense: RoleModel | None
 
 
 @dataclass(frozen=True)
@@ -208,6 +284,212 @@ def availability_probability(report_status, practice_status) -> float:
         raise ValueError(f"Unknown practice status: {practice}") from error
 
 
+def role_prior_for_position(position, role_scenario="base"):
+    if role_scenario not in ROLE_SCENARIOS:
+        raise ValueError(f"Invalid role scenario: {role_scenario}")
+    group = ROLE_POSITION_GROUPS.get((position or "").strip().upper())
+    if group is None:
+        return None
+    index = ROLE_SCENARIOS.index(role_scenario)
+    offense, defense = GENERIC_ROLE_PRIORS[group]
+    return {
+        "offense_snap_share": offense[index],
+        "defense_snap_share": defense[index],
+    }
+
+
+def _availability_coverage(path, source_as_of):
+    if path is None:
+        return {
+            "passed": False,
+            "reason": "No 32-team source coverage audit supplied",
+        }
+    path = Path(path)
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, TypeError, ValueError) as error:
+        raise ValueError("Invalid availability coverage audit") from error
+    if not isinstance(data, dict):
+        raise ValueError("Availability coverage audit must be an object")
+    source = str(data.get("source", "")).strip()
+    stamp = str(data.get("source_as_of", "")).strip()
+    raw_hash = str(data.get("raw_source_sha256", "")).strip().lower()
+    teams = {
+        normalize_team(team) for team in data.get("teams_processed", ())
+    }
+    expected = set(pgo_model.CURRENT_TEAMS)
+    if not source or not stamp or len(raw_hash) != 64 or any(
+        character not in "0123456789abcdef" for character in raw_hash
+    ):
+        raise ValueError("Availability coverage audit metadata is incomplete")
+    if _parse_datetime(stamp) != _parse_datetime(source_as_of):
+        raise ValueError("Availability coverage timestamp does not match overlay")
+    if teams != expected:
+        raise ValueError("Availability coverage audit must contain all 32 teams")
+    return {
+        "passed": True,
+        "source": source,
+        "source_as_of": stamp,
+        "raw_source_sha256": raw_hash,
+        "teams_processed": sorted(teams),
+        "path": str(path.resolve()),
+        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+    }
+
+
+def load_availability_overlay(
+    path, as_of, role_scenario="base", coverage_path=None
+):
+    if role_scenario not in ROLE_SCENARIOS:
+        raise ValueError(f"Invalid role scenario: {role_scenario}")
+    path = Path(path)
+    model_as_of = _parse_datetime(as_of)
+    overlay = {}
+    source_as_of = set()
+    with path.open(encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        if tuple(reader.fieldnames or ()) != AVAILABILITY_COLUMNS:
+            raise ValueError(
+                "Availability overlay schema does not match the release contract"
+            )
+        for row in reader:
+            team = normalize_team(row["team"])
+            gsis_id = row["gsis_id"].strip()
+            player = row["player"].strip()
+            note = row["source_note"].strip()
+            if team not in pgo_model.CURRENT_TEAMS:
+                raise ValueError(f"Unknown availability overlay team: {team}")
+            if not gsis_id or not player or not note:
+                raise ValueError(
+                    "Availability overlay rows require player identity and source note"
+                )
+            try:
+                probability = float(row["availability_probability"])
+            except (TypeError, ValueError) as error:
+                raise ValueError(
+                    f"Invalid availability probability for {player}"
+                ) from error
+            if not math.isfinite(probability) or not 0.0 <= probability <= 1.0:
+                raise ValueError(
+                    f"Availability probability outside [0, 1] for {player}"
+                )
+            stamp = row["source_as_of"].strip()
+            source_dt = _parse_datetime(stamp)
+            if source_dt > model_as_of:
+                raise ValueError("Availability overlay is newer than model as-of")
+            role_values = {}
+            for side in ("offense", "defense"):
+                values = []
+                for bound in ROLE_SCENARIOS:
+                    name = f"{side}_snap_share_{bound}"
+                    raw = row[name].strip()
+                    if raw == "":
+                        values.append(None)
+                        continue
+                    try:
+                        value = float(raw)
+                    except (TypeError, ValueError) as error:
+                        raise ValueError(
+                            f"Invalid {name} for {player}"
+                        ) from error
+                    if not math.isfinite(value) or not 0.0 <= value <= 1.0:
+                        raise ValueError(
+                            f"{name} outside [0, 1] for {player}"
+                        )
+                    values.append(value)
+                if any(value is not None for value in values):
+                    if any(value is None for value in values):
+                        raise ValueError(
+                            f"Incomplete {side} role scenario for {player}"
+                        )
+                    if not values[0] <= values[1] <= values[2]:
+                        raise ValueError(
+                            f"Role scenarios must be ordered low/base/high for {player}"
+                        )
+                    if not row["role_note"].strip():
+                        raise ValueError(
+                            f"Role scenario for {player} requires a role note"
+                        )
+                    role_values[f"{side}_snap_share"] = values[
+                        ROLE_SCENARIOS.index(role_scenario)
+                    ]
+                else:
+                    role_values[f"{side}_snap_share"] = None
+            key = (team, gsis_id)
+            if key in overlay:
+                raise ValueError(
+                    f"Duplicate availability overlay player: {team} {gsis_id}"
+                )
+            overlay[key] = {
+                "availability_probability": probability,
+                **role_values,
+            }
+            source_as_of.add(stamp)
+    if len(source_as_of) != 1:
+        raise ValueError("Availability overlay must have one source timestamp")
+    source_stamp = next(iter(source_as_of))
+    return overlay, {
+        "path": str(path.resolve()),
+        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        "row_count": len(overlay),
+        "source_as_of": source_stamp,
+        "role_scenario": role_scenario,
+        "coverage": _availability_coverage(coverage_path, source_stamp),
+    }
+
+
+def apply_availability_overlay(
+    team, players, overlay, role_scenario="base", role_models=None
+):
+    team = normalize_team(team)
+    updated = {player_id: dict(player) for player_id, player in players.items()}
+    matched = set()
+    for player in updated.values():
+        key = (team, player.get("gsis_id", ""))
+        if key not in overlay and (
+            role_models is None or _probability(player) >= 1.0
+        ):
+            continue
+        record = overlay.get(key, {
+            "availability_probability": _probability(player),
+            "offense_snap_share": None,
+            "defense_snap_share": None,
+        })
+        player["probability"] = record["availability_probability"]
+        generic = role_prior_for_position(player.get("position"), role_scenario)
+        learned = {}
+        if role_models is not None:
+            features = _role_features(player, player.get("prior_starter", False))
+            learned = {
+                "offense_snap_share": predict_role_share(
+                    role_models.offense, features
+                ),
+                "defense_snap_share": predict_role_share(
+                    role_models.defense, features
+                ),
+            }
+        sources = []
+        for name in ("offense_snap_share", "defense_snap_share"):
+            if record[name] is not None:
+                player[name] = record[name]
+                sources.append("explicit")
+            elif player.get(name) is None:
+                if learned.get(name) is not None:
+                    player[name] = learned[name]
+                    sources.append("learned")
+                elif generic is not None:
+                    player[name] = generic[name]
+                    sources.append("generic")
+        player["role_source"] = (
+            "explicit" if "explicit" in sources
+            else "learned" if "learned" in sources
+            else "generic" if "generic" in sources
+            else "unavailable"
+        )
+        matched.add(key)
+    return updated, matched
+
+
 def lineup_views(team, snapshot, state) -> tuple[dict[str, float], dict[str, float]]:
     team = normalize_team(team)
     players = snapshot.get(team, snapshot.get("players", {}))
@@ -255,10 +537,15 @@ def build_feature_rows(paths, half_life_games) -> list[FeatureRow]:
     return rows
 
 
-def build_snapshot_states(paths, as_of, half_life_games) -> dict[str, tuple[dict, dict]]:
+def build_snapshot_states(
+    paths, as_of, half_life_games, availability_overlay=None,
+    role_scenario="base", role_models=None,
+) -> dict[str, tuple[dict, dict]]:
     as_of_dt = _parse_datetime(as_of)
     as_of_year = as_of_dt.astimezone(EASTERN).year
     _, context, inputs = _walk(paths, half_life_games, as_of=as_of_dt)
+    overlay_keys = set(availability_overlay or ())
+    overlay_matches = set()
     available_periods = set()
     completed_current_teams = set()
     for game in _load_games(paths):
@@ -296,10 +583,30 @@ def build_snapshot_states(paths, as_of, half_life_games) -> dict[str, tuple[dict
         coach = context["coaches"].get(team, "")
         if team not in completed_current_teams and team in scheduled_coaches:
             coach = scheduled_coaches[team][2]
-        full, current, _ = _team_views(
-            team, season, week, coach, as_of_dt, context, inputs
+        full, current, metadata = _team_views(
+            team, season, week, coach, as_of_dt, context, inputs,
+            availability_overlay, role_scenario, role_models,
         )
         states[team] = (full, current)
+        matches = metadata["availability_overlay_matches"]
+        if matches and any(
+            current.get(name) is None
+            for name in (
+                "offense_availability", "defense_availability",
+                "offense_availability_concentration",
+                "defense_availability_concentration",
+            )
+        ):
+            raise ValueError(
+                f"Availability overlay for {team} cannot be scored without snap share"
+            )
+        overlay_matches.update(matches)
+    if overlay_keys - overlay_matches:
+        missing = sorted(overlay_keys - overlay_matches)
+        raise ValueError(
+            "Availability overlay players missing from current roster: "
+            + ", ".join(f"{team} {gsis_id}" for team, gsis_id in missing)
+        )
     return states
 
 
@@ -373,6 +680,66 @@ def predict(x, coefficients) -> np.ndarray:
     if not np.isfinite(output).all():
         raise ValueError("Predictions must be finite")
     return output
+
+
+def _role_features(player, starter):
+    group = ROLE_POSITION_GROUPS.get(
+        (player.get("position") or "").strip().upper()
+    )
+    features = {name: 0.0 for name in ROLE_FEATURE_NAMES}
+    if group is not None:
+        features[f"position_{group}"] = 1.0
+    features["years_exp"] = float(player.get("years_exp", 0.0))
+    offense = player.get("offense_snap_share")
+    defense = player.get("defense_snap_share")
+    features["prior_offense_snap_share"] = offense
+    features["prior_defense_snap_share"] = defense
+    features["prior_offense_missing"] = float(offense is None)
+    features["prior_defense_missing"] = float(defense is None)
+    features["prior_starter"] = float(starter)
+    return features
+
+
+def _fit_role_model(rows, target_name):
+    eligible = [
+        row for row in rows
+        if getattr(row, target_name) is not None
+        and math.isfinite(float(getattr(row, target_name)))
+    ]
+    if not eligible:
+        return None
+    preprocessor = fit_preprocessor(eligible, ROLE_FEATURE_NAMES)
+    coefficients = fit_huber_ridge(
+        preprocessor.transform(eligible),
+        np.asarray([getattr(row, target_name) for row in eligible], dtype=float),
+        ROLE_ALPHA,
+        ROLE_DELTA,
+    )
+    return RoleModel(preprocessor, coefficients)
+
+
+def fit_role_models(rows):
+    rows = list(rows)
+    return RoleModels(
+        _fit_role_model(rows, "target_offense_snap_share"),
+        _fit_role_model(rows, "target_defense_snap_share"),
+    )
+
+
+def predict_role_share(model, features):
+    if model is None:
+        return None
+    row = RoleTrainingRow("", "", features, None, None, 1.0)
+    value = float(predict(model.preprocessor.transform([row]), model.coefficients)[0])
+    if not math.isfinite(value):
+        return None
+    return max(0.0, min(1.0, value))
+
+
+def build_role_training_rows(paths, half_life_games, as_of=None):
+    as_of_dt = _parse_datetime(as_of) if as_of is not None else None
+    _, context, _ = _walk(paths, half_life_games, as_of=as_of_dt)
+    return list(context["role_training_rows"])
 
 
 def select_parameters(paths, validation_seasons) -> ChallengerParameters:
@@ -785,8 +1152,12 @@ def _subgroup_gate_passes(subgroups):
     return True
 
 
-def build_ratings(snapshot_states, model, preprocessor, as_of) -> list[dict]:
+def build_ratings(
+    snapshot_states, model, preprocessor, as_of, headline_view="full_strength"
+) -> list[dict]:
     """Build centered full-strength and current-lineup team ratings."""
+    if headline_view not in {"full_strength", "current_lineup"}:
+        raise ValueError(f"Invalid headline view: {headline_view}")
     teams = sorted(snapshot_states)
     if not teams:
         return []
@@ -817,6 +1188,9 @@ def build_ratings(snapshot_states, model, preprocessor, as_of) -> list[dict]:
             if name in ROSTER_COACHING_FEATURES
         ))
         availability = current_rating - full_rating
+        headline_rating = (
+            full_rating if headline_view == "full_strength" else current_rating
+        )
         rows.append({
             "team": team,
             "full_strength_rating": full_rating,
@@ -824,8 +1198,8 @@ def build_ratings(snapshot_states, model, preprocessor, as_of) -> list[dict]:
             "roster_coaching_points": roster,
             "availability_adjustment": availability,
             "current_lineup_rating": full_rating + availability,
-            "headline_view": "full_strength",
-            "headline_rating": full_rating,
+            "headline_view": headline_view,
+            "headline_rating": headline_rating,
             "as_of": str(as_of),
         })
     rows.sort(key=lambda row: (-row["full_strength_rating"], row["team"]))
@@ -1048,8 +1422,21 @@ def _current_team_coverage(paths, snapshot_states):
     )
 
 
-def _analyze_once(paths, manifest, as_of):
+def _analyze_once(
+    paths, manifest, as_of, availability_overlay_path=None,
+    headline_view="full_strength", role_scenario="base",
+    availability_audit_path=None,
+):
     audit = _source_preflight(paths, manifest, as_of)
+    availability_overlay = None
+    if availability_overlay_path is not None:
+        availability_overlay, overlay_receipt = load_availability_overlay(
+            availability_overlay_path,
+            as_of,
+            role_scenario,
+            availability_audit_path,
+        )
+        audit["availability_overlay"] = overlay_receipt
     predictions, evaluation = rolling_predictions(paths)
     parameters = select_parameters(paths, OUTER_SEASONS)
     rows = build_feature_rows(paths, parameters.half_life_games)
@@ -1066,13 +1453,38 @@ def _analyze_once(paths, manifest, as_of):
         parameters.alpha,
         parameters.delta,
     )
+    role_rows = build_role_training_rows(
+        paths, parameters.half_life_games, as_of=as_of
+    )
+    role_models = fit_role_models(role_rows)
+    audit["role_model"] = {
+        "as_of": str(as_of),
+        "feature_names": list(ROLE_FEATURE_NAMES),
+        "offense_rows": sum(
+            row.target_offense_snap_share is not None for row in role_rows
+        ),
+        "defense_rows": sum(
+            row.target_defense_snap_share is not None for row in role_rows
+        ),
+        "offense_coefficients": (
+            role_models.offense.coefficients.tolist()
+            if role_models.offense is not None else None
+        ),
+        "defense_coefficients": (
+            role_models.defense.coefficients.tolist()
+            if role_models.defense is not None else None
+        ),
+    }
     snapshot_states = build_snapshot_states(
-        paths, as_of, parameters.half_life_games
+        paths, as_of, parameters.half_life_games, availability_overlay,
+        role_scenario, role_models,
     )
     audit["coverage"]["current_teams"] = _current_team_coverage(
         paths, snapshot_states
     )
-    ratings = build_ratings(snapshot_states, coefficients, preprocessor, as_of)
+    ratings = build_ratings(
+        snapshot_states, coefficients, preprocessor, as_of, headline_view
+    )
     return {
         "audit": audit,
         "evaluation": evaluation,
@@ -1089,9 +1501,15 @@ def _finalize_analysis(analysis, as_of, reproducible):
         f"coverage_{name}": metric["passed"] is True
         for name, metric in audit["coverage"].items()
     }
+    overlay_source_passed = (
+        audit.get("availability_overlay", {}).get("coverage", {}).get(
+            "passed", True
+        )
+    )
     audit["checks"] = {
-        "source": all(
-            metric["denominator"] > 0 for metric in audit["coverage"].values()
+        "source": (
+            all(metric["denominator"] > 0 for metric in audit["coverage"].values())
+            and overlay_source_passed
         ),
         "identity": all(coverage_checks.values()),
         "leakage": True,
@@ -1159,9 +1577,19 @@ def _build_backtest(analysis, as_of, checks):
     }
 
 
-def _run_research_analysis(paths, manifest, as_of):
-    first = _analyze_once(paths, manifest, as_of)
-    second = _analyze_once(paths, manifest, as_of)
+def _run_research_analysis(
+    paths, manifest, as_of, availability_overlay_path=None,
+    headline_view="full_strength", role_scenario="base",
+    availability_audit_path=None,
+):
+    first = _analyze_once(
+        paths, manifest, as_of, availability_overlay_path, headline_view,
+        role_scenario, availability_audit_path,
+    )
+    second = _analyze_once(
+        paths, manifest, as_of, availability_overlay_path, headline_view,
+        role_scenario, availability_audit_path,
+    )
     first_outputs = _finalize_analysis(first, as_of, True)
     second_outputs = _finalize_analysis(second, as_of, True)
     reproducible = _in_memory_serialization(
@@ -1466,7 +1894,10 @@ def _ridge_solution(design, y, alpha, weights):
     return coefficients
 
 
-def _walk(paths, half_life_games, as_of=None):
+def _walk(
+    paths, half_life_games, as_of=None, role_models=None, role_model_as_of=None,
+    role_scenario="base",
+):
     if not isinstance(half_life_games, (int, float)) or half_life_games <= 0:
         raise ValueError("half_life_games must be positive")
     decay = 0.5 ** (1.0 / half_life_games)
@@ -1474,6 +1905,10 @@ def _walk(paths, half_life_games, as_of=None):
     games = _load_games(paths)
     if as_of is not None:
         games = [game for game in games if game["kickoff_dt"] < as_of]
+    role_model_as_of = (
+        _parse_datetime(role_model_as_of)
+        if role_model_as_of is not None else None
+    )
     context = {
         "ratios": defaultdict(dict),
         "ratings": defaultdict(float),
@@ -1486,6 +1921,7 @@ def _walk(paths, half_life_games, as_of=None):
         "coaches": {},
         "coach_games": defaultdict(int),
         "prior_starter": {},
+        "role_training_rows": [],
         "seen_teams": set(),
         "evaluation_metadata": {},
         "season": None,
@@ -1501,13 +1937,26 @@ def _walk(paths, half_life_games, as_of=None):
         context["season"] = season
         prepared = []
         for game in batch:
+            active_role_models = (
+                role_models
+                if role_models is not None
+                and (
+                    role_model_as_of is None
+                    or game["kickoff_dt"] >= role_model_as_of
+                )
+                else None
+            )
             home = _team_views(
                 game["home"], game["season"], game["week"],
                 game["home_coach"], game["kickoff_dt"], context, inputs,
+                role_scenario=role_scenario,
+                role_models=active_role_models,
             )
             away = _team_views(
                 game["away"], game["season"], game["week"],
                 game["away_coach"], game["kickoff_dt"], context, inputs,
+                role_scenario=role_scenario,
+                role_models=active_role_models,
             )
             features = _matchup_features(home[1], away[1], game)
             context["evaluation_metadata"][game["game_id"]] = {
@@ -1545,7 +1994,10 @@ def _walk(paths, half_life_games, as_of=None):
     return output, context, inputs
 
 
-def _team_views(team, season, week, coach, kickoff, context, inputs):
+def _team_views(
+    team, season, week, coach, kickoff, context, inputs,
+    availability_overlay=None, role_scenario="base", role_models=None,
+):
     roster_rows = inputs["rosters"].get((season, week, team), ())
     players, metadata = _players_for_team(
         team, season, week, kickoff, roster_rows, context, inputs
@@ -1592,6 +2044,10 @@ def _team_views(team, season, week, coach, kickoff, context, inputs):
             players, context["last_team"], team, None, combined, False
         ),
     })
+    players, overlay_matches = apply_availability_overlay(
+        team, players, availability_overlay or {}, role_scenario, role_models
+    )
+    metadata["availability_overlay_matches"] = overlay_matches
     full, current = lineup_views(team, {team: players}, base)
     metadata["starter"] = _best_qb([
         (player_id, player) for player_id, player in players.items()
@@ -1637,6 +2093,7 @@ def _players_for_team(team, season, week, kickoff, roster_rows, context, inputs)
         draft_number = _number(row, "draft_number")
         qb = _qb_features(player_id, years_exp, draft_number, context)
         players[player_id] = {
+            "gsis_id": gsis_id,
             "position": row.get("position", "").strip().upper(),
             "probability": probability,
             "offense_snap_share": offense,
@@ -1764,6 +2221,18 @@ def _update_after_game(game, home, away, context, inputs, decay):
                 offense / offense_total if offense is not None and offense_total > 0 else offense,
                 defense / defense_total if defense is not None and defense_total > 0 else defense,
             )
+        for player_id, player in metadata["roster"].items():
+            if _probability(player) != 1.0:
+                continue
+            offense, defense = snap_shares.get(player_id, (0.0, 0.0))
+            context["role_training_rows"].append(RoleTrainingRow(
+                player_id,
+                game["kickoff"],
+                _role_features(player, player_id == metadata["starter"]),
+                offense,
+                defense,
+                _probability(player),
+            ))
         for player_id in metadata["roster"]:
             offense, defense = snap_shares.get(player_id, (0.0, 0.0))
             if offense is not None:
@@ -2192,6 +2661,18 @@ def parse_args(argv=None):
     parser.add_argument("--lock-path", type=Path, default=DEFAULT_LOCK_PATH)
     parser.add_argument("--cache-dir", type=Path, default=DEFAULT_CACHE_DIR)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
+    parser.add_argument("--availability-overlay", type=Path)
+    parser.add_argument("--availability-audit", type=Path)
+    parser.add_argument(
+        "--headline-view",
+        choices=("full_strength", "current_lineup"),
+        default="full_strength",
+    )
+    parser.add_argument(
+        "--role-scenario",
+        choices=ROLE_SCENARIOS,
+        default="base",
+    )
     return parser.parse_args(argv)
 
 
@@ -2220,7 +2701,15 @@ def main(argv=None):
             lock_path = staged_lock
         paths = pgo_sources.load_locked_sources(lock_path, args.cache_dir)
         manifest = json.loads(lock_path.read_text(encoding="utf-8"))
-        outputs = _run_research_analysis(paths, manifest, args.as_of)
+        outputs = _run_research_analysis(
+            paths,
+            manifest,
+            args.as_of,
+            args.availability_overlay,
+            args.headline_view,
+            args.role_scenario,
+            args.availability_audit,
+        )
         if staged_lock is not None:
             atomic_write_text(
                 args.lock_path, staged_lock.read_text(encoding="utf-8")
