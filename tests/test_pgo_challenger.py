@@ -160,19 +160,430 @@ def _synthetic_paths(directory, *, mutate_game=None, aliases=True, offseason_cha
     return paths
 
 
-def _add_current_roster(paths, directory, *, team="SD", player="future-qb"):
+def _add_current_roster(
+    paths, directory, *, team="SD", player="future-qb", position="QB"
+):
     path = directory / "current-roster-2026.csv"
     _write_csv(path, pgo_sources.ROSTER_COLUMNS, [{
         "season": 2026,
         "week": 0,
         "team": team,
-        "position": "QB",
+        "position": position,
         "gsis_id": f"gsis-{player}",
         "pfr_id": f"pfr-{player}",
         "years_exp": 9,
         "draft_number": 1,
     }])
     paths[("current_roster", 2026)] = path
+
+
+def _add_role_player(paths, directory, *, player="future-wr"):
+    roster_path = paths[("weekly_rosters", 2013)]
+    with open(roster_path, encoding="utf-8", newline="") as handle:
+        roster_rows = list(csv.DictReader(handle))
+    for week in (1, 2):
+        roster_rows.append({
+            "season": 2013,
+            "week": week,
+            "team": "LAC",
+            "position": "WR",
+            "gsis_id": f"gsis-{player}",
+            "pfr_id": f"pfr-{player}",
+            "years_exp": 2,
+            "draft_number": 40,
+        })
+    _write_csv(roster_path, pgo_sources.ROSTER_COLUMNS, roster_rows)
+
+    snap_path = paths[("snap_counts", 2013)]
+    with open(snap_path, encoding="utf-8", newline="") as handle:
+        snap_rows = list(csv.DictReader(handle))
+    for week, offense_snaps in ((1, 20), (2, 30)):
+        snap_rows.append({
+            "season": 2013,
+            "week": week,
+            "team": "LAC",
+            "pfr_player_id": f"pfr-{player}",
+            "position": "WR",
+            "offense_snaps": offense_snaps,
+            "defense_snaps": 0,
+        })
+    _write_csv(snap_path, pgo_sources.SNAP_COLUMNS, snap_rows)
+
+
+class AvailabilityOverlayTests(unittest.TestCase):
+    AS_OF = "2026-08-18T02:09:47-07:00"
+
+    def test_role_training_rows_use_pregame_state_and_exclude_unavailable_rows(self):
+        with tempfile.TemporaryDirectory() as temp:
+            directory = Path(temp)
+            paths = _synthetic_paths(directory)
+            _add_role_player(paths, directory)
+
+            rows = pgo_challenger.build_role_training_rows(
+                paths, 4, as_of="2014-09-08T12:00:00-04:00"
+            )
+
+        row = next(
+            row for row in rows
+            if row.player_id == "gsis-future-wr"
+            and row.target_offense_snap_share == 0.60
+        )
+        self.assertEqual(row.features["position_skill"], 1.0)
+        self.assertAlmostEqual(row.features["prior_offense_snap_share"], 0.40)
+        self.assertAlmostEqual(row.target_offense_snap_share, 0.60)
+        self.assertTrue(all(row.availability_probability == 1.0 for row in rows))
+
+    def test_learned_role_fills_missing_overlay_role_without_touching_full_strength(self):
+        role_models = pgo_challenger.RoleModels(
+            offense=pgo_challenger.RoleModel(
+                pgo_challenger.Preprocessor(
+                    ("position_skill",), np.array([1.0]), np.array([1.0]), ()
+                ),
+                np.array([0.30, 0.0]),
+            ),
+            defense=None,
+        )
+        players = {"wr": {
+            "gsis_id": "gsis-wr", "position": "WR", "probability": 0.0,
+            "offense_snap_share": None, "defense_snap_share": 0.0,
+        }}
+        updated, _ = pgo_challenger.apply_availability_overlay(
+            "BUF", players, {("BUF", "gsis-wr"): {
+                "availability_probability": 0.0,
+                "offense_snap_share": None, "defense_snap_share": None,
+            }}, role_models=role_models,
+        )
+        self.assertEqual(updated["wr"]["role_source"], "learned")
+        self.assertAlmostEqual(updated["wr"]["offense_snap_share"], 0.30)
+
+    def test_availability_coverage_audit_requires_all_32_teams(self):
+        with tempfile.TemporaryDirectory() as temp:
+            directory = Path(temp)
+            overlay_path = directory / "availability.csv"
+            _write_csv(overlay_path, pgo_challenger.AVAILABILITY_COLUMNS, [{
+                "team": "LAR",
+                "gsis_id": "00-0039075",
+                "player": "Puka Nacua",
+                "availability_probability": "0.70",
+                "offense_snap_share_low": "",
+                "offense_snap_share_base": "",
+                "offense_snap_share_high": "",
+                "defense_snap_share_low": "",
+                "defense_snap_share_base": "",
+                "defense_snap_share_high": "",
+                "source_as_of": self.AS_OF,
+                "source_note": "source note",
+                "role_note": "",
+            }])
+            audit_path = directory / "coverage.json"
+            audit_path.write_text(json.dumps({
+                "source": "NFL official injury report",
+                "source_as_of": self.AS_OF,
+                "raw_source_sha256": "0" * 64,
+                "teams_processed": sorted(pgo_model.CURRENT_TEAMS),
+            }), encoding="utf-8")
+
+            _, receipt = pgo_challenger.load_availability_overlay(
+                overlay_path, self.AS_OF, coverage_path=audit_path
+            )
+            self.assertTrue(receipt["coverage"]["passed"])
+            self.assertEqual(
+                receipt["coverage"]["teams_processed"],
+                sorted(pgo_model.CURRENT_TEAMS),
+            )
+
+            audit_path.write_text(json.dumps({
+                "source": "NFL official injury report",
+                "source_as_of": self.AS_OF,
+                "raw_source_sha256": "0" * 64,
+                "teams_processed": ["LAR"],
+            }), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "all 32 teams"):
+                pgo_challenger.load_availability_overlay(
+                    overlay_path, self.AS_OF, coverage_path=audit_path
+                )
+
+    def test_role_training_as_of_ignores_post_boundary_snap_mutation(self):
+        with tempfile.TemporaryDirectory() as temp:
+            directory = Path(temp)
+            paths = _synthetic_paths(directory)
+            _add_role_player(paths, directory)
+            before = pgo_challenger.build_role_training_rows(
+                paths, 4, as_of="2013-09-08T12:00:00-04:00"
+            )
+            snap_path = paths[("snap_counts", 2013)]
+            with open(snap_path, encoding="utf-8", newline="") as handle:
+                rows = list(csv.DictReader(handle))
+            for row in rows:
+                if row["pfr_player_id"] == "pfr-future-wr" and row["week"] == "2":
+                    row["offense_snaps"] = "99"
+            _write_csv(snap_path, pgo_sources.SNAP_COLUMNS, rows)
+            after = pgo_challenger.build_role_training_rows(
+                paths, 4, as_of="2013-09-08T12:00:00-04:00"
+            )
+
+        self.assertEqual(before, after)
+
+    def test_loads_dated_player_overlay_and_rejects_future_rows(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "availability.csv"
+            _write_csv(path, pgo_challenger.AVAILABILITY_COLUMNS, [{
+                "team": "LAR",
+                "gsis_id": "00-0039075",
+                "player": "Puka Nacua",
+                "availability_probability": "0.70",
+                "offense_snap_share_low": "",
+                "offense_snap_share_base": "",
+                "offense_snap_share_high": "",
+                "defense_snap_share_low": "",
+                "defense_snap_share_base": "",
+                "defense_snap_share_high": "",
+                "source_as_of": self.AS_OF,
+                "source_note": "Sean McCabe: dinged; expected around Week 1",
+                "role_note": "",
+            }])
+
+            overlay, receipt = pgo_challenger.load_availability_overlay(
+                path, self.AS_OF
+            )
+
+        self.assertEqual(
+            overlay[("LAR", "00-0039075")]["availability_probability"], 0.70
+        )
+        self.assertEqual(receipt["row_count"], 1)
+        self.assertEqual(receipt["source_as_of"], self.AS_OF)
+
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "future.csv"
+            _write_csv(path, pgo_challenger.AVAILABILITY_COLUMNS, [{
+                "team": "LAR",
+                "gsis_id": "00-0039075",
+                "player": "Puka Nacua",
+                "availability_probability": "0.70",
+                "offense_snap_share_low": "",
+                "offense_snap_share_base": "",
+                "offense_snap_share_high": "",
+                "defense_snap_share_low": "",
+                "defense_snap_share_base": "",
+                "defense_snap_share_high": "",
+                "source_as_of": "2026-08-19T00:00:00-04:00",
+                "source_note": "future input",
+                "role_note": "",
+            }])
+
+            with self.assertRaisesRegex(ValueError, "newer than model"):
+                pgo_challenger.load_availability_overlay(path, self.AS_OF)
+
+    def test_overlay_changes_current_lineup_but_not_full_strength(self):
+        players = {
+            "puka": {
+                "gsis_id": "00-0039075",
+                "position": "WR",
+                "probability": 1.0,
+                "offense_snap_share": 0.50,
+                "defense_snap_share": 0.0,
+            },
+        }
+        overlay = {("LAR", "00-0039075"): {
+            "availability_probability": 0.70,
+            "offense_snap_share": None,
+            "defense_snap_share": None,
+        }}
+
+        updated, matched = pgo_challenger.apply_availability_overlay(
+            "LAR", players, overlay
+        )
+        full, current = pgo_challenger.lineup_views(
+            "LAR", {"LAR": updated}, {"pgo_v0": 0.0}
+        )
+
+        self.assertEqual(matched, {("LAR", "00-0039075")})
+        self.assertEqual(full["offense_availability"], 0.0)
+        self.assertAlmostEqual(current["offense_availability"], -0.15)
+
+    def test_role_scenario_supplies_missing_snap_share(self):
+        players = {
+            "tyson": {
+                "gsis_id": "00-0041029",
+                "position": "WR",
+                "probability": 1.0,
+                "offense_snap_share": None,
+                "defense_snap_share": 0.0,
+            },
+        }
+        overlay = {("NO", "00-0041029"): {
+            "availability_probability": 0.0,
+            "offense_snap_share": 0.30,
+            "defense_snap_share": None,
+        }}
+
+        updated, matched = pgo_challenger.apply_availability_overlay(
+            "NO", players, overlay
+        )
+        full, current = pgo_challenger.lineup_views(
+            "NO", {"NO": updated}, {"pgo_v0": 0.0}
+        )
+
+        self.assertEqual(matched, {("NO", "00-0041029")})
+        self.assertEqual(full["offense_availability"], 0.0)
+        self.assertAlmostEqual(current["offense_availability"], -0.30)
+
+    def test_generic_role_prior_applies_to_any_team_only_when_role_is_missing(self):
+        players = {
+            "rookie-wr": {
+                "gsis_id": "rookie-wr",
+                "position": "WR",
+                "probability": 1.0,
+                "offense_snap_share": None,
+                "defense_snap_share": None,
+            },
+            "known-wr": {
+                "gsis_id": "known-wr",
+                "position": "WR",
+                "probability": 1.0,
+                "offense_snap_share": 0.80,
+                "defense_snap_share": 0.0,
+            },
+        }
+        overlay = {
+            ("BUF", "rookie-wr"): {
+                "availability_probability": 0.0,
+                "offense_snap_share": None,
+                "defense_snap_share": None,
+            },
+            ("BUF", "known-wr"): {
+                "availability_probability": 0.0,
+                "offense_snap_share": None,
+                "defense_snap_share": None,
+            },
+        }
+
+        updated, matched = pgo_challenger.apply_availability_overlay(
+            "BUF", players, overlay, role_scenario="base"
+        )
+
+        self.assertEqual(matched, set(overlay))
+        self.assertEqual(updated["rookie-wr"]["offense_snap_share"], 0.30)
+        self.assertEqual(updated["rookie-wr"]["defense_snap_share"], 0.0)
+        self.assertEqual(updated["known-wr"]["offense_snap_share"], 0.80)
+        self.assertEqual(updated["known-wr"]["defense_snap_share"], 0.0)
+
+    def test_generic_role_prior_is_position_aware_and_scenario_aware(self):
+        self.assertEqual(
+            pgo_challenger.role_prior_for_position("WR", "low"),
+            {"offense_snap_share": 0.15, "defense_snap_share": 0.0},
+        )
+        self.assertEqual(
+            pgo_challenger.role_prior_for_position("QB", "high"),
+            {"offense_snap_share": 1.0, "defense_snap_share": 0.0},
+        )
+        self.assertEqual(
+            pgo_challenger.role_prior_for_position("CB", "base"),
+            {"offense_snap_share": 0.0, "defense_snap_share": 0.30},
+        )
+        self.assertIsNone(pgo_challenger.role_prior_for_position("K", "base"))
+
+    def test_role_scenario_selects_low_base_or_high_prior(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "availability.csv"
+            _write_csv(path, pgo_challenger.AVAILABILITY_COLUMNS, [{
+                "team": "NO",
+                "gsis_id": "00-0041029",
+                "player": "Jordyn Tyson",
+                "availability_probability": "0.00",
+                "offense_snap_share_low": "0.15",
+                "offense_snap_share_base": "0.30",
+                "offense_snap_share_high": "0.45",
+                "defense_snap_share_low": "",
+                "defense_snap_share_base": "",
+                "defense_snap_share_high": "",
+                "source_as_of": self.AS_OF,
+                "source_note": "Sean McCabe note: out about two months",
+                "role_note": "Provisional rookie-WR role prior; research-only",
+            }])
+
+            low, _ = pgo_challenger.load_availability_overlay(
+                path, self.AS_OF, role_scenario="low"
+            )
+            base, _ = pgo_challenger.load_availability_overlay(
+                path, self.AS_OF, role_scenario="base"
+            )
+            high, _ = pgo_challenger.load_availability_overlay(
+                path, self.AS_OF, role_scenario="high"
+            )
+
+        key = ("NO", "00-0041029")
+        self.assertEqual(low[key]["offense_snap_share"], 0.15)
+        self.assertEqual(base[key]["offense_snap_share"], 0.30)
+        self.assertEqual(high[key]["offense_snap_share"], 0.45)
+
+    def test_snapshot_rejects_overlay_without_snap_share(self):
+        with tempfile.TemporaryDirectory() as temp:
+            directory = Path(temp)
+            paths = _synthetic_paths(directory)
+            _add_current_roster(
+                paths, directory, team="SD", player="future-k", position="K"
+            )
+
+            with self.assertRaisesRegex(ValueError, "cannot be scored"):
+                pgo_challenger.build_snapshot_states(
+                    paths,
+                    "2026-07-21T12:00:00-04:00",
+                    4,
+                    {("LAC", "gsis-future-k"): {
+                        "availability_probability": 0.0,
+                        "offense_snap_share": None,
+                        "defense_snap_share": None,
+                    }},
+                )
+
+
+    def test_snapshot_applies_generic_role_prior_to_current_lineup(self):
+        with tempfile.TemporaryDirectory() as temp:
+            directory = Path(temp)
+            paths = _synthetic_paths(directory)
+            _add_current_roster(
+                paths, directory, team="SD", player="future-wr", position="WR"
+            )
+
+            states = pgo_challenger.build_snapshot_states(
+                paths,
+                "2026-07-21T12:00:00-04:00",
+                4,
+                {("LAC", "gsis-future-wr"): {
+                    "availability_probability": 0.0,
+                    "offense_snap_share": None,
+                    "defense_snap_share": None,
+                }},
+                role_scenario="low",
+            )
+
+        self.assertAlmostEqual(states["LAC"][0]["offense_availability"], 0.0)
+        self.assertAlmostEqual(states["LAC"][1]["offense_availability"], -0.15)
+
+    def test_generic_role_prior_does_not_change_full_strength_features(self):
+        with tempfile.TemporaryDirectory() as temp:
+            directory = Path(temp)
+            paths = _synthetic_paths(directory)
+            _add_current_roster(
+                paths, directory, team="SD", player="future-wr", position="WR"
+            )
+            baseline = pgo_challenger.build_snapshot_states(
+                paths, "2026-07-21T12:00:00-04:00", 4
+            )
+            overlay = pgo_challenger.build_snapshot_states(
+                paths,
+                "2026-07-21T12:00:00-04:00",
+                4,
+                {("LAC", "gsis-future-wr"): {
+                    "availability_probability": 0.0,
+                    "offense_snap_share": None,
+                    "defense_snap_share": None,
+                }},
+                role_scenario="base",
+            )
+
+        self.assertEqual(baseline["LAC"][0], overlay["LAC"][0])
 
 
 def _pregame_bytes(row):
@@ -581,6 +992,7 @@ class SourceTests(unittest.TestCase):
             "OAK": "LV",
             "SD": "LAC",
             "ARZ": "ARI",
+            "AZ": "ARI",
             "BLT": "BAL",
             "CLV": "CLE",
             "HST": "HOU",
@@ -931,6 +1343,9 @@ class FeatureTests(unittest.TestCase):
     def test_snapshot_as_of_week_two_ignores_later_roster_and_injury(self):
         with tempfile.TemporaryDirectory() as temp:
             paths = _synthetic_paths(Path(temp))
+            historical = pgo_challenger.build_snapshot_states(
+                paths, "2013-09-08T14:00:00-04:00", 4
+            )
             roster_path = paths[("weekly_rosters", 2013)]
             with open(roster_path, encoding="utf-8", newline="") as handle:
                 rosters = list(csv.DictReader(handle))
@@ -946,7 +1361,9 @@ class FeatureTests(unittest.TestCase):
             })
             _write_csv(roster_path, pgo_sources.ROSTER_COLUMNS, rosters)
             injury_path = paths[("injury_reports", 2013)]
-            _write_csv(injury_path, pgo_sources.INJURY_COLUMNS, [{
+            with open(injury_path, encoding="utf-8", newline="") as handle:
+                injuries = list(csv.DictReader(handle))
+            injuries.append({
                 "season": 2013,
                 "week": 3,
                 "team": "SD",
@@ -954,13 +1371,28 @@ class FeatureTests(unittest.TestCase):
                 "position": "QB",
                 "report_status": "Out",
                 "practice_status": "Did Not Participate",
-            }])
+            })
+            _write_csv(injury_path, pgo_sources.INJURY_COLUMNS, injuries)
+            snap_path = paths[("snap_counts", 2013)]
+            with open(snap_path, encoding="utf-8", newline="") as handle:
+                snaps = list(csv.DictReader(handle))
+            snaps.append({
+                "season": 2013,
+                "week": 3,
+                "team": "SD",
+                "pfr_player_id": "pfr-lac-qb",
+                "position": "QB",
+                "offense_snaps": 99,
+                "defense_snaps": 0,
+            })
+            _write_csv(snap_path, pgo_sources.SNAP_COLUMNS, snaps)
 
-            states = pgo_challenger.build_snapshot_states(
+            with_current_source = pgo_challenger.build_snapshot_states(
                 paths, "2013-09-08T14:00:00-04:00", 4
             )
 
-        full, current = states["LAC"]
+        self.assertEqual(historical, with_current_source)
+        full, current = historical["LAC"]
         self.assertEqual(full, current)
 
     def test_current_game_stats_cannot_change_its_own_features(self):
@@ -1302,6 +1734,15 @@ class ModelTests(unittest.TestCase):
             second = pgo_challenger.select_parameters({}, (2016, 2017))
 
         self.assertEqual(first, second)
+
+    def test_parameter_grid_matches_validation_design(self):
+        self.assertEqual(pgo_challenger.HALF_LIFE_GRID, (2, 4, 8, 16, 32))
+        self.assertEqual(
+            pgo_challenger.ALPHA_GRID, (0.25, 1.0, 10.0, 100.0)
+        )
+        self.assertEqual(
+            pgo_challenger.DELTA_GRID, (0.75, 1.0, 1.5)
+        )
 
     def test_unnamed_future_schema_cannot_change_selection(self):
         history = [
@@ -1966,7 +2407,7 @@ class OutputTests(unittest.TestCase):
         return checks
 
     @staticmethod
-    def _ratings():
+    def _ratings(headline_view="full_strength"):
         feature_names = (
             "pgo_v0",
             "qb_epa_per_dropback",
@@ -1993,8 +2434,18 @@ class OutputTests(unittest.TestCase):
                 current["offense_availability"] = -0.25
             states[team] = (full, current)
         return pgo_challenger.build_ratings(
-            states, model, preprocessor, OutputTests.AS_OF
+            states, model, preprocessor, OutputTests.AS_OF, headline_view
         )
+
+    def test_current_lineup_can_be_selected_as_explicit_headline(self):
+        row = next(
+            row for row in self._ratings("current_lineup")
+            if row["availability_adjustment"] != 0.0
+        )
+
+        self.assertEqual(row["headline_view"], "current_lineup")
+        self.assertEqual(row["headline_rating"], row["current_lineup_rating"])
+        self.assertNotEqual(row["headline_rating"], row["full_strength_rating"])
 
     @staticmethod
     def _passing_audit():
@@ -2515,6 +2966,12 @@ class OutputTests(unittest.TestCase):
         offline_freeze.assert_not_called()
         self.assertEqual(first_hashes, second_hashes)
         self.assertEqual(backtest["status"], "HOLD")
+        features = set(backtest["feature_manifest"]["features"])
+        self.assertTrue({
+            "offense_availability_concentration",
+            "defense_availability_concentration",
+            "qb_depth_uncertainty",
+        }.issubset(features))
         self.assertEqual(
             audit["coverage"]["schedule_team_games"],
             {
@@ -2782,6 +3239,61 @@ class LineupTests(unittest.TestCase):
                 },
             }
         }
+
+    def test_availability_concentration_squares_prior_snap_share(self):
+        concentrated = [
+            {"offense_snap_share": 0.8, "probability": 0.0},
+        ]
+        diffuse = [
+            {"offense_snap_share": 0.4, "probability": 0.0},
+            {"offense_snap_share": 0.4, "probability": 0.0},
+        ]
+
+        concentrated_value = pgo_challenger._unavailable_concentration(
+            concentrated, "offense_snap_share"
+        )
+        diffuse_value = pgo_challenger._unavailable_concentration(
+            diffuse, "offense_snap_share"
+        )
+
+        self.assertAlmostEqual(concentrated_value, 0.64)
+        self.assertAlmostEqual(diffuse_value, 0.32)
+        self.assertGreater(concentrated_value, diffuse_value)
+        self.assertIsNone(
+            pgo_challenger._unavailable_concentration(
+                [{"probability": 0.0}], "offense_snap_share"
+            )
+        )
+
+    def test_qb_depth_uncertainty_uses_existing_probability_weights(self):
+        depth_chart = [
+            ("starter", {"qb_value": 1.0, "probability": 0.5}),
+            ("backup", {"qb_value": 0.0, "probability": 1.0}),
+        ]
+
+        self.assertAlmostEqual(
+            pgo_challenger._expected_qb_uncertainty(depth_chart), 0.25
+        )
+
+    def test_qb_depth_uncertainty_stays_missing_when_probability_mass_is_unmodeled(self):
+        depth_chart = [
+            ("starter", {"qb_value": 1.0, "probability": 0.0}),
+        ]
+
+        self.assertIsNone(pgo_challenger._expected_qb_uncertainty(depth_chart))
+
+    def test_lineup_fragility_features_are_zero_when_everyone_is_available(self):
+        full, current = pgo_challenger.lineup_views(
+            "LV", self._snapshot(starter_probability=1.0), {}
+        )
+
+        for name in (
+            "offense_availability_concentration",
+            "defense_availability_concentration",
+            "qb_depth_uncertainty",
+        ):
+            self.assertEqual(full[name], 0.0)
+            self.assertEqual(current[name], 0.0)
 
     def test_active_player_has_zero_availability_adjustment(self):
         full, current = pgo_challenger.lineup_views(
