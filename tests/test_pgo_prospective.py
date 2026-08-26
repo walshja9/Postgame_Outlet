@@ -587,6 +587,80 @@ class ProspectiveBlendLockTests(unittest.TestCase):
             self.assertEqual(pgo_prospective._cli_derive_blend(mismatch), 1)
             self.assertFalse(mismatch.output_dir.exists())
 
+    def test_cli_refuses_attestation_aliases_without_writing_outputs(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            base_lock = root / "base.json"
+            base_predictions = root / "base.csv"
+            receipt = root / "development.json"
+            base_lock.write_bytes(pgo_prospective.serialize_lock(self.base_lock).encode("utf-8"))
+            base_predictions.write_text(
+                pgo_prospective._prediction_csv(self.base_lock),
+                encoding="utf-8",
+                newline="",
+            )
+            receipt.write_bytes(self.development_receipt_bytes)
+
+            for name in ("prospective_lock.json", "prospective_predictions.csv"):
+                with self.subTest(name=name):
+                    output_dir = root / name.removesuffix(".json").removesuffix(".csv")
+                    args = SimpleNamespace(
+                        base_lock=base_lock,
+                        base_predictions=base_predictions,
+                        development_receipt=receipt,
+                        as_of=self.as_of,
+                        output_dir=output_dir,
+                        attestation_output=output_dir / name,
+                    )
+                    self.assertEqual(pgo_prospective._cli_derive_blend(args), 1)
+                    self.assertFalse(output_dir.exists())
+
+    def test_cli_rolls_back_all_outputs_when_any_write_fails(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            base_lock = root / "base.json"
+            base_predictions = root / "base.csv"
+            receipt = root / "development.json"
+            base_lock.write_bytes(pgo_prospective.serialize_lock(self.base_lock).encode("utf-8"))
+            base_predictions.write_text(
+                pgo_prospective._prediction_csv(self.base_lock),
+                encoding="utf-8",
+                newline="",
+            )
+            receipt.write_bytes(self.development_receipt_bytes)
+            write = pgo_prospective.atomic_write_text
+
+            for failing_write in (1, 2, 3):
+                with self.subTest(failing_write=failing_write):
+                    output_dir = root / f"derived-{failing_write}"
+                    attestation = root / f"attestation-{failing_write}.json"
+                    args = SimpleNamespace(
+                        base_lock=base_lock,
+                        base_predictions=base_predictions,
+                        development_receipt=receipt,
+                        as_of=self.as_of,
+                        output_dir=output_dir,
+                        attestation_output=attestation,
+                    )
+                    calls = 0
+
+                    def fail_write(path, content):
+                        nonlocal calls
+                        calls += 1
+                        if calls == failing_write:
+                            raise OSError("controlled output failure")
+                        write(path, content)
+
+                    with patch.object(pgo_prospective, "atomic_write_text", fail_write):
+                        try:
+                            result = pgo_prospective._cli_derive_blend(args)
+                        except OSError:
+                            result = None
+                    self.assertEqual(
+                        (result, output_dir.exists(), attestation.exists()),
+                        (1, False, False),
+                    )
+
     def test_attestation_rejects_substituted_evidence_inputs(self):
         derived = self._derived()
         base_lock_bytes = pgo_prospective.serialize_lock(self.base_lock).encode("utf-8")

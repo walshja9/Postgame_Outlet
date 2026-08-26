@@ -1396,7 +1396,23 @@ def _cli_develop_blend(args):
 
 
 def _cli_derive_blend(args):
-    if args.output_dir.exists() or args.attestation_output.exists():
+    output_paths = (
+        args.output_dir / "prospective_lock.json",
+        args.output_dir / "prospective_predictions.csv",
+        args.attestation_output,
+    )
+    try:
+        resolved_output_dir = args.output_dir.resolve()
+        resolved_outputs = tuple(path.resolve() for path in output_paths)
+    except OSError:
+        return 1
+    if (
+        args.output_dir.exists()
+        or args.output_dir.is_symlink()
+        or any(path.exists() or path.is_symlink() for path in output_paths)
+        or len(set(resolved_outputs)) != len(resolved_outputs)
+        or resolved_outputs[-1].is_relative_to(resolved_output_dir)
+    ):
         return 1
     try:
         base_lock_bytes = args.base_lock.read_bytes()
@@ -1419,11 +1435,18 @@ def _cli_derive_blend(args):
         )
     except (OSError, TypeError, ValueError, json.JSONDecodeError):
         return 1
-    atomic_write_text(args.output_dir / "prospective_lock.json", derived_lock_bytes.decode("utf-8"))
-    atomic_write_text(
-        args.output_dir / "prospective_predictions.csv", derived_prediction_bytes.decode("utf-8")
-    )
-    atomic_write_text(args.attestation_output, _canonical(attestation) + "\n")
+    try:
+        atomic_write_text(output_paths[0], derived_lock_bytes.decode("utf-8"))
+        atomic_write_text(output_paths[1], derived_prediction_bytes.decode("utf-8"))
+        atomic_write_text(output_paths[2], _canonical(attestation) + "\n")
+    except OSError:
+        for path in output_paths:
+            path.unlink(missing_ok=True)
+        try:
+            args.output_dir.rmdir()
+        except FileNotFoundError:
+            pass
+        return 1
     return 0
 
 
