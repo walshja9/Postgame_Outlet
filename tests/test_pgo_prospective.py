@@ -3,6 +3,7 @@ import csv
 import json
 import math
 import os
+import subprocess
 import tempfile
 import unittest
 from copy import deepcopy
@@ -17,6 +18,25 @@ import pgo_sources
 
 
 AS_OF = "2026-08-20T12:00:00-04:00"
+
+
+class ProspectiveBlendByteContractTests(unittest.TestCase):
+    def test_blend_json_files_have_lf_checkout_attribute(self):
+        result = subprocess.run(
+            [
+                "git", "check-attr", "eol", "--",
+                "research/pgo_stability_blend/development.json",
+                "research/pgo_stability_blend/prospective_attestation.json",
+            ],
+            cwd=Path(__file__).resolve().parents[1],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.stdout.splitlines(), [
+            "research/pgo_stability_blend/development.json: eol: lf",
+            "research/pgo_stability_blend/prospective_attestation.json: eol: lf",
+        ])
 
 
 def _sha256(value):
