@@ -298,7 +298,7 @@ def role_prior_for_position(position, role_scenario="base"):
     }
 
 
-def _availability_coverage(path, source_as_of):
+def _availability_coverage(path, source_as_of, overlay):
     if path is None:
         return {
             "passed": False,
@@ -314,24 +314,92 @@ def _availability_coverage(path, source_as_of):
     source = str(data.get("source", "")).strip()
     stamp = str(data.get("source_as_of", "")).strip()
     raw_hash = str(data.get("raw_source_sha256", "")).strip().lower()
-    teams = {
-        normalize_team(team) for team in data.get("teams_processed", ())
-    }
     expected = set(pgo_model.CURRENT_TEAMS)
     if not source or not stamp or len(raw_hash) != 64 or any(
         character not in "0123456789abcdef" for character in raw_hash
     ):
         raise ValueError("Availability coverage audit metadata is incomplete")
-    if _parse_datetime(stamp) != _parse_datetime(source_as_of):
+    if source_as_of is not None and (
+        _parse_datetime(stamp) != _parse_datetime(source_as_of)
+    ):
         raise ValueError("Availability coverage timestamp does not match overlay")
-    if teams != expected:
+
+    teams_raw = data.get("teams_processed")
+    if not isinstance(teams_raw, list):
         raise ValueError("Availability coverage audit must contain all 32 teams")
+    try:
+        teams = [normalize_team(team) for team in teams_raw]
+    except (AttributeError, TypeError, ValueError) as error:
+        raise ValueError(
+            "Availability coverage audit must contain all 32 teams"
+        ) from error
+    if (
+        len(teams) != len(expected)
+        or len(set(teams)) != len(expected)
+        or set(teams) != expected
+        or any(str(raw).strip() != team for raw, team in zip(teams_raw, teams))
+    ):
+        raise ValueError(
+            "Availability coverage audit must contain all 32 teams canonically and exactly once"
+        )
+
+    counts = data.get("team_row_counts")
+    if not isinstance(counts, dict) or set(counts) != expected:
+        raise ValueError(
+            "Availability coverage team_row_counts must contain all 32 teams"
+        )
+    if any(type(value) is not int or value < 0 for value in counts.values()):
+        raise ValueError(
+            "Availability coverage team_row_counts must be nonnegative integers"
+        )
+    player_row_count = data.get("player_row_count")
+    if type(player_row_count) is not int or player_row_count < 0:
+        raise ValueError(
+            "Availability coverage player_row_count must be a nonnegative integer"
+        )
+    if player_row_count != sum(counts.values()):
+        raise ValueError(
+            "Availability coverage player_row_count does not match team_row_counts"
+        )
+
+    actual_counts = {team: 0 for team in pgo_model.CURRENT_TEAMS}
+    for team, _ in overlay:
+        actual_counts[team] += 1
+    if counts != actual_counts:
+        raise ValueError(
+            "Availability coverage team_row_counts do not match overlay"
+        )
+
+    keys_raw = data.get("overlay_player_keys")
+    if not isinstance(keys_raw, list):
+        raise ValueError("Availability coverage overlay_player_keys must be a list")
+    keys = []
+    for item in keys_raw:
+        if not isinstance(item, dict):
+            raise ValueError(
+                "Availability coverage overlay_player_keys must contain objects"
+            )
+        team = str(item.get("team", "")).strip()
+        gsis_id = str(item.get("gsis_id", "")).strip()
+        if team not in expected or not gsis_id:
+            raise ValueError("Invalid availability coverage overlay player key")
+        keys.append((team, gsis_id))
+    if len(keys) != len(set(keys)) or set(keys) != set(overlay):
+        raise ValueError(
+            "Availability coverage overlay_player_keys do not match overlay"
+        )
     return {
         "passed": True,
         "source": source,
         "source_as_of": stamp,
         "raw_source_sha256": raw_hash,
-        "teams_processed": sorted(teams),
+        "teams_processed": sorted(expected),
+        "team_row_counts": counts,
+        "player_row_count": player_row_count,
+        "overlay_player_keys": [
+            {"team": team, "gsis_id": gsis_id}
+            for team, gsis_id in sorted(keys)
+        ],
         "path": str(path.resolve()),
         "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
     }
@@ -425,16 +493,23 @@ def load_availability_overlay(
                 **role_values,
             }
             source_as_of.add(stamp)
-    if len(source_as_of) != 1:
+    if len(source_as_of) > 1:
         raise ValueError("Availability overlay must have one source timestamp")
-    source_stamp = next(iter(source_as_of))
+    source_stamp = next(iter(source_as_of), None)
+    coverage = _availability_coverage(coverage_path, source_stamp, overlay)
+    if source_stamp is None:
+        if not coverage.get("passed"):
+            raise ValueError("Availability overlay must have one source timestamp")
+        source_stamp = coverage["source_as_of"]
+        if _parse_datetime(source_stamp) > model_as_of:
+            raise ValueError("Availability coverage is newer than model as-of")
     return overlay, {
         "path": str(path.resolve()),
         "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
         "row_count": len(overlay),
         "source_as_of": source_stamp,
         "role_scenario": role_scenario,
-        "coverage": _availability_coverage(coverage_path, source_stamp),
+        "coverage": coverage,
     }
 
 

@@ -1,3 +1,4 @@
+import copy
 import csv
 import gzip
 import hashlib
@@ -281,6 +282,14 @@ class AvailabilityOverlayTests(unittest.TestCase):
                 "source_as_of": self.AS_OF,
                 "raw_source_sha256": "0" * 64,
                 "teams_processed": sorted(pgo_model.CURRENT_TEAMS),
+                "team_row_counts": {
+                    team: int(team == "LAR")
+                    for team in pgo_model.CURRENT_TEAMS
+                },
+                "player_row_count": 1,
+                "overlay_player_keys": [{
+                    "team": "LAR", "gsis_id": "00-0039075",
+                }],
             }), encoding="utf-8")
 
             _, receipt = pgo_challenger.load_availability_overlay(
@@ -302,6 +311,85 @@ class AvailabilityOverlayTests(unittest.TestCase):
                 pgo_challenger.load_availability_overlay(
                     overlay_path, self.AS_OF, coverage_path=audit_path
                 )
+
+    def test_availability_coverage_audit_reconciles_overlay(self):
+        with tempfile.TemporaryDirectory() as temp:
+            directory = Path(temp)
+            overlay_path = directory / "availability.csv"
+            _write_csv(overlay_path, pgo_challenger.AVAILABILITY_COLUMNS, [{
+                "team": "LAR",
+                "gsis_id": "00-0039075",
+                "player": "Puka Nacua",
+                "availability_probability": "0.70",
+                "offense_snap_share_low": "",
+                "offense_snap_share_base": "",
+                "offense_snap_share_high": "",
+                "defense_snap_share_low": "",
+                "defense_snap_share_base": "",
+                "defense_snap_share_high": "",
+                "source_as_of": self.AS_OF,
+                "source_note": "source note",
+                "role_note": "",
+            }])
+            audit_path = directory / "coverage.json"
+            valid = {
+                "source": "NFL official injury report",
+                "source_as_of": self.AS_OF,
+                "raw_source_sha256": "0" * 64,
+                "teams_processed": list(pgo_model.CURRENT_TEAMS),
+                "team_row_counts": {
+                    team: int(team == "LAR")
+                    for team in pgo_model.CURRENT_TEAMS
+                },
+                "player_row_count": 1,
+                "overlay_player_keys": [{
+                    "team": "LAR", "gsis_id": "00-0039075",
+                }],
+            }
+
+            bad_receipts = []
+            duplicate_team = copy.deepcopy(valid)
+            duplicate_team["teams_processed"].append("LAR")
+            bad_receipts.append(("duplicate team", duplicate_team, "exactly once"))
+            missing_count = copy.deepcopy(valid)
+            del missing_count["team_row_counts"]["ARI"]
+            bad_receipts.append(("missing count", missing_count, "team_row_counts"))
+            boolean_count = copy.deepcopy(valid)
+            boolean_count["team_row_counts"]["LAR"] = True
+            bad_receipts.append(("boolean count", boolean_count, "nonnegative integers"))
+            wrong_total = copy.deepcopy(valid)
+            wrong_total["player_row_count"] = 2
+            bad_receipts.append(("wrong total", wrong_total, "player_row_count"))
+            wrong_team = copy.deepcopy(valid)
+            wrong_team["team_row_counts"]["LAR"] = 0
+            wrong_team["team_row_counts"]["ARI"] = 1
+            bad_receipts.append(("wrong team", wrong_team, "do not match overlay"))
+            wrong_key = copy.deepcopy(valid)
+            wrong_key["overlay_player_keys"][0]["gsis_id"] = "wrong"
+            bad_receipts.append(("wrong key", wrong_key, "do not match overlay"))
+
+            for label, receipt, message in bad_receipts:
+                with self.subTest(label=label):
+                    audit_path.write_text(json.dumps(receipt), encoding="utf-8")
+                    with self.assertRaisesRegex(ValueError, message):
+                        pgo_challenger.load_availability_overlay(
+                            overlay_path, self.AS_OF, coverage_path=audit_path
+                        )
+
+            empty_overlay = directory / "empty.csv"
+            _write_csv(empty_overlay, pgo_challenger.AVAILABILITY_COLUMNS, [])
+            empty_receipt = copy.deepcopy(valid)
+            empty_receipt["team_row_counts"] = {
+                team: 0 for team in pgo_model.CURRENT_TEAMS
+            }
+            empty_receipt["player_row_count"] = 0
+            empty_receipt["overlay_player_keys"] = []
+            audit_path.write_text(json.dumps(empty_receipt), encoding="utf-8")
+            overlay, receipt = pgo_challenger.load_availability_overlay(
+                empty_overlay, self.AS_OF, coverage_path=audit_path
+            )
+            self.assertEqual(overlay, {})
+            self.assertTrue(receipt["coverage"]["passed"])
 
     def test_role_training_as_of_ignores_post_boundary_snap_mutation(self):
         with tempfile.TemporaryDirectory() as temp:
