@@ -3102,11 +3102,15 @@ class OutputTests(unittest.TestCase):
         self.assertEqual(first_hashes, second_hashes)
         self.assertEqual(backtest["status"], "HOLD")
         features = set(backtest["feature_manifest"]["features"])
-        self.assertTrue({
-            "offense_availability_concentration",
-            "defense_availability_concentration",
-            "qb_depth_uncertainty",
-        }.isdisjoint(features))
+        canonical = json.loads(
+            (pgo_challenger.DEFAULT_OUTPUT_DIR / "backtest.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(
+            features,
+            set(canonical["feature_manifest"]["features"]),
+        )
         self.assertEqual(
             audit["coverage"]["schedule_team_games"],
             {
