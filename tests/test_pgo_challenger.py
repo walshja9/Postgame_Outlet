@@ -3139,6 +3139,35 @@ class OutputTests(unittest.TestCase):
         freeze.assert_not_called()
         self.assertTrue(error.getvalue().startswith("ERROR: "))
 
+    def test_freeze_refuses_to_replace_existing_source_lock(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            lock_path = root / "sources.lock.json"
+            lock_path.write_bytes(b"prior successful lock\n")
+            error = io.StringIO()
+            with (
+                patch.object(pgo_sources, "freeze_sources") as freeze,
+                patch.object(pgo_challenger, "_run_research_analysis") as analyze,
+                redirect_stderr(error),
+            ):
+                code = pgo_challenger.main([
+                    "--freeze-sources",
+                    "--as-of", self.AS_OF,
+                    "--lock-path", str(lock_path),
+                    "--cache-dir", str(root / "cache"),
+                    "--output-dir", str(root / "output"),
+                ])
+
+            self.assertEqual(code, 2)
+            self.assertEqual(lock_path.read_bytes(), b"prior successful lock\n")
+            freeze.assert_not_called()
+            analyze.assert_not_called()
+            self.assertEqual(
+                error.getvalue(),
+                "ERROR: Refusing to replace existing source lock; use a new "
+                "--lock-path\n",
+            )
+
     def test_current_team_audit_requires_2026_roster_rows(self):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp, "current-roster.csv")
@@ -3161,11 +3190,10 @@ class OutputTests(unittest.TestCase):
         self.assertEqual(coverage["denominator"], 32)
         self.assertFalse(coverage["passed"])
 
-    def test_failed_post_download_validation_preserves_prior_lock(self):
+    def test_failed_post_download_validation_does_not_create_lock(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             lock_path = root / "sources.lock.json"
-            lock_path.write_bytes(b"prior successful lock\n")
 
             def freeze(specs, cache_dir, target, frozen_at):
                 Path(target).write_text('{"sources": []}\n', encoding="utf-8")
@@ -3189,7 +3217,7 @@ class OutputTests(unittest.TestCase):
                 ])
 
             self.assertEqual(code, 2)
-            self.assertEqual(lock_path.read_bytes(), b"prior successful lock\n")
+            self.assertFalse(lock_path.exists())
             self.assertEqual(error.getvalue(), "ERROR: post-download schema failure\n")
 
     def test_malformed_lock_exits_two_without_replacing_receipts(self):

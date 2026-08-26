@@ -2807,6 +2807,11 @@ def main(argv=None):
         _parse_datetime(args.as_of)
         lock_path = args.lock_path
         if args.freeze_sources:
+            if args.lock_path.exists():
+                raise ValueError(
+                    "Refusing to replace existing source lock; use a new "
+                    "--lock-path"
+                )
             args.lock_path.parent.mkdir(parents=True, exist_ok=True)
             with tempfile.NamedTemporaryFile(
                 dir=args.lock_path.parent,
