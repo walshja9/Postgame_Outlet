@@ -430,7 +430,7 @@ class ProspectiveBlendLockTests(unittest.TestCase):
             base_lock = root / "base.json"
             base_predictions = root / "base.csv"
             receipt = root / "development.json"
-            base_lock.write_text(pgo_prospective.serialize_lock(self.base_lock), encoding="utf-8")
+            base_lock.write_bytes(pgo_prospective.serialize_lock(self.base_lock).encode("utf-8"))
             base_predictions.write_text(pgo_prospective._prediction_csv(self.base_lock), encoding="utf-8", newline="")
             receipt.write_bytes(self.development_receipt_bytes)
             args = SimpleNamespace(
@@ -455,6 +455,32 @@ class ProspectiveBlendLockTests(unittest.TestCase):
             })
             self.assertEqual(pgo_prospective._cli_derive_blend(mismatch), 1)
             self.assertFalse(mismatch.output_dir.exists())
+
+    def test_attestation_rejects_substituted_evidence_inputs(self):
+        derived = self._derived()
+        base_lock_bytes = pgo_prospective.serialize_lock(self.base_lock).encode("utf-8")
+        base_prediction_bytes = pgo_prospective._prediction_csv(self.base_lock).encode("utf-8")
+        derived_lock_bytes = pgo_prospective.serialize_lock(derived).encode("utf-8")
+        derived_prediction_bytes = pgo_prospective._prediction_csv(derived).encode("utf-8")
+
+        cases = [
+            (self.base_lock, base_lock_bytes, b"unrelated development receipt"),
+            (self.base_lock, base_lock_bytes + b" ", self.development_receipt_bytes),
+        ]
+        different_base = deepcopy(self.base_lock)
+        different_base["source_lock_sha256"] = _sha256("different base")
+        different_base["artifact_sha256"] = pgo_prospective._artifact_hash(different_base)
+        cases.append((
+            different_base,
+            pgo_prospective.serialize_lock(different_base).encode("utf-8"),
+            self.development_receipt_bytes,
+        ))
+        for base, lock_bytes, receipt_bytes in cases:
+            with self.subTest(base=base is self.base_lock), self.assertRaises(ValueError):
+                pgo_prospective.build_prospective_attestation(
+                    base, lock_bytes, base_prediction_bytes, derived,
+                    derived_lock_bytes, derived_prediction_bytes, receipt_bytes,
+                )
 
 
 class ProspectiveSchemaOneRegressionTests(unittest.TestCase):

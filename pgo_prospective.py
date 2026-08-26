@@ -543,7 +543,11 @@ def build_prospective_attestation(
     _verify_lock(base_lock)
     _verify_lock(derived_lock)
     if (
-        base_prediction_bytes != _prediction_csv(base_lock).encode("utf-8")
+        base_lock_bytes != serialize_lock(base_lock).encode("utf-8")
+        or hashlib.sha256(development_receipt_bytes).hexdigest()
+        != derived_lock["candidate"]["development_receipt_sha256"]
+        or _base_lock_from_derived(derived_lock) != base_lock
+        or base_prediction_bytes != _prediction_csv(base_lock).encode("utf-8")
         or derived_lock_bytes != serialize_lock(derived_lock).encode("utf-8")
         or derived_prediction_bytes != _prediction_csv(derived_lock).encode("utf-8")
     ):
