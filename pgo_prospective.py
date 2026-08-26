@@ -1424,7 +1424,11 @@ def _cli_grade(args):
     lock = {}
     try:
         lock_bytes = Path(args.lock_file).read_bytes()
-        lock = json.loads(lock_bytes)
+        parsed_lock = json.loads(lock_bytes)
+        if not isinstance(parsed_lock, dict):
+            raise ValueError("Lock must be a JSON object")
+        _canonical(parsed_lock)
+        lock = parsed_lock
         attestation = None
         if lock.get("schema_version") == 2:
             attestation_file = getattr(args, "attestation_file", None)
@@ -1450,11 +1454,47 @@ def _cli_develop_blend(args):
     return 0
 
 
+def _detach_output(target, expected_state):
+    quarantine = None
+    try:
+        descriptor, name = tempfile.mkstemp(
+            dir=target.parent,
+            prefix=f".{target.name}.",
+            suffix=".rollback",
+        )
+        os.close(descriptor)
+        quarantine = Path(name)
+        os.replace(target, quarantine)
+    except BaseException:
+        if quarantine is not None:
+            try:
+                quarantine.unlink()
+            except BaseException:
+                pass
+        return
+    try:
+        is_owned = os.path.samestat(
+            quarantine.stat(follow_symlinks=False), expected_state
+        )
+    except BaseException:
+        return
+    if not is_owned:
+        try:
+            os.link(quarantine, target)
+        except BaseException:
+            return
+    try:
+        quarantine.unlink()
+    except BaseException:
+        pass
+
+
 def _write_new_outputs(output_dir, outputs):
     staged = []
     owned = {}
     owns_output_dir = False
     success = False
+    failure = None
     try:
         output_dir.mkdir(parents=True)
         owns_output_dir = True
@@ -1471,30 +1511,31 @@ def _write_new_outputs(output_dir, outputs):
             atomic_write_text(staged_path, content)
         for (target, _), staged_path in zip(outputs, staged):
             state = staged_path.stat(follow_symlinks=False)
-            os.link(staged_path, target)
             owned[target] = state
+            os.link(staged_path, target)
         if any(
             not os.path.samestat(target.stat(follow_symlinks=False), state)
             for target, state in owned.items()
         ):
             raise OSError("Output reservation ownership changed")
         success = True
-    except OSError:
+    except BaseException as error:
+        failure = error
         for target, state in owned.items():
-            try:
-                current = target.stat(follow_symlinks=False)
-            except FileNotFoundError:
-                continue
-            if os.path.samestat(current, state):
-                target.unlink()
+            _detach_output(target, state)
     finally:
         for staged_path in staged:
-            staged_path.unlink(missing_ok=True)
+            try:
+                staged_path.unlink(missing_ok=True)
+            except BaseException:
+                pass
         if owns_output_dir and not success:
             try:
                 output_dir.rmdir()
-            except OSError:
+            except BaseException:
                 pass
+    if isinstance(failure, (KeyboardInterrupt, SystemExit)):
+        raise failure
     return success
 
 

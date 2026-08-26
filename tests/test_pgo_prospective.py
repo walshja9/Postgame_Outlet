@@ -268,6 +268,47 @@ class ProspectiveGradeTests(unittest.TestCase):
             self.assertEqual(receipt["status"], "BLOCKED")
             self.assertEqual(receipt["publication_status"], "BLOCKED")
 
+    def test_cli_canonicalizes_blocked_receipt_for_untrusted_lock_json(self):
+        cases = {
+            "array": "[]",
+            "schema-two-nan": (
+                '{"schema_version":2,"candidate":{"kind":"'
+                + pgo_prospective.BLEND_KIND
+                + '"},"source_hashes":{"bad":NaN}}'
+            ),
+            "schema-one-nan": (
+                '{"schema_version":1,"source_hashes":{"bad":NaN}}'
+            ),
+        }
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            results_path = root / "results.csv"
+            results_path.write_text("game_id\n", encoding="utf-8")
+            for name, payload in cases.items():
+                with self.subTest(name=name):
+                    lock_path = root / f"{name}.json"
+                    lock_path.write_text(payload, encoding="utf-8")
+                    output_dir = root / name
+
+                    result = pgo_prospective.main([
+                        "grade", "--lock-file", str(lock_path),
+                        "--results-path", str(results_path),
+                        "--output-dir", str(output_dir),
+                    ])
+
+                    receipt_text = (
+                        output_dir / "prospective_receipt.json"
+                    ).read_text(encoding="utf-8")
+                    receipt = json.loads(receipt_text)
+                    self.assertEqual(result, 1)
+                    self.assertEqual(receipt["status"], "BLOCKED")
+                    self.assertEqual(receipt["schema_version"], 1)
+                    self.assertEqual(receipt["source_hashes"], {})
+                    self.assertNotIn("NaN", receipt_text)
+                    self.assertEqual(
+                        receipt_text, pgo_prospective._canonical(receipt) + "\n"
+                    )
+
     def test_grade_rejects_tampered_lock_prediction_and_hash(self):
         changed_prediction = deepcopy(self.lock)
         changed_prediction["games"][0]["challenger_prediction"] = 99.0
@@ -584,6 +625,28 @@ class ProspectiveBlendLockTests(unittest.TestCase):
         )
         lock["artifact_sha256"] = pgo_prospective._artifact_hash(lock)
 
+    def _cli_args(self, root, name):
+        base_lock = root / "base.json"
+        base_predictions = root / "base.csv"
+        receipt = root / "development.json"
+        base_lock.write_bytes(
+            pgo_prospective.serialize_lock(self.base_lock).encode("utf-8")
+        )
+        base_predictions.write_text(
+            pgo_prospective._prediction_csv(self.base_lock),
+            encoding="utf-8",
+            newline="",
+        )
+        receipt.write_bytes(self.development_receipt_bytes)
+        return SimpleNamespace(
+            base_lock=base_lock,
+            base_predictions=base_predictions,
+            development_receipt=receipt,
+            as_of=self.as_of,
+            output_dir=root / f"derived-{name}",
+            attestation_output=root / f"attestation-{name}.json",
+        )
+
     def test_derives_reconstructable_candidate_lock_without_mutating_base(self):
         derived = self._derived()
         self.assertEqual(derived["schema_version"], 2)
@@ -886,6 +949,126 @@ class ProspectiveBlendLockTests(unittest.TestCase):
                             self.assertFalse(target.exists())
                     if raced_link == 3:
                         self.assertFalse(output_dir.exists())
+
+    def test_cli_cleans_partial_outputs_before_handling_interruption(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            link = os.link
+
+            for error_type in (KeyboardInterrupt, RuntimeError):
+                with self.subTest(error_type=error_type.__name__):
+                    args = self._cli_args(root, error_type.__name__)
+                    targets = (
+                        args.output_dir / "prospective_lock.json",
+                        args.output_dir / "prospective_predictions.csv",
+                        args.attestation_output,
+                    )
+                    calls = 0
+
+                    def interrupt_link(source, target):
+                        nonlocal calls
+                        calls += 1
+                        if calls == 2:
+                            raise error_type("controlled interruption")
+                        link(source, target)
+
+                    caught = None
+                    result = None
+                    try:
+                        with patch.object(os, "link", interrupt_link):
+                            result = pgo_prospective._cli_derive_blend(args)
+                    except BaseException as error:
+                        caught = error
+
+                    if error_type is KeyboardInterrupt:
+                        self.assertIsInstance(caught, KeyboardInterrupt)
+                    else:
+                        self.assertIsNone(caught)
+                        self.assertEqual(result, 1)
+                    self.assertFalse(any(target.exists() for target in targets))
+
+    def test_cli_cleanup_failure_does_not_mask_or_expose_partial_final(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            args = self._cli_args(root, "cleanup-failure")
+            targets = (
+                args.output_dir / "prospective_lock.json",
+                args.output_dir / "prospective_predictions.csv",
+                args.attestation_output,
+            )
+            link = os.link
+            unlink = Path.unlink
+            link_calls = 0
+            cleanup_failed = False
+
+            def fail_second_link(source, target):
+                nonlocal link_calls
+                link_calls += 1
+                if link_calls == 2:
+                    raise OSError("controlled promotion failure")
+                link(source, target)
+
+            def fail_first_cleanup(path, *positional, **keywords):
+                nonlocal cleanup_failed
+                if not cleanup_failed:
+                    cleanup_failed = True
+                    raise PermissionError("controlled cleanup failure")
+                return unlink(path, *positional, **keywords)
+
+            caught = None
+            result = None
+            try:
+                with (
+                    patch.object(os, "link", fail_second_link),
+                    patch.object(Path, "unlink", fail_first_cleanup),
+                ):
+                    result = pgo_prospective._cli_derive_blend(args)
+            except BaseException as error:
+                caught = error
+
+            self.assertTrue(cleanup_failed)
+            self.assertIsNone(caught)
+            self.assertEqual(result, 1)
+            self.assertFalse(any(target.exists() for target in targets))
+
+    def test_cli_detaches_before_identity_check_during_adversarial_swap(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            args = self._cli_args(root, "adversarial-swap")
+            first = args.output_dir / "prospective_lock.json"
+            second = args.output_dir / "prospective_predictions.csv"
+            link = os.link
+            samestat = os.path.samestat
+            link_calls = 0
+            swapped = False
+
+            def race_second_link(source, target):
+                nonlocal link_calls
+                link_calls += 1
+                if link_calls == 2:
+                    Path(target).write_text("external-b", encoding="utf-8")
+                link(source, target)
+
+            def swap_first_before_comparison(left, right):
+                nonlocal swapped
+                if not swapped:
+                    swapped = True
+                    replacement = root / "external-a.swap"
+                    replacement.write_text("external-a", encoding="utf-8")
+                    os.replace(replacement, first)
+                return samestat(left, right)
+
+            with (
+                patch.object(os, "link", race_second_link),
+                patch.object(os.path, "samestat", swap_first_before_comparison),
+            ):
+                result = pgo_prospective._cli_derive_blend(args)
+
+            self.assertEqual(result, 1)
+            self.assertTrue(swapped)
+            self.assertEqual(first.read_text(encoding="utf-8"), "external-a")
+            self.assertEqual(second.read_text(encoding="utf-8"), "external-b")
+            self.assertFalse(args.attestation_output.exists())
 
     def test_attestation_rejects_substituted_evidence_inputs(self):
         derived = self._derived()
