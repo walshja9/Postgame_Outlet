@@ -382,6 +382,21 @@ class ProspectiveBlendDevelopmentTests(unittest.TestCase):
         no_regression["artifact_sha256"] = pgo_prospective._artifact_hash(no_regression)
         with self.assertRaises(ValueError):
             pgo_prospective._verify_development_receipt(no_regression)
+    def test_rehashed_aggregate_interval_tampering_is_rejected(self):
+        changed_interval = deepcopy(self.receipt)
+        changed_interval["aggregate_interval"]["lower"] = 0.0
+        changed_interval["artifact_sha256"] = pgo_prospective._artifact_hash(changed_interval)
+        with self.assertRaises(ValueError):
+            pgo_prospective._verify_development_receipt(changed_interval)
+
+    def test_rehashed_non_selected_grid_tampering_is_rejected(self):
+        changed_non_selected_grid = deepcopy(self.receipt)
+        changed_non_selected_grid["grid_results"][0]["metrics"]["candidate_mae"] = 0.0
+        changed_non_selected_grid["artifact_sha256"] = pgo_prospective._artifact_hash(
+            changed_non_selected_grid
+        )
+        with self.assertRaises(ValueError):
+            pgo_prospective._verify_development_receipt(changed_non_selected_grid)
 
 
 class ProspectiveArtifactSafetyTests(unittest.TestCase):

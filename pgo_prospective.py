@@ -32,6 +32,7 @@ BLEND_FORMULA = "0.75*pgo_v0_prediction+0.25*challenger_prediction"
 BLEND_WEIGHT = 0.25
 BLEND_GRID = tuple(index / 20 for index in range(21))
 DEVELOPMENT_SOURCE_SHA256 = "b697b6f8f5eee9ae1efe607272458964a681f99f440a94f86d8edce2ad5a19b7"
+DEVELOPMENT_ARTIFACT_SHA256 = "83815b10e621ab97ff664ed3d8006aa53da6107dacaaac5040fc1e447808ae5a"
 DEVELOPMENT_GAME_COUNT = 2_127
 DEVELOPMENT_SEASONS = tuple(range(2018, 2026))
 DEVELOPMENT_COLUMNS = (
@@ -746,7 +747,10 @@ def _verify_development_receipt(receipt):
         raise ValueError("Development receipt selected metrics mismatch")
     if receipt["selection"]["selected_pgo_v1_weight"] != BLEND_WEIGHT:
         raise ValueError("Development receipt blend weight mismatch")
-    if not receipt.get("artifact_sha256") or _artifact_hash(receipt) != receipt["artifact_sha256"]:
+    if (
+        receipt.get("artifact_sha256") != DEVELOPMENT_ARTIFACT_SHA256
+        or _artifact_hash(receipt) != receipt["artifact_sha256"]
+    ):
         raise ValueError("Development receipt artifact hash mismatch")
     return receipt
 
