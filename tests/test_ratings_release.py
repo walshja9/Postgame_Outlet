@@ -318,6 +318,42 @@ class GeneratedDocumentTests(unittest.TestCase):
         }
         generate_site.build_html.qb_data = ([], [])
 
+    def test_qb_drawer_uses_prose_for_the_selected_player_role(self):
+        with tempfile.TemporaryDirectory() as temp:
+            writeups = Path(temp, "writeups")
+            qb_writeups = Path(temp, "qb_writeups")
+            writeups.mkdir()
+            qb_writeups.mkdir()
+            (writeups / "MIN.md").write_text(
+                "## Quarterback\n\nStarter-only analysis.", encoding="utf-8"
+            )
+            backup = {
+                "name": "J.J. McCarthy", "team": "Minnesota Vikings",
+                "val": -2.5, "string": 2,
+                "notes": "Near-startable; former 1st-rounder",
+            }
+            starter = {
+                "name": "Kyler Murray", "team": "Minnesota Vikings", "val": -0.5,
+            }
+            with (
+                patch.object(generate_site, "WRITEUPS", str(writeups)),
+                patch.object(generate_site, "QB_WRITEUPS", str(qb_writeups)),
+            ):
+                backup_html = generate_site.build_qb_detail(backup, "backup", 1)
+                starter_html = generate_site.build_qb_detail(starter, "starter", 1)
+                (qb_writeups / f"{generate_site.qb_slug(backup['name'])}.md").write_text(
+                    "Backup-specific analysis.", encoding="utf-8"
+                )
+                overridden_html = generate_site.build_qb_detail(
+                    backup, "backup", 1
+                )
+
+        self.assertIn("Near-startable; former 1st-rounder", backup_html)
+        self.assertNotIn("Starter-only analysis.", backup_html)
+        self.assertIn("Starter-only analysis.", starter_html)
+        self.assertIn("Backup-specific analysis.", overridden_html)
+        self.assertNotIn("Near-startable; former 1st-rounder", overridden_html)
+
     def test_metadata_names_author_edition_and_canonical_page(self):
         generated_at = datetime(2026, 7, 15, 22, 0, tzinfo=timezone.utc)
         with tempfile.TemporaryDirectory() as temp:

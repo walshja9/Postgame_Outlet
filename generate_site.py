@@ -392,8 +392,7 @@ def build_details(rows):
 
 def build_qb_detail(q, kind, rank):
     """Drawer-inner HTML for one QB row: value/tier/rank header, a value bar on
-    the same scale as the team drawer, and the write-up (per-QB override, else
-    the team's Quarterback section, else a graceful stub)."""
+    the same scale as the team drawer, and role-appropriate write-up fallback."""
     abbr, c1, c2 = TEAM.get(q["team"], ("?", "#444", "#888"))
     name = q["name"]
     nm = html.escape(name)
@@ -409,7 +408,7 @@ def build_qb_detail(q, kind, rank):
         rank_line = f'QB #{rank} of 32'
     subtitle = f'{team_full} &middot; {role} &middot; {rank_line}'
 
-    writeup = load_qb_writeup(name, abbr)
+    writeup = load_qb_writeup(name, abbr if kind == "starter" else None)
     if not writeup:  # backups usually have only a one-line note; starters a section
         note = (q.get("notes") or "").strip()
         if note:
