@@ -333,15 +333,15 @@ def _artifact_hash(lock):
     return hashlib.sha256(_canonical(payload).encode("utf-8")).hexdigest()
 
 
-def _prediction_integrity_hash(games):
+def _prediction_integrity_hash(games, include_candidate=False):
+    keys = (
+        "game_id", "pgo_v0_prediction", "challenger_prediction",
+        "challenger_full_strength_prediction", "subgroup_flags",
+    )
+    if include_candidate:
+        keys += ("candidate_prediction",)
     return hashlib.sha256(_canonical([
-        {
-            key: game[key]
-            for key in (
-                "game_id", "pgo_v0_prediction", "challenger_prediction",
-                "challenger_full_strength_prediction", "subgroup_flags",
-            )
-        }
+        {key: game[key] for key in keys}
         for game in games
     ]).encode("utf-8")).hexdigest()
 
@@ -351,15 +351,22 @@ def serialize_lock(lock):
 
 
 def _prediction_csv(lock):
+    columns = PREDICTION_COLUMNS
+    if (
+        lock.get("schema_version") == 2
+        and isinstance(lock.get("candidate"), dict)
+        and lock["candidate"].get("kind") == BLEND_KIND
+    ):
+        columns += ("candidate_prediction",)
     output = io.StringIO(newline="")
-    writer = csv.DictWriter(output, fieldnames=PREDICTION_COLUMNS, lineterminator="\n")
+    writer = csv.DictWriter(output, fieldnames=columns, lineterminator="\n")
     writer.writeheader()
     for game in lock["games"]:
         row = dict(game)
         row["subgroup_flags"] = json.dumps(
             row["subgroup_flags"], sort_keys=True, separators=(",", ":")
         )
-        writer.writerow({name: row.get(name, "") for name in PREDICTION_COLUMNS})
+        writer.writerow({name: row.get(name, "") for name in columns})
     return output.getvalue()
 
 
@@ -381,7 +388,7 @@ GRADE_RESULT_COLUMNS = (
 )
 
 
-def _verify_lock(lock):
+def _verify_schema_one_lock(lock):
     if not isinstance(lock, dict) or lock.get("status") != LOCK_STATUS:
         raise ValueError("Lock status is not LOCKED:")
     games = lock.get("games")
@@ -411,6 +418,202 @@ def _verify_lock(lock):
     if not artifact_hash or _artifact_hash(lock) != artifact_hash:
         raise ValueError("Lock artifact hash mismatch:")
     return games
+
+
+def _base_lock_from_derived(derived_lock):
+    base = deepcopy(derived_lock)
+    for name in (
+        "candidate", "base_lock_artifact_sha256",
+        "base_prediction_integrity_sha256",
+    ):
+        base.pop(name, None)
+    base["schema_version"] = SCHEMA_VERSION
+    for game in base.get("games", []):
+        if isinstance(game, dict):
+            game.pop("candidate_prediction", None)
+    base["prediction_integrity_sha256"] = derived_lock.get(
+        "base_prediction_integrity_sha256", ""
+    )
+    base["artifact_sha256"] = derived_lock.get("base_lock_artifact_sha256", "")
+    return base
+
+
+def _verify_lock(lock):
+    if not isinstance(lock, dict):
+        raise ValueError("Lock status is not LOCKED:")
+    schema_version = lock.get("schema_version")
+    if schema_version == SCHEMA_VERSION:
+        if (
+            any(name in lock for name in (
+                "candidate", "base_lock_artifact_sha256",
+                "base_prediction_integrity_sha256",
+            ))
+            or any("candidate_prediction" in game for game in lock.get("games", []) if isinstance(game, dict))
+        ):
+            raise ValueError("Schema-1 lock has candidate fields:")
+        return _verify_schema_one_lock(lock)
+    if schema_version != 2:
+        raise ValueError("Lock schema mismatch:")
+    candidate = lock.get("candidate")
+    expected_candidate = {
+        "kind": BLEND_KIND,
+        "pgo_v0_weight": 0.75,
+        "pgo_v1_weight": BLEND_WEIGHT,
+        "formula": BLEND_FORMULA,
+    }
+    if not isinstance(candidate, dict) or set(candidate) != {
+        *expected_candidate, "as_of", "development_receipt_sha256",
+    } or any(candidate.get(name) != value for name, value in expected_candidate.items()):
+        raise ValueError("Derived candidate mismatch:")
+    try:
+        candidate_as_of = _timestamp(candidate["as_of"])
+    except (KeyError, ValueError) as error:
+        raise ValueError("Derived candidate timestamp:") from error
+    receipt_hash = candidate.get("development_receipt_sha256", "")
+    if not _is_sha256(receipt_hash):
+        raise ValueError("Derived development receipt hash:")
+    base = _base_lock_from_derived(lock)
+    _verify_lock(base)
+    if lock.get("base_lock_artifact_sha256") != base["artifact_sha256"]:
+        raise ValueError("Derived base artifact hash:")
+    if lock.get("base_prediction_integrity_sha256") != base["prediction_integrity_sha256"]:
+        raise ValueError("Derived base prediction hash:")
+    games = lock["games"]
+    for game in games:
+        if _parse_datetime(candidate_as_of) >= _parse_datetime(game["kickoff"]):
+            raise ValueError("Candidate timestamp is not before kickoff:")
+        try:
+            prediction = _finite(game["candidate_prediction"], "candidate prediction")
+        except (KeyError, ValueError) as error:
+            raise ValueError("Derived candidate prediction:") from error
+        if prediction != _blend_prediction(
+            game["pgo_v0_prediction"], game["challenger_prediction"]
+        ):
+            raise ValueError("Derived candidate prediction:")
+    if lock.get("prediction_integrity_sha256") != _prediction_integrity_hash(
+        games, include_candidate=True
+    ):
+        raise ValueError("Derived prediction integrity:")
+    if not _is_sha256(lock.get("artifact_sha256", "")) or _artifact_hash(lock) != lock["artifact_sha256"]:
+        raise ValueError("Lock artifact hash mismatch:")
+    return games
+
+
+def derive_stability_blend(base_lock, development_receipt, development_file_sha256, as_of):
+    _verify_lock(base_lock)
+    _verify_development_receipt(development_receipt)
+    receipt_bytes = (_canonical(development_receipt) + "\n").encode("utf-8")
+    if development_file_sha256 != hashlib.sha256(receipt_bytes).hexdigest():
+        raise ValueError("Development receipt file hash mismatch")
+    candidate_as_of = _timestamp(as_of)
+    derived = deepcopy(base_lock)
+    derived["schema_version"] = 2
+    derived["base_lock_artifact_sha256"] = base_lock["artifact_sha256"]
+    derived["base_prediction_integrity_sha256"] = base_lock["prediction_integrity_sha256"]
+    derived["candidate"] = {
+        "kind": BLEND_KIND,
+        "as_of": candidate_as_of,
+        "pgo_v0_weight": 0.75,
+        "pgo_v1_weight": BLEND_WEIGHT,
+        "formula": BLEND_FORMULA,
+        "development_receipt_sha256": development_file_sha256,
+    }
+    for game in derived["games"]:
+        game["candidate_prediction"] = _blend_prediction(
+            game["pgo_v0_prediction"], game["challenger_prediction"]
+        )
+    derived["prediction_integrity_sha256"] = _prediction_integrity_hash(
+        derived["games"], include_candidate=True
+    )
+    derived["artifact_sha256"] = _artifact_hash(derived)
+    _verify_lock(derived)
+    return derived
+
+
+def _is_sha256(value):
+    return isinstance(value, str) and len(value) == 64 and all(
+        character in "0123456789abcdef" for character in value
+    )
+
+
+def build_prospective_attestation(
+    base_lock, base_lock_bytes, base_prediction_bytes, derived_lock,
+    derived_lock_bytes, derived_prediction_bytes, development_receipt_bytes,
+):
+    _verify_lock(base_lock)
+    _verify_lock(derived_lock)
+    if (
+        base_prediction_bytes != _prediction_csv(base_lock).encode("utf-8")
+        or derived_lock_bytes != serialize_lock(derived_lock).encode("utf-8")
+        or derived_prediction_bytes != _prediction_csv(derived_lock).encode("utf-8")
+    ):
+        raise ValueError("Attestation input bytes mismatch")
+    attestation = {
+        "schema_version": SCHEMA_VERSION,
+        "status": LOCK_STATUS,
+        "candidate": {
+            "kind": BLEND_KIND,
+            "as_of": derived_lock["candidate"]["as_of"],
+        },
+        "earliest_kickoff": min(
+            base_lock["games"], key=lambda game: _parse_datetime(game["kickoff"])
+        )["kickoff"],
+        "development_receipt_file_sha256": hashlib.sha256(
+            development_receipt_bytes
+        ).hexdigest(),
+        "base": {
+            "lock_artifact_sha256": base_lock["artifact_sha256"],
+            "lock_file_sha256": hashlib.sha256(base_lock_bytes).hexdigest(),
+            "prediction_integrity_sha256": base_lock["prediction_integrity_sha256"],
+            "predictions_file_sha256": hashlib.sha256(base_prediction_bytes).hexdigest(),
+        },
+        "derived": {
+            "lock_artifact_sha256": derived_lock["artifact_sha256"],
+            "lock_file_sha256": hashlib.sha256(derived_lock_bytes).hexdigest(),
+            "prediction_integrity_sha256": derived_lock["prediction_integrity_sha256"],
+            "predictions_file_sha256": hashlib.sha256(derived_prediction_bytes).hexdigest(),
+        },
+    }
+    attestation["artifact_sha256"] = _artifact_hash(attestation)
+    return _verify_prospective_attestation(attestation)
+
+
+def _verify_prospective_attestation(attestation):
+    expected_keys = {
+        "schema_version", "status", "candidate", "earliest_kickoff",
+        "development_receipt_file_sha256", "base", "derived", "artifact_sha256",
+    }
+    if not isinstance(attestation, dict) or set(attestation) != expected_keys:
+        raise ValueError("Attestation schema mismatch")
+    candidate = attestation["candidate"]
+    if (
+        attestation["schema_version"] != SCHEMA_VERSION
+        or attestation["status"] != LOCK_STATUS
+        or not isinstance(candidate, dict)
+        or set(candidate) != {"kind", "as_of"}
+        or candidate["kind"] != BLEND_KIND
+    ):
+        raise ValueError("Attestation status mismatch")
+    try:
+        candidate_as_of = _parse_datetime(candidate["as_of"])
+        earliest_kickoff = _parse_datetime(attestation["earliest_kickoff"])
+    except ValueError as error:
+        raise ValueError("Attestation timestamp mismatch") from error
+    if candidate_as_of >= earliest_kickoff:
+        raise ValueError("Attestation candidate timestamp:")
+    for name in ("development_receipt_file_sha256", "artifact_sha256"):
+        if not _is_sha256(attestation[name]):
+            raise ValueError("Attestation hash mismatch")
+    for name in ("base", "derived"):
+        section = attestation[name]
+        if not isinstance(section, dict) or set(section) != {
+            "lock_artifact_sha256", "lock_file_sha256",
+            "prediction_integrity_sha256", "predictions_file_sha256",
+        } or not all(_is_sha256(value) for value in section.values()):
+            raise ValueError("Attestation hash mismatch")
+    if _artifact_hash(attestation) != attestation["artifact_sha256"]:
+        raise ValueError("Attestation artifact hash mismatch")
+    return attestation
 
 
 def _normalize_result(result):
@@ -1074,6 +1277,38 @@ def _cli_develop_blend(args):
     return 0
 
 
+def _cli_derive_blend(args):
+    if args.output_dir.exists() or args.attestation_output.exists():
+        return 1
+    try:
+        base_lock_bytes = args.base_lock.read_bytes()
+        base_prediction_bytes = args.base_predictions.read_bytes()
+        development_receipt_bytes = args.development_receipt.read_bytes()
+        base_lock = json.loads(base_lock_bytes)
+        development_receipt = json.loads(development_receipt_bytes)
+        _verify_lock(base_lock)
+        if base_prediction_bytes != _prediction_csv(base_lock).encode("utf-8"):
+            raise ValueError("Base prediction bytes mismatch")
+        derived = derive_stability_blend(
+            base_lock, development_receipt,
+            hashlib.sha256(development_receipt_bytes).hexdigest(), args.as_of,
+        )
+        derived_lock_bytes = serialize_lock(derived).encode("utf-8")
+        derived_prediction_bytes = _prediction_csv(derived).encode("utf-8")
+        attestation = build_prospective_attestation(
+            base_lock, base_lock_bytes, base_prediction_bytes, derived,
+            derived_lock_bytes, derived_prediction_bytes, development_receipt_bytes,
+        )
+    except (OSError, TypeError, ValueError, json.JSONDecodeError):
+        return 1
+    atomic_write_text(args.output_dir / "prospective_lock.json", derived_lock_bytes.decode("utf-8"))
+    atomic_write_text(
+        args.output_dir / "prospective_predictions.csv", derived_prediction_bytes.decode("utf-8")
+    )
+    atomic_write_text(args.attestation_output, _canonical(attestation) + "\n")
+    return 0
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -1090,6 +1325,13 @@ def main(argv=None):
     develop = subparsers.add_parser("develop-blend")
     develop.add_argument("--predictions", type=Path, required=True)
     develop.add_argument("--output", type=Path, required=True)
+    derive = subparsers.add_parser("derive-blend")
+    derive.add_argument("--base-lock", type=Path, required=True)
+    derive.add_argument("--base-predictions", type=Path, required=True)
+    derive.add_argument("--development-receipt", type=Path, required=True)
+    derive.add_argument("--as-of", required=True)
+    derive.add_argument("--output-dir", type=Path, required=True)
+    derive.add_argument("--attestation-output", type=Path, required=True)
     args = parser.parse_args(argv)
     if args.command == "lock":
         return _cli_lock(args)
@@ -1097,6 +1339,8 @@ def main(argv=None):
         return _cli_grade(args)
     elif args.command == "develop-blend":
         return _cli_develop_blend(args)
+    elif args.command == "derive-blend":
+        return _cli_derive_blend(args)
 
 
 if __name__ == "__main__":

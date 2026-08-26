@@ -279,6 +279,184 @@ class ProspectiveGradeTests(unittest.TestCase):
             pgo_prospective.grade_locked_games(changed_hash, self.results)
 
 
+class ProspectiveBlendLockTests(unittest.TestCase):
+    development_path = Path("research/pgo_stability_blend/development.json")
+
+    def setUp(self):
+        lock_tests = ProspectiveLockTests()
+        lock_tests.setUp()
+        self.base_lock = pgo_prospective.lock_games(
+            lock_tests.schedule, lock_tests.model_state, AS_OF
+        )
+        self.original_base_lock = deepcopy(self.base_lock)
+        self.development_receipt_bytes = self.development_path.read_bytes()
+        self.development_receipt = json.loads(self.development_receipt_bytes)
+        self.development_file_sha256 = hashlib.sha256(
+            self.development_receipt_bytes
+        ).hexdigest()
+        self.as_of = "2026-08-21T12:00:00-04:00"
+
+    def _derived(self):
+        return pgo_prospective.derive_stability_blend(
+            self.base_lock, self.development_receipt,
+            self.development_file_sha256, self.as_of,
+        )
+
+    def _rehash(self, lock):
+        lock["prediction_integrity_sha256"] = pgo_prospective._prediction_integrity_hash(
+            lock["games"], include_candidate=True
+        )
+        lock["artifact_sha256"] = pgo_prospective._artifact_hash(lock)
+
+    def test_derives_reconstructable_candidate_lock_without_mutating_base(self):
+        derived = self._derived()
+        self.assertEqual(derived["schema_version"], 2)
+        self.assertEqual(
+            [game["candidate_prediction"] for game in derived["games"]],
+            [3.5, -6.75],
+        )
+        self.assertEqual(
+            pgo_prospective._base_lock_from_derived(derived), self.base_lock
+        )
+        self.assertEqual(self.base_lock, self.original_base_lock)
+        self.assertEqual(
+            pgo_prospective._prediction_csv(derived).splitlines()[0].split(",")[-1],
+            "candidate_prediction",
+        )
+
+    def test_lock_validation_fails_closed_for_schema_and_candidate_tampering(self):
+        top_level = deepcopy(self.base_lock)
+        top_level["candidate"] = {}
+        game_level = deepcopy(self.base_lock)
+        game_level["games"][0]["candidate_prediction"] = 3.5
+        wrong_schema = deepcopy(self.base_lock)
+        wrong_schema["schema_version"] = 3
+        wrong_kind = self._derived()
+        wrong_kind["candidate"]["kind"] = "other"
+        self._rehash(wrong_kind)
+        for lock in (top_level, game_level, wrong_schema, wrong_kind):
+            with self.subTest(lock=lock.get("schema_version")), self.assertRaises(ValueError):
+                pgo_prospective._verify_lock(lock)
+
+    def test_derivation_rejects_changed_base_and_development_contracts(self):
+        changed_prediction = deepcopy(self.base_lock)
+        changed_prediction["games"][0]["pgo_v0_prediction"] = 99.0
+        changed_artifact = deepcopy(self.base_lock)
+        changed_artifact["artifact_sha256"] = _sha256("changed-artifact")
+        changed_prediction_hash = deepcopy(self.base_lock)
+        changed_prediction_hash["prediction_integrity_sha256"] = _sha256("changed-prediction")
+        bad_artifact = deepcopy(self.development_receipt)
+        bad_artifact["artifact_sha256"] = _sha256("changed-development-artifact")
+        bad_source = deepcopy(self.development_receipt)
+        bad_source["source_sha256"] = _sha256("changed-development-source")
+        bad_kind = deepcopy(self.development_receipt)
+        bad_kind["candidate"]["kind"] = "other"
+        bad_weight = deepcopy(self.development_receipt)
+        bad_weight["candidate"]["pgo_v1_weight"] = 0.5
+        cases = (
+            (changed_prediction, self.development_receipt),
+            (changed_artifact, self.development_receipt),
+            (changed_prediction_hash, self.development_receipt),
+            (self.base_lock, bad_artifact),
+            (self.base_lock, bad_source),
+            (self.base_lock, bad_kind),
+            (self.base_lock, bad_weight),
+        )
+        for base, receipt in cases:
+            with self.subTest(base=base is self.base_lock), self.assertRaises(ValueError):
+                pgo_prospective.derive_stability_blend(
+                    base, receipt, self.development_file_sha256, self.as_of
+                )
+
+    def test_derived_validation_rejects_rehashed_candidate_tampering(self):
+        late = self._derived()
+        late["candidate"]["as_of"] = late["games"][0]["kickoff"]
+        self._rehash(late)
+        changed_prediction = self._derived()
+        changed_prediction["games"][0]["candidate_prediction"] = 99.0
+        self._rehash(changed_prediction)
+        changed_weight = self._derived()
+        changed_weight["candidate"]["pgo_v1_weight"] = 0.5
+        self._rehash(changed_weight)
+        for lock in (late, changed_prediction, changed_weight):
+            with self.subTest(lock=lock["candidate"]["as_of"]), self.assertRaises(ValueError):
+                pgo_prospective._verify_lock(lock)
+
+    def test_attestation_is_deterministic_and_self_verifying(self):
+        derived = self._derived()
+        base_lock_bytes = pgo_prospective.serialize_lock(self.base_lock).encode("utf-8")
+        base_prediction_bytes = pgo_prospective._prediction_csv(self.base_lock).encode("utf-8")
+        derived_lock_bytes = pgo_prospective.serialize_lock(derived).encode("utf-8")
+        derived_prediction_bytes = pgo_prospective._prediction_csv(derived).encode("utf-8")
+        attestation = pgo_prospective.build_prospective_attestation(
+            self.base_lock, base_lock_bytes, base_prediction_bytes, derived,
+            derived_lock_bytes, derived_prediction_bytes, self.development_receipt_bytes,
+        )
+        self.assertEqual(
+            pgo_prospective._verify_prospective_attestation(attestation), attestation
+        )
+        changed = deepcopy(attestation)
+        changed["candidate"]["as_of"] = changed["earliest_kickoff"]
+        changed["artifact_sha256"] = pgo_prospective._artifact_hash(changed)
+        with self.assertRaises(ValueError):
+            pgo_prospective._verify_prospective_attestation(changed)
+
+        chronological_base = deepcopy(self.base_lock)
+        chronological_base["games"][1]["kickoff"] = "2026-09-13T16:25:00+05:00"
+        chronological_base["artifact_sha256"] = pgo_prospective._artifact_hash(
+            chronological_base
+        )
+        chronological_derived = pgo_prospective.derive_stability_blend(
+            chronological_base, self.development_receipt,
+            self.development_file_sha256, self.as_of,
+        )
+        chronological_attestation = pgo_prospective.build_prospective_attestation(
+            chronological_base,
+            pgo_prospective.serialize_lock(chronological_base).encode("utf-8"),
+            pgo_prospective._prediction_csv(chronological_base).encode("utf-8"),
+            chronological_derived,
+            pgo_prospective.serialize_lock(chronological_derived).encode("utf-8"),
+            pgo_prospective._prediction_csv(chronological_derived).encode("utf-8"),
+            self.development_receipt_bytes,
+        )
+        self.assertEqual(
+            chronological_attestation["earliest_kickoff"],
+            chronological_base["games"][1]["kickoff"],
+        )
+
+    def test_cli_refuses_existing_targets_and_mismatched_base_csv(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            base_lock = root / "base.json"
+            base_predictions = root / "base.csv"
+            receipt = root / "development.json"
+            base_lock.write_text(pgo_prospective.serialize_lock(self.base_lock), encoding="utf-8")
+            base_predictions.write_text(pgo_prospective._prediction_csv(self.base_lock), encoding="utf-8", newline="")
+            receipt.write_bytes(self.development_receipt_bytes)
+            args = SimpleNamespace(
+                base_lock=base_lock, base_predictions=base_predictions,
+                development_receipt=receipt, as_of=self.as_of,
+                output_dir=root / "derived", attestation_output=root / "attestation.json",
+            )
+            self.assertEqual(pgo_prospective._cli_derive_blend(args), 0)
+            self.assertTrue((args.output_dir / "prospective_lock.json").is_file())
+            self.assertTrue((args.output_dir / "prospective_predictions.csv").is_file())
+            self.assertTrue(args.attestation_output.is_file())
+            self.assertEqual(pgo_prospective._cli_derive_blend(args), 1)
+
+            existing_attestation = SimpleNamespace(**{
+                **args.__dict__, "output_dir": root / "other",
+            })
+            self.assertEqual(pgo_prospective._cli_derive_blend(existing_attestation), 1)
+            base_predictions.write_text("wrong\n", encoding="utf-8", newline="")
+            mismatch = SimpleNamespace(**{
+                **args.__dict__, "output_dir": root / "mismatch",
+                "attestation_output": root / "mismatch-attestation.json",
+            })
+            self.assertEqual(pgo_prospective._cli_derive_blend(mismatch), 1)
+            self.assertFalse(mismatch.output_dir.exists())
+
+
 class ProspectiveSchemaOneRegressionTests(unittest.TestCase):
     def test_schema_one_serialized_bytes_are_frozen(self):
         lock_tests = ProspectiveLockTests()
