@@ -682,12 +682,21 @@ def _result_hash(rows):
 def grade_locked_games(lock, results):
     """Validate finalized results and grade the immutable prospective lock."""
     games = _verify_lock(lock)
+    candidate_grade = (
+        lock.get("schema_version") == 2
+        and isinstance(lock.get("candidate"), dict)
+        and lock["candidate"].get("kind") == BLEND_KIND
+    )
     if not isinstance(results, list):
         raise ValueError("Results must be a list:")
     locked_by_id = {game["game_id"]: game for game in games}
     result_by_id = {}
     normalized_results = []
     for raw in results:
+        if isinstance(raw, dict) and candidate_grade and str(raw.get("status", "")).strip().upper() in {
+            "CANCELLED", "CANCELED", "FORFEIT", "FORFEITED", "POSTPONED",
+        }:
+            raise ValueError(f"Candidate result status: {raw.get('game_id', '')}")
         result = _normalize_result(raw)
         game_id = result["game_id"]
         if game_id in result_by_id:
@@ -727,8 +736,73 @@ def grade_locked_games(lock, results):
         row["pgo_v0_absolute_error"] = abs(actual - row["pgo_v0_prediction"])
         row["challenger_absolute_error"] = abs(actual - row["challenger_prediction"])
         row["improvement"] = row["pgo_v0_absolute_error"] - row["challenger_absolute_error"]
+        if candidate_grade:
+            row["candidate_absolute_error"] = abs(actual - row["candidate_prediction"])
+            row["candidate_improvement_vs_pgo_v0"] = (
+                row["pgo_v0_absolute_error"] - row["candidate_absolute_error"]
+            )
+            row["candidate_improvement_vs_challenger"] = (
+                row["challenger_absolute_error"] - row["candidate_absolute_error"]
+            )
         row.update(row["subgroup_flags"])
         rows.append(row)
+
+    if candidate_grade:
+        pgo_v0 = pgo_challenger.metric_summary(rows, "pgo_v0_prediction")
+        challenger = pgo_challenger.metric_summary(rows, "challenger_prediction")
+        candidate = pgo_challenger.metric_summary(rows, "candidate_prediction")
+        comparison = _comparison_rows(rows, "pgo_v0_prediction", "candidate_prediction")
+        improvement = pgo_challenger.paired_block_bootstrap(
+            comparison, samples=10_000, seed=20260721
+        )
+        subgroups = pgo_challenger.subgroup_results(comparison)
+        candidate_vs_challenger = pgo_challenger.paired_block_bootstrap(
+            _comparison_rows(rows, "challenger_prediction", "candidate_prediction"),
+            samples=10_000, seed=20260721,
+        )
+        checks = {
+            "lock_artifact_integrity": True,
+            "result_integrity": True,
+            "counts_match": len(rows) == len(games),
+            "candidate_mae_lower": candidate["mae"] < pgo_v0["mae"],
+            "aggregate_improvement_ci_positive": improvement["lower"] > 0.0,
+            "no_sufficient_subgroup_regression": pgo_challenger._subgroup_gate_passes(subgroups),
+        }
+        integrity = ("lock_artifact_integrity", "result_integrity", "counts_match")
+        status = (
+            "BLOCKED" if not all(checks[name] for name in integrity)
+            else "PASS" if all(checks.values()) else "HOLD"
+        )
+        feature_state = lock.get("model_state", {}).get("challenger", {})
+        return {
+            "schema_version": 2,
+            "candidate": deepcopy(lock["candidate"]),
+            "status": status,
+            "publication_status": {"PASS": "VALIDATED", "HOLD": "EXPERIMENTAL", "BLOCKED": "BLOCKED"}[status],
+            "as_of": lock.get("as_of"),
+            "lock_sha256": lock["artifact_sha256"],
+            "results_sha256": _result_hash(normalized_results),
+            "schedule_snapshot_sha256": lock.get("schedule_snapshot_sha256"),
+            "source_lock_sha256": lock.get("source_lock_sha256"),
+            "source_hashes": deepcopy(lock.get("source_hashes", {})),
+            "feature_manifest": {
+                "features": list(feature_state.get("feature_names", [])),
+                "missingness_flags": list(feature_state.get("missing_features", [])),
+            },
+            "counts": {"locked_games": len(games), "graded_games": len(rows)},
+            "metrics": {
+                "pgo_v0": pgo_v0, "challenger": challenger, "candidate": candidate,
+                "pgo_v0_mae": pgo_v0["mae"], "challenger_mae": challenger["mae"],
+                "candidate_mae": candidate["mae"],
+            },
+            "bootstrap": improvement,
+            "aggregate_interval": improvement,
+            "candidate_vs_challenger_interval": candidate_vs_challenger,
+            "subgroup_results": subgroups,
+            "checks": checks,
+            "failed_checks": sorted(name for name, passed in checks.items() if not passed),
+            "rows": rows,
+        }
 
     pgo_v0 = pgo_challenger.metric_summary(rows, "pgo_v0_prediction")
     challenger = pgo_challenger.metric_summary(rows, "challenger_prediction")
@@ -782,7 +856,17 @@ def grade_locked_games(lock, results):
 def serialize_grade(receipt, rows):
     receipt_text = _canonical(receipt) + "\n"
     output = io.StringIO(newline="")
-    writer = csv.DictWriter(output, fieldnames=GRADE_RESULT_COLUMNS, lineterminator="\n")
+    columns = GRADE_RESULT_COLUMNS
+    if (
+        receipt.get("schema_version") == 2
+        and isinstance(receipt.get("candidate"), dict)
+        and receipt["candidate"].get("kind") == BLEND_KIND
+    ):
+        columns += (
+            "candidate_absolute_error", "candidate_improvement_vs_pgo_v0",
+            "candidate_improvement_vs_challenger",
+        )
+    writer = csv.DictWriter(output, fieldnames=columns, lineterminator="\n")
     writer.writeheader()
     for row in rows:
         item = dict(row)
@@ -790,7 +874,7 @@ def serialize_grade(receipt, rows):
             {name: bool(row.get(name)) for name in pgo_challenger.SUBGROUPS},
             sort_keys=True, separators=(",", ":"),
         )
-        writer.writerow({name: item.get(name, "") for name in GRADE_RESULT_COLUMNS})
+        writer.writerow({name: item.get(name, "") for name in columns})
     return receipt_text, output.getvalue()
 
 
@@ -994,6 +1078,36 @@ def _blocked_receipt(lock, results_path, error):
         "aggregate_improvement_ci_positive": False,
         "no_sufficient_subgroup_regression": False,
     }
+    if (
+        lock.get("schema_version") == 2
+        and isinstance(lock.get("candidate"), dict)
+        and lock["candidate"].get("kind") == BLEND_KIND
+    ):
+        checks.pop("challenger_mae_lower")
+        checks["candidate_mae_lower"] = False
+        return {
+            "schema_version": 2,
+            "candidate": deepcopy(lock["candidate"]),
+            "status": "BLOCKED",
+            "publication_status": "BLOCKED",
+            "as_of": lock.get("as_of"),
+            "lock_sha256": lock.get("artifact_sha256", ""),
+            "results_sha256": results_hash,
+            "schedule_snapshot_sha256": lock.get("schedule_snapshot_sha256"),
+            "source_lock_sha256": lock.get("source_lock_sha256"),
+            "source_hashes": deepcopy(lock.get("source_hashes", {})),
+            "feature_manifest": {},
+            "counts": {"locked_games": len(lock.get("games", [])) if isinstance(lock.get("games"), list) else 0, "graded_games": 0},
+            "metrics": {},
+            "bootstrap": {},
+            "aggregate_interval": {},
+            "candidate_vs_challenger_interval": {},
+            "subgroup_results": {},
+            "checks": checks,
+            "failed_checks": sorted(checks),
+            "error": str(error),
+            "rows": [],
+        }
     return {
         "schema_version": SCHEMA_VERSION,
         "status": "BLOCKED",
@@ -1348,4 +1462,4 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

@@ -279,6 +279,137 @@ class ProspectiveGradeTests(unittest.TestCase):
             pgo_prospective.grade_locked_games(changed_hash, self.results)
 
 
+class ProspectiveBlendGradeTests(unittest.TestCase):
+    development_path = Path("research/pgo_stability_blend/development.json")
+
+    def setUp(self):
+        lock_tests = ProspectiveLockTests()
+        lock_tests.setUp()
+        base = pgo_prospective.lock_games(
+            lock_tests.schedule, lock_tests.model_state, AS_OF
+        )
+        development_bytes = self.development_path.read_bytes()
+        self.lock = pgo_prospective.derive_stability_blend(
+            base, json.loads(development_bytes), hashlib.sha256(development_bytes).hexdigest(),
+            "2026-08-21T12:00:00-04:00",
+        )
+        self.results = [
+            {
+                "game_id": "2026_01_NYJ_BUF", "home_team": "BUF", "away_team": "NYJ",
+                "kickoff": "2026-09-13T13:00:00-04:00", "game_type": "REG",
+                "home_score": "24", "away_score": "21",
+                "finalized_at": "2026-09-13T17:00:00-04:00",
+            },
+            {
+                "game_id": "2026_01_MIA_NE", "home_team": "NE", "away_team": "MIA",
+                "kickoff": "2026-09-13T16:25:00-04:00", "game_type": "REG",
+                "home_score": "17", "away_score": "21",
+                "finalized_at": "2026-09-13T20:00:00-04:00",
+            },
+        ]
+
+    def _write_inputs(self, root, results):
+        lock_path = pgo_prospective.write_lock(root / "lock", self.lock)
+        results_path = root / "results.csv"
+        columns = tuple(sorted({key for row in results for key in row}))
+        with results_path.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=columns)
+            writer.writeheader()
+            writer.writerows(results)
+        return lock_path, results_path
+
+    def test_candidate_grade_reports_metrics_and_status(self):
+        receipt = pgo_prospective.grade_locked_games(self.lock, self.results)
+
+        self.assertAlmostEqual(receipt["metrics"]["pgo_v0_mae"], 2.5)
+        self.assertAlmostEqual(receipt["metrics"]["challenger_mae"], 1.0)
+        self.assertAlmostEqual(receipt["metrics"]["candidate_mae"], 1.625)
+        self.assertEqual(receipt["status"], "PASS")
+        self.assertEqual(receipt["publication_status"], "VALIDATED")
+        self.assertEqual(receipt["bootstrap"]["samples"], 10_000)
+        self.assertEqual(receipt["bootstrap"]["seed"], 20260721)
+        self.assertIn("candidate_vs_challenger_interval", receipt)
+
+    def test_candidate_holds_when_v0_is_perfect(self):
+        results = [
+            {**self.results[0], "home_score": "24", "away_score": "20"},
+            {**self.results[1], "home_score": "17", "away_score": "25"},
+        ]
+        receipt = pgo_prospective.grade_locked_games(self.lock, results)
+
+        self.assertEqual(receipt["status"], "HOLD")
+        self.assertIn("candidate_mae_lower", receipt["failed_checks"])
+
+    def test_candidate_cli_blocks_missing_cancelled_and_changed_kickoff_results(self):
+        cases = (
+            self.results[:1],
+            [{**self.results[0], "status": "CANCELLED"}, self.results[1]],
+            [{**self.results[0], "kickoff": "2026-09-13T13:01:00-04:00"}, self.results[1]],
+        )
+        for results in cases:
+            with self.subTest(results=results):
+                with tempfile.TemporaryDirectory() as temp:
+                    root = Path(temp)
+                    lock_path, results_path = self._write_inputs(root, results)
+                    output_dir = root / "grade"
+                    self.assertEqual(pgo_prospective.main([
+                        "grade", "--lock-file", str(lock_path), "--results-path",
+                        str(results_path), "--output-dir", str(output_dir),
+                    ]), 1)
+                    receipt = json.loads((output_dir / "prospective_receipt.json").read_text())
+                    self.assertEqual(receipt["status"], "BLOCKED")
+                    self.assertIn("candidate_mae_lower", receipt["checks"])
+
+    def test_candidate_grade_rejects_prediction_hash_and_formula_tampering(self):
+        prediction = deepcopy(self.lock)
+        prediction["games"][0]["candidate_prediction"] = 99.0
+        prediction["prediction_integrity_sha256"] = pgo_prospective._prediction_integrity_hash(
+            prediction["games"], include_candidate=True
+        )
+        prediction["artifact_sha256"] = pgo_prospective._artifact_hash(prediction)
+        changed_hash = deepcopy(self.lock)
+        changed_hash["artifact_sha256"] = _sha256("tampered-lock-artifact")
+        formula = deepcopy(self.lock)
+        formula["candidate"]["formula"] = "other"
+        formula["artifact_sha256"] = pgo_prospective._artifact_hash(formula)
+        for lock in (prediction, changed_hash, formula):
+            with self.subTest(lock=lock["artifact_sha256"]), self.assertRaises(ValueError):
+                pgo_prospective.grade_locked_games(lock, self.results)
+
+    def test_candidate_grade_rejects_invalid_result_rows(self):
+        with self.assertRaisesRegex(ValueError, "^Invalid result row:"):
+            pgo_prospective.grade_locked_games(self.lock, [None])
+
+    def test_candidate_grade_serialization_is_deterministic(self):
+        receipt = pgo_prospective.grade_locked_games(self.lock, self.results)
+
+        first = pgo_prospective.serialize_grade(receipt, receipt["rows"])
+        self.assertEqual(first, pgo_prospective.serialize_grade(receipt, receipt["rows"]))
+        self.assertEqual(first[1].splitlines()[0].split(",")[-3:], [
+            "candidate_absolute_error", "candidate_improvement_vs_pgo_v0",
+            "candidate_improvement_vs_challenger",
+        ])
+
+    def test_main_grade_returns_pass_hold_and_blocked(self):
+        cases = (
+            (self.results, 0),
+            ([
+                {**self.results[0], "home_score": "24", "away_score": "20"},
+                {**self.results[1], "home_score": "17", "away_score": "25"},
+            ], 1),
+            (self.results[:1], 1),
+        )
+        for results, expected in cases:
+            with self.subTest(expected=expected):
+                with tempfile.TemporaryDirectory() as temp:
+                    root = Path(temp)
+                    lock_path, results_path = self._write_inputs(root, results)
+                    self.assertEqual(pgo_prospective.main([
+                        "grade", "--lock-file", str(lock_path), "--results-path",
+                        str(results_path), "--output-dir", str(root / "grade"),
+                    ]), expected)
+
+
 class ProspectiveBlendLockTests(unittest.TestCase):
     development_path = Path("research/pgo_stability_blend/development.json")
 
