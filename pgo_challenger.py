@@ -14,6 +14,7 @@ from collections import defaultdict, deque
 from dataclasses import asdict, dataclass
 from decimal import Decimal, ROUND_HALF_EVEN
 from datetime import datetime, timezone
+from functools import lru_cache
 from itertools import groupby
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -607,8 +608,23 @@ def lineup_views(team, snapshot, state) -> tuple[dict[str, float], dict[str, flo
     return full, current
 
 
+@lru_cache(maxsize=len(HALF_LIFE_GRID))
+def _historical_walk_cached(entries, half_life_games):
+    paths = {
+        (name, season): Path(path)
+        for name, season, path, _size, _modified in entries
+    }
+    return _walk(paths, half_life_games)
+
+
+def _historical_walk(paths, half_life_games):
+    return _historical_walk_cached(
+        _input_cache_key(paths), half_life_games
+    )
+
+
 def build_feature_rows(paths, half_life_games) -> list[FeatureRow]:
-    rows, _, _ = _walk(paths, half_life_games)
+    rows, _, _ = _historical_walk(paths, half_life_games)
     return rows
 
 
@@ -885,7 +901,9 @@ def rolling_predictions(paths) -> tuple[list[dict], dict]:
     challenger = []
     for season in OUTER_SEASONS:
         parameters = select_parameters(paths, range(2016, season))
-        rows, context, _ = _walk(paths, parameters.half_life_games)
+        rows, context, _ = _historical_walk(
+            paths, parameters.half_life_games
+        )
         training = [row for row in rows if row.season < season]
         validation = [row for row in rows if row.season == season]
         if not training or not validation:
@@ -1657,14 +1675,17 @@ def _run_research_analysis(
     headline_view="full_strength", role_scenario="base",
     availability_audit_path=None,
 ):
+    _historical_walk_cached.cache_clear()
     first = _analyze_once(
         paths, manifest, as_of, availability_overlay_path, headline_view,
         role_scenario, availability_audit_path,
     )
+    _historical_walk_cached.cache_clear()
     second = _analyze_once(
         paths, manifest, as_of, availability_overlay_path, headline_view,
         role_scenario, availability_audit_path,
     )
+    _historical_walk_cached.cache_clear()
     first_outputs = _finalize_analysis(first, as_of, True)
     second_outputs = _finalize_analysis(second, as_of, True)
     reproducible = _in_memory_serialization(
@@ -2404,7 +2425,35 @@ def _accumulate_qb(row, target):
         target["rushing_epa"] += rushing_epa
 
 
+def _input_cache_key(paths):
+    entries = []
+    for (name, season), value in paths.items():
+        path = Path(value).resolve()
+        signature = path.stat()
+        entries.append((
+            name, season, str(path), signature.st_size, signature.st_mtime_ns,
+        ))
+    return tuple(sorted(
+        entries,
+        key=lambda entry: (
+            entry[0], -1 if entry[1] is None else entry[1], entry[2],
+        ),
+    ))
+
+
+@lru_cache(maxsize=1)
+def _load_inputs_cached(entries):
+    return _read_inputs({
+        (name, season): Path(path)
+        for name, season, path, _size, _modified in entries
+    })
+
+
 def _load_inputs(paths):
+    return _load_inputs_cached(_input_cache_key(paths))
+
+
+def _read_inputs(paths):
     inputs = {
         "team_rows": {}, "players": defaultdict(list),
         "rosters": defaultdict(list), "injuries": defaultdict(list), "snaps": defaultdict(list),

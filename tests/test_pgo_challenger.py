@@ -1118,6 +1118,41 @@ class SourceTests(unittest.TestCase):
 
 
 class FeatureTests(unittest.TestCase):
+    def test_source_inputs_are_cached_until_file_signature_changes(self):
+        row = {
+            "season": "2013", "week": "1", "team": "OAK",
+            "game_id": "2013_01_OAK_SD",
+        }
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp, "team.csv")
+            path.write_text("first", encoding="utf-8")
+            paths = {("team_weekly_stats", 2013): path}
+            with patch.object(
+                pgo_challenger, "open_csv", side_effect=lambda _: [row]
+            ) as reader:
+                first = pgo_challenger._load_inputs(paths)
+                second = pgo_challenger._load_inputs(paths)
+                path.write_text("second version", encoding="utf-8")
+                third = pgo_challenger._load_inputs(paths)
+
+        self.assertIs(first, second)
+        self.assertIsNot(first, third)
+        self.assertEqual(reader.call_count, 2)
+
+    def test_historical_walk_is_reused_for_an_unchanged_half_life(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp, "schedule.csv")
+            path.write_text("source", encoding="utf-8")
+            paths = {("schedule_results", None): path}
+            with patch.object(
+                pgo_challenger, "_walk", return_value=([], {}, {})
+            ) as walk:
+                first = pgo_challenger.build_feature_rows(paths, 4)
+                second = pgo_challenger.build_feature_rows(paths, 4)
+
+        self.assertEqual(first, second)
+        self.assertEqual(walk.call_count, 1)
+
     def test_full_locked_paths_cannot_leak_current_roster_into_history(self):
         with tempfile.TemporaryDirectory() as temp:
             directory = Path(temp)
