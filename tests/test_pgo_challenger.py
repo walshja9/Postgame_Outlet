@@ -1859,12 +1859,12 @@ class ModelTests(unittest.TestCase):
         self.assertEqual(first, second)
 
     def test_parameter_grid_matches_validation_design(self):
-        self.assertEqual(pgo_challenger.HALF_LIFE_GRID, (2, 4, 8, 16, 32))
+        self.assertEqual(pgo_challenger.HALF_LIFE_GRID, (4, 8, 16))
         self.assertEqual(
-            pgo_challenger.ALPHA_GRID, (0.25, 1.0, 10.0, 100.0)
+            pgo_challenger.ALPHA_GRID, (1.0, 10.0, 100.0)
         )
         self.assertEqual(
-            pgo_challenger.DELTA_GRID, (0.75, 1.0, 1.5)
+            pgo_challenger.DELTA_GRID, (1.0, 1.5)
         )
 
     def test_unnamed_future_schema_cannot_change_selection(self):
@@ -2667,13 +2667,15 @@ class OutputTests(unittest.TestCase):
         ):
             pgo_challenger._source_preflight(paths, manifest, self.AS_OF)
 
-    def test_manifest_freeze_time_must_match_as_of_instant(self):
+    def test_manifest_freeze_time_cannot_be_after_as_of(self):
         paths = {
             (spec.name, spec.season): Path("unused")
             for spec in pgo_sources.source_specs()
         }
         with (
-            patch.object(pgo_sources, "validate_source_audit", return_value={}),
+            patch.object(
+                pgo_sources, "validate_source_audit", side_effect=lambda _paths: {}
+            ),
             patch.object(pgo_challenger, "_historical_coverage", return_value={}),
             patch.object(
                 pgo_challenger, "_load_inputs",
@@ -2684,19 +2686,29 @@ class OutputTests(unittest.TestCase):
                 return_value={"post_kickoff_rows_ignored": 0, "rows": []},
             ),
         ):
-            with self.assertRaisesRegex(ValueError, "frozen_at"):
-                pgo_challenger._source_preflight(
-                    paths,
-                    self._locked_manifest("2026-07-21T15:59:59+00:00"),
-                    self.AS_OF,
-                )
-            audit = pgo_challenger._source_preflight(
+            earlier_audit = pgo_challenger._source_preflight(
+                paths,
+                self._locked_manifest("2026-07-21T15:59:59+00:00"),
+                self.AS_OF,
+            )
+            equal_audit = pgo_challenger._source_preflight(
                 paths,
                 self._locked_manifest("2026-07-21T16:00:00+00:00"),
                 self.AS_OF,
             )
+            with self.assertRaisesRegex(ValueError, "later than --as-of"):
+                pgo_challenger._source_preflight(
+                    paths,
+                    self._locked_manifest("2026-07-21T16:00:01+00:00"),
+                    self.AS_OF,
+                )
 
-        self.assertEqual(len(audit["source_hashes"]), len(paths))
+        self.assertEqual(len(earlier_audit["source_hashes"]), len(paths))
+        self.assertEqual(len(equal_audit["source_hashes"]), len(paths))
+        self.assertEqual(
+            earlier_audit["source_frozen_at"],
+            ["2026-07-21T15:59:59+00:00"],
+        )
 
     def test_release_classification_separates_integrity_from_statistics(self):
         self.assertEqual(
@@ -3094,7 +3106,7 @@ class OutputTests(unittest.TestCase):
             "offense_availability_concentration",
             "defense_availability_concentration",
             "qb_depth_uncertainty",
-        }.issubset(features))
+        }.isdisjoint(features))
         self.assertEqual(
             audit["coverage"]["schedule_team_games"],
             {
@@ -3391,49 +3403,7 @@ class LineupTests(unittest.TestCase):
             }
         }
 
-    def test_availability_concentration_squares_prior_snap_share(self):
-        concentrated = [
-            {"offense_snap_share": 0.8, "probability": 0.0},
-        ]
-        diffuse = [
-            {"offense_snap_share": 0.4, "probability": 0.0},
-            {"offense_snap_share": 0.4, "probability": 0.0},
-        ]
-
-        concentrated_value = pgo_challenger._unavailable_concentration(
-            concentrated, "offense_snap_share"
-        )
-        diffuse_value = pgo_challenger._unavailable_concentration(
-            diffuse, "offense_snap_share"
-        )
-
-        self.assertAlmostEqual(concentrated_value, 0.64)
-        self.assertAlmostEqual(diffuse_value, 0.32)
-        self.assertGreater(concentrated_value, diffuse_value)
-        self.assertIsNone(
-            pgo_challenger._unavailable_concentration(
-                [{"probability": 0.0}], "offense_snap_share"
-            )
-        )
-
-    def test_qb_depth_uncertainty_uses_existing_probability_weights(self):
-        depth_chart = [
-            ("starter", {"qb_value": 1.0, "probability": 0.5}),
-            ("backup", {"qb_value": 0.0, "probability": 1.0}),
-        ]
-
-        self.assertAlmostEqual(
-            pgo_challenger._expected_qb_uncertainty(depth_chart), 0.25
-        )
-
-    def test_qb_depth_uncertainty_stays_missing_when_probability_mass_is_unmodeled(self):
-        depth_chart = [
-            ("starter", {"qb_value": 1.0, "probability": 0.0}),
-        ]
-
-        self.assertIsNone(pgo_challenger._expected_qb_uncertainty(depth_chart))
-
-    def test_lineup_fragility_features_are_zero_when_everyone_is_available(self):
+    def test_unpromoted_fragility_features_are_absent_from_default_model(self):
         full, current = pgo_challenger.lineup_views(
             "LV", self._snapshot(starter_probability=1.0), {}
         )
@@ -3443,8 +3413,8 @@ class LineupTests(unittest.TestCase):
             "defense_availability_concentration",
             "qb_depth_uncertainty",
         ):
-            self.assertEqual(full[name], 0.0)
-            self.assertEqual(current[name], 0.0)
+            self.assertNotIn(name, full)
+            self.assertNotIn(name, current)
 
     def test_active_player_has_zero_availability_adjustment(self):
         full, current = pgo_challenger.lineup_views(

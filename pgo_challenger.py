@@ -54,9 +54,9 @@ QB_FEATURES = (
     "qb_experience_prior",
     "qb_draft_prior",
 )
-HALF_LIFE_GRID = (2, 4, 8, 16, 32)
-ALPHA_GRID = (0.25, 1.0, 10.0, 100.0)
-DELTA_GRID = (0.75, 1.0, 1.5)
+HALF_LIFE_GRID = (4, 8, 16)
+ALPHA_GRID = (1.0, 10.0, 100.0)
+DELTA_GRID = (1.0, 1.5)
 ROLE_ALPHA = 10.0
 ROLE_DELTA = 1.0
 OUTER_SEASONS = tuple(range(2018, 2026))
@@ -581,9 +581,6 @@ def lineup_views(team, snapshot, state) -> tuple[dict[str, float], dict[str, flo
     full["qb_current_minus_full"] = 0.0
     full["offense_availability"] = 0.0
     full["defense_availability"] = 0.0
-    full["offense_availability_concentration"] = 0.0
-    full["defense_availability_concentration"] = 0.0
-    full["qb_depth_uncertainty"] = 0.0
 
     current = dict(full)
     if starter:
@@ -600,11 +597,6 @@ def lineup_views(team, snapshot, state) -> tuple[dict[str, float], dict[str, flo
     defense = _unavailable_share(players.values(), "defense_snap_share")
     current["offense_availability"] = -offense if offense is not None else None
     current["defense_availability"] = -defense if defense is not None else None
-    offense = _unavailable_concentration(players.values(), "offense_snap_share")
-    defense = _unavailable_concentration(players.values(), "defense_snap_share")
-    current["offense_availability_concentration"] = -offense if offense is not None else None
-    current["defense_availability_concentration"] = -defense if defense is not None else None
-    current["qb_depth_uncertainty"] = _expected_qb_uncertainty(depth_chart)
     return full, current
 
 
@@ -684,8 +676,6 @@ def build_snapshot_states(
             current.get(name) is None
             for name in (
                 "offense_availability", "defense_availability",
-                "offense_availability_concentration",
-                "defense_availability_concentration",
             )
         ):
             raise ValueError(
@@ -1314,6 +1304,9 @@ def _neutral_feature_row(team, state, preprocessor):
 def _source_preflight(paths, manifest, as_of):
     audit = pgo_sources.validate_source_audit(paths)
     audit["source_hashes"] = _manifest_hashes(manifest, paths, as_of)
+    audit["source_frozen_at"] = sorted(
+        {entry["frozen_at"] for entry in manifest.get("sources", ())}
+    )
     inputs = _load_inputs(paths)
     audit["identity_resolution"] = inputs["identity_resolution"]
     audit["coverage"] = _historical_coverage(paths, inputs)
@@ -1340,7 +1333,7 @@ def _manifest_hashes(manifest, paths, as_of):
     expected = {
         (spec.name, spec.season): spec for spec in pgo_sources.source_specs()
     }
-    frozen_at = _parse_datetime(as_of)
+    analysis_as_of = _parse_datetime(as_of)
     entries, hashes, keys = manifest.get("sources", ()), {}, set()
     for entry in entries:
         try:
@@ -1359,8 +1352,8 @@ def _manifest_hashes(manifest, paths, as_of):
             and digest != pgo_sources.EXPECTED_SOURCE_SHA256
         ):
             raise ValueError("schedule_results does not match pinned SHA-256")
-        if _parse_datetime(entry_frozen_at) != frozen_at:
-            raise ValueError("Locked source frozen_at does not match --as-of")
+        if _parse_datetime(entry_frozen_at) > analysis_as_of:
+            raise ValueError("Locked source frozen_at is later than --as-of")
         keys.add(key)
         label = key[0] if key[1] is None else f"{key[0]}:{key[1]}"
         hashes[label] = digest
@@ -2647,24 +2640,6 @@ def _expected_qb_feature(depth_chart, name):
     return None if remaining > 1e-12 else total
 
 
-def _expected_qb_uncertainty(depth_chart):
-    weighted = []
-    remaining = 1.0
-    for _, player in depth_chart:
-        weight = remaining * _probability(player)
-        value = _qb_feature(player, "qb_epa_per_dropback")
-        if weight and value is None:
-            return None
-        if weight:
-            weighted.append((weight, float(value)))
-        remaining -= weight
-    if remaining > 1e-12 or not weighted:
-        return None
-    total = sum(weight for weight, _ in weighted)
-    mean = sum(weight * value for weight, value in weighted) / total
-    return sum(weight * (value - mean) ** 2 for weight, value in weighted) / total
-
-
 def _unavailable_share(players, name):
     total = 0.0
     for player in players:
@@ -2675,19 +2650,6 @@ def _unavailable_share(players, name):
         if share is None:
             return None
         total += float(share) * missing
-    return total
-
-
-def _unavailable_concentration(players, name):
-    total = 0.0
-    for player in players:
-        missing = 1.0 - _probability(player)
-        if not missing:
-            continue
-        share = player.get(name)
-        if share is None:
-            return None
-        total += float(share) ** 2 * missing
     return total
 
 
