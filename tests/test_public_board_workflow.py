@@ -25,6 +25,15 @@ class PublicBoardWorkflowTests(unittest.TestCase):
         self.assertIn('id="panel-comparison"', public_board)
         self.assertIn('data-panel="comparison">PGO Model', public_board)
 
+    def test_board_workflows_use_current_node_runtime_actions(self):
+        for name in ("update-board.yml", "publish-edition.yml"):
+            workflow = (ROOT / ".github" / "workflows" / name).read_text(
+                encoding="utf-8"
+            )
+            with self.subTest(workflow=name):
+                self.assertIn("actions/checkout@v7", workflow)
+                self.assertIn("actions/setup-python@v7", workflow)
+
 
 if __name__ == "__main__":
     unittest.main()
