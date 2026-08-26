@@ -1,8 +1,10 @@
 import copy
 import csv
+import gc
 import json
 import tempfile
 import unittest
+import warnings
 from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
@@ -96,6 +98,48 @@ class ReleaseGateTests(unittest.TestCase):
             with patch.object(spreads, "DATA", str(data)):
                 with self.assertRaisesRegex(ValueError, "Alpha"):
                     spreads.load_ratings()
+
+    def test_site_csv_loaders_close_files(self):
+        with tempfile.TemporaryDirectory() as temp:
+            data = Path(temp)
+            write_ratings(data / "ratings.csv")
+            with (data / "prior_2025.csv").open(
+                "w", encoding="utf-8", newline=""
+            ) as handle:
+                writer = csv.DictWriter(
+                    handle, fieldnames=("team", "end_2025_rating")
+                )
+                writer.writeheader()
+                writer.writerow({"team": "Alpha", "end_2025_rating": "1.0"})
+            with (data / "qb_depth.csv").open(
+                "w", encoding="utf-8", newline=""
+            ) as handle:
+                writer = csv.DictWriter(
+                    handle,
+                    fieldnames=(
+                        "qb_name", "team", "string", "value", "notes",
+                        "age", "exp",
+                    ),
+                )
+                writer.writeheader()
+                writer.writerow({
+                    "qb_name": "Backup QB", "team": "Alpha", "string": "2",
+                    "value": "0", "notes": "", "age": "25", "exp": "2",
+                })
+
+            with patch.object(generate_site, "DATA", str(data)):
+                with warnings.catch_warnings(record=True) as caught:
+                    warnings.simplefilter("always", ResourceWarning)
+                    generate_site.load_prior()
+                    generate_site.load_qbs()
+                    gc.collect()
+
+        unclosed = [
+            warning for warning in caught
+            if issubclass(warning.category, ResourceWarning)
+            and "unclosed file" in str(warning.message)
+        ]
+        self.assertEqual(unclosed, [])
 
 
 class SnapshotTests(unittest.TestCase):

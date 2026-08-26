@@ -98,8 +98,9 @@ def load_prior():
     path = os.path.join(DATA, "prior_2025.csv")
     if not os.path.exists(path):
         return {}
-    return {r["team"]: float(r["end_2025_rating"])
-            for r in csv.DictReader(open(path, newline=""))}
+    with open(path, encoding="utf-8", newline="") as handle:
+        return {r["team"]: float(r["end_2025_rating"])
+                for r in csv.DictReader(handle)}
 
 
 def load_teams(prior):
@@ -253,22 +254,26 @@ def load_qbs(team_ratings=None):
     (from the CSVs, may be blank) and — for starters — the team's overall rating."""
     team_ratings = team_ratings or {}
     starters = []
-    for r in csv.DictReader(open(os.path.join(DATA, "ratings.csv"), newline="")):
-        starters.append({"name": r["qb_name"], "team": r["team"],
-                         "val": float(r["qb_value"] or 0),
-                         "age": r.get("age", "").strip(), "exp": r.get("exp", "").strip(),
-                         "team_rating": team_ratings.get(r["team"])})
+    with open(
+        os.path.join(DATA, "ratings.csv"), encoding="utf-8", newline=""
+    ) as handle:
+        for r in csv.DictReader(handle):
+            starters.append({"name": r["qb_name"], "team": r["team"],
+                             "val": float(r["qb_value"] or 0),
+                             "age": r.get("age", "").strip(), "exp": r.get("exp", "").strip(),
+                             "team_rating": team_ratings.get(r["team"])})
     starters.sort(key=lambda x: -x["val"])
 
     backups = []
     path = os.path.join(DATA, "qb_depth.csv")
     if os.path.exists(path):
-        for r in csv.DictReader(open(path, newline="")):
-            backups.append({"name": r["qb_name"], "team": r["team"],
-                            "string": int(r["string"]), "val": float(r["value"] or 0),
-                            "notes": r.get("notes", ""),
-                            "age": r.get("age", "").strip(), "exp": r.get("exp", "").strip(),
-                            "team_rating": team_ratings.get(r["team"])})
+        with open(path, encoding="utf-8", newline="") as handle:
+            for r in csv.DictReader(handle):
+                backups.append({"name": r["qb_name"], "team": r["team"],
+                                "string": int(r["string"]), "val": float(r["value"] or 0),
+                                "notes": r.get("notes", ""),
+                                "age": r.get("age", "").strip(), "exp": r.get("exp", "").strip(),
+                                "team_rating": team_ratings.get(r["team"])})
         backups.sort(key=lambda x: (-x["val"], x["string"]))
         backups = backups[:18]
     return starters, backups
