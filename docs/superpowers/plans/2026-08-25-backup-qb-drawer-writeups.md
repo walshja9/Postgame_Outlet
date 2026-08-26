@@ -56,7 +56,7 @@ def test_qb_drawer_uses_prose_for_the_selected_player_role(self):
         ):
             backup_html = generate_site.build_qb_detail(backup, "backup", 1)
             starter_html = generate_site.build_qb_detail(starter, "starter", 1)
-            (qb_writeups / "jj-mccarthy.md").write_text(
+            (qb_writeups / f"{generate_site.qb_slug(backup['name'])}.md").write_text(
                 "Backup-specific analysis.", encoding="utf-8"
             )
             overridden_html = generate_site.build_qb_detail(backup, "backup", 1)
