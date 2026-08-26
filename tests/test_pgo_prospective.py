@@ -279,6 +279,111 @@ class ProspectiveGradeTests(unittest.TestCase):
             pgo_prospective.grade_locked_games(changed_hash, self.results)
 
 
+class ProspectiveSchemaOneRegressionTests(unittest.TestCase):
+    def test_schema_one_serialized_bytes_are_frozen(self):
+        lock_tests = ProspectiveLockTests()
+        lock_tests.setUp()
+        lock = pgo_prospective.lock_games(lock_tests.schedule, lock_tests.model_state, AS_OF)
+        self.assertEqual(
+            _sha256(pgo_prospective.serialize_lock(lock)),
+            "38a32705b5ff09efcc60a1e12526acbfdf6960525aadac9c80847513f70b7ad0",
+        )
+        self.assertEqual(
+            _sha256(pgo_prospective._prediction_csv(lock)),
+            "97ac0f7f24786ef04bc67a493283b1e3f61422c45007b024d6f1facab4cf9c1d",
+        )
+
+        grade_tests = ProspectiveGradeTests()
+        grade_tests.setUp()
+        receipt = pgo_prospective.grade_locked_games(grade_tests.lock, grade_tests.results)
+        receipt_text, rows_text = pgo_prospective.serialize_grade(receipt, receipt["rows"])
+        self.assertEqual(_sha256(receipt_text), "10dfebd8f68d8327a533d373f79f1677a1b966f7dc7c995afe7b34c0fcaeeb26")
+        self.assertEqual(_sha256(rows_text), "155ec3456adcd45dc9e05c1ddf4d92a45c3e07da1e5f93a950bc43417c6a5c41")
+
+
+class ProspectiveBlendDevelopmentTests(unittest.TestCase):
+    source_path = Path("research/pgo_v1/validation_predictions.csv")
+
+    def setUp(self):
+        self.source = pgo_prospective.load_development_predictions(self.source_path)
+        self.receipt = pgo_prospective.develop_stability_blend(self.source)
+
+    def test_tracked_source_and_approved_fixed_blend_are_reproduced(self):
+        self.assertEqual(
+            self.source["sha256"],
+            "b697b6f8f5eee9ae1efe607272458964a681f99f440a94f86d8edce2ad5a19b7",
+        )
+        self.assertEqual(len(self.source["rows"]), 2_127)
+        self.assertEqual({row["season"] for row in self.source["rows"]}, set(range(2018, 2026)))
+        self.assertEqual(self.receipt["status"], "DEVELOPMENT_ONLY")
+        self.assertEqual(self.receipt["candidate"]["kind"], "fixed_convex_stability_blend")
+        self.assertEqual(self.receipt["selection"]["selected_pgo_v1_weight"], 0.25)
+        self.assertEqual(self.receipt["selection"]["first_regressing_weight"], 0.30)
+        self.assertEqual(len(self.receipt["grid_results"]), 21)
+        self.assertAlmostEqual(self.receipt["metrics"]["candidate_mae"], 10.227241, places=6)
+        self.assertAlmostEqual(self.receipt["metrics"]["pgo_v0_mae"], 10.266150, places=6)
+        self.assertAlmostEqual(self.receipt["aggregate_interval"]["lower"], 0.017797, places=6)
+        self.assertAlmostEqual(self.receipt["aggregate_interval"]["upper"], 0.060136, places=6)
+        self.assertTrue(all(row["improvement"] > 0.0 for row in self.receipt["season_results"]))
+
+    def test_receipt_serialization_and_cli_are_deterministic(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            first = pgo_prospective.write_development_receipt(root / "first.json", self.receipt)
+            second = pgo_prospective.write_development_receipt(root / "second.json", self.receipt)
+            self.assertEqual(first.read_bytes(), second.read_bytes())
+            output = root / "cli.json"
+            self.assertEqual(
+                pgo_prospective._cli_develop_blend(
+                    SimpleNamespace(predictions=self.source_path, output=output)
+                ),
+                0,
+            )
+            self.assertEqual(json.loads(output.read_text(encoding="utf-8")), self.receipt)
+
+    def test_loader_rejects_invalid_csv_contracts(self):
+        raw = self.source_path.read_text(encoding="utf-8")
+        header, first, *rest = raw.splitlines()
+        cases = {
+            "header": "changed," + header.split(",", 1)[1] + "\n" + first + "\n",
+            "duplicate": "\n".join((header, first, first)) + "\n",
+            "boolean": "\n".join((header, first.replace(",true,", ",True,", 1))) + "\n",
+            "nonfinite": "\n".join((header, first.replace(",6.000000,", ",nan,"))) + "\n",
+        }
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            for name, text in cases.items():
+                path = root / f"{name}.csv"
+                path.write_text(text, encoding="utf-8", newline="")
+                with self.subTest(name=name), self.assertRaises(ValueError):
+                    pgo_prospective.load_development_predictions(path)
+
+    def test_development_contract_rejects_source_and_receipt_tampering(self):
+        missing = {"rows": self.source["rows"][:-1], "sha256": self.source["sha256"]}
+        wrong_season = deepcopy(self.source)
+        wrong_season["rows"][0]["season"] = 2017
+        changed_hash = {**self.source, "sha256": _sha256("changed-source")}
+        for source in (missing, wrong_season, changed_hash):
+            with self.subTest(source=source["sha256"]), self.assertRaises(ValueError):
+                pgo_prospective.develop_stability_blend(source)
+
+        stale_hash = deepcopy(self.receipt)
+        stale_hash["metrics"]["candidate_mae"] = 0.0
+        with self.assertRaises(ValueError):
+            pgo_prospective._verify_development_receipt(stale_hash)
+        rehashed = deepcopy(stale_hash)
+        rehashed["artifact_sha256"] = pgo_prospective._artifact_hash(rehashed)
+        with self.assertRaises(ValueError):
+            pgo_prospective._verify_development_receipt(rehashed)
+        no_regression = deepcopy(self.receipt)
+        for grid_row in no_regression["grid_results"]:
+            for season_row in grid_row["season_results"]:
+                season_row["improvement"] = 1.0
+        no_regression["artifact_sha256"] = pgo_prospective._artifact_hash(no_regression)
+        with self.assertRaises(ValueError):
+            pgo_prospective._verify_development_receipt(no_regression)
+
+
 class ProspectiveArtifactSafetyTests(unittest.TestCase):
     protected_paths = (
         Path("research/pgo_v1/backtest.json"),

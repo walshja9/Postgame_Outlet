@@ -27,6 +27,19 @@ PREDICTION_COLUMNS = (
     "challenger_prediction", "challenger_full_strength_prediction",
     "subgroup_flags",
 )
+BLEND_KIND = "fixed_convex_stability_blend"
+BLEND_FORMULA = "0.75*pgo_v0_prediction+0.25*challenger_prediction"
+BLEND_WEIGHT = 0.25
+BLEND_GRID = tuple(index / 20 for index in range(21))
+DEVELOPMENT_SOURCE_SHA256 = "b697b6f8f5eee9ae1efe607272458964a681f99f440a94f86d8edce2ad5a19b7"
+DEVELOPMENT_GAME_COUNT = 2_127
+DEVELOPMENT_SEASONS = tuple(range(2018, 2026))
+DEVELOPMENT_COLUMNS = (
+    "game_id", "season", "week", "kickoff", "actual_margin",
+    "pgo_v0_prediction", "challenger_prediction", "changed_or_backup_qb",
+    "major_availability_loss", "head_coach_change", "high_roster_turnover",
+    "weeks_1_4", "weeks_5_18", "half_life_games", "alpha", "delta",
+)
 
 
 def _parse_datetime(value):
@@ -142,6 +155,49 @@ def load_schedule_snapshot(path):
         if row["game_id"] in seen:
             raise ValueError(f"Duplicate game ID: {row['game_id']}")
         seen.add(row["game_id"])
+    return {"rows": rows, "sha256": hashlib.sha256(raw).hexdigest()}
+
+
+def load_development_predictions(path):
+    """Load the fixed historical blend-development source without changing it."""
+    raw = Path(path).read_bytes()
+    try:
+        reader = csv.DictReader(io.StringIO(raw.decode("utf-8-sig"), newline=""))
+    except UnicodeDecodeError as error:
+        raise ValueError("Development predictions are not UTF-8 CSV") from error
+    if reader.fieldnames != list(DEVELOPMENT_COLUMNS):
+        raise ValueError("Development predictions header mismatch")
+    rows, seen = [], set()
+    boolean_names = {
+        "changed_or_backup_qb", "major_availability_loss", "head_coach_change",
+        "high_roster_turnover", "weeks_1_4", "weeks_5_18",
+    }
+    integer_names = {"season", "week", "half_life_games"}
+    numeric_names = {
+        "actual_margin", "pgo_v0_prediction", "challenger_prediction", "alpha", "delta",
+    }
+    for raw_row in reader:
+        if None in raw_row:
+            raise ValueError("Development predictions row has extra columns")
+        game_id = str(raw_row.get("game_id", "")).strip()
+        if not game_id:
+            raise ValueError("Development prediction game ID is missing")
+        if game_id in seen:
+            raise ValueError(f"Duplicate development game ID: {game_id}")
+        seen.add(game_id)
+        row = {"game_id": game_id, "kickoff": _timestamp(raw_row.get("kickoff", ""))}
+        try:
+            row.update({name: int(raw_row[name]) for name in integer_names})
+        except (KeyError, TypeError, ValueError) as error:
+            raise ValueError(f"Invalid development integer: {game_id}") from error
+        row.update({name: _finite(raw_row.get(name), name) for name in numeric_names})
+        for name in boolean_names:
+            if raw_row.get(name) not in {"true", "false"}:
+                raise ValueError(f"Invalid development boolean: {game_id}")
+            row[name] = raw_row[name] == "true"
+        rows.append(row)
+    if not rows:
+        raise ValueError("Development predictions have no rows")
     return {"rows": rows, "sha256": hashlib.sha256(raw).hexdigest()}
 
 
@@ -539,6 +595,169 @@ def write_grade(output_dir, receipt, rows):
     return receipt_path
 
 
+def _blend_prediction(pgo_v0, challenger, weight=BLEND_WEIGHT):
+    return (1.0 - weight) * float(pgo_v0) + weight * float(challenger)
+
+
+def _comparison_rows(rows, incumbent_key, candidate_key):
+    return [
+        {
+            **row,
+            "pgo_v0_prediction": row[incumbent_key],
+            "challenger_prediction": row[candidate_key],
+        }
+        for row in rows
+    ]
+
+
+def _season_results(incumbent, candidate):
+    incumbent_by_season = {row["season"]: row for row in incumbent["seasons"]}
+    return [
+        {
+            "season": row["season"],
+            "pgo_v0_mae": incumbent_by_season[row["season"]]["mae"],
+            "candidate_mae": row["mae"],
+            "improvement": incumbent_by_season[row["season"]]["mae"] - row["mae"],
+        }
+        for row in candidate["seasons"]
+    ]
+
+
+def _grid_result(rows, incumbent, weight):
+    candidate_rows = [
+        {**row, "candidate_prediction": _blend_prediction(
+            row["pgo_v0_prediction"], row["challenger_prediction"], weight
+        )}
+        for row in rows
+    ]
+    candidate = pgo_challenger.metric_summary(candidate_rows, "candidate_prediction")
+    return {
+        "pgo_v1_weight": weight,
+        "metrics": {
+            "pgo_v0_mae": incumbent["mae"],
+            "candidate_mae": candidate["mae"],
+            "improvement": incumbent["mae"] - candidate["mae"],
+        },
+        "season_results": _season_results(incumbent, candidate),
+        "rows": candidate_rows,
+    }
+
+
+def _selection_from_grid(grid_results):
+    eligible = [
+        row for row in grid_results
+        if row["pgo_v1_weight"] > 0.0
+        and all(item["improvement"] > 0.0 for item in row["season_results"])
+    ]
+    if not eligible:
+        raise ValueError("No development blend improves every season")
+    selected = max(eligible, key=lambda row: row["pgo_v1_weight"])
+    regressing = next((
+        row["pgo_v1_weight"] for row in grid_results
+        if row["pgo_v1_weight"] > selected["pgo_v1_weight"]
+        and any(item["improvement"] <= 0.0 for item in row["season_results"])
+    ), None)
+    if regressing is None:
+        raise ValueError("Development grid has no regressing weight")
+    return selected, regressing
+
+
+def develop_stability_blend(source):
+    if not isinstance(source, dict) or source.get("sha256") != DEVELOPMENT_SOURCE_SHA256:
+        raise ValueError("Development source hash mismatch")
+    rows = source.get("rows")
+    if not isinstance(rows, list) or len(rows) != DEVELOPMENT_GAME_COUNT:
+        raise ValueError("Development source game count mismatch")
+    if tuple(sorted({row.get("season") for row in rows})) != DEVELOPMENT_SEASONS:
+        raise ValueError("Development source seasons mismatch")
+    incumbent = pgo_challenger.metric_summary(rows, "pgo_v0_prediction")
+    grid = [_grid_result(rows, incumbent, weight) for weight in BLEND_GRID]
+    selected, first_regressing = _selection_from_grid(grid)
+    comparison = _comparison_rows(
+        selected.pop("rows"), "pgo_v0_prediction", "candidate_prediction"
+    )
+    receipt = {
+        "schema_version": SCHEMA_VERSION,
+        "status": "DEVELOPMENT_ONLY",
+        "candidate": {
+            "kind": BLEND_KIND,
+            "formula": BLEND_FORMULA,
+            "pgo_v1_weight": BLEND_WEIGHT,
+        },
+        "source_sha256": source["sha256"],
+        "counts": {"games": len(rows), "seasons": len(DEVELOPMENT_SEASONS)},
+        "seasons": list(DEVELOPMENT_SEASONS),
+        "selection": {
+            "selected_pgo_v1_weight": selected["pgo_v1_weight"],
+            "first_regressing_weight": first_regressing,
+        },
+        "metrics": deepcopy(selected["metrics"]),
+        "aggregate_interval": pgo_challenger.paired_block_bootstrap(
+            comparison, samples=10_000, seed=20260721
+        ),
+        "season_results": deepcopy(selected["season_results"]),
+        "grid_results": [{key: value for key, value in row.items() if key != "rows"} for row in grid],
+    }
+    receipt["artifact_sha256"] = _artifact_hash(receipt)
+    return receipt
+
+
+def _verify_development_receipt(receipt):
+    expected_keys = {
+        "schema_version", "status", "candidate", "source_sha256", "counts", "seasons",
+        "selection", "metrics", "aggregate_interval", "season_results", "grid_results",
+        "artifact_sha256",
+    }
+    if not isinstance(receipt, dict) or set(receipt) != expected_keys:
+        raise ValueError("Development receipt schema mismatch")
+    if receipt["schema_version"] != SCHEMA_VERSION or receipt["status"] != "DEVELOPMENT_ONLY":
+        raise ValueError("Development receipt status mismatch")
+    if receipt["candidate"] != {
+        "kind": BLEND_KIND, "formula": BLEND_FORMULA, "pgo_v1_weight": BLEND_WEIGHT,
+    }:
+        raise ValueError("Development receipt candidate mismatch")
+    if receipt["source_sha256"] != DEVELOPMENT_SOURCE_SHA256:
+        raise ValueError("Development receipt source mismatch")
+    if receipt["counts"] != {"games": DEVELOPMENT_GAME_COUNT, "seasons": len(DEVELOPMENT_SEASONS)}:
+        raise ValueError("Development receipt counts mismatch")
+    if receipt["seasons"] != list(DEVELOPMENT_SEASONS):
+        raise ValueError("Development receipt seasons mismatch")
+    grid = receipt["grid_results"]
+    if not isinstance(grid, list) or [row.get("pgo_v1_weight") for row in grid] != list(BLEND_GRID):
+        raise ValueError("Development receipt grid mismatch")
+    try:
+        selected, first_regressing = _selection_from_grid(grid)
+        finite_values = [
+            *receipt["metrics"].values(), *receipt["aggregate_interval"].values(),
+            *(value for row in receipt["season_results"] for value in row.values() if row is not None),
+            *(item for row in grid for item in row["metrics"].values()),
+            *(value for row in grid for item in row["season_results"] for value in item.values()),
+        ]
+    except (AttributeError, KeyError, TypeError, ValueError) as error:
+        raise ValueError("Development receipt metrics mismatch") from error
+    if not all(math.isfinite(float(value)) for value in finite_values):
+        raise ValueError("Development receipt metrics must be finite")
+    if receipt["selection"] != {
+        "selected_pgo_v1_weight": selected["pgo_v1_weight"],
+        "first_regressing_weight": first_regressing,
+    }:
+        raise ValueError("Development receipt selection mismatch")
+    if receipt["metrics"] != selected["metrics"] or receipt["season_results"] != selected["season_results"]:
+        raise ValueError("Development receipt selected metrics mismatch")
+    if receipt["selection"]["selected_pgo_v1_weight"] != BLEND_WEIGHT:
+        raise ValueError("Development receipt blend weight mismatch")
+    if not receipt.get("artifact_sha256") or _artifact_hash(receipt) != receipt["artifact_sha256"]:
+        raise ValueError("Development receipt artifact hash mismatch")
+    return receipt
+
+
+def write_development_receipt(path, receipt):
+    _verify_development_receipt(receipt)
+    path = Path(path)
+    atomic_write_text(path, _canonical(receipt) + "\n")
+    return path
+
+
 def _load_results(path):
     try:
         with Path(path).open(encoding="utf-8-sig", newline="") as handle:
@@ -844,6 +1063,13 @@ def _cli_grade(args):
     return 0 if receipt["status"] == "PASS" else 1
 
 
+def _cli_develop_blend(args):
+    write_development_receipt(
+        args.output, develop_stability_blend(load_development_predictions(args.predictions))
+    )
+    return 0
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -857,11 +1083,16 @@ def main(argv=None):
     grade.add_argument("--lock-file", type=Path, required=True)
     grade.add_argument("--results-path", type=Path, required=True)
     grade.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
+    develop = subparsers.add_parser("develop-blend")
+    develop.add_argument("--predictions", type=Path, required=True)
+    develop.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
     if args.command == "lock":
         return _cli_lock(args)
     elif args.command == "grade":
         return _cli_grade(args)
+    elif args.command == "develop-blend":
+        return _cli_develop_blend(args)
 
 
 if __name__ == "__main__":
