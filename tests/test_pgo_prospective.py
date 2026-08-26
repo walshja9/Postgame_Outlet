@@ -2,6 +2,7 @@ import hashlib
 import csv
 import json
 import math
+import os
 import tempfile
 import unittest
 from copy import deepcopy
@@ -293,6 +294,16 @@ class ProspectiveBlendGradeTests(unittest.TestCase):
             base, json.loads(development_bytes), hashlib.sha256(development_bytes).hexdigest(),
             "2026-08-21T12:00:00-04:00",
         )
+        self.lock_bytes = pgo_prospective.serialize_lock(self.lock).encode("utf-8")
+        self.attestation = pgo_prospective.build_prospective_attestation(
+            base,
+            pgo_prospective.serialize_lock(base).encode("utf-8"),
+            pgo_prospective._prediction_csv(base).encode("utf-8"),
+            self.lock,
+            self.lock_bytes,
+            pgo_prospective._prediction_csv(self.lock).encode("utf-8"),
+            development_bytes,
+        )
         self.results = [
             {
                 "game_id": "2026_01_NYJ_BUF", "home_team": "BUF", "away_team": "NYJ",
@@ -310,16 +321,25 @@ class ProspectiveBlendGradeTests(unittest.TestCase):
 
     def _write_inputs(self, root, results):
         lock_path = pgo_prospective.write_lock(root / "lock", self.lock)
+        attestation_path = root / "attestation.json"
+        attestation_path.write_text(
+            pgo_prospective._canonical(self.attestation) + "\n", encoding="utf-8"
+        )
         results_path = root / "results.csv"
         columns = tuple(sorted({key for row in results for key in row}))
         with results_path.open("w", encoding="utf-8", newline="") as handle:
             writer = csv.DictWriter(handle, fieldnames=columns)
             writer.writeheader()
             writer.writerows(results)
-        return lock_path, results_path
+        return lock_path, results_path, attestation_path
 
     def test_candidate_grade_reports_metrics_and_status(self):
-        receipt = pgo_prospective.grade_locked_games(self.lock, self.results)
+        receipt = pgo_prospective.grade_locked_games(
+            self.lock,
+            self.results,
+            attestation=self.attestation,
+            lock_bytes=self.lock_bytes,
+        )
 
         self.assertAlmostEqual(receipt["metrics"]["pgo_v0_mae"], 2.5)
         self.assertAlmostEqual(receipt["metrics"]["challenger_mae"], 1.0)
@@ -328,14 +348,122 @@ class ProspectiveBlendGradeTests(unittest.TestCase):
         self.assertEqual(receipt["publication_status"], "VALIDATED")
         self.assertEqual(receipt["bootstrap"]["samples"], 10_000)
         self.assertEqual(receipt["bootstrap"]["seed"], 20260721)
-        self.assertIn("candidate_vs_challenger_interval", receipt)
+        self.assertEqual(receipt["candidate_vs_challenger_interval"], {
+            "mean": -0.625, "lower": -0.625, "upper": -0.625,
+            "samples": 10_000, "seed": 20260721,
+        })
+        self.assertEqual(receipt["subgroup_results"]["weeks_1_4"], {
+            "status": "INSUFFICIENT_EVIDENCE", "count": 2,
+        })
+        self.assertTrue(receipt["checks"]["no_sufficient_subgroup_regression"])
+
+    def test_candidate_holds_for_sufficient_subgroup_regression(self):
+        subgroups = {
+            name: {"status": "INSUFFICIENT_EVIDENCE", "count": 0}
+            for name in pgo_prospective.pgo_challenger.SUBGROUPS
+        }
+        subgroups["weeks_1_4"] = {
+            "status": "SUFFICIENT_EVIDENCE",
+            "count": 100,
+            "pgo_v0_mae": 2.0,
+            "challenger_mae": 3.0,
+            "improvement": -1.0,
+            "lower": -1.5,
+            "upper": -0.5,
+        }
+
+        with patch.object(
+            pgo_prospective.pgo_challenger,
+            "subgroup_results",
+            return_value=subgroups,
+        ):
+            receipt = pgo_prospective.grade_locked_games(
+                self.lock,
+                self.results,
+                attestation=self.attestation,
+                lock_bytes=self.lock_bytes,
+            )
+
+        self.assertFalse(receipt["checks"]["no_sufficient_subgroup_regression"])
+        self.assertEqual(receipt["status"], "HOLD")
+
+    def test_candidate_grade_requires_external_attestation_and_exact_lock_bytes(self):
+        for attestation, lock_bytes in ((None, None), (self.attestation, b"{}")):
+            with self.subTest(lock_bytes=lock_bytes), self.assertRaisesRegex(
+                ValueError, "[Aa]ttestation"
+            ):
+                pgo_prospective.grade_locked_games(
+                    self.lock,
+                    self.results,
+                    attestation=attestation,
+                    lock_bytes=lock_bytes,
+                )
+
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            lock_path, results_path, _ = self._write_inputs(root, self.results)
+            output_dir = root / "grade"
+            self.assertEqual(pgo_prospective.main([
+                "grade", "--lock-file", str(lock_path), "--results-path",
+                str(results_path), "--output-dir", str(output_dir),
+            ]), 1)
+            receipt = json.loads((output_dir / "prospective_receipt.json").read_text())
+            self.assertEqual(receipt["status"], "BLOCKED")
+
+    def test_candidate_grade_rejects_coordinated_development_rehash(self):
+        changed = deepcopy(self.lock)
+        changed["candidate"]["development_receipt_sha256"] = _sha256("other development")
+        changed["artifact_sha256"] = pgo_prospective._artifact_hash(changed)
+        pgo_prospective._verify_lock(changed)
+
+        with self.assertRaisesRegex(ValueError, "attestation"):
+            pgo_prospective.grade_locked_games(
+                changed,
+                self.results,
+                attestation=self.attestation,
+                lock_bytes=pgo_prospective.serialize_lock(changed).encode("utf-8"),
+            )
+
+    def test_candidate_grade_rejects_coordinated_base_candidate_rehash(self):
+        changed = deepcopy(self.lock)
+        game = changed["games"][0]
+        game["pgo_v0_prediction"] += 1.0
+        game["challenger_prediction"] += 1.0
+        game["candidate_prediction"] = pgo_prospective._blend_prediction(
+            game["pgo_v0_prediction"], game["challenger_prediction"]
+        )
+        base = pgo_prospective._base_lock_from_derived(changed)
+        base["prediction_integrity_sha256"] = pgo_prospective._prediction_integrity_hash(
+            base["games"]
+        )
+        base["artifact_sha256"] = pgo_prospective._artifact_hash(base)
+        changed["base_prediction_integrity_sha256"] = base["prediction_integrity_sha256"]
+        changed["base_lock_artifact_sha256"] = base["artifact_sha256"]
+        changed["prediction_integrity_sha256"] = pgo_prospective._prediction_integrity_hash(
+            changed["games"], include_candidate=True
+        )
+        changed["artifact_sha256"] = pgo_prospective._artifact_hash(changed)
+        pgo_prospective._verify_lock(changed)
+
+        with self.assertRaisesRegex(ValueError, "attestation"):
+            pgo_prospective.grade_locked_games(
+                changed,
+                self.results,
+                attestation=self.attestation,
+                lock_bytes=pgo_prospective.serialize_lock(changed).encode("utf-8"),
+            )
 
     def test_candidate_holds_when_v0_is_perfect(self):
         results = [
             {**self.results[0], "home_score": "24", "away_score": "20"},
             {**self.results[1], "home_score": "17", "away_score": "25"},
         ]
-        receipt = pgo_prospective.grade_locked_games(self.lock, results)
+        receipt = pgo_prospective.grade_locked_games(
+            self.lock,
+            results,
+            attestation=self.attestation,
+            lock_bytes=self.lock_bytes,
+        )
 
         self.assertEqual(receipt["status"], "HOLD")
         self.assertIn("candidate_mae_lower", receipt["failed_checks"])
@@ -350,11 +478,12 @@ class ProspectiveBlendGradeTests(unittest.TestCase):
             with self.subTest(results=results):
                 with tempfile.TemporaryDirectory() as temp:
                     root = Path(temp)
-                    lock_path, results_path = self._write_inputs(root, results)
+                    lock_path, results_path, attestation_path = self._write_inputs(root, results)
                     output_dir = root / "grade"
                     self.assertEqual(pgo_prospective.main([
                         "grade", "--lock-file", str(lock_path), "--results-path",
-                        str(results_path), "--output-dir", str(output_dir),
+                        str(results_path), "--attestation-file", str(attestation_path),
+                        "--output-dir", str(output_dir),
                     ]), 1)
                     receipt = json.loads((output_dir / "prospective_receipt.json").read_text())
                     self.assertEqual(receipt["status"], "BLOCKED")
@@ -374,14 +503,29 @@ class ProspectiveBlendGradeTests(unittest.TestCase):
         formula["artifact_sha256"] = pgo_prospective._artifact_hash(formula)
         for lock in (prediction, changed_hash, formula):
             with self.subTest(lock=lock["artifact_sha256"]), self.assertRaises(ValueError):
-                pgo_prospective.grade_locked_games(lock, self.results)
+                pgo_prospective.grade_locked_games(
+                    lock,
+                    self.results,
+                    attestation=self.attestation,
+                    lock_bytes=pgo_prospective.serialize_lock(lock).encode("utf-8"),
+                )
 
     def test_candidate_grade_rejects_invalid_result_rows(self):
         with self.assertRaisesRegex(ValueError, "^Invalid result row:"):
-            pgo_prospective.grade_locked_games(self.lock, [None])
+            pgo_prospective.grade_locked_games(
+                self.lock,
+                [None],
+                attestation=self.attestation,
+                lock_bytes=self.lock_bytes,
+            )
 
     def test_candidate_grade_serialization_is_deterministic(self):
-        receipt = pgo_prospective.grade_locked_games(self.lock, self.results)
+        receipt = pgo_prospective.grade_locked_games(
+            self.lock,
+            self.results,
+            attestation=self.attestation,
+            lock_bytes=self.lock_bytes,
+        )
 
         first = pgo_prospective.serialize_grade(receipt, receipt["rows"])
         self.assertEqual(first, pgo_prospective.serialize_grade(receipt, receipt["rows"]))
@@ -403,10 +547,11 @@ class ProspectiveBlendGradeTests(unittest.TestCase):
             with self.subTest(expected=expected):
                 with tempfile.TemporaryDirectory() as temp:
                     root = Path(temp)
-                    lock_path, results_path = self._write_inputs(root, results)
+                    lock_path, results_path, attestation_path = self._write_inputs(root, results)
                     self.assertEqual(pgo_prospective.main([
                         "grade", "--lock-file", str(lock_path), "--results-path",
-                        str(results_path), "--output-dir", str(root / "grade"),
+                        str(results_path), "--attestation-file", str(attestation_path),
+                        "--output-dir", str(root / "grade"),
                     ]), expected)
 
 
@@ -615,6 +760,35 @@ class ProspectiveBlendLockTests(unittest.TestCase):
                     self.assertEqual(pgo_prospective._cli_derive_blend(args), 1)
                     self.assertFalse(output_dir.exists())
 
+    def test_cli_refuses_output_directory_below_attestation_path(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            base_lock = root / "base.json"
+            base_predictions = root / "base.csv"
+            receipt = root / "development.json"
+            base_lock.write_bytes(pgo_prospective.serialize_lock(self.base_lock).encode("utf-8"))
+            base_predictions.write_text(
+                pgo_prospective._prediction_csv(self.base_lock),
+                encoding="utf-8",
+                newline="",
+            )
+            receipt.write_bytes(self.development_receipt_bytes)
+            attestation = root / "attestation.json"
+            args = SimpleNamespace(
+                base_lock=base_lock,
+                base_predictions=base_predictions,
+                development_receipt=receipt,
+                as_of=self.as_of,
+                output_dir=attestation / "derived",
+                attestation_output=attestation,
+            )
+
+            try:
+                result = pgo_prospective._cli_derive_blend(args)
+            except OSError:
+                result = None
+            self.assertEqual((result, attestation.exists()), (1, False))
+
     def test_cli_rolls_back_all_outputs_when_any_write_fails(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -660,6 +834,58 @@ class ProspectiveBlendLockTests(unittest.TestCase):
                         (result, output_dir.exists(), attestation.exists()),
                         (1, False, False),
                     )
+
+    def test_cli_preserves_raced_targets_and_removes_owned_outputs(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            base_lock = root / "base.json"
+            base_predictions = root / "base.csv"
+            receipt = root / "development.json"
+            base_lock.write_bytes(pgo_prospective.serialize_lock(self.base_lock).encode("utf-8"))
+            base_predictions.write_text(
+                pgo_prospective._prediction_csv(self.base_lock),
+                encoding="utf-8",
+                newline="",
+            )
+            receipt.write_bytes(self.development_receipt_bytes)
+            link = os.link
+
+            for raced_link in (1, 2, 3):
+                with self.subTest(raced_link=raced_link):
+                    output_dir = root / f"derived-{raced_link}"
+                    attestation = root / f"attestation-{raced_link}.json"
+                    targets = (
+                        output_dir / "prospective_lock.json",
+                        output_dir / "prospective_predictions.csv",
+                        attestation,
+                    )
+                    args = SimpleNamespace(
+                        base_lock=base_lock,
+                        base_predictions=base_predictions,
+                        development_receipt=receipt,
+                        as_of=self.as_of,
+                        output_dir=output_dir,
+                        attestation_output=attestation,
+                    )
+                    calls = 0
+
+                    def race_link(source, target):
+                        nonlocal calls
+                        calls += 1
+                        if calls == raced_link:
+                            Path(target).write_text("racer", encoding="utf-8")
+                        link(source, target)
+
+                    with patch.object(os, "link", race_link):
+                        result = pgo_prospective._cli_derive_blend(args)
+                    self.assertEqual(result, 1)
+                    for index, target in enumerate(targets, start=1):
+                        if index == raced_link:
+                            self.assertEqual(target.read_text(encoding="utf-8"), "racer")
+                        else:
+                            self.assertFalse(target.exists())
+                    if raced_link == 3:
+                        self.assertFalse(output_dir.exists())
 
     def test_attestation_rejects_substituted_evidence_inputs(self):
         derived = self._derived()

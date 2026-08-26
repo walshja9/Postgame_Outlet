@@ -7,6 +7,8 @@ import hashlib
 import io
 import json
 import math
+import os
+import tempfile
 from copy import deepcopy
 from dataclasses import asdict
 from datetime import datetime, timezone
@@ -620,6 +622,45 @@ def _verify_prospective_attestation(attestation):
     return attestation
 
 
+def _verify_grade_attestation(lock, lock_bytes, attestation):
+    _verify_prospective_attestation(attestation)
+    if not isinstance(lock_bytes, bytes):
+        raise ValueError("Grade attestation lock bytes mismatch")
+    base = _base_lock_from_derived(lock)
+    base_lock_bytes = serialize_lock(base).encode("utf-8")
+    base_prediction_bytes = _prediction_csv(base).encode("utf-8")
+    derived_lock_bytes = serialize_lock(lock).encode("utf-8")
+    derived_prediction_bytes = _prediction_csv(lock).encode("utf-8")
+    expected_base = {
+        "lock_artifact_sha256": base["artifact_sha256"],
+        "lock_file_sha256": hashlib.sha256(base_lock_bytes).hexdigest(),
+        "prediction_integrity_sha256": base["prediction_integrity_sha256"],
+        "predictions_file_sha256": hashlib.sha256(base_prediction_bytes).hexdigest(),
+    }
+    expected_derived = {
+        "lock_artifact_sha256": lock["artifact_sha256"],
+        "lock_file_sha256": hashlib.sha256(lock_bytes).hexdigest(),
+        "prediction_integrity_sha256": lock["prediction_integrity_sha256"],
+        "predictions_file_sha256": hashlib.sha256(derived_prediction_bytes).hexdigest(),
+    }
+    if (
+        lock_bytes != derived_lock_bytes
+        or attestation["candidate"] != {
+            "kind": lock["candidate"]["kind"],
+            "as_of": lock["candidate"]["as_of"],
+        }
+        or attestation["development_receipt_file_sha256"]
+        != lock["candidate"]["development_receipt_sha256"]
+        or attestation["earliest_kickoff"] != min(
+            lock["games"], key=lambda game: _parse_datetime(game["kickoff"])
+        )["kickoff"]
+        or attestation["base"] != expected_base
+        or attestation["derived"] != expected_derived
+    ):
+        raise ValueError("Grade attestation mismatch")
+    return attestation
+
+
 def _normalize_result(result):
     if not isinstance(result, dict):
         raise ValueError("Invalid result row:")
@@ -679,7 +720,7 @@ def _result_hash(rows):
     return hashlib.sha256(_canonical(rows).encode("utf-8")).hexdigest()
 
 
-def grade_locked_games(lock, results):
+def grade_locked_games(lock, results, *, attestation=None, lock_bytes=None):
     """Validate finalized results and grade the immutable prospective lock."""
     games = _verify_lock(lock)
     candidate_grade = (
@@ -687,6 +728,8 @@ def grade_locked_games(lock, results):
         and isinstance(lock.get("candidate"), dict)
         and lock["candidate"].get("kind") == BLEND_KIND
     )
+    if candidate_grade:
+        _verify_grade_attestation(lock, lock_bytes, attestation)
     if not isinstance(results, list):
         raise ValueError("Results must be a list:")
     locked_by_id = {game["game_id"]: game for game in games}
@@ -1380,8 +1423,20 @@ def _cli_lock(args):
 def _cli_grade(args):
     lock = {}
     try:
-        lock = json.loads(Path(args.lock_file).read_text(encoding="utf-8"))
-        receipt = grade_locked_games(lock, _load_results(args.results_path))
+        lock_bytes = Path(args.lock_file).read_bytes()
+        lock = json.loads(lock_bytes)
+        attestation = None
+        if lock.get("schema_version") == 2:
+            attestation_file = getattr(args, "attestation_file", None)
+            if attestation_file is None:
+                raise ValueError("Grade attestation required")
+            attestation = json.loads(Path(attestation_file).read_bytes())
+        receipt = grade_locked_games(
+            lock,
+            _load_results(args.results_path),
+            attestation=attestation,
+            lock_bytes=lock_bytes,
+        )
     except (OSError, TypeError, ValueError, json.JSONDecodeError) as error:
         receipt = _blocked_receipt(lock, args.results_path, error)
     write_grade(args.output_dir, receipt, receipt["rows"])
@@ -1393,6 +1448,54 @@ def _cli_develop_blend(args):
         args.output, develop_stability_blend(load_development_predictions(args.predictions))
     )
     return 0
+
+
+def _write_new_outputs(output_dir, outputs):
+    staged = []
+    owned = {}
+    owns_output_dir = False
+    success = False
+    try:
+        output_dir.mkdir(parents=True)
+        owns_output_dir = True
+        outputs[-1][0].parent.mkdir(parents=True, exist_ok=True)
+        for target, content in outputs:
+            descriptor, name = tempfile.mkstemp(
+                dir=target.parent,
+                prefix=f".{target.name}.",
+                suffix=".pending",
+            )
+            os.close(descriptor)
+            staged_path = Path(name)
+            staged.append(staged_path)
+            atomic_write_text(staged_path, content)
+        for (target, _), staged_path in zip(outputs, staged):
+            state = staged_path.stat(follow_symlinks=False)
+            os.link(staged_path, target)
+            owned[target] = state
+        if any(
+            not os.path.samestat(target.stat(follow_symlinks=False), state)
+            for target, state in owned.items()
+        ):
+            raise OSError("Output reservation ownership changed")
+        success = True
+    except OSError:
+        for target, state in owned.items():
+            try:
+                current = target.stat(follow_symlinks=False)
+            except FileNotFoundError:
+                continue
+            if os.path.samestat(current, state):
+                target.unlink()
+    finally:
+        for staged_path in staged:
+            staged_path.unlink(missing_ok=True)
+        if owns_output_dir and not success:
+            try:
+                output_dir.rmdir()
+            except OSError:
+                pass
+    return success
 
 
 def _cli_derive_blend(args):
@@ -1412,6 +1515,7 @@ def _cli_derive_blend(args):
         or any(path.exists() or path.is_symlink() for path in output_paths)
         or len(set(resolved_outputs)) != len(resolved_outputs)
         or resolved_outputs[-1].is_relative_to(resolved_output_dir)
+        or resolved_output_dir.is_relative_to(resolved_outputs[-1])
     ):
         return 1
     try:
@@ -1435,19 +1539,12 @@ def _cli_derive_blend(args):
         )
     except (OSError, TypeError, ValueError, json.JSONDecodeError):
         return 1
-    try:
-        atomic_write_text(output_paths[0], derived_lock_bytes.decode("utf-8"))
-        atomic_write_text(output_paths[1], derived_prediction_bytes.decode("utf-8"))
-        atomic_write_text(output_paths[2], _canonical(attestation) + "\n")
-    except OSError:
-        for path in output_paths:
-            path.unlink(missing_ok=True)
-        try:
-            args.output_dir.rmdir()
-        except FileNotFoundError:
-            pass
-        return 1
-    return 0
+    outputs = (
+        (output_paths[0], derived_lock_bytes.decode("utf-8")),
+        (output_paths[1], derived_prediction_bytes.decode("utf-8")),
+        (output_paths[2], _canonical(attestation) + "\n"),
+    )
+    return 0 if _write_new_outputs(args.output_dir, outputs) else 1
 
 
 def main(argv=None):
@@ -1462,6 +1559,7 @@ def main(argv=None):
     grade = subparsers.add_parser("grade")
     grade.add_argument("--lock-file", type=Path, required=True)
     grade.add_argument("--results-path", type=Path, required=True)
+    grade.add_argument("--attestation-file", type=Path)
     grade.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     develop = subparsers.add_parser("develop-blend")
     develop.add_argument("--predictions", type=Path, required=True)
