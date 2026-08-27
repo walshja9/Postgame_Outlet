@@ -2,6 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+**Status:** CANCELLED by user direction on August 27, 2026. Do not contact PFF,
+purchase access, or execute any task in this plan. Fantasy v1 proceeds with the
+independent nflverse-only contract in
+`docs/superpowers/specs/2026-08-27-pgo-team-and-fantasy-model-design.md`.
+
 **Goal:** Determine whether PFF's new API is contractually and technically sufficient for PGO's approved team and weekly half-PPR fantasy models before any subscription purchase, credential use, source ingestion, or model integration.
 
 **Architecture:** Treat PFF as an unapproved external source behind one fail-closed qualification gate. Obtain written API-specific rights, a data dictionary, and representative inactive/status responses; compare them with the locked T-90 decision contract; then issue `PASS`, `HOLD`, or `BLOCKED`. Do not design an adapter against an undocumented schema.

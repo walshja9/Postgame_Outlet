@@ -1,10 +1,13 @@
 # PGO Team and Fantasy Model Design
 
-**Status:** Approved design; implementation not started
+**Status:** Approved revised design; implementation not started
 **Date:** August 27, 2026
 **Product:** Postgame Outlet NFL team ratings and weekly fantasy projections
 **Release boundary:** Specification commit only. Model execution, source capture,
 prospective locking, public-site changes, and deployment require later gates.
+**Revision:** Fantasy v1 is independent and nflverse-only. PFF and every other
+paid source are excluded. Current-week injury and game-day inactive evidence are
+not model inputs until a separately licensed, time-safe source is approved.
 
 ## 1. Decision
 
@@ -14,10 +17,11 @@ Postgame Outlet will maintain two independently evaluated models:
    public view; and
 2. a player-game model for weekly half-PPR season-long start/sit rankings.
 
-The models may share frozen schedules, player identities, rosters, injuries,
-official inactive lists, and matchup context. They must not share targets,
+The models may share frozen schedules, player identities, rosters, lagged player
+and team statistics, and matchup context. They must not share targets,
 validation receipts, promotion status, or unsupported claims. A PASS by one
-model does not promote the other.
+model does not promote the other. Fantasy v1 cannot read PFF data or any
+current-week injury, practice, game-status, or inactive field.
 
 The website and store do not change in this design slice. Model integrity and
 evidence come first; commerce remains downstream of fantasy content.
@@ -26,7 +30,7 @@ evidence come first; commerce remains downstream of fantasy content.
 
 | Contract | Team model | Fantasy model |
 |---|---|---|
-| Question | Predict final home-team scoring margin | Predict each active player's weekly half-PPR points |
+| Question | Predict final home-team scoring margin | Predict each roster-eligible player's weekly half-PPR points |
 | Analysis type | Predictive continuous target; ranking is derived | Predictive continuous target; rankings are derived |
 | Competition | NFL regular season only | NFL regular season only |
 | Grain | One game | One player-game |
@@ -34,7 +38,7 @@ evidence come first; commerce remains downstream of fantasy content.
 | Decision time `T` | 90 minutes before scheduled kickoff | 90 minutes before that player's scheduled kickoff |
 | Target | `home_score - away_score` | Locked half-PPR scoring formula below |
 | Historical evaluation | Existing 2018-2025 evidence | Expanding 2022-2025 test folds using 2020 onward |
-| 2026 role | Existing immutable prospective lock | New immutable prospective lock before Week 1 |
+| 2026 role | Existing immutable prospective lock | Lock the model before Week 1; lock predictions append-only at each T-90 window |
 | Public derivatives | Neutral-field rating and rank | Position, FLEX, and Superflex rank |
 | Initial status | Existing public `Experimental model — HOLD` | `Experimental model — HOLD` |
 
@@ -44,10 +48,21 @@ rescheduled kickoff and a new pregame evidence freeze.
 
 ## 3. Fantasy population and scoring
 
-The fantasy population is every officially game-day-active quarterback,
-running back, fullback, wide receiver, and tight end. Fullbacks map to running
-back for rankings. Officially inactive players are marked `OUT`, assigned no
-rank, and retained in the audit rather than silently dropped.
+The historical fantasy population is every quarterback, running back, fullback,
+wide receiver, and tight end whose nflverse weekly roster status is `ACT` for
+the applicable regular-season week. `ACT` means on the NFL active roster; it
+does not prove that the player dressed or participated in that game. Fullbacks
+map to running back for rankings.
+
+Every eligible roster row receives a target. A missing player-stat row is
+exactly zero fantasy points after the source audit proves that the player and
+team-week identities are valid. Healthy scratches, game-day inactives, and
+active players with no recorded statistics therefore remain legitimate zero
+outcomes instead of disappearing from evaluation.
+
+Fantasy v1 does not emit `OUT` or claim confirmed game-day availability.
+Prospective rows carry `availability_status = UNVERIFIED`. A start/sit surface
+cannot hide this limitation or suppress a player based on an inferred status.
 
 The locked scoring formula is:
 
@@ -74,7 +89,7 @@ The two pipelines share a small evidence boundary and remain independent after
 feature construction:
 
 ```text
-frozen schedule / identities / rosters / injuries / official inactives
+frozen schedule / identities / ACT rosters / lagged stats and snaps
                               |
                  time-safe shared evidence
                      /                 \
@@ -117,17 +132,15 @@ immutable artifact. Creating that external artifact is a separate authorization.
 Shared evidence requires:
 
 - schedule and official kickoff timestamps;
-- weekly rosters with stable GSIS identities;
-- official injury/practice reports and their available-at metadata;
-- complete official game-day inactive evidence for both teams in every game;
+- weekly rosters with `status`, stable GSIS identities, and all 32 teams;
 - historical snap counts, shifted before the predicted game;
 - historical player and team weekly statistics, shifted before the predicted
   game.
 
 The existing nflverse sources remain suitable starting points, subject to the
-new frozen fantasy lock and the audit rules below. Official inactive evidence
-must retain source identity, source URL, applicable game, capture/publication
-time, exact raw hash, and every listed player identity.
+new frozen fantasy lock and the audit rules below. The fantasy lock excludes
+injury reports, depth charts, inactive lists, PFF, betting data, and every
+source without a reproducible pregame contract.
 
 ### 5.3 Reconnaissance findings and historical boundary
 
@@ -138,9 +151,18 @@ The August 27 read-only source audit found:
   required scoring components;
 - weekly rosters provide stable GSIS keys and roster status, but roster status is
   not a substitute for the official game-day inactive list;
+- [nflverse documents](https://nflreadr.nflverse.com/articles/nflverse_data_schedule.html#nflverse-roster-data)
+  that roster data update daily, while historical weekly rows do not preserve
+  an original per-row capture timestamp. Historical `ACT` is therefore a
+  population rule, not a predictive feature; prospective runs must capture and
+  hash the exact roster bytes available at T;
 - the sampled 2013 injury file contains `date_modified`, while the sampled 2025
   file does not, so injury-row revision timing alone cannot reconstruct every
   90-minute state;
+- [nflverse's current availability documentation](https://nflreadr.nflverse.com/articles/nflverse_data_schedule.html#injury-data)
+  says its injury source died after the 2024 season and provides no 2025 data,
+  so current-week injury fields cannot form a consistent 2020-2025 feature
+  family;
 - player-stat rows outside the same-week `ACT` roster universe fall from 195 in
   2019 to 9, 15, 0, 5, 3, and 13 in 2020-2025 respectively. Earlier seasons have
   materially larger roster/status disagreement.
@@ -151,15 +173,21 @@ automatically valid. The team model retains its existing historical window.
 
 ### 5.4 Identity and availability rules
 
-GSIS ID is authoritative for roster, injury, inactive, and player-stat joins.
+GSIS ID is authoritative for roster and player-stat joins.
 PFR IDs may join snap counts only through an audited one-to-one mapping. Display
 name joins are prohibited. Ambiguous, duplicate, or missing identities block the
 affected run.
 
-An official inactive designation at `T` overrides every projection and produces
-`OUT`. An unresolved status is not interpreted as healthy. If complete inactive
-coverage is unavailable for either team, the final prediction window is
-`BLOCKED`.
+`status == ACT` establishes only active-roster eligibility. It is prohibited as
+evidence that a player is game-day active or healthy. `INA`, `PUP`, `RES`, `SUS`,
+`DEV`, and every other non-`ACT` roster status are outside the v1 population.
+Missing status, a missing GSIS ID, conflicting team membership, or a duplicated
+player-week identity blocks the affected run.
+
+No same-week injury, practice, game-status, inactive, depth-chart, or
+participation value enters fantasy v1. A future availability overlay must be a
+separately versioned candidate with its own licensed source, historical
+decision-time evidence, ablation, validation receipt, and approval.
 
 ## 6. Team-model track
 
@@ -190,8 +218,12 @@ Candidates climb only when the prior rung is implemented and evaluated on the
 same rows and folds:
 
 1. **Null baseline:** training-fold historical mean by position.
-2. **Strong simple baseline:** a shifted player rolling mean shrunk toward the
-   position mean, with a documented cold-start fallback.
+2. **Strong simple baseline:** the player's eight most recent eligible games,
+   exponentially weighted with a four-game half-life and shrunk toward the
+   time-safe position mean with four pseudo-games. For newest-to-oldest prior
+   outcomes, weight game `i` by `2 ** (-i / 4)`. Predict
+   `(weighted_player_sum + 4 * position_mean) / (weight_sum + 4)`. A player with
+   no prior eligible game receives the position mean.
 3. **First candidate:** a small regularized direct half-PPR model using only
    time-safe prior information.
 
@@ -200,9 +232,10 @@ The first candidate may use:
 - shifted prior fantasy points over declared short and medium windows;
 - shifted offensive snaps and snap share;
 - shifted attempts, carries, targets, receptions, and opportunity shares;
-- pregame roster role, experience, and cold-start indicators;
+- position, experience, draft capital, and cold-start indicators available by
+  `T`;
 - time-safe team and opponent context;
-- injury, practice, game-status, and inactive evidence available by `T`.
+- weekly `ACT` roster eligibility, used for population construction only.
 
 The following are prohibited:
 
@@ -210,6 +243,8 @@ The following are prohibited:
   participation derived from the final box score;
 - full-season or end-of-season aggregates joined backward into earlier weeks;
 - post-kickoff injury revisions or corrected records without an as-of vintage;
+- same-week injury, practice, game-status, inactive, depth-chart, or
+  participation fields, even when they appear in the frozen files;
 - opponent features that include the game being predicted;
 - global preprocessing, feature selection, imputation, or tuning across a test
   fold;
@@ -236,9 +271,9 @@ Use expanding season folds with two training-only seasons:
 | 2020-2023 | 2024 |
 | 2020-2024 | 2025 |
 
-After candidates, features, and gates are frozen, generate an immutable 2026
-prospective prediction lock before Week 1. The 2026 outcomes are not available
-for tuning.
+Before 2026 Week 1, freeze the model artifact, feature manifest, scoring rules,
+and evaluation charter. At each kickoff window, lock predictions at T-90 before
+any outcome is known. The 2026 outcomes are not available for tuning.
 
 All transforms and parameters are fitted inside each training fold. Player rows
 from the same game stay in the same fold. Candidates and baselines use identical
@@ -259,9 +294,10 @@ selected before outcomes by the locked strong simple baseline each week:
 The baseline-selected pool is fixed and shared by every candidate. A candidate
 cannot choose its own easier evaluation rows.
 
-Secondary diagnostics include all-active-player MAE, position MAE, RMSE, signed
-bias, rank correlation, cold-start performance, injury-status slices, and the
-largest misses. These diagnostics cannot replace the locked primary metric.
+Secondary diagnostics include all-roster-eligible-player MAE, position MAE,
+RMSE, signed bias, rank correlation, cold-start performance, zero-outcome
+slices, and the largest misses. These diagnostics cannot replace the locked
+primary metric.
 
 ### 8.3 Acceptance gate
 
@@ -289,7 +325,7 @@ Before any metric is trusted, the audit must:
 - prove every retained value was available by `T`;
 - verify stable ordering and shift-before-roll behavior;
 - perturb future outcomes and prove earlier feature rows do not change;
-- trace roster, injury, inactive, opponent, and team-context join cardinality;
+- trace roster, player-stat, snap, opponent, and team-context join cardinality;
 - prove training precedes testing and preprocessing is fold-local;
 - run automated target-alias, duplicate, and suspicious-correlation checks;
 - manually resolve every automated review item.
@@ -303,27 +339,42 @@ position slice; do not hide an unfavorable season.
 
 ## 10. Outputs and execution
 
-The smallest acceptable implementation is one fantasy module plus focused
-tests, reusing existing helpers where their contracts match. It supports four
+The full v1 implementation is one fantasy module plus focused tests, reusing
+existing helpers where their contracts match. It eventually supports four
 explicit operations:
 
 1. freeze and validate fantasy sources;
 2. build and audit the time-safe player-game table;
-3. backtest baselines and the fixed candidate;
+3. backtest baselines and, only later, the fixed candidate;
 4. create or grade immutable prospective predictions.
+
+Implementation is rung-by-rung. The first authorized code slice stops after
+scoring, population construction, chronological feature state, the null
+baseline, the locked strong simple baseline, and their fold report. It does not
+fit the regularized candidate, capture canonical source bytes, create a 2026
+lock, or change the website. Candidate implementation begins only after the
+baseline slice passes its structural, identity, chronology, and leakage tests.
 
 Each prospective prediction row records:
 
 - game ID, GSIS ID, displayed player name, team, opponent, and position;
 - scheduled kickoff and exact decision timestamp;
-- availability status;
+- roster status `ACT` and `availability_status = UNVERIFIED`;
 - half-PPR projection;
 - position, FLEX, and Superflex rank when eligible;
 - source-lock, model-artifact, and prediction-integrity hashes.
 
-Final runs are schedule-driven by kickoff window. They require complete official
-inactive coverage and use no overwrite semantics. Existing output paths cause a
-stop. A failed write leaves no accepted partial package.
+The model artifact, feature manifest, validation contract, and scoring rules are
+frozen before 2026 Week 1. Player predictions are then schedule-driven and
+locked append-only at each kickoff window's T-90 boundary. Every run requires
+complete `ACT` roster coverage for both teams, uses no overwrite semantics, and
+records the exact frozen roster snapshot. Existing output paths cause a stop. A
+failed write leaves no accepted partial package.
+
+These locks provide prospective model evidence; they do not prove that every
+listed player will dress. Grading treats a locked eligible player with no
+player-stat row as zero fantasy points after identity and game-result coverage
+pass.
 
 Required evidence artifacts are:
 
@@ -347,10 +398,13 @@ No implementation step in this design authorizes:
 - altering the Shopify theme, navigation, store, or GitHub Pages artifact;
 - pushing, deploying, or publishing fantasy rankings.
 
-After a structurally valid 2026 fantasy lock exists, an explicitly experimental
-fantasy board may be proposed separately. It must show source and update time,
-model status, scoring format, and methodology/accountability links. Merchandise
-remains after the fantasy analysis.
+After structurally valid 2026 fantasy locks exist, an explicitly experimental
+fantasy research board may be proposed separately. Until a validated
+availability layer exists, it must say that game-day availability is unverified
+and cannot be presented as a complete start/sit product. It must also show
+source and update time, model status, scoring format, and
+methodology/accountability links. Merchandise remains after the fantasy
+analysis.
 
 ## 12. Verification and stop conditions
 
@@ -361,11 +415,13 @@ review finds no unresolved issue.
 
 Stop rather than infer when:
 
-- an official inactive source is incomplete or ambiguous;
+- weekly `ACT` roster coverage is incomplete or ambiguous;
 - a source hash differs from the accepted lock;
 - a required historical source cannot be preserved reproducibly;
 - a player lacks a stable identity;
 - a feature's availability at `T` cannot be proved;
+- any same-week injury, practice, game-status, inactive, depth-chart, or
+  participation value enters fantasy v1;
 - evaluation populations differ between candidates;
 - a protected team or prospective artifact changes;
 - a result is being used to justify a post-hoc metric, fold, feature, or gate
@@ -381,6 +437,7 @@ Stop rather than infer when:
 - A lineup optimizer or personalized roster assistant
 - Component-stat, simulation, boosted-tree, or neural-network systems without a
   demonstrated held-out need
+- Current-week injury or game-day availability adjustment in fantasy v1
 - A website redesign or store change
 
 The next step after review of this specification is a test-driven implementation
