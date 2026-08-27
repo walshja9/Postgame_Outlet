@@ -408,12 +408,46 @@ class FantasyBaselineTests(unittest.TestCase):
                 )
         return rows
 
-    @staticmethod
-    def _audit():
+    @classmethod
+    def _audit(cls):
+        counts = {season: 0 for season in pgo_fantasy.MODEL_SEASONS}
+        for row in cls()._model_rows():
+            counts[row["season"]] += 1
         return {
             "schema_version": 1,
-            "checks": {"source_contract": True},
-            "sources": [],
+            "scope": {
+                "seasons": list(pgo_fantasy.MODEL_SEASONS),
+                "game_type": "REG",
+                "roster_status": "ACT",
+            },
+            "sources": [
+                {
+                    "name": spec.name,
+                    "season": spec.season,
+                    "bytes": 1,
+                    "sha256": hashlib.sha256(
+                        f"{spec.name}:{spec.season}".encode("utf-8")
+                    ).hexdigest(),
+                    "rows": 1,
+                }
+                for spec in pgo_fantasy.fantasy_source_specs()
+            ],
+            "coverage": {
+                str(season): {
+                    "eligible": counts[season],
+                    "matched_stats": counts[season],
+                    "zero_filled": 0,
+                    "bye_skipped": 0,
+                }
+                for season in pgo_fantasy.MODEL_SEASONS
+            },
+            "checks": {
+                "source_contract": True,
+                "schedule_identity": True,
+                "roster_identity": True,
+                "stat_identity": True,
+                "finite_targets": True,
+            },
         }
 
     def test_strong_baseline_uses_eight_games_half_life_four_and_four_pseudo_games(self):
@@ -539,6 +573,19 @@ class FantasyBaselineTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "Duplicate baseline player-week"):
             pgo_fantasy.backtest_baselines(rows, self._audit())
+
+    def test_backtest_rejects_incomplete_or_mismatched_source_audit(self):
+        rows = self._model_rows()
+        with self.assertRaisesRegex(ValueError, "Source audit"):
+            pgo_fantasy.backtest_baselines(
+                rows,
+                {"schema_version": 1, "checks": {"source_contract": True}},
+            )
+
+        mismatched = self._audit()
+        mismatched["coverage"]["2022"]["eligible"] += 1
+        with self.assertRaisesRegex(ValueError, "Source audit"):
+            pgo_fantasy.backtest_baselines(rows, mismatched)
 
 
 class FantasyReceiptTests(unittest.TestCase):

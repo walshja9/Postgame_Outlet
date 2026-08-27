@@ -82,6 +82,13 @@ PREDICTION_COLUMNS = (
     "strong_prediction",
     "primary_pool",
 )
+AUDIT_CHECKS = frozenset({
+    "source_contract",
+    "schedule_identity",
+    "roster_identity",
+    "stat_identity",
+    "finite_targets",
+})
 
 
 def fantasy_source_specs() -> tuple[SourceSpec, ...]:
@@ -603,16 +610,93 @@ def _canonical_json_bytes(value):
         raise ValueError("Value is not finite canonical JSON") from error
 
 
-def backtest_baselines(rows, source_audit) -> tuple[dict, list[dict]]:
+def _validate_source_audit(source_audit):
     if (
         not isinstance(source_audit, dict)
-        or not isinstance(source_audit.get("checks"), dict)
-        or not source_audit["checks"]
-        or any(value is not True for value in source_audit["checks"].values())
+        or set(source_audit) != {
+            "schema_version",
+            "scope",
+            "sources",
+            "coverage",
+            "checks",
+        }
+        or type(source_audit.get("schema_version")) is not int
+        or source_audit["schema_version"] != 1
+        or source_audit.get("scope") != {
+            "seasons": list(MODEL_SEASONS),
+            "game_type": "REG",
+            "roster_status": "ACT",
+        }
+        or source_audit.get("checks") != {
+            name: True for name in AUDIT_CHECKS
+        }
     ):
-        raise ValueError("Source audit is incomplete")
+        raise ValueError("Source audit contract is invalid")
+
+    expected_sources = {
+        (spec.name, spec.season) for spec in fantasy_source_specs()
+    }
+    sources = source_audit.get("sources")
+    if not isinstance(sources, list):
+        raise ValueError("Source audit sources are invalid")
+    received_sources = set()
+    for receipt in sources:
+        if not isinstance(receipt, dict) or set(receipt) != {
+            "name",
+            "season",
+            "bytes",
+            "sha256",
+            "rows",
+        }:
+            raise ValueError("Source audit receipt is invalid")
+        key = (receipt["name"], receipt["season"])
+        digest = receipt["sha256"]
+        if (
+            key in received_sources
+            or key not in expected_sources
+            or type(receipt["bytes"]) is not int
+            or receipt["bytes"] <= 0
+            or type(receipt["rows"]) is not int
+            or receipt["rows"] <= 0
+            or not isinstance(digest, str)
+            or len(digest) != 64
+            or any(character not in "0123456789abcdef" for character in digest)
+        ):
+            raise ValueError("Source audit receipt is invalid")
+        received_sources.add(key)
+    if received_sources != expected_sources:
+        raise ValueError("Source audit inventory is incomplete")
+
+    coverage = source_audit.get("coverage")
+    if not isinstance(coverage, dict) or set(coverage) != {
+        str(season) for season in MODEL_SEASONS
+    }:
+        raise ValueError("Source audit coverage is invalid")
+    fields = {"eligible", "matched_stats", "zero_filled", "bye_skipped"}
+    for season in MODEL_SEASONS:
+        values = coverage[str(season)]
+        if (
+            not isinstance(values, dict)
+            or set(values) != fields
+            or any(type(values[field]) is not int or values[field] < 0 for field in fields)
+            or values["matched_stats"] + values["zero_filled"]
+            != values["eligible"]
+        ):
+            raise ValueError("Source audit coverage is invalid")
+
+
+def _validate_audit_population(source_audit, rows):
+    for season in MODEL_SEASONS:
+        count = sum(row["season"] == season for row in rows)
+        if source_audit["coverage"][str(season)]["eligible"] != count:
+            raise ValueError("Source audit population does not match baseline rows")
+
+
+def backtest_baselines(rows, source_audit) -> tuple[dict, list[dict]]:
+    _validate_source_audit(source_audit)
     audit_sha256 = hashlib.sha256(_canonical_json_bytes(source_audit)).hexdigest()
     validated = _validated_baseline_rows(rows)
+    _validate_audit_population(source_audit, validated)
     predictions = []
     folds = []
     for test_season in TEST_SEASONS:
