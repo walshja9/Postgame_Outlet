@@ -1,6 +1,7 @@
 import copy
 import csv
 import hashlib
+import json
 import math
 import tempfile
 import unittest
@@ -395,7 +396,7 @@ class FantasyBaselineTests(unittest.TestCase):
         }
 
     def _model_rows(self):
-        counts = {"QB": 24, "RB": 36, "WR": 24, "TE": 12}
+        counts = {"QB": 30, "RB": 42, "WR": 30, "TE": 20}
         rows = []
         for season in pgo_fantasy.MODEL_SEASONS:
             weeks = (1, 2, 3) if season == 2022 else (1,)
@@ -538,6 +539,152 @@ class FantasyBaselineTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "Duplicate baseline player-week"):
             pgo_fantasy.backtest_baselines(rows, self._audit())
+
+
+class FantasyReceiptTests(unittest.TestCase):
+    @staticmethod
+    def _rows():
+        return FantasyBaselineTests()._model_rows()
+
+    @staticmethod
+    def _audit():
+        return FantasyBaselineTests._audit()
+
+    @staticmethod
+    def _mae(rows, prediction_name):
+        return sum(
+            abs(row["fantasy_points"] - row[prediction_name]) for row in rows
+        ) / len(rows)
+
+    def test_fold_report_recomputes_from_common_prediction_rows(self):
+        audit = self._audit()
+
+        report, predictions = pgo_fantasy.backtest_baselines(self._rows(), audit)
+
+        self.assertEqual(report["schema_version"], 1)
+        self.assertEqual(report["model"], "pgo_fantasy_baselines_v1")
+        self.assertEqual(report["stage"], "BASELINE_ONLY")
+        self.assertEqual(report["status"], "HOLD")
+        self.assertEqual(report["publication_status"], "EXPERIMENTAL")
+        self.assertEqual(report["scoring"], "HALF_PPR")
+        self.assertEqual(
+            report["population"], "WEEKLY_ROSTER_ACT_QB_RB_FB_WR_TE"
+        )
+        canonical_audit = json.dumps(
+            audit,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+            allow_nan=False,
+        ).encode("utf-8")
+        self.assertEqual(
+            report["source_audit_sha256"],
+            hashlib.sha256(canonical_audit).hexdigest(),
+        )
+        self.assertEqual(
+            [fold["test_season"] for fold in report["folds"]],
+            [2022, 2023, 2024, 2025],
+        )
+        for fold in report["folds"]:
+            season = fold["test_season"]
+            self.assertEqual(fold["train_seasons"], list(range(2020, season)))
+            season_rows = [row for row in predictions if row["season"] == season]
+            primary_rows = [row for row in season_rows if row["primary_pool"]]
+            self.assertGreater(len(season_rows), len(primary_rows))
+            self.assertEqual(fold["all_eligible"]["count"], len(season_rows))
+            self.assertEqual(fold["primary"]["count"], len(primary_rows))
+            for label, selected in (
+                ("all_eligible", season_rows),
+                ("primary", primary_rows),
+            ):
+                self.assertAlmostEqual(
+                    fold[label]["null_mae"],
+                    self._mae(selected, "null_prediction"),
+                )
+                self.assertAlmostEqual(
+                    fold[label]["strong_mae"],
+                    self._mae(selected, "strong_prediction"),
+                )
+            self.assertEqual(set(fold["primary_by_position"]), {"QB", "RB", "WR", "TE"})
+            for position, metrics in fold["primary_by_position"].items():
+                position_rows = [
+                    row for row in primary_rows if row["position"] == position
+                ]
+                self.assertEqual(metrics["count"], len(position_rows))
+                self.assertAlmostEqual(
+                    metrics["strong_mae"],
+                    self._mae(position_rows, "strong_prediction"),
+                )
+
+        pooled_primary = [row for row in predictions if row["primary_pool"]]
+        self.assertEqual(report["pooled"]["primary"]["count"], len(pooled_primary))
+        self.assertAlmostEqual(
+            report["pooled"]["primary"]["strong_mae"],
+            self._mae(pooled_primary, "strong_prediction"),
+        )
+
+        def finite_numbers(value):
+            if isinstance(value, dict):
+                return all(finite_numbers(item) for item in value.values())
+            if isinstance(value, list):
+                return all(finite_numbers(item) for item in value)
+            return not isinstance(value, float) or math.isfinite(value)
+
+        self.assertTrue(finite_numbers(report))
+        self.assertNotIn("candidate", report)
+
+    def test_receipt_serialization_is_deterministic_lf_only_and_finite(self):
+        first_report, first_predictions = pgo_fantasy.backtest_baselines(
+            self._rows(), self._audit()
+        )
+        second_report, second_predictions = pgo_fantasy.backtest_baselines(
+            list(reversed(self._rows())), self._audit()
+        )
+
+        first_json = pgo_fantasy.serialize_baseline_report(first_report)
+        second_json = pgo_fantasy.serialize_baseline_report(second_report)
+        first_csv = pgo_fantasy.serialize_baseline_predictions(first_predictions)
+        second_csv = pgo_fantasy.serialize_baseline_predictions(
+            list(reversed(second_predictions))
+        )
+
+        self.assertEqual(first_json, second_json)
+        self.assertEqual(first_csv, second_csv)
+        self.assertTrue(first_json.endswith("\n"))
+        self.assertTrue(first_csv.endswith("\n"))
+        self.assertNotIn("\r", first_json)
+        self.assertNotIn("\r", first_csv)
+        self.assertEqual(
+            first_csv.splitlines()[0].split(","),
+            list(pgo_fantasy.PREDICTION_COLUMNS),
+        )
+
+        comma_name = copy.deepcopy(first_predictions)
+        comma_name[0]["player_name"] = "Player, Quoted"
+        self.assertIn(
+            '"Player, Quoted"',
+            pgo_fantasy.serialize_baseline_predictions(comma_name),
+        )
+
+        bad_report = copy.deepcopy(first_report)
+        bad_report["pooled"]["primary"]["strong_mae"] = math.nan
+        with self.assertRaises(ValueError):
+            pgo_fantasy.serialize_baseline_report(bad_report)
+        bad_predictions = copy.deepcopy(first_predictions)
+        bad_predictions[0]["strong_prediction"] = math.inf
+        with self.assertRaisesRegex(ValueError, "finite"):
+            pgo_fantasy.serialize_baseline_predictions(bad_predictions)
+        with self.assertRaisesRegex(ValueError, "zero"):
+            pgo_fantasy.serialize_baseline_predictions([])
+        with self.assertRaisesRegex(ValueError, "Invalid baseline prediction row"):
+            pgo_fantasy.serialize_baseline_predictions([{}])
+
+    def test_nonfinite_source_audit_cannot_be_bound(self):
+        audit = self._audit()
+        audit["bad"] = math.nan
+
+        with self.assertRaises(ValueError):
+            pgo_fantasy.backtest_baselines(self._rows(), audit)
 
 if __name__ == "__main__":
     unittest.main()

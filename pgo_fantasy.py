@@ -1,6 +1,9 @@
 """Independent half-PPR fantasy baselines built from frozen nflverse files."""
 
+import csv
 import hashlib
+import io
+import json
 import math
 from pathlib import Path
 
@@ -64,6 +67,20 @@ TWO_POINT_FIELDS = (
     "passing_2pt_conversions",
     "rushing_2pt_conversions",
     "receiving_2pt_conversions",
+)
+PREDICTION_COLUMNS = (
+    "season",
+    "week",
+    "game_id",
+    "gsis_id",
+    "player_name",
+    "team",
+    "opponent",
+    "position",
+    "fantasy_points",
+    "null_prediction",
+    "strong_prediction",
+    "primary_pool",
 )
 
 
@@ -539,6 +556,53 @@ def _predict_fold(rows, test_season):
     return predictions
 
 
+def _metric_block(rows):
+    if not rows:
+        raise ValueError("Metric slice contains zero rows")
+    null_mae = sum(
+        abs(row["fantasy_points"] - row["null_prediction"]) for row in rows
+    ) / len(rows)
+    strong_mae = sum(
+        abs(row["fantasy_points"] - row["strong_prediction"]) for row in rows
+    ) / len(rows)
+    values = (null_mae, strong_mae, null_mae - strong_mae)
+    if not all(math.isfinite(value) for value in values):
+        raise ValueError("Baseline metrics must be finite")
+    return {
+        "count": len(rows),
+        "null_mae": null_mae,
+        "strong_mae": strong_mae,
+        "strong_vs_null_mae_improvement": null_mae - strong_mae,
+    }
+
+
+def _evaluation_metrics(rows):
+    primary = [row for row in rows if row["primary_pool"]]
+    return {
+        "all_eligible": _metric_block(rows),
+        "primary": _metric_block(primary),
+        "primary_by_position": {
+            position: _metric_block(
+                [row for row in primary if row["position"] == position]
+            )
+            for position in ("QB", "RB", "WR", "TE")
+        },
+    }
+
+
+def _canonical_json_bytes(value):
+    try:
+        return json.dumps(
+            value,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+            allow_nan=False,
+        ).encode("utf-8")
+    except (TypeError, ValueError) as error:
+        raise ValueError("Value is not finite canonical JSON") from error
+
+
 def backtest_baselines(rows, source_audit) -> tuple[dict, list[dict]]:
     if (
         not isinstance(source_audit, dict)
@@ -547,20 +611,108 @@ def backtest_baselines(rows, source_audit) -> tuple[dict, list[dict]]:
         or any(value is not True for value in source_audit["checks"].values())
     ):
         raise ValueError("Source audit is incomplete")
+    audit_sha256 = hashlib.sha256(_canonical_json_bytes(source_audit)).hexdigest()
     validated = _validated_baseline_rows(rows)
     predictions = []
     folds = []
     for test_season in TEST_SEASONS:
-        predictions.extend(_predict_fold(validated, test_season))
+        fold_predictions = _predict_fold(validated, test_season)
+        predictions.extend(fold_predictions)
         folds.append({
             "test_season": test_season,
             "train_seasons": list(range(MODEL_SEASONS[0], test_season)),
+            **_evaluation_metrics(fold_predictions),
         })
     predictions.sort(key=_row_key)
     return ({
         "schema_version": 1,
+        "model": "pgo_fantasy_baselines_v1",
         "stage": "BASELINE_ONLY",
         "status": "HOLD",
         "publication_status": "EXPERIMENTAL",
+        "status_reason": "No candidate is evaluated in the baseline-only slice",
+        "scoring": "HALF_PPR",
+        "population": "WEEKLY_ROSTER_ACT_QB_RB_FB_WR_TE",
+        "source_audit_sha256": audit_sha256,
         "folds": folds,
+        "pooled": _evaluation_metrics(predictions),
     }, predictions)
+
+
+def serialize_baseline_report(report) -> str:
+    try:
+        return json.dumps(
+            report,
+            indent=2,
+            sort_keys=True,
+            ensure_ascii=False,
+            allow_nan=False,
+        ) + "\n"
+    except (TypeError, ValueError) as error:
+        raise ValueError("Baseline report must contain finite JSON values") from error
+
+
+def serialize_baseline_predictions(rows) -> str:
+    try:
+        ordered = sorted(list(rows), key=_row_key)
+    except (KeyError, TypeError, ValueError) as error:
+        raise ValueError("Invalid baseline prediction row") from error
+    if not ordered:
+        raise ValueError("Baseline predictions contain zero rows")
+    output = io.StringIO(newline="")
+    writer = csv.DictWriter(
+        output,
+        fieldnames=PREDICTION_COLUMNS,
+        lineterminator="\n",
+    )
+    writer.writeheader()
+    seen = set()
+    for source in ordered:
+        try:
+            season = source["season"]
+            week = source["week"]
+            game_id = source["game_id"]
+            gsis_id = source["gsis_id"]
+            position = source["position"]
+            primary = source["primary_pool"]
+            numbers = {
+                name: float(source[name])
+                for name in (
+                    "fantasy_points",
+                    "null_prediction",
+                    "strong_prediction",
+                )
+            }
+        except (KeyError, TypeError, ValueError) as error:
+            raise ValueError("Invalid baseline prediction row") from error
+        key = (game_id, gsis_id)
+        if (
+            isinstance(season, bool)
+            or not isinstance(season, int)
+            or isinstance(week, bool)
+            or not isinstance(week, int)
+            or not isinstance(game_id, str)
+            or not game_id
+            or not isinstance(gsis_id, str)
+            or not gsis_id
+            or position not in {"QB", "RB", "WR", "TE"}
+            or not isinstance(primary, bool)
+            or not all(math.isfinite(value) for value in numbers.values())
+        ):
+            raise ValueError(f"Prediction values must be finite and valid for {key}")
+        if key in seen:
+            raise ValueError(f"Duplicate baseline prediction row: {key}")
+        seen.add(key)
+        writer.writerow({
+            "season": season,
+            "week": week,
+            "game_id": game_id,
+            "gsis_id": gsis_id,
+            "player_name": source.get("player_name", ""),
+            "team": source.get("team", ""),
+            "opponent": source.get("opponent", ""),
+            "position": position,
+            **numbers,
+            "primary_pool": str(primary).lower(),
+        })
+    return output.getvalue()
