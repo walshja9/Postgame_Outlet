@@ -280,6 +280,12 @@ from the same game stay in the same fold. Candidates and baselines use identical
 eligible rows. Missing predictions count as failures rather than disappearing
 from the comparison.
 
+Within a test season, every player-game in a season-week is predicted from
+outcomes in strictly earlier weeks. Results from an earlier kickoff in the same
+week cannot update player history or the time-safe position mean for a later
+kickoff. The pipeline predicts the complete week first and updates all state
+only after every row in that week has been scored.
+
 ### 8.2 Primary population and metric
 
 The primary metric is MAE, lower is better, on a common 12-team startable pool
