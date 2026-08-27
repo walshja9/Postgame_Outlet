@@ -368,3 +368,199 @@ def build_player_games(paths) -> tuple[list[dict], dict]:
         },
     }
     return rows, audit
+
+
+def strong_baseline(history, position_mean) -> float:
+    position_mean = float(position_mean)
+    values = [float(value) for value in history[-8:]]
+    if not math.isfinite(position_mean) or not all(
+        math.isfinite(value) for value in values
+    ):
+        raise ValueError("Strong-baseline inputs must be finite")
+    recent = list(reversed(values))
+    if not recent:
+        return position_mean
+    weights = [2 ** (-index / 4) for index in range(len(recent))]
+    prediction = (
+        sum(value * weight for value, weight in zip(recent, weights))
+        + 4 * position_mean
+    ) / (sum(weights) + 4)
+    if not math.isfinite(prediction):
+        raise ValueError("Strong-baseline prediction must be finite")
+    return prediction
+
+
+def _row_key(row):
+    return row["season"], row["week"], row["game_id"], row["gsis_id"]
+
+
+def _natural_key(row):
+    return row["game_id"], row["gsis_id"]
+
+
+def select_primary_pool(rows) -> set[tuple[str, str]]:
+    ordered = []
+    seen = set()
+    for row in rows:
+        key = _natural_key(row)
+        if key in seen:
+            raise ValueError(f"Duplicate primary-pool row: {key}")
+        seen.add(key)
+        try:
+            prediction = float(row["strong_prediction"])
+        except (KeyError, TypeError, ValueError) as error:
+            raise ValueError(f"Invalid strong prediction for {key}") from error
+        if not math.isfinite(prediction):
+            raise ValueError(f"Strong prediction must be finite for {key}")
+        position = row.get("position")
+        if position not in {"QB", "RB", "WR", "TE"}:
+            raise ValueError(f"Invalid fantasy position for {key}: {position!r}")
+        ordered.append((row, prediction))
+
+    selected = set()
+    for position, limit in (("QB", 24), ("RB", 24), ("WR", 24), ("TE", 12)):
+        candidates = sorted(
+            (
+                (row, prediction)
+                for row, prediction in ordered
+                if row["position"] == position
+            ),
+            key=lambda item: (-item[1], item[0]["gsis_id"]),
+        )
+        if len(candidates) < limit:
+            raise ValueError(f"Insufficient primary-pool {position} rows")
+        selected.update(_natural_key(row) for row, _ in candidates[:limit])
+
+    flex = sorted(
+        (
+            (row, prediction)
+            for row, prediction in ordered
+            if row["position"] in {"RB", "WR", "TE"}
+            and _natural_key(row) not in selected
+        ),
+        key=lambda item: (-item[1], item[0]["gsis_id"]),
+    )
+    if len(flex) < 12:
+        raise ValueError("Insufficient primary-pool FLEX rows")
+    selected.update(_natural_key(row) for row, _ in flex[:12])
+    return selected
+
+
+def _validated_baseline_rows(rows):
+    validated = []
+    seen = set()
+    player_weeks = set()
+    for source in rows:
+        try:
+            season = source["season"]
+            week = source["week"]
+            game_id = source["game_id"].strip()
+            gsis_id = source["gsis_id"].strip()
+            position = source["position"]
+            target = float(source["fantasy_points"])
+        except (AttributeError, KeyError, TypeError, ValueError) as error:
+            raise ValueError("Invalid baseline player-game row") from error
+        if (
+            isinstance(season, bool)
+            or not isinstance(season, int)
+            or season not in MODEL_SEASONS
+            or isinstance(week, bool)
+            or not isinstance(week, int)
+            or week < 1
+            or not game_id
+            or not gsis_id
+            or position not in {"QB", "RB", "WR", "TE"}
+            or not math.isfinite(target)
+        ):
+            raise ValueError("Invalid baseline player-game row")
+        key = (game_id, gsis_id)
+        if key in seen:
+            raise ValueError(f"Duplicate baseline player-game row: {key}")
+        seen.add(key)
+        player_week = (season, week, gsis_id)
+        if player_week in player_weeks:
+            raise ValueError(f"Duplicate baseline player-week: {player_week}")
+        player_weeks.add(player_week)
+        validated.append({**source, "fantasy_points": target})
+    if {row["season"] for row in validated} != set(MODEL_SEASONS):
+        raise ValueError("Baseline rows must cover every model season")
+    return sorted(validated, key=_row_key)
+
+
+def _predict_fold(rows, test_season):
+    training = [row for row in rows if row["season"] < test_season]
+    position_sums = {position: 0.0 for position in ("QB", "RB", "WR", "TE")}
+    position_counts = {position: 0 for position in position_sums}
+    histories = {}
+    for row in training:
+        position = row["position"]
+        target = row["fantasy_points"]
+        position_sums[position] += target
+        position_counts[position] += 1
+        histories.setdefault(row["gsis_id"], []).append(target)
+    if any(count == 0 for count in position_counts.values()):
+        raise ValueError(f"Training positions are incomplete for {test_season}")
+    null_means = {
+        position: position_sums[position] / position_counts[position]
+        for position in position_sums
+    }
+
+    test_weeks = {}
+    for row in rows:
+        if row["season"] == test_season:
+            test_weeks.setdefault(row["week"], []).append(row)
+    if not test_weeks:
+        raise ValueError(f"Test season contains zero rows: {test_season}")
+
+    predictions = []
+    for week in sorted(test_weeks):
+        week_predictions = []
+        for row in sorted(test_weeks[week], key=_row_key):
+            position = row["position"]
+            live_mean = position_sums[position] / position_counts[position]
+            week_predictions.append({
+                **row,
+                "null_prediction": null_means[position],
+                "strong_prediction": strong_baseline(
+                    histories.get(row["gsis_id"], []), live_mean
+                ),
+            })
+        primary = select_primary_pool(week_predictions)
+        for prediction in week_predictions:
+            prediction["primary_pool"] = _natural_key(prediction) in primary
+        predictions.extend(week_predictions)
+
+        # Every outcome in the week is hidden until all predictions are complete.
+        for row in sorted(test_weeks[week], key=_row_key):
+            target = row["fantasy_points"]
+            histories.setdefault(row["gsis_id"], []).append(target)
+            position_sums[row["position"]] += target
+            position_counts[row["position"]] += 1
+    return predictions
+
+
+def backtest_baselines(rows, source_audit) -> tuple[dict, list[dict]]:
+    if (
+        not isinstance(source_audit, dict)
+        or not isinstance(source_audit.get("checks"), dict)
+        or not source_audit["checks"]
+        or any(value is not True for value in source_audit["checks"].values())
+    ):
+        raise ValueError("Source audit is incomplete")
+    validated = _validated_baseline_rows(rows)
+    predictions = []
+    folds = []
+    for test_season in TEST_SEASONS:
+        predictions.extend(_predict_fold(validated, test_season))
+        folds.append({
+            "test_season": test_season,
+            "train_seasons": list(range(MODEL_SEASONS[0], test_season)),
+        })
+    predictions.sort(key=_row_key)
+    return ({
+        "schema_version": 1,
+        "stage": "BASELINE_ONLY",
+        "status": "HOLD",
+        "publication_status": "EXPERIMENTAL",
+        "folds": folds,
+    }, predictions)

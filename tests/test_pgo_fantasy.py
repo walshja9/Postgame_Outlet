@@ -377,5 +377,167 @@ class FantasyPopulationTests(unittest.TestCase):
                     pgo_fantasy.build_player_games(paths)
 
 
+class FantasyBaselineTests(unittest.TestCase):
+    @staticmethod
+    def _row(season, week, position, index):
+        return {
+            "season": season,
+            "week": week,
+            "game_id": f"{season}_{week:02d}_BUF_LAR",
+            "gsis_id": f"{position}-{index:02d}",
+            "player_name": f"{position} Player {index}",
+            "team": "BUF",
+            "opponent": "LAR",
+            "position": position,
+            "fantasy_points": float(
+                index + week + {"QB": 12, "RB": 8, "WR": 6, "TE": 4}[position]
+            ),
+        }
+
+    def _model_rows(self):
+        counts = {"QB": 24, "RB": 36, "WR": 24, "TE": 12}
+        rows = []
+        for season in pgo_fantasy.MODEL_SEASONS:
+            weeks = (1, 2, 3) if season == 2022 else (1,)
+            for week in weeks:
+                rows.extend(
+                    self._row(season, week, position, index)
+                    for position, count in counts.items()
+                    for index in range(count)
+                )
+        return rows
+
+    @staticmethod
+    def _audit():
+        return {
+            "schema_version": 1,
+            "checks": {"source_contract": True},
+            "sources": [],
+        }
+
+    def test_strong_baseline_uses_eight_games_half_life_four_and_four_pseudo_games(self):
+        history = [float(value) for value in range(1, 11)]
+        recent_newest_first = list(reversed(history[-8:]))
+        weights = [2 ** (-index / 4) for index in range(8)]
+        expected = (
+            sum(
+                value * weight
+                for value, weight in zip(recent_newest_first, weights)
+            )
+            + 4 * 12.0
+        ) / (sum(weights) + 4)
+
+        self.assertAlmostEqual(pgo_fantasy.strong_baseline(history, 12.0), expected)
+        self.assertEqual(pgo_fantasy.strong_baseline([], 12.0), 12.0)
+        with self.assertRaisesRegex(ValueError, "finite"):
+            pgo_fantasy.strong_baseline([1.0], math.nan)
+
+    def test_primary_pool_uses_locked_quotas_and_gsis_tie_break(self):
+        counts = {"QB": 30, "RB": 30, "WR": 30, "TE": 20}
+        rows = [
+            {
+                **self._row(2022, 1, position, index),
+                "strong_prediction": 10.0,
+            }
+            for position, count in counts.items()
+            for index in range(count)
+        ]
+
+        selected = pgo_fantasy.select_primary_pool(rows)
+
+        self.assertEqual(len(selected), 96)
+        self.assertIn(("2022_01_BUF_LAR", "QB-23"), selected)
+        self.assertNotIn(("2022_01_BUF_LAR", "QB-24"), selected)
+        self.assertEqual(
+            sum(gsis_id.startswith("QB-") for _, gsis_id in selected),
+            24,
+        )
+        with self.assertRaisesRegex(ValueError, "Insufficient primary-pool QB"):
+            pgo_fantasy.select_primary_pool(
+                [
+                    row
+                    for row in rows
+                    if not (
+                        row["position"] == "QB"
+                        and int(row["gsis_id"].removeprefix("QB-")) >= 23
+                    )
+                ]
+            )
+
+    def test_same_week_outcomes_do_not_change_same_week_predictions(self):
+        rows = self._model_rows()
+        _, original = pgo_fantasy.backtest_baselines(rows, self._audit())
+        mutated_rows = copy.deepcopy(rows)
+        changed = next(
+            row
+            for row in mutated_rows
+            if row["season"] == 2022
+            and row["week"] == 2
+            and row["gsis_id"] == "RB-00"
+        )
+        changed["fantasy_points"] += 1000.0
+
+        _, mutated = pgo_fantasy.backtest_baselines(mutated_rows, self._audit())
+
+        def keyed(predictions):
+            return {
+                (
+                    row["season"],
+                    row["week"],
+                    row["game_id"],
+                    row["gsis_id"],
+                ): row
+                for row in predictions
+            }
+
+        before = keyed(original)
+        after = keyed(mutated)
+        for key in before:
+            if key[0] == 2022 and key[1] <= 2:
+                self.assertEqual(
+                    (
+                        before[key]["null_prediction"],
+                        before[key]["strong_prediction"],
+                        before[key]["primary_pool"],
+                    ),
+                    (
+                        after[key]["null_prediction"],
+                        after[key]["strong_prediction"],
+                        after[key]["primary_pool"],
+                    ),
+                )
+        week_3_key = (2022, 3, "2022_03_BUF_LAR", "RB-00")
+        self.assertNotEqual(
+            before[week_3_key]["strong_prediction"],
+            after[week_3_key]["strong_prediction"],
+        )
+        self.assertEqual(
+            before[week_3_key]["null_prediction"],
+            after[week_3_key]["null_prediction"],
+        )
+
+    def test_backtest_is_deterministic_under_input_permutation(self):
+        rows = self._model_rows()
+
+        first = pgo_fantasy.backtest_baselines(rows, self._audit())
+        second = pgo_fantasy.backtest_baselines(list(reversed(rows)), self._audit())
+
+        self.assertEqual(first, second)
+
+    def test_backtest_rejects_duplicate_player_week_identity(self):
+        rows = self._model_rows()
+        duplicate = copy.deepcopy(next(
+            row
+            for row in rows
+            if row["season"] == 2022
+            and row["week"] == 1
+            and row["gsis_id"] == "QB-00"
+        ))
+        duplicate["game_id"] = "2022_01_OTHER_GAME"
+        rows.append(duplicate)
+
+        with self.assertRaisesRegex(ValueError, "Duplicate baseline player-week"):
+            pgo_fantasy.backtest_baselines(rows, self._audit())
+
 if __name__ == "__main__":
     unittest.main()
