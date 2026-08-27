@@ -1,10 +1,12 @@
 # PGO Team and Fantasy Model Design
 
-**Status:** Approved revised design; implementation not started
+**Status:** Approved revised design; baseline-only code implemented and locally
+verified; canonical source capture and model execution not started
 **Date:** August 27, 2026
 **Product:** Postgame Outlet NFL team ratings and weekly fantasy projections
-**Release boundary:** Specification commit only. Model execution, source capture,
-prospective locking, public-site changes, and deployment require later gates.
+**Release boundary:** Baseline implementation only. Model execution, source
+capture, prospective locking, public-site changes, and deployment require later
+gates.
 **Revision:** Fantasy v1 is independent and nflverse-only. PFF and every other
 paid source are excluded. Current-week injury and game-day inactive evidence are
 not model inputs until a separately licensed, time-safe source is approved.

@@ -2,6 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+**Status:** Implemented and locally verified on August 27, 2026. No canonical
+source capture, backtest execution, push, publication, or deployment occurred.
+
 **Goal:** Build and verify the first independent nflverse-only fantasy rung: exact half-PPR scoring, an audited weekly `ACT` population, leakage-safe chronological null and strong baselines, and a deterministic fold report.
 
 **Architecture:** Add one pure-Python module, `pgo_fantasy.py`, and one focused `unittest` module. The code consumes already-locked schedule, weekly-roster, and player-weekly-stat paths, returns plain dictionaries and rows, and performs no network fetch, canonical source capture, model fitting, prospective lock, public-site change, or deployment.
