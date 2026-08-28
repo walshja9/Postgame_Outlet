@@ -1,14 +1,18 @@
 import copy
 import csv
+import gzip
 import hashlib
 import io
 import json
 import math
+import os
 import subprocess
 import tempfile
 import unittest
+from contextlib import redirect_stderr
 from pathlib import Path
 from unittest import mock
+from unittest.mock import patch
 
 import pgo_fantasy
 import pgo_sources
@@ -737,6 +741,229 @@ class FantasySourceQualificationTests(
         )
         with self.assertRaisesRegex(ValueError, "hash"):
             pgo_fantasy.validate_fantasy_source_qualification(changed_lock, receipt)
+
+
+class FantasySourceCommandTests(FantasyQualificationFixture, unittest.TestCase):
+    AS_OF = FantasySourceLockTests.AS_OF
+
+    def _payloads(self, root, mutate=None):
+        paths = self._qualification_paths(root / "fixtures", mutate)
+        payloads = {}
+        for spec in pgo_fantasy.fantasy_source_specs():
+            data = paths[(spec.name, spec.season)].read_bytes()
+            if spec.url.lower().endswith(".csv.gz"):
+                data = gzip.compress(data, mtime=0)
+            payloads[spec.url] = data
+        return payloads
+
+    def _run_in_root(self, root, argv, payloads=None):
+        original = pgo_sources.freeze_sources
+
+        def freeze(specs, cache_dir, lock_path, frozen_at):
+            return original(
+                specs, cache_dir, lock_path, frozen_at,
+                fetch=payloads.__getitem__,
+            )
+
+        previous = Path.cwd()
+        os.chdir(root)
+        try:
+            if payloads is None:
+                return pgo_fantasy.main(argv)
+            schedule = next(
+                spec for spec in pgo_fantasy.fantasy_source_specs()
+                if spec.name == "schedule_results"
+            )
+            digest = hashlib.sha256(payloads[schedule.url]).hexdigest()
+            with (
+                patch.object(pgo_sources, "EXPECTED_SOURCE_SHA256", digest),
+                patch.object(pgo_sources, "freeze_sources", side_effect=freeze),
+            ):
+                return pgo_fantasy.main(argv)
+        finally:
+            os.chdir(previous)
+
+    def test_freeze_writes_local_pass_but_not_research(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payloads = self._payloads(root)
+            code = self._run_in_root(
+                root,
+                ["--freeze-sources", "--frozen-at", self.AS_OF],
+                payloads,
+            )
+            receipt = json.loads((
+                root / "output/pgo-fantasy-source-qualification.json"
+            ).read_text(encoding="utf-8"))
+            lock_text = (
+                root / "output/pgo-fantasy-source-candidate.lock.json"
+            ).read_text(encoding="utf-8")
+
+            self.assertEqual(code, 0)
+            self.assertEqual(receipt["qualification_status"], "PASS")
+            pgo_fantasy.validate_fantasy_source_qualification(lock_text, receipt)
+            self.assertFalse((root / "research/pgo_fantasy").exists())
+
+    def test_blocked_freeze_writes_diagnostic_but_not_research(self):
+        def unmatched(schedule, rosters, stats):
+            stats[2022].append({
+                **stats[2022][0],
+                "player_id": "NO-ROSTER",
+                "position": "WR",
+            })
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payloads = self._payloads(root, unmatched)
+            code = self._run_in_root(
+                root,
+                ["--freeze-sources", "--frozen-at", self.AS_OF],
+                payloads,
+            )
+            receipt = json.loads((
+                root / "output/pgo-fantasy-source-qualification.json"
+            ).read_text(encoding="utf-8"))
+
+            self.assertEqual(code, 1)
+            self.assertEqual(receipt["qualification_status"], "BLOCKED")
+            self.assertGreater(receipt["discrepancies"]["total"], 0)
+            self.assertFalse((root / "research/pgo_fantasy").exists())
+
+    def test_accept_requalifies_offline_and_refuses_overwrite(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payloads = self._payloads(root)
+            self.assertEqual(self._run_in_root(
+                root,
+                ["--freeze-sources", "--frozen-at", self.AS_OF],
+                payloads,
+            ), 0)
+            with patch.object(pgo_sources, "freeze_sources") as freeze:
+                self.assertEqual(self._run_in_root(
+                    root, ["--accept-qualified"]
+                ), 0)
+                freeze.assert_not_called()
+            accepted = root / "research/pgo_fantasy"
+            self.assertEqual(
+                sorted(path.name for path in accepted.iterdir()),
+                ["source_qualification.json", "sources.lock.json"],
+            )
+            before = {
+                path.name: path.read_bytes() for path in accepted.iterdir()
+            }
+            error = io.StringIO()
+            with redirect_stderr(error):
+                second = self._run_in_root(root, ["--accept-qualified"])
+            self.assertEqual(second, 2)
+            self.assertEqual(before, {
+                path.name: path.read_bytes() for path in accepted.iterdir()
+            })
+
+    def test_preflight_rejects_bad_time_or_existing_candidate_before_fetch(self):
+        for argv, existing in (
+            (["--freeze-sources", "--frozen-at", "not-a-time"], False),
+            (["--freeze-sources", "--frozen-at", self.AS_OF], True),
+        ):
+            with self.subTest(argv=argv), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                if existing:
+                    path = root / "output/pgo-fantasy-source-candidate.lock.json"
+                    path.parent.mkdir(parents=True)
+                    path.write_text("existing\n", encoding="utf-8")
+                previous = Path.cwd()
+                os.chdir(root)
+                try:
+                    with patch.object(pgo_sources, "freeze_sources") as freeze:
+                        code = pgo_fantasy.main(argv)
+                    self.assertEqual(code, 2)
+                    freeze.assert_not_called()
+                finally:
+                    os.chdir(previous)
+
+    def test_operational_freeze_failure_writes_blocked_diagnostic(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            previous = Path.cwd()
+            os.chdir(root)
+            try:
+                with patch.object(
+                    pgo_sources, "freeze_sources", side_effect=OSError("offline")
+                ):
+                    code = pgo_fantasy.main([
+                        "--freeze-sources", "--frozen-at", self.AS_OF,
+                    ])
+            finally:
+                os.chdir(previous)
+            receipt = json.loads((
+                root / "output/pgo-fantasy-source-qualification.json"
+            ).read_text(encoding="utf-8"))
+            self.assertEqual(code, 2)
+            self.assertEqual(receipt["qualification_status"], "BLOCKED")
+            self.assertEqual(receipt["error"], "OSError: offline")
+            self.assertFalse((root / "research/pgo_fantasy").exists())
+
+    def test_freeze_write_failure_removes_candidate_before_diagnostic(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payloads = self._payloads(root)
+            original = pgo_fantasy.atomic_write_text
+            calls = 0
+
+            def fail_second(path, text):
+                nonlocal calls
+                calls += 1
+                if calls == 2:
+                    raise OSError("receipt write failed")
+                return original(path, text)
+
+            with patch.object(
+                pgo_fantasy, "atomic_write_text", side_effect=fail_second
+            ):
+                code = self._run_in_root(
+                    root,
+                    ["--freeze-sources", "--frozen-at", self.AS_OF],
+                    payloads,
+                )
+            receipt = json.loads((
+                root / "output/pgo-fantasy-source-qualification.json"
+            ).read_text(encoding="utf-8"))
+            self.assertEqual(code, 2)
+            self.assertFalse((
+                root / "output/pgo-fantasy-source-candidate.lock.json"
+            ).exists())
+            self.assertEqual(receipt["error"], "OSError: receipt write failed")
+
+    def test_accept_write_failure_leaves_no_partial_research_directory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payloads = self._payloads(root)
+            self.assertEqual(self._run_in_root(
+                root,
+                ["--freeze-sources", "--frozen-at", self.AS_OF],
+                payloads,
+            ), 0)
+            original = pgo_fantasy.atomic_write_text
+            calls = 0
+
+            def fail_second(path, text):
+                nonlocal calls
+                calls += 1
+                if calls == 2:
+                    raise OSError("second write failed")
+                return original(path, text)
+
+            previous = Path.cwd()
+            os.chdir(root)
+            try:
+                with patch.object(
+                    pgo_fantasy, "atomic_write_text", side_effect=fail_second
+                ):
+                    code = pgo_fantasy.main(["--accept-qualified"])
+            finally:
+                os.chdir(previous)
+            self.assertEqual(code, 2)
+            self.assertFalse((root / "research/pgo_fantasy").exists())
+            self.assertEqual(list((root / "research").iterdir()), [])
 
 
 class FantasyBaselineTests(unittest.TestCase):

@@ -1,16 +1,21 @@
 """Independent half-PPR fantasy baselines built from frozen nflverse files."""
 
+import argparse
 import csv
 import gzip
 import hashlib
 import io
 import json
 import math
+import os
+import sys
+import tempfile
 from datetime import datetime
 from pathlib import Path
 
 from pgo_model import CURRENT_TEAMS, SOURCE_URL
-from pgo_sources import SourceSpec, normalize_team
+import pgo_sources
+from pgo_sources import SourceSpec, atomic_write_text, normalize_team
 
 
 MODEL_SEASONS = tuple(range(2020, 2026))
@@ -116,6 +121,13 @@ def fantasy_source_specs() -> tuple[SourceSpec, ...]:
 
 
 FANTASY_CACHE_DIR = Path(".cache/pgo_fantasy")
+FANTASY_CANDIDATE_LOCK = Path(
+    "output/pgo-fantasy-source-candidate.lock.json"
+)
+FANTASY_QUALIFICATION_OUTPUT = Path(
+    "output/pgo-fantasy-source-qualification.json"
+)
+FANTASY_ACCEPTED_DIR = Path("research/pgo_fantasy")
 FANTASY_SCOPE = {
     "seasons": list(MODEL_SEASONS),
     "game_type": "REG",
@@ -933,6 +945,141 @@ def validate_fantasy_source_qualification(source_lock_text, receipt):
         ):
             raise ValueError("Fantasy source qualification is not PASS")
     serialize_fantasy_source_json(receipt)
+
+
+def _freeze_and_qualify(frozen_at):
+    _parse_frozen_at(frozen_at)
+    for path in (FANTASY_CANDIDATE_LOCK, FANTASY_QUALIFICATION_OUTPUT):
+        if path.exists():
+            raise ValueError(f"Refusing to replace existing candidate output: {path}")
+    if FANTASY_ACCEPTED_DIR.exists():
+        raise ValueError("Accepted fantasy source evidence already exists")
+    FANTASY_CANDIDATE_LOCK.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, name = tempfile.mkstemp(
+        dir=FANTASY_CANDIDATE_LOCK.parent,
+        prefix=".pgo-fantasy-source-",
+        suffix=".pending",
+    )
+    os.close(descriptor)
+    staged = Path(name)
+    staged.unlink()
+    published = False
+    try:
+        manifest = pgo_sources.freeze_sources(
+            fantasy_source_specs(), FANTASY_CACHE_DIR, staged, frozen_at
+        )
+        lock = build_fantasy_source_lock(manifest)
+        lock_text = serialize_fantasy_source_json(lock)
+        staged.write_text(lock_text, encoding="utf-8", newline="")
+        paths = pgo_sources.load_locked_sources(staged, FANTASY_CACHE_DIR)
+        receipt = qualify_fantasy_sources(paths, lock_text)
+        atomic_write_text(FANTASY_CANDIDATE_LOCK, lock_text)
+        atomic_write_text(
+            FANTASY_QUALIFICATION_OUTPUT,
+            serialize_fantasy_source_json(receipt),
+        )
+        published = True
+        return receipt
+    except BaseException:
+        if not published:
+            FANTASY_CANDIDATE_LOCK.unlink(missing_ok=True)
+            FANTASY_QUALIFICATION_OUTPUT.unlink(missing_ok=True)
+        raise
+    finally:
+        staged.unlink(missing_ok=True)
+
+
+def _accept_qualified_sources():
+    lock_text = FANTASY_CANDIDATE_LOCK.read_text(encoding="utf-8")
+    receipt_text = FANTASY_QUALIFICATION_OUTPUT.read_text(encoding="utf-8")
+    lock = json.loads(lock_text)
+    receipt = json.loads(receipt_text)
+    validate_fantasy_source_lock(lock)
+    validate_fantasy_source_qualification(lock_text, receipt)
+    paths = pgo_sources.load_locked_sources(
+        FANTASY_CANDIDATE_LOCK, FANTASY_CACHE_DIR
+    )
+    recomputed = qualify_fantasy_sources(paths, lock_text)
+    if serialize_fantasy_source_json(recomputed) != receipt_text:
+        raise ValueError("Fantasy source qualification does not reproduce")
+    if FANTASY_ACCEPTED_DIR.exists():
+        raise ValueError("Accepted fantasy source evidence already exists")
+    FANTASY_ACCEPTED_DIR.parent.mkdir(parents=True, exist_ok=True)
+    FANTASY_ACCEPTED_DIR.mkdir()
+    try:
+        atomic_write_text(
+            FANTASY_ACCEPTED_DIR / "sources.lock.json", lock_text
+        )
+        atomic_write_text(
+            FANTASY_ACCEPTED_DIR / "source_qualification.json", receipt_text
+        )
+    except BaseException:
+        for name in ("sources.lock.json", "source_qualification.json"):
+            (FANTASY_ACCEPTED_DIR / name).unlink(missing_ok=True)
+        FANTASY_ACCEPTED_DIR.rmdir()
+        raise
+
+
+def parse_qualification_args(argv: list[str] | None = None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    action = parser.add_mutually_exclusive_group(required=True)
+    action.add_argument("--freeze-sources", action="store_true")
+    action.add_argument("--accept-qualified", action="store_true")
+    parser.add_argument("--frozen-at")
+    return parser.parse_args(argv)
+
+
+def _operational_blocked_receipt(error):
+    return {
+        "schema_version": 1,
+        "qualification_status": "BLOCKED",
+        "artifact_availability": "LOCAL_CACHE_ONLY",
+        "error": f"{type(error).__name__}: {error}",
+    }
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_qualification_args(argv)
+    try:
+        if args.freeze_sources:
+            if args.frozen_at is None:
+                raise ValueError("--frozen-at is required with --freeze-sources")
+            receipt = _freeze_and_qualify(args.frozen_at)
+            status = receipt["qualification_status"]
+            print(f"{status}: PGO fantasy source qualification")
+            return 0 if status == "PASS" else 1
+        if args.frozen_at is not None:
+            raise ValueError("--frozen-at is valid only with --freeze-sources")
+        _accept_qualified_sources()
+        print("PASS: accepted PGO fantasy source qualification")
+        return 0
+    except (
+        AttributeError, csv.Error, json.JSONDecodeError, KeyError, OSError,
+        OverflowError, TypeError, UnicodeError, ValueError,
+    ) as error:
+        if (
+            args.freeze_sources
+            and not FANTASY_CANDIDATE_LOCK.exists()
+            and not FANTASY_QUALIFICATION_OUTPUT.exists()
+        ):
+            try:
+                FANTASY_QUALIFICATION_OUTPUT.parent.mkdir(
+                    parents=True, exist_ok=True
+                )
+                atomic_write_text(
+                    FANTASY_QUALIFICATION_OUTPUT,
+                    serialize_fantasy_source_json(
+                        _operational_blocked_receipt(error)
+                    ),
+                )
+            except OSError:
+                pass
+        print(f"ERROR: {error}", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
 
 
 def strong_baseline(history, position_mean) -> float:
