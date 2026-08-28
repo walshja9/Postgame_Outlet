@@ -8,7 +8,7 @@ import math
 from datetime import datetime
 from pathlib import Path
 
-from pgo_model import SOURCE_URL
+from pgo_model import CURRENT_TEAMS, SOURCE_URL
 from pgo_sources import SourceSpec, normalize_team, open_csv
 
 
@@ -120,6 +120,20 @@ FANTASY_SCOPE = {
     "game_type": "REG",
     "roster_status": "ACT",
 }
+FANTASY_DISCREPANCY_CLASSES = (
+    "incomplete_team_coverage",
+    "incomplete_team_week_coverage",
+    "missing_roster_identity",
+    "missing_roster_status",
+    "duplicate_roster_identity",
+    "conflicting_team",
+    "missing_stat_identity",
+    "duplicate_stat_identity",
+    "missing_roster",
+    "non_act_roster",
+    "schedule_identity",
+    "position_contradiction",
+)
 
 
 def _parse_frozen_at(value):
@@ -508,6 +522,407 @@ def build_player_games(paths) -> tuple[list[dict], dict]:
         },
     }
     return rows, audit
+
+
+def _discrepancy(reason, season, week=0, gsis_id="", game_id="", team=""):
+    return {
+        "reason": reason,
+        "season": season,
+        "week": week,
+        "gsis_id": gsis_id,
+        "game_id": game_id,
+        "team": team,
+    }
+
+
+def _discrepancy_key(row):
+    return (
+        row["reason"], row["season"], row["week"], row["gsis_id"],
+        row["game_id"], row["team"],
+    )
+
+
+def _reconcile_fantasy_population(source_rows, games, team_weeks):
+    roster_index = {}
+    stat_index = {}
+    roster_teams = {season: set() for season in MODEL_SEASONS}
+    roster_team_weeks = set()
+    discrepancies = []
+
+    for source_season in MODEL_SEASONS:
+        for row in source_rows[("weekly_rosters", source_season)]:
+            season = _integer(row, "season", "roster")
+            if season != source_season:
+                raise ValueError(
+                    f"Roster source-season mismatch: {source_season} != {season}"
+                )
+            if (row.get("game_type") or "").strip() != "REG":
+                continue
+            team = normalize_team(row.get("team") or "")
+            week = _integer(row, "week", "roster")
+            roster_teams[season].add(team)
+            roster_team_weeks.add((season, week, team))
+            position = POSITION_MAP.get((row.get("position") or "").strip().upper())
+            if position is None:
+                continue
+            gsis_id = (row.get("gsis_id") or "").strip()
+            status = (row.get("status") or "").strip().upper()
+            if not gsis_id:
+                discrepancies.append(_discrepancy(
+                    "missing_roster_identity", season, week, team=team
+                ))
+                continue
+            if not status:
+                discrepancies.append(_discrepancy(
+                    "missing_roster_status", season, week, gsis_id, team=team
+                ))
+            roster_index.setdefault((season, week, gsis_id), []).append({
+                "season": season,
+                "week": week,
+                "gsis_id": gsis_id,
+                "team": team,
+                "position": position,
+                "status": status,
+            })
+
+    for season in MODEL_SEASONS:
+        for team in sorted(set(CURRENT_TEAMS) - roster_teams[season]):
+            discrepancies.append(_discrepancy(
+                "incomplete_team_coverage", season, team=team
+            ))
+    for season, week, team in sorted(set(team_weeks) - roster_team_weeks):
+        discrepancies.append(_discrepancy(
+            "incomplete_team_week_coverage", season, week, team=team
+        ))
+
+    for key, records in sorted(roster_index.items()):
+        teams = sorted({record["team"] for record in records})
+        if len(records) > 1:
+            discrepancies.append(_discrepancy(
+                "duplicate_roster_identity", *key, team=",".join(teams)
+            ))
+        if len(teams) > 1:
+            discrepancies.append(_discrepancy(
+                "conflicting_team", *key, team=",".join(teams)
+            ))
+
+    for source_season in MODEL_SEASONS:
+        for row in source_rows[("player_weekly_stats", source_season)]:
+            season = _integer(row, "season", "stat")
+            if season != source_season:
+                raise ValueError(
+                    f"Stat source-season mismatch: {source_season} != {season}"
+                )
+            if (row.get("season_type") or "").strip() != "REG":
+                continue
+            position = POSITION_MAP.get((row.get("position") or "").strip().upper())
+            if position is None:
+                continue
+            week = _integer(row, "week", "stat")
+            gsis_id = (row.get("player_id") or "").strip()
+            game_id = (row.get("game_id") or "").strip()
+            team = normalize_team(row.get("team") or "")
+            opponent = normalize_team(row.get("opponent_team") or "")
+            if not gsis_id:
+                discrepancies.append(_discrepancy(
+                    "missing_stat_identity", season, week, game_id=game_id,
+                    team=team,
+                ))
+                continue
+            record = {
+                "season": season,
+                "week": week,
+                "gsis_id": gsis_id,
+                "game_id": game_id,
+                "team": team,
+                "opponent": opponent,
+                "position": position,
+            }
+            stat_index.setdefault((season, week, gsis_id), []).append(record)
+            game = games.get(game_id)
+            if (
+                game is None
+                or game["season"] != season
+                or game["week"] != week
+                or {team, opponent} != {game["away"], game["home"]}
+                or team == opponent
+            ):
+                discrepancies.append(_discrepancy(
+                    "schedule_identity", season, week, gsis_id, game_id, team
+                ))
+
+    for key, records in sorted(stat_index.items()):
+        if len(records) > 1:
+            discrepancies.append(_discrepancy(
+                "duplicate_stat_identity", *key,
+                game_id=records[0]["game_id"], team=records[0]["team"],
+            ))
+        rosters = roster_index.get(key, [])
+        for stat in records:
+            if not rosters:
+                discrepancies.append(_discrepancy(
+                    "missing_roster", *key, game_id=stat["game_id"],
+                    team=stat["team"],
+                ))
+                continue
+            if len(rosters) != 1:
+                continue
+            roster = rosters[0]
+            if roster["status"] != "ACT":
+                discrepancies.append(_discrepancy(
+                    "non_act_roster", *key, game_id=stat["game_id"],
+                    team=roster["team"],
+                ))
+            if roster["position"] != stat["position"]:
+                discrepancies.append(_discrepancy(
+                    "position_contradiction", *key, game_id=stat["game_id"],
+                    team=roster["team"],
+                ))
+            expected = team_weeks.get((key[0], key[1], roster["team"]))
+            if (
+                roster["team"] != stat["team"]
+                or expected != (stat["game_id"], stat["opponent"])
+            ):
+                discrepancies.append(_discrepancy(
+                    "schedule_identity", *key, game_id=stat["game_id"],
+                    team=stat["team"],
+                ))
+
+    rows = sorted(
+        {tuple(sorted(row.items())) for row in discrepancies},
+        key=lambda items: _discrepancy_key(dict(items)),
+    )
+    rows = [dict(items) for items in rows]
+    counts = {
+        reason: sum(row["reason"] == reason for row in rows)
+        for reason in FANTASY_DISCREPANCY_CLASSES
+    }
+    by_season = {
+        str(season): {
+            reason: sum(
+                row["season"] == season and row["reason"] == reason
+                for row in rows
+            )
+            for reason in FANTASY_DISCREPANCY_CLASSES
+        }
+        for season in MODEL_SEASONS
+    }
+    return {"total": len(rows), "counts": counts, "by_season": by_season, "rows": rows}
+
+
+def _blocked_coverage(source_rows, team_weeks):
+    coverage = {
+        str(season): {
+            "eligible": 0,
+            "matched_stats": 0,
+            "zero_filled": 0,
+            "bye_skipped": 0,
+        }
+        for season in MODEL_SEASONS
+    }
+    stat_index = {}
+    for source_season in MODEL_SEASONS:
+        for row in source_rows[("player_weekly_stats", source_season)]:
+            if (row.get("season_type") or "").strip() != "REG":
+                continue
+            position = POSITION_MAP.get(
+                (row.get("position") or "").strip().upper()
+            )
+            gsis_id = (row.get("player_id") or "").strip()
+            if position is None or not gsis_id:
+                continue
+            season = _integer(row, "season", "stat")
+            week = _integer(row, "week", "stat")
+            stat_index.setdefault((season, week, gsis_id), []).append({
+                "game_id": (row.get("game_id") or "").strip(),
+                "team": normalize_team(row.get("team") or ""),
+                "opponent": normalize_team(row.get("opponent_team") or ""),
+                "position": position,
+            })
+
+    for source_season in MODEL_SEASONS:
+        for row in source_rows[("weekly_rosters", source_season)]:
+            if (row.get("game_type") or "").strip() != "REG":
+                continue
+            position = POSITION_MAP.get(
+                (row.get("position") or "").strip().upper()
+            )
+            status = (row.get("status") or "").strip().upper()
+            gsis_id = (row.get("gsis_id") or "").strip()
+            if position is None or status != "ACT" or not gsis_id:
+                continue
+            season = _integer(row, "season", "roster")
+            week = _integer(row, "week", "roster")
+            team = normalize_team(row.get("team") or "")
+            expected = team_weeks.get((season, week, team))
+            values = coverage[str(season)]
+            if expected is None:
+                values["bye_skipped"] += 1
+                continue
+            values["eligible"] += 1
+            candidates = stat_index.get((season, week, gsis_id), [])
+            matched = (
+                len(candidates) == 1
+                and candidates[0]["game_id"] == expected[0]
+                and candidates[0]["team"] == team
+                and candidates[0]["opponent"] == expected[1]
+                and candidates[0]["position"] == position
+            )
+            values["matched_stats" if matched else "zero_filled"] += 1
+    return coverage
+
+
+def qualify_fantasy_sources(paths, source_lock_text):
+    try:
+        lock = json.loads(source_lock_text)
+    except (TypeError, json.JSONDecodeError) as error:
+        raise ValueError("Fantasy source lock is invalid JSON") from error
+    validate_fantasy_source_lock(lock)
+    source_rows, source_receipts = _load_source_rows(paths)
+    locked = {(entry["name"], entry["season"]): entry for entry in lock["sources"]}
+    for source in source_receipts:
+        entry = locked[(source["name"], source["season"])]
+        if source["bytes"] != entry["bytes"] or source["sha256"] != entry["sha256"]:
+            raise ValueError("Fantasy source bytes do not match the lock")
+    games, team_weeks = _load_schedule(source_rows[("schedule_results", None)])
+    discrepancies = _reconcile_fantasy_population(source_rows, games, team_weeks)
+    if discrepancies["total"] == 0:
+        _, model_audit = build_player_games(paths)
+        coverage = model_audit["coverage"]
+    else:
+        coverage = _blocked_coverage(source_rows, team_weeks)
+    checks = {
+        "source_contract": True,
+        "locked_bytes": True,
+        "schedule_identity": discrepancies["counts"]["schedule_identity"] == 0,
+        "team_coverage": all(
+            discrepancies["counts"][name] == 0
+            for name in ("incomplete_team_coverage", "incomplete_team_week_coverage")
+        ),
+        "roster_identity": all(
+            discrepancies["counts"][name] == 0
+            for name in (
+                "missing_roster_identity", "missing_roster_status",
+                "duplicate_roster_identity", "conflicting_team",
+            )
+        ),
+        "stat_identity": all(
+            discrepancies["counts"][name] == 0
+            for name in ("missing_stat_identity", "duplicate_stat_identity")
+        ),
+        "population_reconciliation": discrepancies["total"] == 0,
+        "finite_targets": discrepancies["total"] == 0,
+    }
+    return {
+        "schema_version": 1,
+        "qualification_status": "PASS" if all(checks.values()) else "BLOCKED",
+        "artifact_availability": "LOCAL_CACHE_ONLY",
+        "source_lock_sha256": hashlib.sha256(
+            source_lock_text.encode("utf-8")
+        ).hexdigest(),
+        "scope": dict(FANTASY_SCOPE),
+        "source_count": len(source_receipts),
+        "sources": source_receipts,
+        "checks": checks,
+        "coverage": coverage,
+        "discrepancies": discrepancies,
+    }
+
+
+def validate_fantasy_source_qualification(source_lock_text, receipt):
+    required = {
+        "schema_version", "qualification_status", "artifact_availability",
+        "source_lock_sha256", "scope", "source_count", "sources", "checks",
+        "coverage", "discrepancies",
+    }
+    if not isinstance(receipt, dict) or set(receipt) != required:
+        raise ValueError("Fantasy source qualification receipt is invalid")
+    try:
+        lock = json.loads(source_lock_text)
+    except (TypeError, json.JSONDecodeError) as error:
+        raise ValueError("Fantasy source lock is invalid JSON") from error
+    validate_fantasy_source_lock(lock)
+    expected_hash = hashlib.sha256(source_lock_text.encode("utf-8")).hexdigest()
+    if receipt["source_lock_sha256"] != expected_hash:
+        raise ValueError("Fantasy source qualification lock hash changed")
+    expected_checks = {
+        "source_contract", "locked_bytes", "schedule_identity", "team_coverage",
+        "roster_identity", "stat_identity", "population_reconciliation",
+        "finite_targets",
+    }
+    discrepancies = receipt.get("discrepancies")
+    coverage = receipt.get("coverage")
+    if (
+        type(receipt["schema_version"]) is not int
+        or receipt["schema_version"] != 1
+        or receipt["qualification_status"] != "PASS"
+        or receipt["artifact_availability"] != "LOCAL_CACHE_ONLY"
+        or receipt["scope"] != FANTASY_SCOPE
+        or type(receipt["source_count"]) is not int
+        or receipt["source_count"] != 13
+        or not isinstance(receipt["sources"], list)
+        or len(receipt["sources"]) != 13
+        or not isinstance(receipt["checks"], dict)
+        or set(receipt["checks"]) != expected_checks
+        or not all(value is True for value in receipt["checks"].values())
+        or not isinstance(discrepancies, dict)
+        or set(discrepancies) != {"total", "counts", "by_season", "rows"}
+        or type(discrepancies["total"]) is not int
+        or discrepancies["total"] != 0
+        or discrepancies["rows"] != []
+        or not isinstance(discrepancies["counts"], dict)
+        or set(discrepancies["counts"]) != set(FANTASY_DISCREPANCY_CLASSES)
+        or any(type(value) is not int or value != 0
+               for value in discrepancies["counts"].values())
+        or not isinstance(discrepancies["by_season"], dict)
+        or set(discrepancies["by_season"]) != {str(season) for season in MODEL_SEASONS}
+        or not isinstance(coverage, dict)
+        or set(coverage) != {str(season) for season in MODEL_SEASONS}
+    ):
+        raise ValueError("Fantasy source qualification is not PASS")
+    locked = {(entry["name"], entry["season"]): entry for entry in lock["sources"]}
+    received = set()
+    received_order = []
+    for source in receipt["sources"]:
+        if not isinstance(source, dict) or set(source) != {
+            "name", "season", "bytes", "sha256", "rows"
+        }:
+            raise ValueError("Fantasy source qualification is not PASS")
+        key = (source["name"], source["season"])
+        if (
+            key in received
+            or key not in locked
+            or type(source["bytes"]) is not int
+            or source["bytes"] != locked[key]["bytes"]
+            or source["sha256"] != locked[key]["sha256"]
+            or type(source["rows"]) is not int
+            or source["rows"] <= 0
+        ):
+            raise ValueError("Fantasy source qualification is not PASS")
+        received.add(key)
+        received_order.append(key)
+    if (
+        received != set(locked)
+        or received_order != sorted(received_order, key=_source_key_sort)
+    ):
+        raise ValueError("Fantasy source qualification is not PASS")
+    for season in MODEL_SEASONS:
+        season_discrepancies = discrepancies["by_season"][str(season)]
+        values = coverage[str(season)]
+        if (
+            not isinstance(season_discrepancies, dict)
+            or set(season_discrepancies) != set(FANTASY_DISCREPANCY_CLASSES)
+            or any(type(value) is not int or value != 0
+                   for value in season_discrepancies.values())
+            or not isinstance(values, dict)
+            or set(values) != {
+                "eligible", "matched_stats", "zero_filled", "bye_skipped"
+            }
+            or any(type(value) is not int or value < 0 for value in values.values())
+            or values["matched_stats"] + values["zero_filled"] != values["eligible"]
+        ):
+            raise ValueError("Fantasy source qualification is not PASS")
+    serialize_fantasy_source_json(receipt)
 
 
 def strong_baseline(history, position_mean) -> float:

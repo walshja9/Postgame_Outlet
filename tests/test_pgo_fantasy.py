@@ -464,6 +464,166 @@ class FantasyPopulationTests(unittest.TestCase):
                     pgo_fantasy.build_player_games(paths)
 
 
+class FantasyQualificationFixture:
+    _row = staticmethod(FantasyPopulationTests._row)
+
+    def _write_sources(self, directory, schedule, rosters, stats):
+        return FantasyPopulationTests()._write_sources(
+            directory, schedule, rosters, stats
+        )
+
+    def _qualification_rows(self):
+        schedule = []
+        rosters = {season: [] for season in pgo_fantasy.MODEL_SEASONS}
+        stats = {season: [] for season in pgo_fantasy.MODEL_SEASONS}
+        for season in pgo_fantasy.MODEL_SEASONS:
+            game_id = f"{season}_01_BUF_LAR"
+            schedule.append(self._row(
+                pgo_fantasy.SCHEDULE_COLUMNS,
+                game_id=game_id, season=str(season), week="1", game_type="REG",
+                gameday=f"{season}-09-08", gametime="20:20", away_team="BUF",
+                home_team="LAR", away_score="21", home_score="17",
+            ))
+            for team in pgo_fantasy.CURRENT_TEAMS:
+                rosters[season].append(self._row(
+                    pgo_fantasy.ROSTER_COLUMNS,
+                    season=str(season), week="99", game_type="REG", team=team,
+                    position="K", status="ACT", full_name=f"Coverage {team}",
+                    gsis_id=f"K-{season}-{team}",
+                ))
+            for team, opponent, player in (("BUF", "LAR", "BUF-QB"), ("LAR", "BUF", "LAR-QB")):
+                rosters[season].append(self._row(
+                    pgo_fantasy.ROSTER_COLUMNS,
+                    season=str(season), week="1", game_type="REG", team=team,
+                    position="QB", status="ACT", full_name=player,
+                    gsis_id=f"{player}-{season}",
+                ))
+                stats[season].append(self._row(
+                    pgo_fantasy.PLAYER_COLUMNS,
+                    player_id=f"{player}-{season}", position="QB",
+                    season=str(season), week="1", season_type="REG",
+                    game_id=game_id, team=team, opponent_team=opponent,
+                    passing_yards="200",
+                ))
+        return schedule, rosters, stats
+
+    def _qualification_paths(self, directory, mutate=None):
+        Path(directory).mkdir(parents=True, exist_ok=True)
+        schedule, rosters, stats = self._qualification_rows()
+        if mutate is not None:
+            mutate(schedule, rosters, stats)
+        return self._write_sources(directory, schedule, rosters, stats)
+
+    @staticmethod
+    def _source_lock_text(paths):
+        manifest = {"sources": []}
+        for spec in pgo_fantasy.fantasy_source_specs():
+            data = Path(paths[(spec.name, spec.season)]).read_bytes()
+            manifest["sources"].append({
+                "name": spec.name,
+                "season": spec.season,
+                "url": spec.url,
+                "sha256": hashlib.sha256(data).hexdigest(),
+                "bytes": len(data),
+                "frozen_at": FantasySourceLockTests.AS_OF,
+            })
+        return pgo_fantasy.serialize_fantasy_source_json(
+            pgo_fantasy.build_fantasy_source_lock(manifest)
+        )
+
+
+class FantasySourceQualificationTests(
+    FantasyQualificationFixture, unittest.TestCase
+):
+    def test_clean_sources_pass_without_stat_driven_population_expansion(self):
+        with tempfile.TemporaryDirectory() as directory:
+            paths = self._qualification_paths(directory)
+            lock_text = self._source_lock_text(paths)
+            receipt = pgo_fantasy.qualify_fantasy_sources(paths, lock_text)
+
+        self.assertEqual(receipt["qualification_status"], "PASS")
+        self.assertEqual(receipt["artifact_availability"], "LOCAL_CACHE_ONLY")
+        self.assertEqual(receipt["source_count"], 13)
+        self.assertEqual(len(receipt["sources"]), 13)
+        self.assertTrue(all(receipt["checks"].values()))
+        self.assertEqual(receipt["discrepancies"]["total"], 0)
+        self.assertTrue(all(
+            count == 0
+            for count in receipt["discrepancies"]["counts"].values()
+        ))
+        self.assertEqual(receipt["coverage"]["2022"]["eligible"], 2)
+        pgo_fantasy.validate_fantasy_source_qualification(lock_text, receipt)
+
+    def test_reports_all_discrepancy_classes_deterministically(self):
+        def mutate(schedule, rosters, stats):
+            season = 2022
+            game_id = f"{season}_01_BUF_LAR"
+            schedule.append(self._row(
+                pgo_fantasy.SCHEDULE_COLUMNS,
+                game_id="2022_02_ARI_ATL", season="2022", week="2",
+                game_type="REG", gameday="2022-09-18", gametime="13:00",
+                away_team="ARI", home_team="ATL", away_score="10", home_score="17",
+            ))
+            rosters[season] = [
+                row for row in rosters[season]
+                if not (row["team"] == "ARI" and row["position"] == "K")
+            ]
+            rosters[season].extend([
+                self._row(pgo_fantasy.ROSTER_COLUMNS, season="2022", week="1", game_type="REG", team="BUF", position="WR", status="INA", full_name="Non ACT", gsis_id="NON-ACT"),
+                self._row(pgo_fantasy.ROSTER_COLUMNS, season="2022", week="1", game_type="REG", team="BUF", position="WR", status="ACT", full_name="Position Conflict", gsis_id="POS-CONFLICT"),
+                self._row(pgo_fantasy.ROSTER_COLUMNS, season="2022", week="1", game_type="REG", team="BUF", position="WR", status="ACT", full_name="Duplicate", gsis_id="DUP-ROSTER"),
+                self._row(pgo_fantasy.ROSTER_COLUMNS, season="2022", week="1", game_type="REG", team="LAR", position="WR", status="ACT", full_name="Duplicate", gsis_id="DUP-ROSTER"),
+                self._row(pgo_fantasy.ROSTER_COLUMNS, season="2022", week="1", game_type="REG", team="BUF", position="WR", status="", full_name="Missing Status", gsis_id="MISSING-STATUS"),
+                self._row(pgo_fantasy.ROSTER_COLUMNS, season="2022", week="1", game_type="REG", team="BUF", position="WR", status="ACT", full_name="Missing ID", gsis_id=""),
+            ])
+            stats[season].extend([
+                self._row(pgo_fantasy.PLAYER_COLUMNS, player_id="NO-ROSTER", position="WR", season="2022", week="1", season_type="REG", game_id=game_id, team="BUF", opponent_team="LAR", receiving_yards="40"),
+                self._row(pgo_fantasy.PLAYER_COLUMNS, player_id="NON-ACT", position="WR", season="2022", week="1", season_type="REG", game_id=game_id, team="BUF", opponent_team="LAR", receiving_yards="40"),
+                self._row(pgo_fantasy.PLAYER_COLUMNS, player_id="POS-CONFLICT", position="RB", season="2022", week="1", season_type="REG", game_id=game_id, team="BUF", opponent_team="LAR", rushing_yards="40"),
+                self._row(pgo_fantasy.PLAYER_COLUMNS, player_id="BAD-SCHEDULE", position="WR", season="2022", week="1", season_type="REG", game_id=game_id, team="BUF", opponent_team="BUF", receiving_yards="40"),
+                self._row(pgo_fantasy.PLAYER_COLUMNS, player_id="", position="WR", season="2022", week="1", season_type="REG", game_id=game_id, team="BUF", opponent_team="LAR", receiving_yards="40"),
+            ])
+            rosters[season].append(self._row(
+                pgo_fantasy.ROSTER_COLUMNS,
+                season="2022", week="1", game_type="REG", team="BUF",
+                position="WR", status="ACT", full_name="Bad Schedule",
+                gsis_id="BAD-SCHEDULE",
+            ))
+            stats[season].append(copy.deepcopy(stats[season][-2]))
+
+        with tempfile.TemporaryDirectory() as directory:
+            paths = self._qualification_paths(directory, mutate)
+            lock_text = self._source_lock_text(paths)
+            first = pgo_fantasy.qualify_fantasy_sources(paths, lock_text)
+            second = pgo_fantasy.qualify_fantasy_sources(
+                dict(reversed(list(paths.items()))), lock_text
+            )
+
+        self.assertEqual(first, second)
+        self.assertEqual(first["qualification_status"], "BLOCKED")
+        reasons = {row["reason"] for row in first["discrepancies"]["rows"]}
+        self.assertTrue({
+            "incomplete_team_coverage", "missing_roster_identity",
+            "incomplete_team_week_coverage", "missing_roster_status",
+            "duplicate_roster_identity", "conflicting_team",
+            "missing_stat_identity", "duplicate_stat_identity", "missing_roster",
+            "non_act_roster", "schedule_identity", "position_contradiction",
+        }.issubset(reasons))
+        with self.assertRaisesRegex(ValueError, "PASS"):
+            pgo_fantasy.validate_fantasy_source_qualification(lock_text, first)
+
+    def test_receipt_is_bound_to_exact_lock_bytes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            paths = self._qualification_paths(directory)
+            lock_text = self._source_lock_text(paths)
+            receipt = pgo_fantasy.qualify_fantasy_sources(paths, lock_text)
+        changed_lock = lock_text.replace(
+            FantasySourceLockTests.AS_OF, "2026-08-27T12:00:01-04:00"
+        )
+        with self.assertRaisesRegex(ValueError, "hash"):
+            pgo_fantasy.validate_fantasy_source_qualification(changed_lock, receipt)
+
+
 class FantasyBaselineTests(unittest.TestCase):
     @staticmethod
     def _row(season, week, position, index):
