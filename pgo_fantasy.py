@@ -675,10 +675,10 @@ def _reconcile_fantasy_population(source_rows, games, team_weeks):
             game_id = (row.get("game_id") or "").strip()
             team = normalize_team(row.get("team") or "")
             opponent = normalize_team(row.get("opponent_team") or "")
-            stat_team_weeks.add((season, week, team))
             position = POSITION_MAP.get((row.get("position") or "").strip().upper())
             if position is None and not roster_index.get((season, week, gsis_id), []):
                 continue
+            stat_team_weeks.add((season, week, team))
             if not gsis_id:
                 discrepancies.append(_discrepancy(
                     "missing_stat_identity", season, week, game_id=game_id,
@@ -1095,8 +1095,8 @@ def _freeze_and_qualify(frozen_at):
 
 
 def _accept_qualified_sources():
-    lock_text = FANTASY_CANDIDATE_LOCK.read_text(encoding="utf-8")
-    receipt_text = FANTASY_QUALIFICATION_OUTPUT.read_text(encoding="utf-8")
+    lock_text = FANTASY_CANDIDATE_LOCK.read_bytes().decode("utf-8")
+    receipt_text = FANTASY_QUALIFICATION_OUTPUT.read_bytes().decode("utf-8")
     lock = _load_fantasy_source_lock(lock_text)
     receipt = json.loads(receipt_text)
     validate_fantasy_source_qualification(lock_text, receipt)

@@ -796,6 +796,36 @@ class FantasySourceQualificationTests(
             for season in pgo_fantasy.MODEL_SEASONS
         })
 
+    def test_unmodeled_nonroster_stats_do_not_satisfy_team_week_coverage(self):
+        def unmodeled_nonroster(schedule, rosters, stats):
+            for season, rows in stats.items():
+                for row in rows:
+                    row["player_id"] = f"K-NON-ROSTER-{season}-{row['team']}"
+                    row["position"] = "K"
+
+        with tempfile.TemporaryDirectory() as directory:
+            paths = self._qualification_paths(directory, unmodeled_nonroster)
+            with self._fixture_schedule_digest(paths):
+                receipt = pgo_fantasy.qualify_fantasy_sources(
+                    paths, self._source_lock_text(paths)
+                )
+
+        self.assertEqual(receipt["qualification_status"], "BLOCKED")
+        self.assertFalse(receipt["checks"]["stat_team_week_coverage"])
+        self.assertEqual(
+            receipt["discrepancies"]["counts"]["incomplete_stat_team_week_coverage"],
+            12,
+        )
+        self.assertEqual(receipt["coverage"], {
+            str(season): {
+                "eligible": 2,
+                "matched_stats": 0,
+                "zero_filled": 2,
+                "bye_skipped": 0,
+            }
+            for season in pgo_fantasy.MODEL_SEASONS
+        })
+
     def test_missing_regular_stat_team_week_blocks_without_population_growth(self):
         def missing_buf(schedule, rosters, stats):
             stats[2022] = [row for row in stats[2022] if row["team"] != "BUF"]
@@ -1038,6 +1068,42 @@ class FantasySourceCommandTests(FantasyQualificationFixture, unittest.TestCase):
                     )
                 self.assertEqual(code, 2)
                 self.assertFalse((root / "research/pgo_fantasy").exists())
+
+    def test_accept_rejects_crlf_candidate_lock_bytes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payloads = self._payloads(root)
+            self.assertEqual(self._run_in_root(
+                root,
+                ["--freeze-sources", "--frozen-at", self.AS_OF],
+                payloads,
+            ), 0)
+            lock_path = root / "output/pgo-fantasy-source-candidate.lock.json"
+            lock_path.write_bytes(lock_path.read_bytes().replace(b"\n", b"\r\n"))
+            with redirect_stderr(io.StringIO()):
+                code = self._run_in_root(root, ["--accept-qualified"], payloads)
+
+            self.assertEqual(code, 2)
+            self.assertFalse((root / "research/pgo_fantasy").exists())
+
+    def test_accept_rejects_crlf_candidate_receipt_bytes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payloads = self._payloads(root)
+            self.assertEqual(self._run_in_root(
+                root,
+                ["--freeze-sources", "--frozen-at", self.AS_OF],
+                payloads,
+            ), 0)
+            receipt_path = root / "output/pgo-fantasy-source-qualification.json"
+            receipt_path.write_bytes(
+                receipt_path.read_bytes().replace(b"\n", b"\r\n")
+            )
+            with redirect_stderr(io.StringIO()):
+                code = self._run_in_root(root, ["--accept-qualified"], payloads)
+
+            self.assertEqual(code, 2)
+            self.assertFalse((root / "research/pgo_fantasy").exists())
 
     def test_preflight_rejects_bad_time_or_existing_candidate_before_fetch(self):
         for argv, existing in (
