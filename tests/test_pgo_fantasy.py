@@ -3,11 +3,97 @@ import csv
 import hashlib
 import json
 import math
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 
 import pgo_fantasy
+import pgo_sources
+
+
+class FantasySourceLockTests(unittest.TestCase):
+    AS_OF = "2026-08-27T12:00:00-04:00"
+
+    @classmethod
+    def _manifest(cls):
+        return {
+            "sources": [
+                {
+                    "name": spec.name,
+                    "season": spec.season,
+                    "url": spec.url,
+                    "sha256": hashlib.sha256(
+                        f"{spec.name}:{spec.season}".encode("utf-8")
+                    ).hexdigest(),
+                    "bytes": 1,
+                    "frozen_at": cls.AS_OF,
+                }
+                for spec in pgo_fantasy.fantasy_source_specs()
+            ]
+        }
+
+    def test_builds_exact_deterministic_fantasy_lock(self):
+        lock = pgo_fantasy.build_fantasy_source_lock(self._manifest())
+        text = pgo_fantasy.serialize_fantasy_source_json(lock)
+
+        self.assertEqual(lock["schema_version"], 1)
+        self.assertEqual(lock["scope"], {
+            "seasons": [2020, 2021, 2022, 2023, 2024, 2025],
+            "game_type": "REG",
+            "roster_status": "ACT",
+        })
+        self.assertEqual(len(lock["sources"]), 13)
+        self.assertEqual(text, pgo_fantasy.serialize_fantasy_source_json(
+            pgo_fantasy.build_fantasy_source_lock({
+                "sources": list(reversed(self._manifest()["sources"]))
+            })
+        ))
+        self.assertNotIn("\r", text)
+        self.assertTrue(text.endswith("\n"))
+        for entry in lock["sources"]:
+            self.assertEqual(set(entry), {
+                "name", "season", "url", "sha256", "bytes", "frozen_at",
+                "cache_path", "required_columns", "allowed_scope",
+            })
+            self.assertTrue(entry["cache_path"].startswith(".cache/pgo_fantasy/"))
+
+    def test_rejects_naive_or_inconsistent_capture_time_and_manifest_drift(self):
+        cases = []
+        naive = self._manifest()
+        naive["sources"][0]["frozen_at"] = "2026-08-27T12:00:00"
+        cases.append(naive)
+        inconsistent = self._manifest()
+        inconsistent["sources"][0]["frozen_at"] = "2026-08-27T13:00:00-04:00"
+        cases.append(inconsistent)
+        missing = self._manifest()
+        missing["sources"].pop()
+        cases.append(missing)
+        changed_url = self._manifest()
+        changed_url["sources"][0]["url"] = "https://example.invalid/source.csv"
+        cases.append(changed_url)
+
+        for manifest in cases:
+            with self.subTest(manifest=manifest):
+                with self.assertRaises(ValueError):
+                    pgo_fantasy.build_fantasy_source_lock(manifest)
+
+    def test_fantasy_research_json_has_lf_checkout_attribute(self):
+        result = subprocess.run(
+            [
+                "git", "check-attr", "eol", "--",
+                "research/pgo_fantasy/sources.lock.json",
+                "research/pgo_fantasy/source_qualification.json",
+            ],
+            cwd=Path(__file__).resolve().parents[1],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.stdout.splitlines(), [
+            "research/pgo_fantasy/sources.lock.json: eol: lf",
+            "research/pgo_fantasy/source_qualification.json: eol: lf",
+        ])
 
 
 class FantasyContractTests(unittest.TestCase):

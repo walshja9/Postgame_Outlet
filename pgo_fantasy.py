@@ -5,6 +5,7 @@ import hashlib
 import io
 import json
 import math
+from datetime import datetime
 from pathlib import Path
 
 from pgo_model import SOURCE_URL
@@ -111,6 +112,121 @@ def fantasy_source_specs() -> tuple[SourceSpec, ...]:
             ),
         ))
     return tuple(specs)
+
+
+FANTASY_CACHE_DIR = Path(".cache/pgo_fantasy")
+FANTASY_SCOPE = {
+    "seasons": list(MODEL_SEASONS),
+    "game_type": "REG",
+    "roster_status": "ACT",
+}
+
+
+def _parse_frozen_at(value):
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError("frozen_at must be a timezone-bearing timestamp")
+    try:
+        parsed = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+    except ValueError as error:
+        raise ValueError("frozen_at must be a timezone-bearing timestamp") from error
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise ValueError("frozen_at must be a timezone-bearing timestamp")
+    return value.strip()
+
+
+def _cache_name(url, digest):
+    suffix = ".csv.gz" if url.lower().endswith(".csv.gz") else ".csv"
+    return (FANTASY_CACHE_DIR / f"{digest}{suffix}").as_posix()
+
+
+def _allowed_scope(spec):
+    return {
+        "seasons": list(MODEL_SEASONS) if spec.season is None else [spec.season],
+        "game_type_field": (
+            "season_type" if spec.name == "player_weekly_stats" else "game_type"
+        ),
+        "game_type_value": "REG",
+        "completed_only": spec.name == "schedule_results",
+    }
+
+
+def build_fantasy_source_lock(manifest):
+    if not isinstance(manifest, dict) or set(manifest) != {"sources"}:
+        raise ValueError("Fantasy source manifest is invalid")
+    specs = {(spec.name, spec.season): spec for spec in fantasy_source_specs()}
+    entries = manifest["sources"]
+    if not isinstance(entries, list):
+        raise ValueError("Fantasy source inventory is invalid")
+    received = {}
+    frozen_values = set()
+    required = {"name", "season", "url", "sha256", "bytes", "frozen_at"}
+    for source in entries:
+        if not isinstance(source, dict) or set(source) != required:
+            raise ValueError("Fantasy source entry is invalid")
+        name = source["name"]
+        season = source["season"]
+        if not isinstance(name, str) or (season is not None and type(season) is not int):
+            raise ValueError("Fantasy source entry is invalid")
+        key = (name, season)
+        digest = source["sha256"]
+        if (
+            key in received
+            or key not in specs
+            or source["url"] != specs[key].url
+            or type(source["bytes"]) is not int
+            or source["bytes"] <= 0
+            or not isinstance(digest, str)
+            or len(digest) != 64
+            or any(character not in "0123456789abcdef" for character in digest)
+        ):
+            raise ValueError("Fantasy source entry is invalid")
+        frozen = _parse_frozen_at(source["frozen_at"])
+        frozen_values.add(frozen)
+        received[key] = {
+            **source,
+            "frozen_at": frozen,
+            "cache_path": _cache_name(source["url"], digest),
+            "required_columns": list(specs[key].required_columns),
+            "allowed_scope": _allowed_scope(specs[key]),
+        }
+    if set(received) != set(specs) or len(frozen_values) != 1:
+        raise ValueError("Fantasy source inventory is incomplete or inconsistent")
+    return {
+        "schema_version": 1,
+        "scope": dict(FANTASY_SCOPE),
+        "sources": [received[key] for key in sorted(received, key=_source_key_sort)],
+    }
+
+
+def validate_fantasy_source_lock(lock):
+    if not isinstance(lock, dict) or set(lock) != {"schema_version", "scope", "sources"}:
+        raise ValueError("Fantasy source lock is invalid")
+    if type(lock["schema_version"]) is not int or lock["schema_version"] != 1:
+        raise ValueError("Fantasy source lock schema is invalid")
+    if not isinstance(lock["sources"], list):
+        raise ValueError("Fantasy source lock sources are invalid")
+    try:
+        raw_manifest = {
+            "sources": [
+                {name: entry[name] for name in (
+                    "name", "season", "url", "sha256", "bytes", "frozen_at"
+                )}
+                for entry in lock["sources"]
+            ]
+        }
+    except (KeyError, TypeError) as error:
+        raise ValueError("Fantasy source lock sources are invalid") from error
+    if lock != build_fantasy_source_lock(raw_manifest):
+        raise ValueError("Fantasy source lock contract is invalid")
+
+
+def serialize_fantasy_source_json(value):
+    try:
+        return json.dumps(
+            value, indent=2, sort_keys=True, ensure_ascii=False, allow_nan=False
+        ) + "\n"
+    except (TypeError, ValueError) as error:
+        raise ValueError("Fantasy source evidence must contain finite JSON") from error
 
 
 def _number(row, name):
