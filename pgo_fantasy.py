@@ -127,6 +127,9 @@ FANTASY_CANDIDATE_LOCK = Path(
 FANTASY_QUALIFICATION_OUTPUT = Path(
     "output/pgo-fantasy-source-qualification.json"
 )
+FANTASY_CANDIDATE_CLAIM = Path(
+    "output/.pgo-fantasy-source-candidate.claim"
+)
 FANTASY_ACCEPTED_DIR = Path("research/pgo_fantasy")
 FANTASY_SCOPE = {
     "seasons": list(MODEL_SEASONS),
@@ -136,6 +139,7 @@ FANTASY_SCOPE = {
 FANTASY_DISCREPANCY_CLASSES = (
     "incomplete_team_coverage",
     "incomplete_team_week_coverage",
+    "incomplete_stat_team_week_coverage",
     "missing_roster_identity",
     "missing_roster_status",
     "duplicate_roster_identity",
@@ -207,6 +211,11 @@ def build_fantasy_source_lock(manifest):
             or any(character not in "0123456789abcdef" for character in digest)
         ):
             raise ValueError("Fantasy source entry is invalid")
+        if (
+            key == ("schedule_results", None)
+            and digest != pgo_sources.EXPECTED_SOURCE_SHA256
+        ):
+            raise ValueError("schedule_results does not match pinned SHA-256")
         frozen = _parse_frozen_at(source["frozen_at"])
         frozen_values.add(frozen)
         received[key] = {
@@ -254,6 +263,31 @@ def serialize_fantasy_source_json(value):
         ) + "\n"
     except (TypeError, ValueError) as error:
         raise ValueError("Fantasy source evidence must contain finite JSON") from error
+
+
+def _reject_duplicate_json_keys(pairs):
+    value = {}
+    for key, item in pairs:
+        if key in value:
+            raise ValueError("Fantasy source lock contains duplicate JSON key")
+        value[key] = item
+    return value
+
+
+def _load_fantasy_source_lock(source_lock_text):
+    try:
+        lock = json.loads(
+            source_lock_text,
+            object_pairs_hook=_reject_duplicate_json_keys,
+        )
+    except (TypeError, ValueError) as error:
+        if "duplicate JSON key" in str(error):
+            raise
+        raise ValueError("Fantasy source lock is invalid JSON") from error
+    validate_fantasy_source_lock(lock)
+    if serialize_fantasy_source_json(lock) != source_lock_text:
+        raise ValueError("Fantasy source lock serialization is not canonical")
+    return lock
 
 
 def _number(row, name):
@@ -567,6 +601,7 @@ def _reconcile_fantasy_population(source_rows, games, team_weeks):
     stat_index = {}
     roster_teams = {season: set() for season in MODEL_SEASONS}
     roster_team_weeks = set()
+    stat_team_weeks = set()
     discrepancies = []
 
     for source_season in MODEL_SEASONS:
@@ -640,6 +675,7 @@ def _reconcile_fantasy_population(source_rows, games, team_weeks):
             game_id = (row.get("game_id") or "").strip()
             team = normalize_team(row.get("team") or "")
             opponent = normalize_team(row.get("opponent_team") or "")
+            stat_team_weeks.add((season, week, team))
             position = POSITION_MAP.get((row.get("position") or "").strip().upper())
             if position is None and not roster_index.get((season, week, gsis_id), []):
                 continue
@@ -670,6 +706,11 @@ def _reconcile_fantasy_population(source_rows, games, team_weeks):
                 discrepancies.append(_discrepancy(
                     "schedule_identity", season, week, gsis_id, game_id, team
                 ))
+
+    for season, week, team in sorted(set(team_weeks) - stat_team_weeks):
+        discrepancies.append(_discrepancy(
+            "incomplete_stat_team_week_coverage", season, week, team=team
+        ))
 
     for key, records in sorted(stat_index.items()):
         if len(records) > 1:
@@ -793,11 +834,7 @@ def _blocked_coverage(source_rows, team_weeks):
 
 
 def qualify_fantasy_sources(paths, source_lock_text):
-    try:
-        lock = json.loads(source_lock_text)
-    except (TypeError, json.JSONDecodeError) as error:
-        raise ValueError("Fantasy source lock is invalid JSON") from error
-    validate_fantasy_source_lock(lock)
+    lock = _load_fantasy_source_lock(source_lock_text)
     source_rows, source_receipts = _load_source_rows(paths)
     locked = {(entry["name"], entry["season"]): entry for entry in lock["sources"]}
     for source in source_receipts:
@@ -832,6 +869,9 @@ def qualify_fantasy_sources(paths, source_lock_text):
             discrepancies["counts"][name] == 0
             for name in ("missing_stat_identity", "duplicate_stat_identity")
         ),
+        "stat_team_week_coverage": (
+            discrepancies["counts"]["incomplete_stat_team_week_coverage"] == 0
+        ),
         "population_reconciliation": discrepancies["total"] == 0,
         "finite_targets": discrepancies["total"] == 0,
     }
@@ -859,18 +899,14 @@ def validate_fantasy_source_qualification(source_lock_text, receipt):
     }
     if not isinstance(receipt, dict) or set(receipt) != required:
         raise ValueError("Fantasy source qualification receipt is invalid")
-    try:
-        lock = json.loads(source_lock_text)
-    except (TypeError, json.JSONDecodeError) as error:
-        raise ValueError("Fantasy source lock is invalid JSON") from error
-    validate_fantasy_source_lock(lock)
+    lock = _load_fantasy_source_lock(source_lock_text)
     expected_hash = hashlib.sha256(source_lock_text.encode("utf-8")).hexdigest()
     if receipt["source_lock_sha256"] != expected_hash:
         raise ValueError("Fantasy source qualification lock hash changed")
     expected_checks = {
         "source_contract", "locked_bytes", "schedule_identity", "team_coverage",
-        "roster_identity", "stat_identity", "population_reconciliation",
-        "finite_targets",
+        "roster_identity", "stat_identity", "stat_team_week_coverage",
+        "population_reconciliation", "finite_targets",
     }
     discrepancies = receipt.get("discrepancies")
     coverage = receipt.get("coverage")
@@ -947,24 +983,91 @@ def validate_fantasy_source_qualification(source_lock_text, receipt):
     serialize_fantasy_source_json(receipt)
 
 
-def _freeze_and_qualify(frozen_at):
-    _parse_frozen_at(frozen_at)
+def _unlink_owned(path, expected_state, content=None):
+    path = Path(path)
+    quarantine = None
+    try:
+        descriptor, name = tempfile.mkstemp(
+            dir=path.parent,
+            prefix=f".{path.name}.",
+            suffix=".rollback",
+        )
+        os.close(descriptor)
+        quarantine = Path(name)
+        os.replace(path, quarantine)
+    except BaseException:
+        if quarantine is not None:
+            try:
+                quarantine.unlink()
+            except BaseException:
+                pass
+        return
+    try:
+        is_owned = os.path.samestat(
+            quarantine.stat(follow_symlinks=False), expected_state
+        )
+        if content is not None:
+            is_owned = is_owned and quarantine.read_bytes() == content
+    except BaseException:
+        return
+    if not is_owned:
+        try:
+            os.link(quarantine, path)
+        except BaseException:
+            return
+    try:
+        quarantine.unlink()
+    except BaseException:
+        pass
+
+
+def _exclusive_write_text(path, text):
+    path = Path(path)
+    content = text.encode("utf-8")
+    descriptor = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    state = os.fstat(descriptor)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8", newline="") as handle:
+            handle.write(text)
+            handle.flush()
+            os.fsync(handle.fileno())
+    except BaseException:
+        _unlink_owned(path, state)
+        raise
+    return state, content
+
+
+def _refuse_existing_candidate_outputs():
     for path in (FANTASY_CANDIDATE_LOCK, FANTASY_QUALIFICATION_OUTPUT):
         if path.exists():
             raise ValueError(f"Refusing to replace existing candidate output: {path}")
     if FANTASY_ACCEPTED_DIR.exists():
         raise ValueError("Accepted fantasy source evidence already exists")
+
+
+def _freeze_and_qualify(frozen_at):
+    _parse_frozen_at(frozen_at)
+    _refuse_existing_candidate_outputs()
     FANTASY_CANDIDATE_LOCK.parent.mkdir(parents=True, exist_ok=True)
-    descriptor, name = tempfile.mkstemp(
-        dir=FANTASY_CANDIDATE_LOCK.parent,
-        prefix=".pgo-fantasy-source-",
-        suffix=".pending",
-    )
-    os.close(descriptor)
-    staged = Path(name)
-    staged.unlink()
-    published = False
     try:
+        claim = _exclusive_write_text(
+            FANTASY_CANDIDATE_CLAIM, os.urandom(16).hex()
+        )
+    except FileExistsError as error:
+        raise ValueError("Fantasy source candidate freeze already in progress") from error
+    staged = None
+    candidate = None
+    qualification = None
+    try:
+        _refuse_existing_candidate_outputs()
+        descriptor, name = tempfile.mkstemp(
+            dir=FANTASY_CANDIDATE_LOCK.parent,
+            prefix=".pgo-fantasy-source-",
+            suffix=".pending",
+        )
+        os.close(descriptor)
+        staged = Path(name)
+        staged.unlink()
         manifest = pgo_sources.freeze_sources(
             fantasy_source_specs(), FANTASY_CACHE_DIR, staged, frozen_at
         )
@@ -973,28 +1076,29 @@ def _freeze_and_qualify(frozen_at):
         staged.write_text(lock_text, encoding="utf-8", newline="")
         paths = pgo_sources.load_locked_sources(staged, FANTASY_CACHE_DIR)
         receipt = qualify_fantasy_sources(paths, lock_text)
-        atomic_write_text(FANTASY_CANDIDATE_LOCK, lock_text)
-        atomic_write_text(
+        candidate = _exclusive_write_text(FANTASY_CANDIDATE_LOCK, lock_text)
+        qualification = _exclusive_write_text(
             FANTASY_QUALIFICATION_OUTPUT,
             serialize_fantasy_source_json(receipt),
         )
-        published = True
         return receipt
     except BaseException:
-        if not published:
-            FANTASY_CANDIDATE_LOCK.unlink(missing_ok=True)
-            FANTASY_QUALIFICATION_OUTPUT.unlink(missing_ok=True)
+        if candidate is not None:
+            _unlink_owned(FANTASY_CANDIDATE_LOCK, *candidate)
+        if qualification is not None:
+            _unlink_owned(FANTASY_QUALIFICATION_OUTPUT, *qualification)
         raise
     finally:
-        staged.unlink(missing_ok=True)
+        if staged is not None:
+            staged.unlink(missing_ok=True)
+        _unlink_owned(FANTASY_CANDIDATE_CLAIM, *claim)
 
 
 def _accept_qualified_sources():
     lock_text = FANTASY_CANDIDATE_LOCK.read_text(encoding="utf-8")
     receipt_text = FANTASY_QUALIFICATION_OUTPUT.read_text(encoding="utf-8")
-    lock = json.loads(lock_text)
+    lock = _load_fantasy_source_lock(lock_text)
     receipt = json.loads(receipt_text)
-    validate_fantasy_source_lock(lock)
     validate_fantasy_source_qualification(lock_text, receipt)
     paths = pgo_sources.load_locked_sources(
         FANTASY_CANDIDATE_LOCK, FANTASY_CACHE_DIR
@@ -1061,12 +1165,13 @@ def main(argv: list[str] | None = None) -> int:
             args.freeze_sources
             and not FANTASY_CANDIDATE_LOCK.exists()
             and not FANTASY_QUALIFICATION_OUTPUT.exists()
+            and not FANTASY_CANDIDATE_CLAIM.exists()
         ):
             try:
                 FANTASY_QUALIFICATION_OUTPUT.parent.mkdir(
                     parents=True, exist_ok=True
                 )
-                atomic_write_text(
+                _exclusive_write_text(
                     FANTASY_QUALIFICATION_OUTPUT,
                     serialize_fantasy_source_json(
                         _operational_blocked_receipt(error)

@@ -21,6 +21,18 @@ import pgo_sources
 class FantasySourceLockTests(unittest.TestCase):
     AS_OF = "2026-08-27T12:00:00-04:00"
 
+    def setUp(self):
+        manifest = self._manifest()
+        self._pinned_schedule = patch.object(
+            pgo_sources,
+            "EXPECTED_SOURCE_SHA256",
+            manifest["sources"][0]["sha256"],
+        )
+        self._pinned_schedule.start()
+
+    def tearDown(self):
+        self._pinned_schedule.stop()
+
     @classmethod
     def _manifest(cls):
         return {
@@ -521,6 +533,15 @@ class FantasyQualificationFixture:
         return self._write_sources(directory, schedule, rosters, stats)
 
     @staticmethod
+    def _fixture_schedule_digest(paths):
+        schedule = paths[("schedule_results", None)].read_bytes()
+        return patch.object(
+            pgo_sources,
+            "EXPECTED_SOURCE_SHA256",
+            hashlib.sha256(schedule).hexdigest(),
+        )
+
+    @staticmethod
     def _source_lock_text(paths):
         manifest = {"sources": []}
         for spec in pgo_fantasy.fantasy_source_specs():
@@ -544,8 +565,10 @@ class FantasySourceQualificationTests(
     def test_clean_sources_pass_without_stat_driven_population_expansion(self):
         with tempfile.TemporaryDirectory() as directory:
             paths = self._qualification_paths(directory)
-            lock_text = self._source_lock_text(paths)
-            receipt = pgo_fantasy.qualify_fantasy_sources(paths, lock_text)
+            with self._fixture_schedule_digest(paths):
+                lock_text = self._source_lock_text(paths)
+                receipt = pgo_fantasy.qualify_fantasy_sources(paths, lock_text)
+                pgo_fantasy.validate_fantasy_source_qualification(lock_text, receipt)
 
         self.assertEqual(receipt["qualification_status"], "PASS")
         self.assertEqual(receipt["artifact_availability"], "LOCAL_CACHE_ONLY")
@@ -558,7 +581,6 @@ class FantasySourceQualificationTests(
             for count in receipt["discrepancies"]["counts"].values()
         ))
         self.assertEqual(receipt["coverage"]["2022"]["eligible"], 2)
-        pgo_fantasy.validate_fantasy_source_qualification(lock_text, receipt)
 
     def test_reports_all_discrepancy_classes_deterministically(self):
         def mutate(schedule, rosters, stats):
@@ -599,11 +621,16 @@ class FantasySourceQualificationTests(
 
         with tempfile.TemporaryDirectory() as directory:
             paths = self._qualification_paths(directory, mutate)
-            lock_text = self._source_lock_text(paths)
-            first = pgo_fantasy.qualify_fantasy_sources(paths, lock_text)
-            second = pgo_fantasy.qualify_fantasy_sources(
-                dict(reversed(list(paths.items()))), lock_text
-            )
+            with self._fixture_schedule_digest(paths):
+                lock_text = self._source_lock_text(paths)
+                first = pgo_fantasy.qualify_fantasy_sources(paths, lock_text)
+                second = pgo_fantasy.qualify_fantasy_sources(
+                    dict(reversed(list(paths.items()))), lock_text
+                )
+                with self.assertRaisesRegex(ValueError, "PASS"):
+                    pgo_fantasy.validate_fantasy_source_qualification(
+                        lock_text, first
+                    )
 
         self.assertEqual(first, second)
         self.assertEqual(first["qualification_status"], "BLOCKED")
@@ -616,7 +643,12 @@ class FantasySourceQualificationTests(
             "non_act_roster", "schedule_identity", "position_contradiction",
         }.issubset(reasons))
         expected_counts = {
-            reason: 2 if reason == "incomplete_team_week_coverage" else 1
+            reason: (
+                2 if reason in {
+                    "incomplete_team_week_coverage",
+                    "incomplete_stat_team_week_coverage",
+                } else 1
+            )
             for reason in pgo_fantasy.FANTASY_DISCREPANCY_CLASSES
         }
         self.assertEqual(first["discrepancies"]["counts"], expected_counts)
@@ -634,6 +666,10 @@ class FantasySourceQualificationTests(
              "gsis_id": "DUP-ROSTER", "game_id": "", "team": "BUF,LAR"},
             {"reason": "duplicate_stat_identity", "season": 2022, "week": 1,
              "gsis_id": "BAD-SCHEDULE", "game_id": "2022_01_BUF_LAR", "team": "BUF"},
+            {"reason": "incomplete_stat_team_week_coverage", "season": 2022, "week": 2,
+             "gsis_id": "", "game_id": "", "team": "ARI"},
+            {"reason": "incomplete_stat_team_week_coverage", "season": 2022, "week": 2,
+             "gsis_id": "", "game_id": "", "team": "ATL"},
             {"reason": "incomplete_team_coverage", "season": 2022, "week": 0,
              "gsis_id": "", "game_id": "", "team": "ARI"},
             {"reason": "incomplete_team_week_coverage", "season": 2022, "week": 2,
@@ -664,13 +700,9 @@ class FantasySourceQualificationTests(
             }
             for season in pgo_fantasy.MODEL_SEASONS
         })
-        with self.assertRaisesRegex(ValueError, "PASS"):
-            pgo_fantasy.validate_fantasy_source_qualification(lock_text, first)
-
     def test_qualification_uses_one_loaded_byte_snapshot(self):
         with tempfile.TemporaryDirectory() as directory:
             paths = self._qualification_paths(directory)
-            lock_text = self._source_lock_text(paths)
             target = Path(paths[("weekly_rosters", 2022)])
             original = target.read_bytes()
             reads = []
@@ -698,8 +730,10 @@ class FantasySourceQualificationTests(
                         target.write_text(output.getvalue(), encoding="utf-8", newline="")
                 return data
 
-            with mock.patch.object(Path, "read_bytes", mutate_after_read):
-                receipt = pgo_fantasy.qualify_fantasy_sources(paths, lock_text)
+            with self._fixture_schedule_digest(paths):
+                lock_text = self._source_lock_text(paths)
+                with mock.patch.object(Path, "read_bytes", mutate_after_read):
+                    receipt = pgo_fantasy.qualify_fantasy_sources(paths, lock_text)
             changed = target.read_bytes()
 
         self.assertEqual(reads, [original])
@@ -717,9 +751,10 @@ class FantasySourceQualificationTests(
 
         with tempfile.TemporaryDirectory() as directory:
             paths = self._qualification_paths(directory, mutate)
-            receipt = pgo_fantasy.qualify_fantasy_sources(
-                paths, self._source_lock_text(paths)
-            )
+            with self._fixture_schedule_digest(paths):
+                receipt = pgo_fantasy.qualify_fantasy_sources(
+                    paths, self._source_lock_text(paths)
+                )
 
         self.assertEqual(receipt["qualification_status"], "BLOCKED")
         self.assertEqual(receipt["discrepancies"]["counts"]["position_contradiction"], 1)
@@ -731,16 +766,109 @@ class FantasySourceQualificationTests(
             "eligible": 2, "matched_stats": 1, "zero_filled": 1, "bye_skipped": 0,
         })
 
+    def test_all_post_stats_block_stat_team_week_coverage(self):
+        def all_post(schedule, rosters, stats):
+            for rows in stats.values():
+                for row in rows:
+                    row["season_type"] = "POST"
+
+        with tempfile.TemporaryDirectory() as directory:
+            paths = self._qualification_paths(directory, all_post)
+            with self._fixture_schedule_digest(paths):
+                receipt = pgo_fantasy.qualify_fantasy_sources(
+                    paths, self._source_lock_text(paths)
+                )
+
+        self.assertEqual(receipt["qualification_status"], "BLOCKED")
+        self.assertFalse(receipt["checks"]["stat_team_week_coverage"])
+        self.assertEqual(
+            receipt["discrepancies"]["counts"]["incomplete_stat_team_week_coverage"],
+            12,
+        )
+        self.assertEqual(receipt["discrepancies"]["by_season"], {
+            str(season): {
+                **{
+                    reason: 0
+                    for reason in pgo_fantasy.FANTASY_DISCREPANCY_CLASSES
+                },
+                "incomplete_stat_team_week_coverage": 2,
+            }
+            for season in pgo_fantasy.MODEL_SEASONS
+        })
+
+    def test_missing_regular_stat_team_week_blocks_without_population_growth(self):
+        def missing_buf(schedule, rosters, stats):
+            stats[2022] = [row for row in stats[2022] if row["team"] != "BUF"]
+
+        with tempfile.TemporaryDirectory() as directory:
+            paths = self._qualification_paths(directory, missing_buf)
+            with self._fixture_schedule_digest(paths):
+                receipt = pgo_fantasy.qualify_fantasy_sources(
+                    paths, self._source_lock_text(paths)
+                )
+
+        self.assertEqual(receipt["qualification_status"], "BLOCKED")
+        self.assertEqual(receipt["discrepancies"]["rows"], [{
+            "reason": "incomplete_stat_team_week_coverage",
+            "season": 2022,
+            "week": 1,
+            "gsis_id": "",
+            "game_id": "",
+            "team": "BUF",
+        }])
+        self.assertEqual(receipt["coverage"]["2022"], {
+            "eligible": 2, "matched_stats": 1, "zero_filled": 1, "bye_skipped": 0,
+        })
+
+    def test_qualification_rejects_noncanonical_and_duplicate_lock_text(self):
+        with tempfile.TemporaryDirectory() as directory:
+            paths = self._qualification_paths(directory)
+            with self._fixture_schedule_digest(paths):
+                lock_text = self._source_lock_text(paths)
+                duplicate = lock_text.replace(
+                    '  "schema_version": 1,\n',
+                    '  "schema_version": 1,\n  "schema_version": 1,\n',
+                    1,
+                )
+                for text, message in (
+                    (lock_text + " ", "canonical"),
+                    (duplicate, "duplicate JSON key"),
+                    (None, "invalid JSON"),
+                ):
+                    with self.subTest(message=message), self.assertRaisesRegex(
+                        ValueError, message
+                    ):
+                        pgo_fantasy.qualify_fantasy_sources(paths, text)
+
+    def test_shared_lock_boundary_requires_pinned_schedule_digest(self):
+        manifest = FantasySourceLockTests._manifest()
+        digest = manifest["sources"][0]["sha256"]
+        with patch.object(pgo_sources, "EXPECTED_SOURCE_SHA256", digest):
+            lock = pgo_fantasy.build_fantasy_source_lock(manifest)
+            schedule = next(
+                entry for entry in lock["sources"]
+                if entry["name"] == "schedule_results"
+            )
+            schedule["sha256"] = "0" * 64
+            schedule["cache_path"] = pgo_fantasy._cache_name(
+                schedule["url"], schedule["sha256"]
+            )
+            with self.assertRaisesRegex(ValueError, "pinned SHA-256"):
+                pgo_fantasy.validate_fantasy_source_lock(lock)
+
     def test_receipt_is_bound_to_exact_lock_bytes(self):
         with tempfile.TemporaryDirectory() as directory:
             paths = self._qualification_paths(directory)
-            lock_text = self._source_lock_text(paths)
-            receipt = pgo_fantasy.qualify_fantasy_sources(paths, lock_text)
-        changed_lock = lock_text.replace(
-            FantasySourceLockTests.AS_OF, "2026-08-27T12:00:01-04:00"
-        )
-        with self.assertRaisesRegex(ValueError, "hash"):
-            pgo_fantasy.validate_fantasy_source_qualification(changed_lock, receipt)
+            with self._fixture_schedule_digest(paths):
+                lock_text = self._source_lock_text(paths)
+                receipt = pgo_fantasy.qualify_fantasy_sources(paths, lock_text)
+                changed_lock = lock_text.replace(
+                    FantasySourceLockTests.AS_OF, "2026-08-27T12:00:01-04:00"
+                )
+                with self.assertRaisesRegex(ValueError, "hash"):
+                    pgo_fantasy.validate_fantasy_source_qualification(
+                        changed_lock, receipt
+                    )
 
 
 class FantasySourceCommandTests(FantasyQualificationFixture, unittest.TestCase):
@@ -756,10 +884,10 @@ class FantasySourceCommandTests(FantasyQualificationFixture, unittest.TestCase):
             payloads[spec.url] = data
         return payloads
 
-    def _run_in_root(self, root, argv, payloads=None):
+    def _run_in_root(self, root, argv, payloads=None, freeze=None):
         original = pgo_sources.freeze_sources
 
-        def freeze(specs, cache_dir, lock_path, frozen_at):
+        def fetch_fixture(specs, cache_dir, lock_path, frozen_at):
             return original(
                 specs, cache_dir, lock_path, frozen_at,
                 fetch=payloads.__getitem__,
@@ -777,7 +905,11 @@ class FantasySourceCommandTests(FantasyQualificationFixture, unittest.TestCase):
             digest = hashlib.sha256(payloads[schedule.url]).hexdigest()
             with (
                 patch.object(pgo_sources, "EXPECTED_SOURCE_SHA256", digest),
-                patch.object(pgo_sources, "freeze_sources", side_effect=freeze),
+                patch.object(
+                    pgo_sources,
+                    "freeze_sources",
+                    side_effect=fetch_fixture if freeze is None else freeze,
+                ),
             ):
                 return pgo_fantasy.main(argv)
         finally:
@@ -801,7 +933,16 @@ class FantasySourceCommandTests(FantasyQualificationFixture, unittest.TestCase):
 
             self.assertEqual(code, 0)
             self.assertEqual(receipt["qualification_status"], "PASS")
-            pgo_fantasy.validate_fantasy_source_qualification(lock_text, receipt)
+            schedule = next(
+                spec for spec in pgo_fantasy.fantasy_source_specs()
+                if spec.name == "schedule_results"
+            )
+            with patch.object(
+                pgo_sources,
+                "EXPECTED_SOURCE_SHA256",
+                hashlib.sha256(payloads[schedule.url]).hexdigest(),
+            ):
+                pgo_fantasy.validate_fantasy_source_qualification(lock_text, receipt)
             self.assertFalse((root / "research/pgo_fantasy").exists())
 
     def test_blocked_freeze_writes_diagnostic_but_not_research(self):
@@ -840,7 +981,7 @@ class FantasySourceCommandTests(FantasyQualificationFixture, unittest.TestCase):
             ), 0)
             with patch.object(pgo_sources, "freeze_sources") as freeze:
                 self.assertEqual(self._run_in_root(
-                    root, ["--accept-qualified"]
+                    root, ["--accept-qualified"], payloads
                 ), 0)
                 freeze.assert_not_called()
             accepted = root / "research/pgo_fantasy"
@@ -853,11 +994,50 @@ class FantasySourceCommandTests(FantasyQualificationFixture, unittest.TestCase):
             }
             error = io.StringIO()
             with redirect_stderr(error):
-                second = self._run_in_root(root, ["--accept-qualified"])
+                second = self._run_in_root(
+                    root, ["--accept-qualified"], payloads
+                )
             self.assertEqual(second, 2)
             self.assertEqual(before, {
                 path.name: path.read_bytes() for path in accepted.iterdir()
             })
+
+    def test_accept_rejects_noncanonical_or_duplicate_candidate_lock(self):
+        for change in (
+            lambda text: text + " ",
+            lambda text: text.replace(
+                '  "schema_version": 1,\n',
+                '  "schema_version": 1,\n  "schema_version": 1,\n',
+                1,
+            ),
+        ):
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                payloads = self._payloads(root)
+                self.assertEqual(self._run_in_root(
+                    root,
+                    ["--freeze-sources", "--frozen-at", self.AS_OF],
+                    payloads,
+                ), 0)
+                lock_path = root / "output/pgo-fantasy-source-candidate.lock.json"
+                receipt_path = root / "output/pgo-fantasy-source-qualification.json"
+                lock_text = change(lock_path.read_text(encoding="utf-8"))
+                receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+                receipt["source_lock_sha256"] = hashlib.sha256(
+                    lock_text.encode("utf-8")
+                ).hexdigest()
+                lock_path.write_text(lock_text, encoding="utf-8", newline="")
+                receipt_path.write_text(
+                    pgo_fantasy.serialize_fantasy_source_json(receipt),
+                    encoding="utf-8",
+                    newline="",
+                )
+                with redirect_stderr(io.StringIO()):
+                    code = self._run_in_root(
+                        root, ["--accept-qualified"], payloads
+                    )
+                self.assertEqual(code, 2)
+                self.assertFalse((root / "research/pgo_fantasy").exists())
 
     def test_preflight_rejects_bad_time_or_existing_candidate_before_fetch(self):
         for argv, existing in (
@@ -906,7 +1086,7 @@ class FantasySourceCommandTests(FantasyQualificationFixture, unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             payloads = self._payloads(root)
-            original = pgo_fantasy.atomic_write_text
+            original = pgo_fantasy._exclusive_write_text
             calls = 0
 
             def fail_second(path, text):
@@ -917,7 +1097,7 @@ class FantasySourceCommandTests(FantasyQualificationFixture, unittest.TestCase):
                 return original(path, text)
 
             with patch.object(
-                pgo_fantasy, "atomic_write_text", side_effect=fail_second
+                pgo_fantasy, "_exclusive_write_text", side_effect=fail_second
             ):
                 code = self._run_in_root(
                     root,
@@ -932,6 +1112,131 @@ class FantasySourceCommandTests(FantasyQualificationFixture, unittest.TestCase):
                 root / "output/pgo-fantasy-source-candidate.lock.json"
             ).exists())
             self.assertEqual(receipt["error"], "OSError: receipt write failed")
+
+    def test_candidate_claim_blocks_concurrent_freeze_before_fetch(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payloads = self._payloads(root)
+            original = pgo_sources.freeze_sources
+            claim = root / pgo_fantasy.FANTASY_CANDIDATE_CLAIM
+            calls = 0
+
+            def first_freeze(specs, cache_dir, lock_path, frozen_at):
+                nonlocal calls
+                calls += 1
+                self.assertTrue(claim.exists())
+
+                def second_freeze(specs, cache_dir, lock_path, frozen_at):
+                    return original(
+                        specs, cache_dir, lock_path, frozen_at,
+                        fetch=payloads.__getitem__,
+                    )
+
+                with patch.object(
+                    pgo_sources, "freeze_sources", side_effect=second_freeze
+                ), redirect_stderr(io.StringIO()):
+                    second = pgo_fantasy.main([
+                        "--freeze-sources", "--frozen-at", self.AS_OF,
+                    ])
+                self.assertEqual(second, 2)
+                return original(
+                    specs, cache_dir, lock_path, frozen_at,
+                    fetch=payloads.__getitem__,
+                )
+
+            code = self._run_in_root(
+                root,
+                ["--freeze-sources", "--frozen-at", self.AS_OF],
+                payloads,
+                first_freeze,
+            )
+            self.assertEqual(code, 0)
+            self.assertEqual(calls, 1)
+            self.assertFalse(claim.exists())
+
+    def test_concurrent_candidate_is_never_overwritten_or_removed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payloads = self._payloads(root)
+            original = pgo_sources.freeze_sources
+            claim = root / pgo_fantasy.FANTASY_CANDIDATE_CLAIM
+            candidate = root / "output/pgo-fantasy-source-candidate.lock.json"
+
+            def interfere(specs, cache_dir, lock_path, frozen_at):
+                self.assertTrue(claim.exists())
+                candidate.write_text("interloper\n", encoding="utf-8")
+                return original(
+                    specs, cache_dir, lock_path, frozen_at,
+                    fetch=payloads.__getitem__,
+                )
+
+            with redirect_stderr(io.StringIO()):
+                code = self._run_in_root(
+                    root,
+                    ["--freeze-sources", "--frozen-at", self.AS_OF],
+                    payloads,
+                    interfere,
+                )
+            self.assertEqual(code, 2)
+            self.assertEqual(candidate.read_text(encoding="utf-8"), "interloper\n")
+            self.assertFalse((
+                root / "output/pgo-fantasy-source-qualification.json"
+            ).exists())
+            self.assertFalse(claim.exists())
+
+    def test_freeze_rollback_keeps_interfering_receipt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payloads = self._payloads(root)
+            original = pgo_fantasy._exclusive_write_text
+            candidate = root / "output/pgo-fantasy-source-candidate.lock.json"
+            receipt = root / "output/pgo-fantasy-source-qualification.json"
+            claim = root / pgo_fantasy.FANTASY_CANDIDATE_CLAIM
+
+            def interfere(path, text):
+                if Path(path) == pgo_fantasy.FANTASY_QUALIFICATION_OUTPUT:
+                    receipt.write_text("interloper\n", encoding="utf-8")
+                return original(path, text)
+
+            with patch.object(
+                pgo_fantasy, "_exclusive_write_text", side_effect=interfere
+            ), redirect_stderr(io.StringIO()):
+                code = self._run_in_root(
+                    root,
+                    ["--freeze-sources", "--frozen-at", self.AS_OF],
+                    payloads,
+                )
+            self.assertEqual(code, 2)
+            self.assertFalse(candidate.exists())
+            self.assertEqual(receipt.read_text(encoding="utf-8"), "interloper\n")
+            self.assertFalse(claim.exists())
+
+    def test_cleanup_restores_a_foreign_swap_before_detach(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root / "output/pgo-fantasy-source-candidate.lock.json"
+            target.parent.mkdir()
+            owned = pgo_fantasy._exclusive_write_text(target, "owned\n")
+            foreign = root / "foreign.lock"
+            foreign.write_text("interloper\n", encoding="utf-8")
+            original_replace = os.replace
+            swapped = False
+
+            def swap_before_detach(source, destination):
+                nonlocal swapped
+                if Path(source) == target and not swapped:
+                    swapped = True
+                    original_replace(foreign, target)
+                return original_replace(source, destination)
+
+            with patch.object(
+                pgo_fantasy.os, "replace", side_effect=swap_before_detach
+            ):
+                pgo_fantasy._unlink_owned(target, *owned)
+
+            self.assertTrue(swapped)
+            self.assertEqual(target.read_text(encoding="utf-8"), "interloper\n")
+            self.assertEqual(list(root.glob("output/*.rollback")), [])
 
     def test_accept_write_failure_leaves_no_partial_research_directory(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -958,7 +1263,9 @@ class FantasySourceCommandTests(FantasyQualificationFixture, unittest.TestCase):
                 with patch.object(
                     pgo_fantasy, "atomic_write_text", side_effect=fail_second
                 ):
-                    code = pgo_fantasy.main(["--accept-qualified"])
+                    code = self._run_in_root(
+                        root, ["--accept-qualified"], payloads
+                    )
             finally:
                 os.chdir(previous)
             self.assertEqual(code, 2)
