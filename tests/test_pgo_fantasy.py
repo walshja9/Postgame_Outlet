@@ -1,12 +1,14 @@
 import copy
 import csv
 import hashlib
+import io
 import json
 import math
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import pgo_fantasy
 import pgo_sources
@@ -609,8 +611,121 @@ class FantasySourceQualificationTests(
             "missing_stat_identity", "duplicate_stat_identity", "missing_roster",
             "non_act_roster", "schedule_identity", "position_contradiction",
         }.issubset(reasons))
+        expected_counts = {
+            reason: 2 if reason == "incomplete_team_week_coverage" else 1
+            for reason in pgo_fantasy.FANTASY_DISCREPANCY_CLASSES
+        }
+        self.assertEqual(first["discrepancies"]["counts"], expected_counts)
+        self.assertEqual(first["discrepancies"]["by_season"], {
+            str(season): (
+                expected_counts if season == 2022
+                else {reason: 0 for reason in expected_counts}
+            )
+            for season in pgo_fantasy.MODEL_SEASONS
+        })
+        self.assertEqual(first["discrepancies"]["rows"], [
+            {"reason": "conflicting_team", "season": 2022, "week": 1,
+             "gsis_id": "DUP-ROSTER", "game_id": "", "team": "BUF,LAR"},
+            {"reason": "duplicate_roster_identity", "season": 2022, "week": 1,
+             "gsis_id": "DUP-ROSTER", "game_id": "", "team": "BUF,LAR"},
+            {"reason": "duplicate_stat_identity", "season": 2022, "week": 1,
+             "gsis_id": "BAD-SCHEDULE", "game_id": "2022_01_BUF_LAR", "team": "BUF"},
+            {"reason": "incomplete_team_coverage", "season": 2022, "week": 0,
+             "gsis_id": "", "game_id": "", "team": "ARI"},
+            {"reason": "incomplete_team_week_coverage", "season": 2022, "week": 2,
+             "gsis_id": "", "game_id": "", "team": "ARI"},
+            {"reason": "incomplete_team_week_coverage", "season": 2022, "week": 2,
+             "gsis_id": "", "game_id": "", "team": "ATL"},
+            {"reason": "missing_roster", "season": 2022, "week": 1,
+             "gsis_id": "NO-ROSTER", "game_id": "2022_01_BUF_LAR", "team": "BUF"},
+            {"reason": "missing_roster_identity", "season": 2022, "week": 1,
+             "gsis_id": "", "game_id": "", "team": "BUF"},
+            {"reason": "missing_roster_status", "season": 2022, "week": 1,
+             "gsis_id": "MISSING-STATUS", "game_id": "", "team": "BUF"},
+            {"reason": "missing_stat_identity", "season": 2022, "week": 1,
+             "gsis_id": "", "game_id": "2022_01_BUF_LAR", "team": "BUF"},
+            {"reason": "non_act_roster", "season": 2022, "week": 1,
+             "gsis_id": "NON-ACT", "game_id": "2022_01_BUF_LAR", "team": "BUF"},
+            {"reason": "position_contradiction", "season": 2022, "week": 1,
+             "gsis_id": "POS-CONFLICT", "game_id": "2022_01_BUF_LAR", "team": "BUF"},
+            {"reason": "schedule_identity", "season": 2022, "week": 1,
+             "gsis_id": "BAD-SCHEDULE", "game_id": "2022_01_BUF_LAR", "team": "BUF"},
+        ])
+        self.assertEqual(first["coverage"], {
+            str(season): {
+                "eligible": 6 if season == 2022 else 2,
+                "matched_stats": 2,
+                "zero_filled": 4 if season == 2022 else 0,
+                "bye_skipped": 0,
+            }
+            for season in pgo_fantasy.MODEL_SEASONS
+        })
         with self.assertRaisesRegex(ValueError, "PASS"):
             pgo_fantasy.validate_fantasy_source_qualification(lock_text, first)
+
+    def test_qualification_uses_one_loaded_byte_snapshot(self):
+        with tempfile.TemporaryDirectory() as directory:
+            paths = self._qualification_paths(directory)
+            lock_text = self._source_lock_text(paths)
+            target = Path(paths[("weekly_rosters", 2022)])
+            original = target.read_bytes()
+            reads = []
+            original_read_bytes = Path.read_bytes
+
+            def mutate_after_read(path):
+                data = original_read_bytes(path)
+                if Path(path) == target:
+                    reads.append(data)
+                    if len(reads) == 1:
+                        rows = list(csv.DictReader(io.StringIO(data.decode("utf-8"))))
+                        rows.append(self._row(
+                            pgo_fantasy.ROSTER_COLUMNS,
+                            season="2022", week="1", game_type="REG", team="BUF",
+                            position="QB", status="ACT", full_name="Mutated",
+                            gsis_id="MUTATED-QB",
+                        ))
+                        output = io.StringIO(newline="")
+                        writer = csv.DictWriter(
+                            output, fieldnames=pgo_fantasy.ROSTER_COLUMNS,
+                            lineterminator="\n",
+                        )
+                        writer.writeheader()
+                        writer.writerows(rows)
+                        target.write_text(output.getvalue(), encoding="utf-8", newline="")
+                return data
+
+            with mock.patch.object(Path, "read_bytes", mutate_after_read):
+                receipt = pgo_fantasy.qualify_fantasy_sources(paths, lock_text)
+            changed = target.read_bytes()
+
+        self.assertEqual(reads, [original])
+        self.assertNotEqual(changed, original)
+        self.assertEqual(receipt["coverage"]["2022"]["eligible"], 2)
+        source = next(
+            source for source in receipt["sources"]
+            if (source["name"], source["season"]) == ("weekly_rosters", 2022)
+        )
+        self.assertEqual(source["sha256"], hashlib.sha256(original).hexdigest())
+
+    def test_unmapped_stat_for_eligible_roster_is_position_contradiction(self):
+        def mutate(schedule, rosters, stats):
+            stats[2022][0]["position"] = "K"
+
+        with tempfile.TemporaryDirectory() as directory:
+            paths = self._qualification_paths(directory, mutate)
+            receipt = pgo_fantasy.qualify_fantasy_sources(
+                paths, self._source_lock_text(paths)
+            )
+
+        self.assertEqual(receipt["qualification_status"], "BLOCKED")
+        self.assertEqual(receipt["discrepancies"]["counts"]["position_contradiction"], 1)
+        self.assertEqual(receipt["discrepancies"]["rows"], [{
+            "reason": "position_contradiction", "season": 2022, "week": 1,
+            "gsis_id": "BUF-QB-2022", "game_id": "2022_01_BUF_LAR", "team": "BUF",
+        }])
+        self.assertEqual(receipt["coverage"]["2022"], {
+            "eligible": 2, "matched_stats": 1, "zero_filled": 1, "bye_skipped": 0,
+        })
 
     def test_receipt_is_bound_to_exact_lock_bytes(self):
         with tempfile.TemporaryDirectory() as directory:

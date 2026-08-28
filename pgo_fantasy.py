@@ -1,6 +1,7 @@
 """Independent half-PPR fantasy baselines built from frozen nflverse files."""
 
 import csv
+import gzip
 import hashlib
 import io
 import json
@@ -9,7 +10,7 @@ from datetime import datetime
 from pathlib import Path
 
 from pgo_model import CURRENT_TEAMS, SOURCE_URL
-from pgo_sources import SourceSpec, normalize_team, open_csv
+from pgo_sources import SourceSpec, normalize_team
 
 
 MODEL_SEASONS = tuple(range(2020, 2026))
@@ -296,7 +297,11 @@ def _load_source_rows(paths):
     for key, spec in specs.items():
         path = Path(paths[key])
         data = path.read_bytes()
-        rows = list(open_csv(path))
+        try:
+            raw = gzip.decompress(data) if data.startswith(b"\x1f\x8b") else data
+            rows = list(csv.DictReader(io.StringIO(raw.decode("utf-8"))))
+        except (OSError, UnicodeDecodeError) as error:
+            raise ValueError(f"{_source_label(key)} is not readable CSV") from error
         if not rows:
             raise ValueError(f"{_source_label(key)} contains zero data rows")
         missing_columns = [
@@ -460,8 +465,7 @@ def _load_stats(source_rows, games, rosters):
     return stats
 
 
-def build_player_games(paths) -> tuple[list[dict], dict]:
-    source_rows, source_receipts = _load_source_rows(paths)
+def _build_player_games_from_sources(source_rows, source_receipts):
     games, team_weeks = _load_schedule(source_rows[("schedule_results", None)])
     coverage = {
         str(season): {
@@ -522,6 +526,10 @@ def build_player_games(paths) -> tuple[list[dict], dict]:
         },
     }
     return rows, audit
+
+
+def build_player_games(paths) -> tuple[list[dict], dict]:
+    return _build_player_games_from_sources(*_load_source_rows(paths))
 
 
 def _discrepancy(reason, season, week=0, gsis_id="", game_id="", team=""):
@@ -615,14 +623,14 @@ def _reconcile_fantasy_population(source_rows, games, team_weeks):
                 )
             if (row.get("season_type") or "").strip() != "REG":
                 continue
-            position = POSITION_MAP.get((row.get("position") or "").strip().upper())
-            if position is None:
-                continue
             week = _integer(row, "week", "stat")
             gsis_id = (row.get("player_id") or "").strip()
             game_id = (row.get("game_id") or "").strip()
             team = normalize_team(row.get("team") or "")
             opponent = normalize_team(row.get("opponent_team") or "")
+            position = POSITION_MAP.get((row.get("position") or "").strip().upper())
+            if position is None and not roster_index.get((season, week, gsis_id), []):
+                continue
             if not gsis_id:
                 discrepancies.append(_discrepancy(
                     "missing_stat_identity", season, week, game_id=game_id,
@@ -787,7 +795,9 @@ def qualify_fantasy_sources(paths, source_lock_text):
     games, team_weeks = _load_schedule(source_rows[("schedule_results", None)])
     discrepancies = _reconcile_fantasy_population(source_rows, games, team_weeks)
     if discrepancies["total"] == 0:
-        _, model_audit = build_player_games(paths)
+        _, model_audit = _build_player_games_from_sources(
+            source_rows, source_receipts
+        )
         coverage = model_audit["coverage"]
     else:
         coverage = _blocked_coverage(source_rows, team_weeks)
