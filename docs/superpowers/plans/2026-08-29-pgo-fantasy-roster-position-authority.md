@@ -1391,7 +1391,12 @@ tests/test_pgo_fantasy.py
 
 ---
 
-### Task 3: Run the one permitted August 27 development shadow
+### Task 3: Corrected inventory for a separately authorized development shadow
+
+> **August 30, 2026 correction:** The original one-shot wrote nothing. An
+> owner-authorized, aggregate-only, no-write capture corrected the inventory.
+> A later shadow write requires its own contract and remains development
+> evidence only; it is not authorized by this historical plan.
 
 **Files:**
 - Read only: `D:\CodexWorktrees\Postgame_Outlet-fantasy-source-qualification\output\pgo-fantasy-source-candidate.lock.json`
@@ -1401,7 +1406,7 @@ tests/test_pgo_fantasy.py
 
 **Interfaces:**
 - Consumes: the exact old schema-1 source lock and 13 cached files; it does not consume the old BLOCKED qualification receipt as authority.
-- Produces: one ignored schema-2 qualification receipt at the development-shadow path after every expected inventory assertion passes.
+- Produces, only under its separate future contract: one ignored schema-2 qualification receipt at the development-shadow path after every expected inventory assertion passes.
 - Does not produce: a v2 candidate pair, accepted research evidence, backtest, model fit, public artifact, push, or deployment.
 
 - [ ] **Step 1: Prove the immutable inputs and empty outputs before reading the cache**
@@ -1455,29 +1460,35 @@ assert receipt["qualification_status"] == "PASS"
 assert receipt["blocking_discrepancies"]["total"] == 0
 assert receipt["diagnostics"]["counts"] == {
     "stat_position_disagreement": 312,
-    "act_unmodeled_roster_stat": 45,
-    "noneligible_roster_missing_identity": 51,
+    "act_unmodeled_roster_stat": 282,
+    "noneligible_roster_missing_identity": 94,
 }
 assert receipt["diagnostics"]["fantasy_point_totals"] == {
     "stat_position_disagreement": 895.14,
-    "act_unmodeled_roster_stat": 24.5,
+    "act_unmodeled_roster_stat": 344.26,
 }
 coverage = receipt["coverage"]
 assert sum(row["eligible"] for row in coverage.values()) == 44908
 assert sum(row["matched_stats"] for row in coverage.values()) == 35519
 assert sum(row["zero_filled"] for row in coverage.values()) == 9389
-assert sum(row["excluded_stats"] for row in coverage.values()) == 45
+assert sum(row["bye_skipped"] for row in coverage.values()) == 93
+assert sum(row["excluded_stats"] for row in coverage.values()) == 282
 assert not Path("research/pgo_fantasy").exists()
+receipt_text = pgo_fantasy.serialize_fantasy_source_json(receipt)
+assert hashlib.sha256(receipt_text.encode("utf-8")).hexdigest() == (
+    "888d1f5f707ed253a4279d6f3b2224de152d9f5b81d40ecf81f5d9db07b5e0b2"
+)
 shadow_path.parent.mkdir(parents=True, exist_ok=True)
 pgo_fantasy._exclusive_write_text(
     shadow_path,
-    pgo_fantasy.serialize_fantasy_source_json(receipt),
+    receipt_text,
 )
 print(hashlib.sha256(shadow_path.read_bytes()).hexdigest())
 '@ | python -B -
 ```
 
-Expected: exit `0` and exactly one SHA-256 line for the new shadow file. The exact shadow hash is recorded in the execution report; it is not predeclared because it is derived from the implementation under review.
+Expected: exit `0` and exactly one SHA-256 line:
+`888d1f5f707ed253a4279d6f3b2224de152d9f5b81d40ecf81f5d9db07b5e0b2`.
 
 - [ ] **Step 3: Recheck immutability and evidence separation**
 
@@ -1594,7 +1605,8 @@ Review the complete `HEAD~2..HEAD` diff and the shadow receipt against every sec
 - old-candidate isolation;
 - no-overwrite and rollback behavior under races/interruption;
 - absence of names, outcomes, or stat position in population selection;
-- the exact 312/45/51 diagnostic and 44,908/35,519/9,389 coverage inventory; and
+- the exact 312/282/94 diagnostic and 44,908/35,519/9,389 coverage inventory,
+  including 282 excluded stat rows; and
 - every protected-path and release boundary.
 
 Expected decision: `PASS` only with no unresolved Critical or Important finding. A finding or shadow mismatch stops the slice for diagnosis; it does not authorize a refreeze, acceptance, backtest, publication, push, or deployment.

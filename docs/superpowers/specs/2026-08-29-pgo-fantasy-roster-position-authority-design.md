@@ -36,7 +36,8 @@ valid 13-source lock and a `BLOCKED` qualification receipt:
 - 44 collapsed `missing_roster_identity` natural keys; and
 - 312 `position_contradiction` discrepancies.
 
-Inspection of the exact locked bytes established:
+These are historical v1 receipt findings, not a complete v2 diagnostic
+inventory. Inspection of the exact locked bytes established:
 
 - every missing-identity source row is outside the eligible population. The 51
   regular-season rows are `DEV` or `RES`; multiple rows share some of the 44
@@ -53,6 +54,33 @@ The defect is therefore semantic, not missing identity resolution: the v1
 qualifier treated every source position disagreement as a blocking identity
 failure and required GSIS identity before determining whether a roster row was
 eligible.
+
+### August 30, 2026 inventory correction
+
+The original one-shot wrote no development shadow. An owner-authorized,
+aggregate-only, no-write capture at the same branch head corrected the complete
+schema-2 diagnostic inventory without changing production, research, or public
+artifacts. Its source lock SHA-256 was
+`e2ec765babdc1319e36255e7ee2f69904aab4db2fd0dc9e7c7f5ea80793ce508`; its
+in-memory receipt SHA-256 was
+`888d1f5f707ed253a4279d6f3b2224de152d9f5b81d40ecf81f5d9db07b5e0b2`; and its
+canonical aggregate stdout SHA-256 was
+`b5dfdfffdb3ae1ba9693afd9e5ab40908aebc701d992a80539537c6661fb64f3`.
+
+The schema-2 receipt was `PASS` for 13 sources with zero blocking
+discrepancies. Its complete diagnostic counts, in order, were 312
+`stat_position_disagreement`, 282 `act_unmodeled_roster_stat`, and 94
+`noneligible_roster_missing_identity`; the first two point totals were 895.14
+and 344.26. Coverage was 44,908 eligible, 35,519 matched, 9,389 zero-filled,
+93 bye-skipped, and 282 excluded.
+
+V1 filtered roster rows by modeled position before identity classification;
+v2 diagnoses missing identity across all noneligible regular-season roster
+rows. V2 also audits admitted-scoring stat rows when their exact `ACT` roster
+position is unmodeled. These extra diagnostics remain outside the modeled
+population, so they do not change eligible, matched, or zero-filled totals.
+A later shadow write requires its own contract and remains development evidence
+only.
 
 These observations are development evidence. They do not convert the failed
 receipt into a PASS and do not authorize a replay of the same gate.
@@ -271,24 +299,27 @@ If a future v2 freeze retrieves byte-identical historical files, the receipt
 records those hashes explicitly. A later timestamp does not turn identical
 bytes into statistically independent evidence.
 
-## 11. August 27 development-shadow expectations
+## 11. Corrected development-shadow inventory
 
-The v2 shadow is expected to account for the prior contradictions as:
+The August 30 aggregate-only capture establishes the exact inventory required
+by any separately authorized future development shadow:
 
 - 312 `stat_position_disagreement` diagnostics;
-- 45 `act_unmodeled_roster_stat` diagnostics totaling 24.5 points;
-- 51 regular-season `noneligible_roster_missing_identity` source rows, which
-  previously collapsed to 44 natural keys;
+- 282 `act_unmodeled_roster_stat` diagnostics totaling 344.26 points;
+- 94 `noneligible_roster_missing_identity` diagnostics;
 - zero unexplained blocking discrepancies;
 - 44,908 eligible player-games;
 - 35,519 matched-stat rows; and
-- 9,389 verified zero-filled rows.
+- 9,389 verified zero-filled rows, with 93 bye-skipped and 282 excluded stat
+  rows.
 
-The 895.14 points on position-disagreement rows remain in model targets and are
-assigned to the weekly roster position. These values are development
-assertions against already inspected bytes, not a promotion gate. Any mismatch
-between the implementation and this inventory stops for diagnosis; it is not
-fixed by changing expected counts.
+The exact serialized schema-2 receipt SHA-256 is
+`888d1f5f707ed253a4279d6f3b2224de152d9f5b81d40ecf81f5d9db07b5e0b2`. The
+895.14 points on position-disagreement rows remain in model targets and are
+assigned to the weekly roster position. These values are development assertions
+against already inspected bytes, not a promotion gate. Any mismatch between the
+implementation and this inventory stops for diagnosis; it is not fixed by
+changing expected counts.
 
 ## 12. Verification
 

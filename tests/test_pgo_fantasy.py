@@ -773,6 +773,9 @@ class FantasySourceQualificationTests(
         self.assertEqual(receipt["coverage"]["2022"]["eligible"], 2)
         self.assertEqual(receipt["coverage"]["2022"]["excluded_stats"], 1)
         self.assertEqual(
+            receipt["diagnostics"]["counts"]["act_unmodeled_roster_stat"], 1
+        )
+        self.assertEqual(
             receipt["diagnostics"]["fantasy_point_totals"]
             ["act_unmodeled_roster_stat"],
             1.5,
@@ -804,6 +807,10 @@ class FantasySourceQualificationTests(
         ]
         self.assertEqual(len(rows), 2)
         self.assertNotEqual(rows[0]["source_row_number"], rows[1]["source_row_number"])
+        self.assertEqual(
+            receipt["diagnostics"]["counts"]
+            ["noneligible_roster_missing_identity"], 2,
+        )
 
     def test_reports_all_discrepancy_classes_deterministically(self):
         def mutate(schedule, rosters, stats):
