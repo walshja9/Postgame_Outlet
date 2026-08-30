@@ -136,7 +136,9 @@ FANTASY_SCOPE = {
     "game_type": "REG",
     "roster_status": "ACT",
 }
-FANTASY_DISCREPANCY_CLASSES = (
+FANTASY_POSITION_AUTHORITY = "NFLVERSE_WEEKLY_ROSTER"
+FANTASY_POSITION_MAPPING = {"FB": "RB"}
+FANTASY_BLOCKING_CLASSES = (
     "incomplete_team_coverage",
     "incomplete_team_week_coverage",
     "incomplete_stat_team_week_coverage",
@@ -149,8 +151,26 @@ FANTASY_DISCREPANCY_CLASSES = (
     "missing_roster",
     "non_act_roster",
     "schedule_identity",
-    "position_contradiction",
+    "invalid_fantasy_target",
 )
+FANTASY_DIAGNOSTIC_CLASSES = (
+    "stat_position_disagreement",
+    "act_unmodeled_roster_stat",
+    "noneligible_roster_missing_identity",
+)
+FANTASY_POINT_DIAGNOSTICS = (
+    "stat_position_disagreement", "act_unmodeled_roster_stat",
+)
+FANTASY_BLOCKING_ROW_FIELDS = frozenset({
+    "reason", "season", "week", "gsis_id", "game_id", "team",
+    "source", "source_row_number",
+})
+FANTASY_DIAGNOSTIC_ROW_FIELDS = frozenset({
+    "reason", "season", "week", "gsis_id", "game_id", "team",
+    "roster_status", "raw_roster_position", "fantasy_position",
+    "raw_stat_position", "player_name", "source_row_number",
+    "fantasy_points",
+})
 
 
 def _parse_frozen_at(value):
@@ -422,163 +442,12 @@ def _load_schedule(rows):
     return games, team_weeks
 
 
-def _load_rosters(source_rows, team_weeks, coverage):
-    rosters = {}
-    player_weeks = set()
-    for source_season in MODEL_SEASONS:
-        for row in source_rows[("weekly_rosters", source_season)]:
-            season = _integer(row, "season", "roster")
-            if season != source_season:
-                raise ValueError(
-                    f"Roster source-season mismatch: {source_season} != {season}"
-                )
-            if (row.get("game_type") or "").strip() != "REG":
-                continue
-            raw_position = (row.get("position") or "").strip().upper()
-            position = POSITION_MAP.get(raw_position)
-            if position is None:
-                continue
-            week = _integer(row, "week", "roster")
-            status = (row.get("status") or "").strip().upper()
-            if not status:
-                raise ValueError("Missing roster status")
-            gsis_id = (row.get("gsis_id") or "").strip()
-            if not gsis_id:
-                raise ValueError("Missing roster GSIS ID")
-            team = normalize_team(row.get("team") or "")
-            player_week = (season, week, gsis_id)
-            if player_week in player_weeks:
-                raise ValueError(f"Duplicate eligible roster identity: {player_week}")
-            player_weeks.add(player_week)
-            if status != "ACT":
-                continue
-            schedule_key = (season, week, team)
-            if schedule_key not in team_weeks:
-                coverage[str(season)]["bye_skipped"] += 1
-                continue
-            game_id, opponent = team_weeks[schedule_key]
-            natural_key = (game_id, gsis_id)
-            if natural_key in rosters:
-                raise ValueError(f"Duplicate fantasy natural key: {natural_key}")
-            rosters[natural_key] = {
-                "season": season,
-                "week": week,
-                "game_id": game_id,
-                "gsis_id": gsis_id,
-                "player_name": (row.get("full_name") or "").strip(),
-                "team": team,
-                "opponent": opponent,
-                "position": position,
-            }
-            coverage[str(season)]["eligible"] += 1
-    return rosters
-
-
-def _load_stats(source_rows, games, rosters):
-    stats = {}
-    for source_season in MODEL_SEASONS:
-        for row in source_rows[("player_weekly_stats", source_season)]:
-            season = _integer(row, "season", "stat")
-            if season != source_season:
-                raise ValueError(
-                    f"Stat source-season mismatch: {source_season} != {season}"
-                )
-            if (row.get("season_type") or "").strip() != "REG":
-                continue
-            raw_position = (row.get("position") or "").strip().upper()
-            gsis_id = (row.get("player_id") or "").strip()
-            game_id = (row.get("game_id") or "").strip()
-            natural_key = (game_id, gsis_id)
-            if raw_position not in POSITION_MAP and natural_key not in rosters:
-                continue
-            if not gsis_id:
-                raise ValueError("Missing stat GSIS ID")
-            game = games.get(game_id)
-            week = _integer(row, "week", "stat")
-            if game is None or game["season"] != season or game["week"] != week:
-                raise ValueError(f"Stat schedule identity mismatch: {(game_id, gsis_id)}")
-            team = normalize_team(row.get("team") or "")
-            opponent = normalize_team(row.get("opponent_team") or "")
-            valid_matchup = (
-                (team == game["away"] and opponent == game["home"])
-                or (team == game["home"] and opponent == game["away"])
-            )
-            if not valid_matchup:
-                raise ValueError(f"Stat team/opponent mismatch: {(game_id, gsis_id)}")
-            if natural_key in stats:
-                raise ValueError(f"Duplicate eligible stat identity: {natural_key}")
-            stats[natural_key] = row
-    return stats
-
-
-def _build_player_games_from_sources(source_rows, source_receipts):
-    games, team_weeks = _load_schedule(source_rows[("schedule_results", None)])
-    coverage = {
-        str(season): {
-            "eligible": 0,
-            "matched_stats": 0,
-            "zero_filled": 0,
-            "bye_skipped": 0,
-        }
-        for season in MODEL_SEASONS
-    }
-    rosters = _load_rosters(source_rows, team_weeks, coverage)
-    stats = _load_stats(source_rows, games, rosters)
-    unmatched = sorted(set(stats) - set(rosters))
-    if unmatched:
-        raise ValueError(f"Eligible stat row outside ACT roster population: {unmatched[0]}")
-
-    rows = []
-    for key, roster in sorted(rosters.items()):
-        stat = stats.get(key)
-        if stat is not None:
-            if (
-                normalize_team(stat["team"]) != roster["team"]
-                or normalize_team(stat["opponent_team"]) != roster["opponent"]
-            ):
-                raise ValueError(f"Stat team/opponent mismatch: {key}")
-            if POSITION_MAP.get(stat["position"].strip().upper()) != roster["position"]:
-                raise ValueError(f"Position mismatch for {key}")
-        target = 0.0 if stat is None else half_ppr(stat)
-        coverage[str(roster["season"])][
-            "zero_filled" if stat is None else "matched_stats"
-        ] += 1
-        rows.append({**roster, "fantasy_points": target})
-    rows.sort(
-        key=lambda row: (
-            row["season"],
-            row["week"],
-            row["game_id"],
-            row["gsis_id"],
-        )
-    )
-    if not rows:
-        raise ValueError("Fantasy population contains zero eligible player-games")
-    audit = {
-        "schema_version": 1,
-        "scope": {
-            "seasons": list(MODEL_SEASONS),
-            "game_type": "REG",
-            "roster_status": "ACT",
-        },
-        "sources": source_receipts,
-        "coverage": coverage,
-        "checks": {
-            "source_contract": True,
-            "schedule_identity": True,
-            "roster_identity": True,
-            "stat_identity": True,
-            "finite_targets": True,
-        },
-    }
-    return rows, audit
-
-
 def build_player_games(paths) -> tuple[list[dict], dict]:
     return _build_player_games_from_sources(*_load_source_rows(paths))
 
 
-def _discrepancy(reason, season, week=0, gsis_id="", game_id="", team=""):
+def _blocking(reason, season, week=0, gsis_id="", game_id="", team="",
+              source="", source_row_number=0):
     return {
         "reason": reason,
         "season": season,
@@ -586,251 +455,176 @@ def _discrepancy(reason, season, week=0, gsis_id="", game_id="", team=""):
         "gsis_id": gsis_id,
         "game_id": game_id,
         "team": team,
+        "source": source,
+        "source_row_number": source_row_number,
     }
 
 
-def _discrepancy_key(row):
+def _diagnostic(reason, season, week=0, gsis_id="", game_id="", team="",
+                roster_status="", raw_roster_position="", fantasy_position="",
+                raw_stat_position="", player_name="", source_row_number=0,
+                fantasy_points=0.0):
+    return {
+        "reason": reason, "season": season, "week": week, "gsis_id": gsis_id,
+        "game_id": game_id, "team": team, "roster_status": roster_status,
+        "raw_roster_position": raw_roster_position,
+        "fantasy_position": fantasy_position,
+        "raw_stat_position": raw_stat_position, "player_name": player_name,
+        "source_row_number": source_row_number, "fantasy_points": fantasy_points,
+    }
+
+
+def _finding_key(row):
     return (
         row["reason"], row["season"], row["week"], row["gsis_id"],
-        row["game_id"], row["team"],
+        row["game_id"], row["team"], row.get("source", ""),
+        row["source_row_number"], row.get("raw_roster_position", ""),
+        row.get("raw_stat_position", ""),
     )
 
 
-def _reconcile_fantasy_population(source_rows, games, team_weeks):
-    roster_index = {}
-    stat_index = {}
-    roster_teams = {season: set() for season in MODEL_SEASONS}
-    roster_team_weeks = set()
-    stat_team_weeks = set()
-    discrepancies = []
+def _summarize_findings(rows, classes, point_classes=()):
+    unique = {tuple(sorted(row.items())) for row in rows}
+    ordered = sorted((dict(items) for items in unique), key=_finding_key)
+    result = {
+        "total": len(ordered),
+        "counts": {reason: sum(row["reason"] == reason for row in ordered)
+                   for reason in classes},
+        "by_season": {str(season): {
+            reason: sum(row["season"] == season and row["reason"] == reason
+                        for row in ordered) for reason in classes}
+            for season in MODEL_SEASONS},
+        "rows": ordered,
+    }
+    if point_classes:
+        result["fantasy_point_totals"] = {
+            reason: round(math.fsum(row["fantasy_points"] for row in ordered
+                                    if row["reason"] == reason), 10)
+            for reason in point_classes}
+    return result
 
+
+def _has_admitted_scoring(row):
+    return any(_number(row, name) != 0 for name in SCORING_FIELDS)
+
+
+def _empty_coverage():
+    return {str(season): {"eligible": 0, "matched_stats": 0,
+                          "zero_filled": 0, "bye_skipped": 0,
+                          "excluded_stats": 0}
+            for season in MODEL_SEASONS}
+
+
+def _reconcile_fantasy_population(source_rows):
+    games, team_weeks = _load_schedule(source_rows[("schedule_results", None)])
+    coverage, roster_index, stat_index = _empty_coverage(), {}, {}
+    roster_teams = {season: set() for season in MODEL_SEASONS}
+    roster_team_weeks, relevant_stat_team_weeks = set(), set()
+    relevant_roster_keys, blocking, diagnostics = set(), [], []
     for source_season in MODEL_SEASONS:
-        for row in source_rows[("weekly_rosters", source_season)]:
+        source = f"weekly_rosters:{source_season}"
+        for row_number, row in enumerate(source_rows[("weekly_rosters", source_season)], 2):
             season = _integer(row, "season", "roster")
             if season != source_season:
-                raise ValueError(
-                    f"Roster source-season mismatch: {source_season} != {season}"
-                )
-            if (row.get("game_type") or "").strip() != "REG":
-                continue
-            team = normalize_team(row.get("team") or "")
-            week = _integer(row, "week", "roster")
-            roster_teams[season].add(team)
-            roster_team_weeks.add((season, week, team))
-            position = POSITION_MAP.get((row.get("position") or "").strip().upper())
-            if position is None:
-                continue
-            gsis_id = (row.get("gsis_id") or "").strip()
-            status = (row.get("status") or "").strip().upper()
+                raise ValueError(f"Roster source-season mismatch: {source_season} != {season}")
+            if (row.get("game_type") or "").strip() != "REG": continue
+            week, team = _integer(row, "week", "roster"), normalize_team(row.get("team") or "")
+            raw_position = (row.get("position") or "").strip().upper()
+            fantasy_position = POSITION_MAP.get(raw_position)
+            status, gsis_id = (row.get("status") or "").strip().upper(), (row.get("gsis_id") or "").strip()
+            player_name = (row.get("full_name") or "").strip()
+            roster_teams[season].add(team); roster_team_weeks.add((season, week, team))
+            if fantasy_position is not None and not status:
+                blocking.append(_blocking("missing_roster_status", season, week, gsis_id, team=team, source=source, source_row_number=row_number))
+            eligible = fantasy_position is not None and status == "ACT"
             if not gsis_id:
-                discrepancies.append(_discrepancy(
-                    "missing_roster_identity", season, week, team=team
-                ))
+                if eligible:
+                    blocking.append(_blocking("missing_roster_identity", season, week, team=team, source=source, source_row_number=row_number))
+                else:
+                    diagnostics.append(_diagnostic("noneligible_roster_missing_identity", season, week, team=team, roster_status=status, raw_roster_position=raw_position, fantasy_position=fantasy_position or "", player_name=player_name, source_row_number=row_number))
                 continue
-            if not status:
-                discrepancies.append(_discrepancy(
-                    "missing_roster_status", season, week, gsis_id, team=team
-                ))
             roster_index.setdefault((season, week, gsis_id), []).append({
-                "season": season,
-                "week": week,
-                "gsis_id": gsis_id,
-                "team": team,
-                "position": position,
-                "status": status,
-            })
-
+                "season": season, "week": week, "gsis_id": gsis_id, "team": team,
+                "status": status, "raw_position": raw_position,
+                "fantasy_position": fantasy_position, "player_name": player_name,
+                "eligible": eligible, "source": source, "source_row_number": row_number})
     for season in MODEL_SEASONS:
         for team in sorted(set(CURRENT_TEAMS) - roster_teams[season]):
-            discrepancies.append(_discrepancy(
-                "incomplete_team_coverage", season, team=team
-            ))
+            blocking.append(_blocking("incomplete_team_coverage", season, team=team, source=f"weekly_rosters:{season}"))
     for season, week, team in sorted(set(team_weeks) - roster_team_weeks):
-        discrepancies.append(_discrepancy(
-            "incomplete_team_week_coverage", season, week, team=team
-        ))
-
-    for key, records in sorted(roster_index.items()):
-        teams = sorted({record["team"] for record in records})
-        if len(records) > 1:
-            discrepancies.append(_discrepancy(
-                "duplicate_roster_identity", *key, team=",".join(teams)
-            ))
-        if len(teams) > 1:
-            discrepancies.append(_discrepancy(
-                "conflicting_team", *key, team=",".join(teams)
-            ))
-
+        blocking.append(_blocking("incomplete_team_week_coverage", season, week, team=team, source=f"weekly_rosters:{season}"))
     for source_season in MODEL_SEASONS:
-        for row in source_rows[("player_weekly_stats", source_season)]:
+        source = f"player_weekly_stats:{source_season}"
+        for row_number, row in enumerate(source_rows[("player_weekly_stats", source_season)], 2):
             season = _integer(row, "season", "stat")
             if season != source_season:
-                raise ValueError(
-                    f"Stat source-season mismatch: {source_season} != {season}"
-                )
-            if (row.get("season_type") or "").strip() != "REG":
-                continue
-            week = _integer(row, "week", "stat")
-            gsis_id = (row.get("player_id") or "").strip()
-            game_id = (row.get("game_id") or "").strip()
-            team = normalize_team(row.get("team") or "")
-            opponent = normalize_team(row.get("opponent_team") or "")
-            position = POSITION_MAP.get((row.get("position") or "").strip().upper())
-            if position is None and not roster_index.get((season, week, gsis_id), []):
-                continue
-            stat_team_weeks.add((season, week, team))
+                raise ValueError(f"Stat source-season mismatch: {source_season} != {season}")
+            if (row.get("season_type") or "").strip() != "REG": continue
+            week, gsis_id = _integer(row, "week", "stat"), (row.get("player_id") or "").strip()
+            raw_position = (row.get("position") or "").strip().upper()
+            stat_position, key = POSITION_MAP.get(raw_position), (season, week, gsis_id)
+            roster_records = roster_index.get(key, []) if gsis_id else []
+            try:
+                has_scoring, fantasy_points = _has_admitted_scoring(row), half_ppr(row)
+            except ValueError:
+                blocking.append(_blocking("invalid_fantasy_target", season, week, gsis_id, game_id=(row.get("game_id") or "").strip(), team=normalize_team(row.get("team") or ""), source=source, source_row_number=row_number)); continue
+            if not (stat_position is not None or has_scoring or any(record["eligible"] for record in roster_records)): continue
             if not gsis_id:
-                discrepancies.append(_discrepancy(
-                    "missing_stat_identity", season, week, game_id=game_id,
-                    team=team,
-                ))
-                continue
-            record = {
-                "season": season,
-                "week": week,
-                "gsis_id": gsis_id,
-                "game_id": game_id,
-                "team": team,
-                "opponent": opponent,
-                "position": position,
-            }
-            stat_index.setdefault((season, week, gsis_id), []).append(record)
-            game = games.get(game_id)
-            if (
-                game is None
-                or game["season"] != season
-                or game["week"] != week
-                or {team, opponent} != {game["away"], game["home"]}
-                or team == opponent
-            ):
-                discrepancies.append(_discrepancy(
-                    "schedule_identity", season, week, gsis_id, game_id, team
-                ))
-
-    for season, week, team in sorted(set(team_weeks) - stat_team_weeks):
-        discrepancies.append(_discrepancy(
-            "incomplete_stat_team_week_coverage", season, week, team=team
-        ))
-
-    for key, records in sorted(stat_index.items()):
-        if len(records) > 1:
-            discrepancies.append(_discrepancy(
-                "duplicate_stat_identity", *key,
-                game_id=records[0]["game_id"], team=records[0]["team"],
-            ))
+                blocking.append(_blocking("missing_stat_identity", season, week, game_id=(row.get("game_id") or "").strip(), team=normalize_team(row.get("team") or ""), source=source, source_row_number=row_number)); continue
+            relevant_roster_keys.add(key)
+            stat_index.setdefault(key, []).append({"season": season, "week": week, "gsis_id": gsis_id, "game_id": (row.get("game_id") or "").strip(), "team": normalize_team(row.get("team") or ""), "opponent": normalize_team(row.get("opponent_team") or ""), "raw_position": raw_position, "stat_position": stat_position, "fantasy_points": fantasy_points, "source": source, "source_row_number": row_number})
+    for key, records in sorted(roster_index.items()):
+        if not (any(record["eligible"] for record in records) or key in relevant_roster_keys): continue
+        teams = sorted({record["team"] for record in records})
+        if len(records) > 1: blocking.append(_blocking("duplicate_roster_identity", *key, team=",".join(teams), source=f"weekly_rosters:{key[0]}"))
+        if len(teams) > 1: blocking.append(_blocking("conflicting_team", *key, team=",".join(teams), source=f"weekly_rosters:{key[0]}"))
+    matched_stats = {}
+    for key, stats in sorted(stat_index.items()):
+        if len(stats) > 1: blocking.append(_blocking("duplicate_stat_identity", *key, game_id=stats[0]["game_id"], team=stats[0]["team"], source=f"player_weekly_stats:{key[0]}"))
         rosters = roster_index.get(key, [])
-        for stat in records:
+        for stat in stats:
             if not rosters:
-                discrepancies.append(_discrepancy(
-                    "missing_roster", *key, game_id=stat["game_id"],
-                    team=stat["team"],
-                ))
-                continue
-            if len(rosters) != 1:
-                continue
-            roster = rosters[0]
-            if roster["status"] != "ACT":
-                discrepancies.append(_discrepancy(
-                    "non_act_roster", *key, game_id=stat["game_id"],
-                    team=roster["team"],
-                ))
-            if roster["position"] != stat["position"]:
-                discrepancies.append(_discrepancy(
-                    "position_contradiction", *key, game_id=stat["game_id"],
-                    team=roster["team"],
-                ))
+                blocking.append(_blocking("missing_roster", *key, game_id=stat["game_id"], team=stat["team"], source=stat["source"], source_row_number=stat["source_row_number"])); continue
+            if len(rosters) != 1: continue
+            roster, game = rosters[0], games.get(stat["game_id"])
             expected = team_weeks.get((key[0], key[1], roster["team"]))
-            if (
-                roster["team"] != stat["team"]
-                or expected != (stat["game_id"], stat["opponent"])
-            ):
-                discrepancies.append(_discrepancy(
-                    "schedule_identity", *key, game_id=stat["game_id"],
-                    team=stat["team"],
-                ))
-
-    rows = sorted(
-        {tuple(sorted(row.items())) for row in discrepancies},
-        key=lambda items: _discrepancy_key(dict(items)),
-    )
-    rows = [dict(items) for items in rows]
-    counts = {
-        reason: sum(row["reason"] == reason for row in rows)
-        for reason in FANTASY_DISCREPANCY_CLASSES
-    }
-    by_season = {
-        str(season): {
-            reason: sum(
-                row["season"] == season and row["reason"] == reason
-                for row in rows
-            )
-            for reason in FANTASY_DISCREPANCY_CLASSES
-        }
-        for season in MODEL_SEASONS
-    }
-    return {"total": len(rows), "counts": counts, "by_season": by_season, "rows": rows}
+            schedule_valid = game is not None and game["season"] == key[0] and game["week"] == key[1] and roster["team"] == stat["team"] and expected == (stat["game_id"], stat["opponent"])
+            if not schedule_valid: blocking.append(_blocking("schedule_identity", *key, game_id=stat["game_id"], team=stat["team"], source=stat["source"], source_row_number=stat["source_row_number"]))
+            if roster["status"] != "ACT":
+                blocking.append(_blocking("non_act_roster", *key, game_id=stat["game_id"], team=roster["team"], source=stat["source"], source_row_number=stat["source_row_number"])); continue
+            if roster["fantasy_position"] is None:
+                diagnostics.append(_diagnostic("act_unmodeled_roster_stat", *key, game_id=stat["game_id"], team=roster["team"], roster_status=roster["status"], raw_roster_position=roster["raw_position"], raw_stat_position=stat["raw_position"], player_name=roster["player_name"], source_row_number=stat["source_row_number"], fantasy_points=stat["fantasy_points"])); coverage[str(key[0])]["excluded_stats"] += 1; continue
+            if stat["raw_position"] and stat["stat_position"] != roster["fantasy_position"]:
+                diagnostics.append(_diagnostic("stat_position_disagreement", *key, game_id=stat["game_id"], team=roster["team"], roster_status=roster["status"], raw_roster_position=roster["raw_position"], fantasy_position=roster["fantasy_position"], raw_stat_position=stat["raw_position"], player_name=roster["player_name"], source_row_number=stat["source_row_number"], fantasy_points=stat["fantasy_points"]))
+            if schedule_valid and len(stats) == 1:
+                matched_stats[key] = stat; relevant_stat_team_weeks.add((key[0], key[1], roster["team"]))
+    for season, week, team in sorted(set(team_weeks) - relevant_stat_team_weeks):
+        blocking.append(_blocking("incomplete_stat_team_week_coverage", season, week, team=team, source=f"player_weekly_stats:{season}"))
+    rows = []
+    for key, records in sorted(roster_index.items()):
+        if len(records) != 1 or not records[0]["eligible"]: continue
+        roster, expected = records[0], team_weeks.get((key[0], key[1], records[0]["team"]))
+        if expected is None: coverage[str(key[0])]["bye_skipped"] += 1; continue
+        coverage[str(key[0])]["eligible"] += 1
+        stat = matched_stats.get(key); coverage[str(key[0])]["matched_stats" if stat else "zero_filled"] += 1
+        rows.append({"season": key[0], "week": key[1], "game_id": expected[0], "gsis_id": key[2], "player_name": roster["player_name"], "team": roster["team"], "opponent": expected[1], "position": roster["fantasy_position"], "fantasy_points": 0.0 if stat is None else stat["fantasy_points"]})
+    rows.sort(key=lambda row: (row["season"], row["week"], row["game_id"], row["gsis_id"]))
+    return {"rows": rows, "coverage": coverage,
+            "blocking_discrepancies": _summarize_findings(blocking, FANTASY_BLOCKING_CLASSES),
+            "diagnostics": _summarize_findings(diagnostics, FANTASY_DIAGNOSTIC_CLASSES, FANTASY_POINT_DIAGNOSTICS)}
 
 
-def _blocked_coverage(source_rows, team_weeks):
-    coverage = {
-        str(season): {
-            "eligible": 0,
-            "matched_stats": 0,
-            "zero_filled": 0,
-            "bye_skipped": 0,
-        }
-        for season in MODEL_SEASONS
-    }
-    stat_index = {}
-    for source_season in MODEL_SEASONS:
-        for row in source_rows[("player_weekly_stats", source_season)]:
-            if (row.get("season_type") or "").strip() != "REG":
-                continue
-            position = POSITION_MAP.get(
-                (row.get("position") or "").strip().upper()
-            )
-            gsis_id = (row.get("player_id") or "").strip()
-            if position is None or not gsis_id:
-                continue
-            season = _integer(row, "season", "stat")
-            week = _integer(row, "week", "stat")
-            stat_index.setdefault((season, week, gsis_id), []).append({
-                "game_id": (row.get("game_id") or "").strip(),
-                "team": normalize_team(row.get("team") or ""),
-                "opponent": normalize_team(row.get("opponent_team") or ""),
-                "position": position,
-            })
-
-    for source_season in MODEL_SEASONS:
-        for row in source_rows[("weekly_rosters", source_season)]:
-            if (row.get("game_type") or "").strip() != "REG":
-                continue
-            position = POSITION_MAP.get(
-                (row.get("position") or "").strip().upper()
-            )
-            status = (row.get("status") or "").strip().upper()
-            gsis_id = (row.get("gsis_id") or "").strip()
-            if position is None or status != "ACT" or not gsis_id:
-                continue
-            season = _integer(row, "season", "roster")
-            week = _integer(row, "week", "roster")
-            team = normalize_team(row.get("team") or "")
-            expected = team_weeks.get((season, week, team))
-            values = coverage[str(season)]
-            if expected is None:
-                values["bye_skipped"] += 1
-                continue
-            values["eligible"] += 1
-            candidates = stat_index.get((season, week, gsis_id), [])
-            matched = (
-                len(candidates) == 1
-                and candidates[0]["game_id"] == expected[0]
-                and candidates[0]["team"] == team
-                and candidates[0]["opponent"] == expected[1]
-                and candidates[0]["position"] == position
-            )
-            values["matched_stats" if matched else "zero_filled"] += 1
-    return coverage
+def _build_player_games_from_sources(source_rows, source_receipts):
+    result = _reconcile_fantasy_population(source_rows)
+    blocking = result["blocking_discrepancies"]
+    if blocking["total"]:
+        reasons = ", ".join(reason for reason, count in blocking["counts"].items() if count)
+        raise ValueError(f"Fantasy source qualification has blocking discrepancies: {reasons}")
+    if not result["rows"]: raise ValueError("Fantasy population contains zero eligible player-games")
+    return result["rows"], {"schema_version": 2, "scope": dict(FANTASY_SCOPE),
+        "position_authority": FANTASY_POSITION_AUTHORITY, "position_mapping": dict(FANTASY_POSITION_MAPPING),
+        "sources": source_receipts, "coverage": result["coverage"], "blocking_discrepancies": blocking,
+        "diagnostics": result["diagnostics"], "checks": {name: True for name in AUDIT_CHECKS}}
 
 
 def qualify_fantasy_sources(paths, source_lock_text):
@@ -841,61 +635,87 @@ def qualify_fantasy_sources(paths, source_lock_text):
         entry = locked[(source["name"], source["season"])]
         if source["bytes"] != entry["bytes"] or source["sha256"] != entry["sha256"]:
             raise ValueError("Fantasy source bytes do not match the lock")
-    games, team_weeks = _load_schedule(source_rows[("schedule_results", None)])
-    discrepancies = _reconcile_fantasy_population(source_rows, games, team_weeks)
-    if discrepancies["total"] == 0:
-        _, model_audit = _build_player_games_from_sources(
-            source_rows, source_receipts
-        )
-        coverage = model_audit["coverage"]
-    else:
-        coverage = _blocked_coverage(source_rows, team_weeks)
+    result = _reconcile_fantasy_population(source_rows)
+    blocking = result["blocking_discrepancies"]
+    counts = blocking["counts"]
     checks = {
         "source_contract": True,
         "locked_bytes": True,
-        "schedule_identity": discrepancies["counts"]["schedule_identity"] == 0,
+        "schedule_identity": counts["schedule_identity"] == 0,
         "team_coverage": all(
-            discrepancies["counts"][name] == 0
+            counts[name] == 0
             for name in ("incomplete_team_coverage", "incomplete_team_week_coverage")
         ),
         "roster_identity": all(
-            discrepancies["counts"][name] == 0
+            counts[name] == 0
             for name in (
                 "missing_roster_identity", "missing_roster_status",
                 "duplicate_roster_identity", "conflicting_team",
             )
         ),
         "stat_identity": all(
-            discrepancies["counts"][name] == 0
-            for name in ("missing_stat_identity", "duplicate_stat_identity")
+            counts[name] == 0 for name in (
+                "missing_stat_identity", "duplicate_stat_identity", "missing_roster", "non_act_roster")
         ),
-        "stat_team_week_coverage": (
-            discrepancies["counts"]["incomplete_stat_team_week_coverage"] == 0
-        ),
-        "population_reconciliation": discrepancies["total"] == 0,
-        "finite_targets": discrepancies["total"] == 0,
+        "stat_team_week_coverage": counts["incomplete_stat_team_week_coverage"] == 0,
+        "population_reconciliation": blocking["total"] == 0,
+        "finite_targets": counts["invalid_fantasy_target"] == 0,
     }
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "qualification_status": "PASS" if all(checks.values()) else "BLOCKED",
         "artifact_availability": "LOCAL_CACHE_ONLY",
         "source_lock_sha256": hashlib.sha256(
             source_lock_text.encode("utf-8")
         ).hexdigest(),
         "scope": dict(FANTASY_SCOPE),
+        "position_authority": FANTASY_POSITION_AUTHORITY,
+        "position_mapping": dict(FANTASY_POSITION_MAPPING),
         "source_count": len(source_receipts),
         "sources": source_receipts,
         "checks": checks,
-        "coverage": coverage,
-        "discrepancies": discrepancies,
+        "coverage": result["coverage"],
+        "blocking_discrepancies": blocking,
+        "diagnostics": result["diagnostics"],
     }
+
+
+def _validate_finding_summary(summary, classes, row_fields, point_classes=()):
+    required = {"total", "counts", "by_season", "rows"}
+    if point_classes: required.add("fantasy_point_totals")
+    if not isinstance(summary, dict) or set(summary) != required:
+        raise ValueError("Fantasy source qualification is not PASS")
+    rows, counts = summary["rows"], summary["counts"]
+    if (type(summary["total"]) is not int or not isinstance(rows, list) or
+        summary["total"] != len(rows) or
+        any(not isinstance(row, dict) or set(row) != row_fields for row in rows) or
+        not isinstance(counts, dict) or set(counts) != set(classes) or
+        any(type(value) is not int or value < 0 for value in counts.values())):
+        raise ValueError("Fantasy source qualification is not PASS")
+    strings = set(row_fields) - {"season", "week", "source_row_number", "fantasy_points"}
+    for row in rows:
+        if (row["reason"] not in classes or type(row["season"]) is not int or
+            row["season"] not in MODEL_SEASONS or type(row["week"]) is not int or row["week"] < 0 or
+            type(row["source_row_number"]) is not int or row["source_row_number"] < 0 or
+            any(not isinstance(row[name], str) for name in strings) or
+            ("fantasy_points" in row and (isinstance(row["fantasy_points"], bool) or not isinstance(row["fantasy_points"], (int, float)) or not math.isfinite(row["fantasy_points"])) )):
+            raise ValueError("Fantasy source qualification is not PASS")
+    expected_counts = {reason: sum(row["reason"] == reason for row in rows) for reason in classes}
+    expected_seasons = {str(season): {reason: sum(row["season"] == season and row["reason"] == reason for row in rows) for reason in classes} for season in MODEL_SEASONS}
+    if rows != sorted(rows, key=_finding_key) or len({tuple(sorted(row.items())) for row in rows}) != len(rows) or counts != expected_counts or summary["by_season"] != expected_seasons:
+        raise ValueError("Fantasy source qualification is not PASS")
+    if point_classes:
+        expected = {reason: round(math.fsum(row["fantasy_points"] for row in rows if row["reason"] == reason), 10) for reason in point_classes}
+        values = summary["fantasy_point_totals"]
+        if not isinstance(values, dict) or set(values) != set(point_classes) or values != expected or any(isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) for value in values.values()):
+            raise ValueError("Fantasy source qualification is not PASS")
 
 
 def validate_fantasy_source_qualification(source_lock_text, receipt):
     required = {
         "schema_version", "qualification_status", "artifact_availability",
-        "source_lock_sha256", "scope", "source_count", "sources", "checks",
-        "coverage", "discrepancies",
+        "source_lock_sha256", "scope", "position_authority", "position_mapping",
+        "source_count", "sources", "checks", "coverage", "blocking_discrepancies", "diagnostics",
     }
     if not isinstance(receipt, dict) or set(receipt) != required:
         raise ValueError("Fantasy source qualification receipt is invalid")
@@ -908,14 +728,15 @@ def validate_fantasy_source_qualification(source_lock_text, receipt):
         "roster_identity", "stat_identity", "stat_team_week_coverage",
         "population_reconciliation", "finite_targets",
     }
-    discrepancies = receipt.get("discrepancies")
     coverage = receipt.get("coverage")
     if (
         type(receipt["schema_version"]) is not int
-        or receipt["schema_version"] != 1
+        or receipt["schema_version"] != 2
         or receipt["qualification_status"] != "PASS"
         or receipt["artifact_availability"] != "LOCAL_CACHE_ONLY"
         or receipt["scope"] != FANTASY_SCOPE
+        or receipt["position_authority"] != FANTASY_POSITION_AUTHORITY
+        or receipt["position_mapping"] != FANTASY_POSITION_MAPPING
         or type(receipt["source_count"]) is not int
         or receipt["source_count"] != 13
         or not isinstance(receipt["sources"], list)
@@ -923,20 +744,13 @@ def validate_fantasy_source_qualification(source_lock_text, receipt):
         or not isinstance(receipt["checks"], dict)
         or set(receipt["checks"]) != expected_checks
         or not all(value is True for value in receipt["checks"].values())
-        or not isinstance(discrepancies, dict)
-        or set(discrepancies) != {"total", "counts", "by_season", "rows"}
-        or type(discrepancies["total"]) is not int
-        or discrepancies["total"] != 0
-        or discrepancies["rows"] != []
-        or not isinstance(discrepancies["counts"], dict)
-        or set(discrepancies["counts"]) != set(FANTASY_DISCREPANCY_CLASSES)
-        or any(type(value) is not int or value != 0
-               for value in discrepancies["counts"].values())
-        or not isinstance(discrepancies["by_season"], dict)
-        or set(discrepancies["by_season"]) != {str(season) for season in MODEL_SEASONS}
         or not isinstance(coverage, dict)
         or set(coverage) != {str(season) for season in MODEL_SEASONS}
     ):
+        raise ValueError("Fantasy source qualification is not PASS")
+    _validate_finding_summary(receipt["blocking_discrepancies"], FANTASY_BLOCKING_CLASSES, FANTASY_BLOCKING_ROW_FIELDS)
+    _validate_finding_summary(receipt["diagnostics"], FANTASY_DIAGNOSTIC_CLASSES, FANTASY_DIAGNOSTIC_ROW_FIELDS, FANTASY_POINT_DIAGNOSTICS)
+    if receipt["blocking_discrepancies"]["total"]:
         raise ValueError("Fantasy source qualification is not PASS")
     locked = {(entry["name"], entry["season"]): entry for entry in lock["sources"]}
     received = set()
@@ -965,19 +779,15 @@ def validate_fantasy_source_qualification(source_lock_text, receipt):
     ):
         raise ValueError("Fantasy source qualification is not PASS")
     for season in MODEL_SEASONS:
-        season_discrepancies = discrepancies["by_season"][str(season)]
         values = coverage[str(season)]
         if (
-            not isinstance(season_discrepancies, dict)
-            or set(season_discrepancies) != set(FANTASY_DISCREPANCY_CLASSES)
-            or any(type(value) is not int or value != 0
-                   for value in season_discrepancies.values())
-            or not isinstance(values, dict)
+            not isinstance(values, dict)
             or set(values) != {
-                "eligible", "matched_stats", "zero_filled", "bye_skipped"
+                "eligible", "matched_stats", "zero_filled", "bye_skipped", "excluded_stats"
             }
             or any(type(value) is not int or value < 0 for value in values.values())
             or values["matched_stats"] + values["zero_filled"] != values["eligible"]
+            or values["excluded_stats"] != receipt["diagnostics"]["by_season"][str(season)]["act_unmodeled_roster_stat"]
         ):
             raise ValueError("Fantasy source qualification is not PASS")
     serialize_fantasy_source_json(receipt)
@@ -1407,23 +1217,32 @@ def _validate_source_audit(source_audit):
     if (
         not isinstance(source_audit, dict)
         or set(source_audit) != {
-            "schema_version",
-            "scope",
-            "sources",
-            "coverage",
-            "checks",
+            "schema_version", "scope", "position_authority",
+            "position_mapping", "sources", "coverage",
+            "blocking_discrepancies", "diagnostics", "checks",
         }
         or type(source_audit.get("schema_version")) is not int
-        or source_audit["schema_version"] != 1
-        or source_audit.get("scope") != {
-            "seasons": list(MODEL_SEASONS),
-            "game_type": "REG",
-            "roster_status": "ACT",
-        }
+        or source_audit["schema_version"] != 2
+        or source_audit.get("scope") != FANTASY_SCOPE
+        or source_audit.get("position_authority") != FANTASY_POSITION_AUTHORITY
+        or source_audit.get("position_mapping") != FANTASY_POSITION_MAPPING
         or source_audit.get("checks") != {
             name: True for name in AUDIT_CHECKS
         }
     ):
+        raise ValueError("Source audit contract is invalid")
+    _validate_finding_summary(
+        source_audit["blocking_discrepancies"],
+        FANTASY_BLOCKING_CLASSES,
+        FANTASY_BLOCKING_ROW_FIELDS,
+    )
+    _validate_finding_summary(
+        source_audit["diagnostics"],
+        FANTASY_DIAGNOSTIC_CLASSES,
+        FANTASY_DIAGNOSTIC_ROW_FIELDS,
+        FANTASY_POINT_DIAGNOSTICS,
+    )
+    if source_audit["blocking_discrepancies"]["total"] != 0:
         raise ValueError("Source audit contract is invalid")
 
     expected_sources = {
@@ -1465,7 +1284,10 @@ def _validate_source_audit(source_audit):
         str(season) for season in MODEL_SEASONS
     }:
         raise ValueError("Source audit coverage is invalid")
-    fields = {"eligible", "matched_stats", "zero_filled", "bye_skipped"}
+    fields = {
+        "eligible", "matched_stats", "zero_filled", "bye_skipped",
+        "excluded_stats",
+    }
     for season in MODEL_SEASONS:
         values = coverage[str(season)]
         if (
@@ -1474,6 +1296,8 @@ def _validate_source_audit(source_audit):
             or any(type(values[field]) is not int or values[field] < 0 for field in fields)
             or values["matched_stats"] + values["zero_filled"]
             != values["eligible"]
+            or values["excluded_stats"] != source_audit["diagnostics"]
+            ["by_season"][str(season)]["act_unmodeled_roster_stat"]
         ):
             raise ValueError("Source audit coverage is invalid")
 
