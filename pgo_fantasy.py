@@ -122,13 +122,13 @@ def fantasy_source_specs() -> tuple[SourceSpec, ...]:
 
 FANTASY_CACHE_DIR = Path(".cache/pgo_fantasy")
 FANTASY_CANDIDATE_LOCK = Path(
-    "output/pgo-fantasy-source-candidate.lock.json"
+    "output/pgo-fantasy-source-v2-candidate.lock.json"
 )
 FANTASY_QUALIFICATION_OUTPUT = Path(
-    "output/pgo-fantasy-source-qualification.json"
+    "output/pgo-fantasy-source-v2-qualification.json"
 )
 FANTASY_CANDIDATE_CLAIM = Path(
-    "output/.pgo-fantasy-source-candidate.claim"
+    "output/.pgo-fantasy-source-v2-candidate.claim"
 )
 FANTASY_ACCEPTED_DIR = Path("research/pgo_fantasy")
 FANTASY_SCOPE = {
@@ -872,7 +872,7 @@ def _freeze_and_qualify(frozen_at):
         _refuse_existing_candidate_outputs()
         descriptor, name = tempfile.mkstemp(
             dir=FANTASY_CANDIDATE_LOCK.parent,
-            prefix=".pgo-fantasy-source-",
+            prefix=".pgo-fantasy-source-v2-",
             suffix=".pending",
         )
         os.close(descriptor)
@@ -945,7 +945,7 @@ def parse_qualification_args(argv: list[str] | None = None):
 
 def _operational_blocked_receipt(error):
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "qualification_status": "BLOCKED",
         "artifact_availability": "LOCAL_CACHE_ONLY",
         "error": f"{type(error).__name__}: {error}",

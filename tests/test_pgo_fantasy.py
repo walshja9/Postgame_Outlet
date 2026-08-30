@@ -1179,10 +1179,10 @@ class FantasySourceCommandTests(FantasyQualificationFixture, unittest.TestCase):
                 payloads,
             )
             receipt = json.loads((
-                root / "output/pgo-fantasy-source-qualification.json"
+                root / pgo_fantasy.FANTASY_QUALIFICATION_OUTPUT
             ).read_text(encoding="utf-8"))
             lock_text = (
-                root / "output/pgo-fantasy-source-candidate.lock.json"
+                root / pgo_fantasy.FANTASY_CANDIDATE_LOCK
             ).read_text(encoding="utf-8")
 
             self.assertEqual(code, 0)
@@ -1216,12 +1216,73 @@ class FantasySourceCommandTests(FantasyQualificationFixture, unittest.TestCase):
                 payloads,
             )
             receipt = json.loads((
-                root / "output/pgo-fantasy-source-qualification.json"
+                root / pgo_fantasy.FANTASY_QUALIFICATION_OUTPUT
             ).read_text(encoding="utf-8"))
 
             self.assertEqual(code, 1)
             self.assertEqual(receipt["qualification_status"], "BLOCKED")
             self.assertGreater(receipt["blocking_discrepancies"]["total"], 0)
+            self.assertFalse((root / "research/pgo_fantasy").exists())
+
+    def test_v2_freeze_never_reads_or_writes_august_27_candidate_paths(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            old_lock = root / "output/pgo-fantasy-source-candidate.lock.json"
+            old_receipt = root / "output/pgo-fantasy-source-qualification.json"
+            old_lock.parent.mkdir(parents=True)
+            old_lock.write_bytes(b"immutable old lock\n")
+            old_receipt.write_bytes(b"immutable old receipt\n")
+            payloads = self._payloads(root)
+
+            code = self._run_in_root(
+                root,
+                ["--freeze-sources", "--frozen-at", self.AS_OF],
+                payloads,
+            )
+
+            self.assertEqual(code, 0)
+            self.assertEqual(old_lock.read_bytes(), b"immutable old lock\n")
+            self.assertEqual(old_receipt.read_bytes(), b"immutable old receipt\n")
+            self.assertTrue((root / pgo_fantasy.FANTASY_CANDIDATE_LOCK).exists())
+            self.assertTrue((
+                root / pgo_fantasy.FANTASY_QUALIFICATION_OUTPUT
+            ).exists())
+
+    def test_accept_rejects_schema_one_receipt_without_fetch_or_research(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payloads = self._payloads(root)
+            self.assertEqual(self._run_in_root(
+                root,
+                ["--freeze-sources", "--frozen-at", self.AS_OF],
+                payloads,
+            ), 0)
+            receipt_path = root / pgo_fantasy.FANTASY_QUALIFICATION_OUTPUT
+            receipt = json.loads(receipt_path.read_bytes().decode("utf-8"))
+            receipt["schema_version"] = 1
+            receipt_path.write_bytes(
+                pgo_fantasy.serialize_fantasy_source_json(receipt).encode("utf-8")
+            )
+
+            schedule = next(
+                spec for spec in pgo_fantasy.fantasy_source_specs()
+                if spec.name == "schedule_results"
+            )
+            digest = hashlib.sha256(payloads[schedule.url]).hexdigest()
+            previous = Path.cwd()
+            os.chdir(root)
+            try:
+                with patch.object(
+                    pgo_sources, "EXPECTED_SOURCE_SHA256", digest
+                ), patch.object(
+                    pgo_sources, "freeze_sources"
+                ) as freeze, redirect_stderr(io.StringIO()):
+                    code = pgo_fantasy.main(["--accept-qualified"])
+            finally:
+                os.chdir(previous)
+
+            self.assertEqual(code, 2)
+            freeze.assert_not_called()
             self.assertFalse((root / "research/pgo_fantasy").exists())
 
     def test_accept_requalifies_offline_and_refuses_overwrite(self):
@@ -1273,8 +1334,8 @@ class FantasySourceCommandTests(FantasyQualificationFixture, unittest.TestCase):
                     ["--freeze-sources", "--frozen-at", self.AS_OF],
                     payloads,
                 ), 0)
-                lock_path = root / "output/pgo-fantasy-source-candidate.lock.json"
-                receipt_path = root / "output/pgo-fantasy-source-qualification.json"
+                lock_path = root / pgo_fantasy.FANTASY_CANDIDATE_LOCK
+                receipt_path = root / pgo_fantasy.FANTASY_QUALIFICATION_OUTPUT
                 lock_text = change(lock_path.read_text(encoding="utf-8"))
                 receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
                 receipt["source_lock_sha256"] = hashlib.sha256(
@@ -1302,7 +1363,7 @@ class FantasySourceCommandTests(FantasyQualificationFixture, unittest.TestCase):
                 ["--freeze-sources", "--frozen-at", self.AS_OF],
                 payloads,
             ), 0)
-            lock_path = root / "output/pgo-fantasy-source-candidate.lock.json"
+            lock_path = root / pgo_fantasy.FANTASY_CANDIDATE_LOCK
             lock_path.write_bytes(lock_path.read_bytes().replace(b"\n", b"\r\n"))
             with redirect_stderr(io.StringIO()):
                 code = self._run_in_root(root, ["--accept-qualified"], payloads)
@@ -1319,7 +1380,7 @@ class FantasySourceCommandTests(FantasyQualificationFixture, unittest.TestCase):
                 ["--freeze-sources", "--frozen-at", self.AS_OF],
                 payloads,
             ), 0)
-            receipt_path = root / "output/pgo-fantasy-source-qualification.json"
+            receipt_path = root / pgo_fantasy.FANTASY_QUALIFICATION_OUTPUT
             receipt_path.write_bytes(
                 receipt_path.read_bytes().replace(b"\n", b"\r\n")
             )
@@ -1337,7 +1398,7 @@ class FantasySourceCommandTests(FantasyQualificationFixture, unittest.TestCase):
             with self.subTest(argv=argv), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 if existing:
-                    path = root / "output/pgo-fantasy-source-candidate.lock.json"
+                    path = root / pgo_fantasy.FANTASY_CANDIDATE_LOCK
                     path.parent.mkdir(parents=True)
                     path.write_text("existing\n", encoding="utf-8")
                 previous = Path.cwd()
@@ -1365,9 +1426,10 @@ class FantasySourceCommandTests(FantasyQualificationFixture, unittest.TestCase):
             finally:
                 os.chdir(previous)
             receipt = json.loads((
-                root / "output/pgo-fantasy-source-qualification.json"
+                root / pgo_fantasy.FANTASY_QUALIFICATION_OUTPUT
             ).read_text(encoding="utf-8"))
             self.assertEqual(code, 2)
+            self.assertEqual(receipt["schema_version"], 2)
             self.assertEqual(receipt["qualification_status"], "BLOCKED")
             self.assertEqual(receipt["error"], "OSError: offline")
             self.assertFalse((root / "research/pgo_fantasy").exists())
@@ -1395,11 +1457,11 @@ class FantasySourceCommandTests(FantasyQualificationFixture, unittest.TestCase):
                     payloads,
                 )
             receipt = json.loads((
-                root / "output/pgo-fantasy-source-qualification.json"
+                root / pgo_fantasy.FANTASY_QUALIFICATION_OUTPUT
             ).read_text(encoding="utf-8"))
             self.assertEqual(code, 2)
             self.assertFalse((
-                root / "output/pgo-fantasy-source-candidate.lock.json"
+                root / pgo_fantasy.FANTASY_CANDIDATE_LOCK
             ).exists())
             self.assertEqual(receipt["error"], "OSError: receipt write failed")
 
@@ -1450,7 +1512,7 @@ class FantasySourceCommandTests(FantasyQualificationFixture, unittest.TestCase):
             payloads = self._payloads(root)
             original = pgo_sources.freeze_sources
             claim = root / pgo_fantasy.FANTASY_CANDIDATE_CLAIM
-            candidate = root / "output/pgo-fantasy-source-candidate.lock.json"
+            candidate = root / pgo_fantasy.FANTASY_CANDIDATE_LOCK
 
             def interfere(specs, cache_dir, lock_path, frozen_at):
                 self.assertTrue(claim.exists())
@@ -1470,7 +1532,7 @@ class FantasySourceCommandTests(FantasyQualificationFixture, unittest.TestCase):
             self.assertEqual(code, 2)
             self.assertEqual(candidate.read_text(encoding="utf-8"), "interloper\n")
             self.assertFalse((
-                root / "output/pgo-fantasy-source-qualification.json"
+                root / pgo_fantasy.FANTASY_QUALIFICATION_OUTPUT
             ).exists())
             self.assertFalse(claim.exists())
 
@@ -1479,8 +1541,8 @@ class FantasySourceCommandTests(FantasyQualificationFixture, unittest.TestCase):
             root = Path(directory)
             payloads = self._payloads(root)
             original = pgo_fantasy._exclusive_write_text
-            candidate = root / "output/pgo-fantasy-source-candidate.lock.json"
-            receipt = root / "output/pgo-fantasy-source-qualification.json"
+            candidate = root / pgo_fantasy.FANTASY_CANDIDATE_LOCK
+            receipt = root / pgo_fantasy.FANTASY_QUALIFICATION_OUTPUT
             claim = root / pgo_fantasy.FANTASY_CANDIDATE_CLAIM
 
             def interfere(path, text):
@@ -1504,7 +1566,7 @@ class FantasySourceCommandTests(FantasyQualificationFixture, unittest.TestCase):
     def test_cleanup_restores_a_foreign_swap_before_detach(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            target = root / "output/pgo-fantasy-source-candidate.lock.json"
+            target = root / pgo_fantasy.FANTASY_CANDIDATE_LOCK
             target.parent.mkdir()
             owned = pgo_fantasy._exclusive_write_text(target, "owned\n")
             foreign = root / "foreign.lock"
