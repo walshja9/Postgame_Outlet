@@ -120,6 +120,13 @@ def fantasy_source_specs() -> tuple[SourceSpec, ...]:
     return tuple(specs)
 
 
+def prior_observed_source_specs() -> tuple[SourceSpec, ...]:
+    return tuple(
+        spec for spec in fantasy_source_specs()
+        if spec.name != "weekly_rosters"
+    )
+
+
 FANTASY_CACHE_DIR = Path(".cache/pgo_fantasy")
 FANTASY_CANDIDATE_LOCK = Path(
     "output/pgo-fantasy-source-v2-candidate.lock.json"
@@ -348,8 +355,13 @@ def _source_key_sort(key):
     return key[0], -1 if key[1] is None else key[1]
 
 
-def _load_source_rows(paths):
-    specs = {(spec.name, spec.season): spec for spec in fantasy_source_specs()}
+def _load_source_rows(paths, source_specs=None):
+    source_specs = (
+        fantasy_source_specs()
+        if source_specs is None
+        else tuple(source_specs)
+    )
+    specs = {(spec.name, spec.season): spec for spec in source_specs}
     received = set(paths)
     missing = sorted(set(specs) - received, key=_source_key_sort)
     if missing:

@@ -204,6 +204,117 @@ class FantasyContractTests(unittest.TestCase):
                     pgo_fantasy.half_ppr({"passing_yards": invalid})
 
 
+class PriorObservedFixture:
+    COUNTS = {"QB": 30, "RB": 42, "WR": 30, "TE": 20}
+
+    @staticmethod
+    def _row(columns, **values):
+        return {column: values.get(column, "") for column in columns}
+
+    @staticmethod
+    def _csv_bytes(columns, rows):
+        output = io.StringIO(newline="")
+        writer = csv.DictWriter(
+            output, fieldnames=columns, lineterminator="\n"
+        )
+        writer.writeheader()
+        writer.writerows(rows)
+        return output.getvalue().encode("utf-8")
+
+    def _source_rows(self, weeks=(1, 2, 3), counts=None):
+        counts = self.COUNTS if counts is None else counts
+        schedule = []
+        stats = {season: [] for season in pgo_fantasy.MODEL_SEASONS}
+        for season in pgo_fantasy.MODEL_SEASONS:
+            for week in weeks:
+                game_id = f"{season}_{week:02d}_BUF_LAR"
+                schedule.append(self._row(
+                    pgo_fantasy.SCHEDULE_COLUMNS,
+                    game_id=game_id, season=str(season), week=str(week),
+                    game_type="REG", gameday=f"{season}-09-{week:02d}",
+                    gametime="13:00", away_team="BUF", home_team="LAR",
+                    away_score="20", home_score="10",
+                ))
+                for position, count in counts.items():
+                    for index in range(count):
+                        stats[season].append(self._row(
+                            pgo_fantasy.PLAYER_COLUMNS,
+                            player_id=f"{position}-{index:02d}",
+                            position=position, season=str(season),
+                            week=str(week), season_type="REG",
+                            game_id=game_id, team="BUF",
+                            opponent_team="LAR",
+                            receiving_yards=str(10 + index),
+                        ))
+        return schedule, stats
+
+    def _write_sources(self, directory, schedule, stats):
+        root = Path(directory)
+        root.mkdir(parents=True, exist_ok=True)
+        schedule_path = root / "schedule.csv"
+        schedule_path.write_bytes(self._csv_bytes(
+            pgo_fantasy.SCHEDULE_COLUMNS, schedule
+        ))
+        paths = {("schedule_results", None): schedule_path}
+        for season in pgo_fantasy.MODEL_SEASONS:
+            path = root / f"stats-{season}.csv.gz"
+            path.write_bytes(gzip.compress(
+                self._csv_bytes(pgo_fantasy.PLAYER_COLUMNS, stats[season]),
+                mtime=0,
+            ))
+            paths[("player_weekly_stats", season)] = path
+        return paths
+
+    @staticmethod
+    def _schedule_patch(paths):
+        digest = hashlib.sha256(
+            Path(paths[("schedule_results", None)]).read_bytes()
+        ).hexdigest()
+        return patch.object(pgo_sources, "EXPECTED_SOURCE_SHA256", digest)
+
+
+class PriorObservedSourceContractTests(
+    PriorObservedFixture, unittest.TestCase
+):
+    def test_inventory_is_schedule_plus_six_stats(self):
+        specs = pgo_fantasy.prior_observed_source_specs()
+        self.assertEqual(len(specs), 7)
+        self.assertEqual(
+            {(spec.name, spec.season) for spec in specs},
+            {("schedule_results", None)} | {
+                ("player_weekly_stats", season)
+                for season in pgo_fantasy.MODEL_SEASONS
+            },
+        )
+
+    def test_loader_reads_each_source_once_and_ignores_mapping_order(self):
+        schedule, stats = self._source_rows(weeks=(1,))
+        with tempfile.TemporaryDirectory() as directory:
+            paths = self._write_sources(directory, schedule, stats)
+            original = Path.read_bytes
+            reads = []
+
+            def counted(path):
+                reads.append(Path(path))
+                return original(path)
+
+            with mock.patch.object(Path, "read_bytes", counted):
+                first = pgo_fantasy._load_source_rows(
+                    paths,
+                    source_specs=pgo_fantasy.prior_observed_source_specs(),
+                )
+            second = pgo_fantasy._load_source_rows(
+                dict(reversed(list(paths.items()))),
+                source_specs=pgo_fantasy.prior_observed_source_specs(),
+            )
+
+        self.assertEqual(len(reads), 7)
+        self.assertTrue(all(
+            reads.count(Path(path)) == 1 for path in paths.values()
+        ))
+        self.assertEqual(first, second)
+
+
 class FantasyPopulationTests(unittest.TestCase):
     @staticmethod
     def _row(columns, **values):
