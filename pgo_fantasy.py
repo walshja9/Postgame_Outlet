@@ -542,14 +542,14 @@ def _load_prior_observed_stats(source_rows, team_weeks):
             if key in seen:
                 raise ValueError(f"Duplicate prior-observed player-week: {key}")
             seen.add(key)
+            by_week.setdefault((season, week), []).append(parsed)
             if parsed["position"] is None:
                 diagnostics.append(_prior_observed_diagnostic(
                     "unsupported_position", parsed
                 ))
                 continue
-            by_week.setdefault((season, week), []).append(parsed)
     for rows in by_week.values():
-        rows.sort(key=lambda row: (row["gsis_id"], row["game_id"]))
+        rows.sort(key=lambda row: (row["game_id"], row["gsis_id"]))
     diagnostics.sort(key=_prior_observed_diagnostic_key)
     return by_week, diagnostics
 
@@ -567,8 +567,10 @@ def _build_prior_observed_from_sources(source_rows, source_receipts):
         if not weeks:
             raise ValueError("Prior-observed schedule is missing a model season")
         for week in weeks:
-            current_rows = stats_by_week.get((season, week), [])
-            current = {row["gsis_id"]: row for row in current_rows}
+            all_current_rows = stats_by_week.get((season, week), [])
+            current_rows = [row for row in all_current_rows
+                            if row["position"] is not None]
+            current = {row["gsis_id"]: row for row in all_current_rows}
             predicted = set()
             if week >= 2:
                 for gsis_id in sorted(history):
@@ -582,6 +584,10 @@ def _build_prior_observed_from_sources(source_rows, source_receipts):
                         continue
                     game_id, opponent = scheduled
                     target = current.get(gsis_id)
+                    if target is not None and target["position"] is None:
+                        raise ValueError(
+                            "Prior-observed current stat position is invalid"
+                        )
                     output_rows.append({
                         "season": season, "week": week, "game_id": game_id,
                         "gsis_id": gsis_id, "player_name": last["player_name"],
@@ -619,10 +625,15 @@ def _build_prior_observed_from_sources(source_rows, source_receipts):
                     "fantasy_points": row["fantasy_points"],
                     "evaluation_eligible": False,
                 })
-            total = sum(max(row["fantasy_points"], 0.0)
-                        for row in current_rows)
-            captured = sum(max(current[player]["fantasy_points"], 0.0)
-                           for player in predicted if player in current)
+            total = math.fsum(max(row["fantasy_points"], 0.0)
+                              for row in current_rows)
+            captured = math.fsum(
+                max(current[player]["fantasy_points"], 0.0)
+                for player in sorted(
+                    predicted & set(current),
+                    key=lambda player: (current[player]["game_id"], player),
+                )
+            )
             matched = len(predicted & set(current))
             coverage.append({
                 "season": season, "week": week,
@@ -1578,12 +1589,24 @@ def _validate_prior_observed_audit(audit, rows):
             raise ValueError("Prior-observed Week 1 rows are state-only")
         row_counts[key] = row_counts.get(key, 0) + 1
         points = max(row["fantasy_points"], 0.0)
-        positive_totals[key] = positive_totals.get(key, 0.0) + points
+        positive_totals.setdefault(key, []).append((
+            (row["game_id"], row["gsis_id"]), points
+        ))
         if row["evaluation_eligible"]:
             eligible_counts[key] = eligible_counts.get(key, 0) + 1
-            positive_captured[key] = positive_captured.get(key, 0.0) + points
+            positive_captured.setdefault(key, []).append((
+                (row["game_id"], row["gsis_id"]), points
+            ))
         else:
             state_only_ids.add((row["season"], row["week"], row["gsis_id"]))
+    positive_totals = {
+        key: math.fsum(points for _, points in sorted(values))
+        for key, values in positive_totals.items()
+    }
+    positive_captured = {
+        key: math.fsum(points for _, points in sorted(values))
+        for key, values in positive_captured.items()
+    }
     for item in coverage:
         if not isinstance(item, dict) or set(item) != PRIOR_OBSERVED_COVERAGE_FIELDS:
             raise ValueError("Prior-observed coverage is invalid")

@@ -439,6 +439,17 @@ class PriorObservedCohortTests(PriorObservedFixture, unittest.TestCase):
              for row in audit["diagnostics"]},
         )
 
+    def test_current_unsupported_position_for_prior_player_fails_closed(self):
+        for position in ("K", ""):
+            with self.subTest(position=position):
+                schedule, stats = self._source_rows(counts={"QB": 1})
+                target = next(row for row in stats[2022]
+                              if row["week"] == "2")
+                target["position"] = position
+                with tempfile.TemporaryDirectory() as directory:
+                    with self.assertRaisesRegex(ValueError, "position"):
+                        self._build(directory, schedule, stats)
+
     def test_invalid_relevant_stats_fail_closed(self):
         mutations = (
             lambda row: row.update(player_id=""),
@@ -2354,6 +2365,39 @@ class PriorObservedBaselineTests(PriorObservedFixture, unittest.TestCase):
         changed["checks"]["point_coverage"] = True
         with self.assertRaisesRegex(ValueError, "coverage"):
             pgo_fantasy.backtest_baselines(rows, changed)
+
+    def test_large_heterogeneous_multigame_coverage_validates_stably(self):
+        schedule, stats = self._baseline_source_rows()
+        for week in range(1, 19):
+            schedule.append(self._row(
+                pgo_fantasy.SCHEDULE_COLUMNS,
+                game_id=f"2022_{week:02d}_ATL_CAR", season="2022",
+                week=str(week), game_type="REG", gameday=f"2022-09-{week:02d}",
+                gametime="13:00", away_team="ATL", home_team="CAR",
+                away_score="20", home_score="10",
+            ))
+            source = next(row for row in stats[2022] if row["week"] == str(week))
+            stats[2022].extend({
+                **source,
+                "player_id": f"ZET-{index:03d}",
+                "position": ("QB", "RB", "WR", "TE")[index % 4],
+                "game_id": f"2022_{week:02d}_ATL_CAR", "team": "ATL",
+                "opponent_team": "CAR", "receiving_yards": str(30 + 3 * index),
+                "passing_yards": str(index % 17), "receptions": str(index % 5),
+            } for index in range(300))
+        with tempfile.TemporaryDirectory() as directory:
+            paths = self._write_sources(directory, schedule, stats)
+            with self._schedule_patch(paths):
+                rows, audit = pgo_fantasy.build_prior_observed_games(paths)
+            reversed_paths = dict(reversed(list(paths.items())))
+            with self._schedule_patch(reversed_paths):
+                reversed_source_rows, reversed_audit = (
+                    pgo_fantasy.build_prior_observed_games(reversed_paths)
+                )
+            reversed_rows = list(reversed(rows))
+            self.assertEqual((rows, audit), (reversed_source_rows, reversed_audit))
+            pgo_fantasy.backtest_baselines(rows, audit)
+            pgo_fantasy.backtest_baselines(reversed_rows, reversed_audit)
 
     def test_complete_historical_week_matrix_is_required(self):
         schedule, stats = self._baseline_source_rows()
