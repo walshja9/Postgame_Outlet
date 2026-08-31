@@ -145,6 +145,22 @@ FANTASY_SCOPE = {
 }
 FANTASY_POSITION_AUTHORITY = "NFLVERSE_WEEKLY_ROSTER"
 FANTASY_POSITION_MAPPING = {"FB": "RB"}
+PRIOR_OBSERVED_POPULATION = "PRIOR_OBSERVED_8_WEEK"
+PRIOR_OBSERVED_POSITION_AUTHORITY = "MOST_RECENT_PRIOR_PLAYER_STAT"
+PRIOR_OBSERVED_SCOPE = {
+    "seasons": list(MODEL_SEASONS),
+    "game_type": "REG",
+    "history_weeks": 8,
+    "evaluation_weeks": [2, 18],
+}
+PRIOR_OBSERVED_CHECKS = (
+    "source_contract", "schedule_identity", "stat_identity",
+    "chronology", "finite_targets", "point_coverage",
+)
+PRIOR_OBSERVED_DIAGNOSTIC_CLASSES = (
+    "cold_start", "team_transition", "bye_transition",
+    "recency_expired", "unsupported_position",
+)
 FANTASY_BLOCKING_CLASSES = (
     "incomplete_team_coverage",
     "incomplete_team_week_coverage",
@@ -456,6 +472,199 @@ def _load_schedule(rows):
 
 def build_player_games(paths) -> tuple[list[dict], dict]:
     return _build_player_games_from_sources(*_load_source_rows(paths))
+
+
+def _prior_observed_diagnostic(reason, row, last_known_team=""):
+    if reason not in PRIOR_OBSERVED_DIAGNOSTIC_CLASSES:
+        raise ValueError(f"Unknown prior-observed diagnostic: {reason}")
+    return {
+        "reason": reason,
+        "season": row["season"],
+        "week": row["week"],
+        "game_id": row["game_id"],
+        "gsis_id": row["gsis_id"],
+        "team": row["team"],
+        "last_known_team": last_known_team,
+        "raw_position": row["raw_position"],
+        "fantasy_points": row["fantasy_points"],
+    }
+
+
+def _prior_observed_diagnostic_key(row):
+    return (
+        row["season"], row["week"], row["reason"], row["gsis_id"],
+        row["team"], row["game_id"],
+    )
+
+
+def _load_prior_observed_stats(source_rows, team_weeks):
+    by_week, diagnostics, seen = {}, [], set()
+    for source_season in MODEL_SEASONS:
+        for row in source_rows[("player_weekly_stats", source_season)]:
+            season = _integer(row, "season", "prior-observed stat")
+            if season != source_season:
+                raise ValueError("Prior-observed stat source-season mismatch")
+            if (row.get("season_type") or "").strip() != "REG":
+                continue
+            week = _integer(row, "week", "prior-observed stat")
+            game_id = (row.get("game_id") or "").strip()
+            gsis_id = (row.get("player_id") or "").strip()
+            team = normalize_team(row.get("team") or "")
+            opponent = normalize_team(row.get("opponent_team") or "")
+            raw_position = (row.get("position") or "").strip().upper()
+            fantasy_points = half_ppr(row)
+            if (
+                week < 1 or week > 18
+                or team_weeks.get((season, week, team))
+                != (game_id, opponent)
+            ):
+                raise ValueError("Prior-observed stat schedule identity is invalid")
+            parsed = {
+                "season": season, "week": week, "game_id": game_id,
+                "gsis_id": gsis_id, "player_name": "", "team": team,
+                "opponent": opponent,
+                "position": POSITION_MAP.get(raw_position),
+                "raw_position": raw_position,
+                "fantasy_points": fantasy_points,
+            }
+            if parsed["position"] is None:
+                diagnostics.append(_prior_observed_diagnostic(
+                    "unsupported_position", parsed
+                ))
+                continue
+            if not gsis_id:
+                raise ValueError("Missing prior-observed stat identity")
+            key = season, week, gsis_id
+            if key in seen:
+                raise ValueError(f"Duplicate prior-observed player-week: {key}")
+            seen.add(key)
+            by_week.setdefault((season, week), []).append(parsed)
+    for rows in by_week.values():
+        rows.sort(key=lambda row: (row["gsis_id"], row["game_id"]))
+    diagnostics.sort(key=_prior_observed_diagnostic_key)
+    return by_week, diagnostics
+
+
+def _build_prior_observed_from_sources(source_rows, source_receipts):
+    _, team_weeks = _load_schedule(source_rows[("schedule_results", None)])
+    stats_by_week, diagnostics = _load_prior_observed_stats(
+        source_rows, team_weeks
+    )
+    output_rows, coverage = [], []
+    for season in MODEL_SEASONS:
+        history = {}
+        weeks = sorted({week for item_season, week, _ in team_weeks
+                        if item_season == season})
+        if not weeks:
+            raise ValueError("Prior-observed schedule is missing a model season")
+        for week in weeks:
+            current_rows = stats_by_week.get((season, week), [])
+            current = {row["gsis_id"]: row for row in current_rows}
+            predicted = set()
+            if week >= 2:
+                for gsis_id in sorted(history):
+                    prior = [row for row in history[gsis_id]
+                             if week - 8 <= row["week"] < week]
+                    if not prior:
+                        continue
+                    last = prior[-1]
+                    scheduled = team_weeks.get((season, week, last["team"]))
+                    if scheduled is None:
+                        continue
+                    game_id, opponent = scheduled
+                    target = current.get(gsis_id)
+                    output_rows.append({
+                        "season": season, "week": week, "game_id": game_id,
+                        "gsis_id": gsis_id, "player_name": last["player_name"],
+                        "team": last["team"], "opponent": opponent,
+                        "position": last["position"],
+                        "fantasy_points": 0.0 if target is None
+                        else target["fantasy_points"],
+                        "evaluation_eligible": True,
+                    })
+                    predicted.add(gsis_id)
+                    if target is not None and target["team"] != last["team"]:
+                        diagnostics.append(_prior_observed_diagnostic(
+                            "team_transition", target, last["team"]
+                        ))
+            for row in current_rows:
+                if row["gsis_id"] in predicted:
+                    continue
+                prior = history.get(row["gsis_id"], [])
+                if not prior:
+                    reason, last_team = "cold_start", ""
+                elif week - prior[-1]["week"] > 8:
+                    reason, last_team = "recency_expired", prior[-1]["team"]
+                elif team_weeks.get((season, week, prior[-1]["team"])) is None:
+                    reason, last_team = "bye_transition", prior[-1]["team"]
+                else:
+                    raise ValueError("Prior-observed chronology omitted a player")
+                diagnostics.append(_prior_observed_diagnostic(
+                    reason, row, last_team
+                ))
+                output_rows.append({
+                    "season": season, "week": week,
+                    "game_id": row["game_id"], "gsis_id": row["gsis_id"],
+                    "player_name": row["player_name"], "team": row["team"],
+                    "opponent": row["opponent"], "position": row["position"],
+                    "fantasy_points": row["fantasy_points"],
+                    "evaluation_eligible": False,
+                })
+            total = sum(max(row["fantasy_points"], 0.0)
+                        for row in current_rows)
+            captured = sum(max(current[player]["fantasy_points"], 0.0)
+                           for player in predicted if player in current)
+            matched = len(predicted & set(current))
+            coverage.append({
+                "season": season, "week": week,
+                "eligible": len(predicted), "matched_stats": matched,
+                "zero_filled": len(predicted) - matched,
+                "state_only": len(current_rows) - matched,
+                "positive_points_captured": captured,
+                "positive_points_total": total,
+                "positive_point_coverage": captured / total
+                if total > 0.0 else 0.0,
+            })
+            for row in current_rows:
+                history.setdefault(row["gsis_id"], []).append(row)
+    coverage.sort(key=lambda row: (row["season"], row["week"]))
+    diagnostics.sort(key=_prior_observed_diagnostic_key)
+    test_rows = [
+        row for row in coverage
+        if row["season"] in TEST_SEASONS and row["week"] >= 2
+    ]
+    point_coverage = (
+        all(any(row["season"] == season for row in test_rows)
+            for season in TEST_SEASONS)
+        and all(row["positive_points_total"] > 0.0
+                and row["positive_point_coverage"] >= 0.95
+                for row in test_rows)
+    )
+    audit = {
+        "schema_version": 1,
+        "population": PRIOR_OBSERVED_POPULATION,
+        "scope": dict(PRIOR_OBSERVED_SCOPE),
+        "position_authority": PRIOR_OBSERVED_POSITION_AUTHORITY,
+        "position_mapping": dict(FANTASY_POSITION_MAPPING),
+        "sources": source_receipts,
+        "coverage": coverage,
+        "diagnostics": diagnostics,
+        "checks": {name: True for name in PRIOR_OBSERVED_CHECKS},
+    }
+    audit["checks"]["point_coverage"] = point_coverage
+    return sorted(output_rows, key=_row_key), audit
+
+
+def build_prior_observed_games(paths) -> tuple[list[dict], dict]:
+    source_rows, receipts = _load_source_rows(
+        paths, source_specs=prior_observed_source_specs()
+    )
+    schedule = next(row for row in receipts
+                    if (row["name"], row["season"])
+                    == ("schedule_results", None))
+    if schedule["sha256"] != pgo_sources.EXPECTED_SOURCE_SHA256:
+        raise ValueError("Prior-observed schedule does not match pinned SHA-256")
+    return _build_prior_observed_from_sources(source_rows, receipts)
 
 
 def _blocking(reason, season, week=0, gsis_id="", game_id="", team="",

@@ -315,6 +315,239 @@ class PriorObservedSourceContractTests(
         self.assertEqual(first, second)
 
 
+class PriorObservedCohortTests(PriorObservedFixture, unittest.TestCase):
+    def _build(self, directory, schedule, stats):
+        paths = self._write_sources(directory, schedule, stats)
+        with self._schedule_patch(paths):
+            return pgo_fantasy.build_prior_observed_games(paths)
+
+    def test_prior_state_zero_fill_and_fullback_mapping(self):
+        schedule, stats = self._source_rows(
+            counts={"QB": 1, "FB": 1, "WR": 1, "TE": 1}
+        )
+        stats[2022] = [
+            row for row in stats[2022]
+            if not (row["week"] == "2" and row["player_id"] == "QB-00")
+        ]
+        with tempfile.TemporaryDirectory() as directory:
+            rows, audit = self._build(directory, schedule, stats)
+
+        self.assertTrue(any(row["week"] == 1 for row in rows))
+        self.assertTrue(all(
+            not row["evaluation_eligible"]
+            for row in rows if row["week"] == 1
+        ))
+        keyed = {
+            (row["season"], row["week"], row["gsis_id"]): row
+            for row in rows
+        }
+        self.assertEqual(keyed[(2022, 2, "QB-00")]["fantasy_points"], 0.0)
+        self.assertEqual(keyed[(2022, 2, "FB-00")]["position"], "RB")
+        week = next(
+            row for row in audit["coverage"]
+            if (row["season"], row["week"]) == (2022, 2)
+        )
+        self.assertEqual(
+            (week["eligible"], week["matched_stats"], week["zero_filled"]),
+            (4, 3, 1),
+        )
+        self.assertEqual(week["state_only"], 0)
+
+    def test_first_appearance_enters_next_week(self):
+        schedule, stats = self._source_rows(counts={"QB": 1})
+        for week in (2, 3):
+            source = next(
+                row for row in stats[2022] if row["week"] == str(week)
+            )
+            stats[2022].append({**source, "player_id": "NEW-QB"})
+        with tempfile.TemporaryDirectory() as directory:
+            rows, audit = self._build(directory, schedule, stats)
+
+        self.assertEqual(
+            [(row["season"], row["week"]) for row in rows
+             if row["gsis_id"] == "NEW-QB"
+             and row["evaluation_eligible"]],
+            [(2022, 3)],
+        )
+        self.assertIn(
+            (2022, 2, False),
+            {(row["season"], row["week"], row["evaluation_eligible"])
+             for row in rows if row["gsis_id"] == "NEW-QB"},
+        )
+        self.assertIn(
+            ("cold_start", 2022, 2, "NEW-QB"),
+            {(row["reason"], row["season"], row["week"], row["gsis_id"])
+             for row in audit["diagnostics"]},
+        )
+
+    def test_future_rows_do_not_change_week_two(self):
+        schedule, stats = self._source_rows(counts={"QB": 2})
+        with tempfile.TemporaryDirectory() as first_directory:
+            first, _ = self._build(first_directory, schedule, stats)
+        changed = copy.deepcopy(stats)
+        changed[2022] = [
+            row for row in changed[2022] if row["week"] != "3"
+        ]
+        with tempfile.TemporaryDirectory() as second_directory:
+            second, _ = self._build(second_directory, schedule, changed)
+
+        select = lambda rows: [
+            row for row in rows
+            if (row["season"], row["week"]) == (2022, 2)
+        ]
+        self.assertEqual(select(first), select(second))
+
+    def test_roster_bytes_and_path_mapping_order_have_no_influence(self):
+        schedule, stats = self._source_rows(counts={"QB": 2})
+        with tempfile.TemporaryDirectory() as directory:
+            paths = self._write_sources(directory, schedule, stats)
+            unrelated_roster = Path(directory) / "weekly-roster.csv"
+            unrelated_roster.write_bytes(b"status,gsis_id\nACT,OLD\n")
+            with self._schedule_patch(paths):
+                first = pgo_fantasy.build_prior_observed_games(paths)
+            unrelated_roster.write_bytes(b"status,gsis_id\nACT,CHANGED\n")
+            reversed_paths = dict(reversed(list(paths.items())))
+            with self._schedule_patch(reversed_paths):
+                second = pgo_fantasy.build_prior_observed_games(reversed_paths)
+        self.assertEqual(first, second)
+
+    def test_most_recent_prior_position_controls_next_week(self):
+        schedule, stats = self._source_rows(counts={"QB": 1})
+        week_two = next(row for row in stats[2022]
+                        if row["week"] == "2" and row["player_id"] == "QB-00")
+        week_two["position"] = "TE"
+        with tempfile.TemporaryDirectory() as directory:
+            rows, _ = self._build(directory, schedule, stats)
+        keyed = {(row["season"], row["week"], row["gsis_id"]): row
+                 for row in rows}
+        self.assertEqual(keyed[(2022, 2, "QB-00")]["position"], "QB")
+        self.assertEqual(keyed[(2022, 3, "QB-00")]["position"], "TE")
+
+    def test_unsupported_position_is_diagnostic_only(self):
+        schedule, stats = self._source_rows(counts={"QB": 1})
+        source = next(row for row in stats[2022] if row["week"] == "2")
+        stats[2022].append({
+            **source, "player_id": "K-00", "position": "K"
+        })
+        with tempfile.TemporaryDirectory() as directory:
+            rows, audit = self._build(directory, schedule, stats)
+
+        self.assertNotIn("K-00", {row["gsis_id"] for row in rows})
+        self.assertIn(
+            ("unsupported_position", "K-00"),
+            {(row["reason"], row["gsis_id"])
+             for row in audit["diagnostics"]},
+        )
+
+    def test_invalid_relevant_stats_fail_closed(self):
+        mutations = (
+            lambda row: row.update(player_id=""),
+            lambda row: row.update(team="ATL"),
+            lambda row: row.update(receiving_yards="NaN"),
+        )
+        for mutate in mutations:
+            schedule, stats = self._source_rows(counts={"QB": 1})
+            mutate(next(row for row in stats[2022] if row["week"] == "2"))
+            with tempfile.TemporaryDirectory() as directory:
+                with self.assertRaises(ValueError):
+                    self._build(directory, schedule, stats)
+
+    def test_duplicate_player_week_fails_closed(self):
+        schedule, stats = self._source_rows(counts={"QB": 1})
+        target = next(row for row in stats[2022] if row["week"] == "2")
+        stats[2022].append(copy.deepcopy(target))
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaisesRegex(ValueError, "Duplicate prior-observed"):
+                self._build(directory, schedule, stats)
+
+    def test_unpinned_schedule_fails_closed(self):
+        schedule, stats = self._source_rows(counts={"QB": 1})
+        with tempfile.TemporaryDirectory() as directory:
+            paths = self._write_sources(directory, schedule, stats)
+            with patch.object(
+                pgo_sources, "EXPECTED_SOURCE_SHA256", "0" * 64
+            ):
+                with self.assertRaisesRegex(ValueError, "pinned SHA-256"):
+                    pgo_fantasy.build_prior_observed_games(paths)
+
+    def test_team_transition_keeps_prior_game_context(self):
+        schedule, stats = self._source_rows(counts={"QB": 1})
+        schedule.append(self._row(
+            pgo_fantasy.SCHEDULE_COLUMNS,
+            game_id="2022_02_ATL_CAR", season="2022", week="2",
+            game_type="REG", gameday="2022-09-02", gametime="13:00",
+            away_team="ATL", home_team="CAR",
+            away_score="20", home_score="10",
+        ))
+        moved = next(row for row in stats[2022]
+                     if row["week"] == "2" and row["player_id"] == "QB-00")
+        moved.update(
+            game_id="2022_02_ATL_CAR", team="ATL", opponent_team="CAR"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            rows, audit = self._build(directory, schedule, stats)
+        prediction = next(row for row in rows
+                          if (row["season"], row["week"], row["gsis_id"])
+                          == (2022, 2, "QB-00"))
+        self.assertEqual(
+            (prediction["game_id"], prediction["team"], prediction["opponent"]),
+            ("2022_02_BUF_LAR", "BUF", "LAR"),
+        )
+        self.assertGreater(prediction["fantasy_points"], 0.0)
+        self.assertIn(
+            ("team_transition", "QB-00", "BUF", "ATL"),
+            {(row["reason"], row["gsis_id"], row["last_known_team"], row["team"])
+             for row in audit["diagnostics"]},
+        )
+
+    def test_bye_transition_and_recency_expiry_are_unpredicted(self):
+        schedule, stats = self._source_rows(
+            weeks=tuple(range(1, 11)), counts={"QB": 1}
+        )
+        schedule.extend((
+            self._row(
+                pgo_fantasy.SCHEDULE_COLUMNS,
+                game_id="2022_01_NYJ_MIA", season="2022", week="1",
+                game_type="REG", gameday="2022-09-01", gametime="13:00",
+                away_team="NYJ", home_team="MIA",
+                away_score="20", home_score="10",
+            ),
+            self._row(
+                pgo_fantasy.SCHEDULE_COLUMNS,
+                game_id="2022_02_ATL_CAR", season="2022", week="2",
+                game_type="REG", gameday="2022-09-02", gametime="13:00",
+                away_team="ATL", home_team="CAR",
+                away_score="20", home_score="10",
+            ),
+        ))
+        week_one = next(row for row in stats[2022] if row["week"] == "1")
+        week_two = next(row for row in stats[2022] if row["week"] == "2")
+        week_ten = next(row for row in stats[2022] if row["week"] == "10")
+        stats[2022].extend((
+            {**week_one, "player_id": "BYE-QB", "game_id": "2022_01_NYJ_MIA",
+             "team": "NYJ", "opponent_team": "MIA"},
+            {**week_two, "player_id": "BYE-QB", "game_id": "2022_02_ATL_CAR",
+             "team": "ATL", "opponent_team": "CAR"},
+            {**week_one, "player_id": "EXPIRED-QB"},
+            {**week_ten, "player_id": "EXPIRED-QB"},
+        ))
+        with tempfile.TemporaryDirectory() as directory:
+            rows, audit = self._build(directory, schedule, stats)
+        keys = {(row["season"], row["week"], row["gsis_id"]) for row in rows}
+        self.assertIn((2022, 2, "BYE-QB"), keys)
+        self.assertIn((2022, 10, "EXPIRED-QB"), keys)
+        self.assertFalse(next(row["evaluation_eligible"] for row in rows
+                              if (row["season"], row["week"], row["gsis_id"])
+                              == (2022, 2, "BYE-QB")))
+        self.assertFalse(next(row["evaluation_eligible"] for row in rows
+                              if (row["season"], row["week"], row["gsis_id"])
+                              == (2022, 10, "EXPIRED-QB")))
+        reasons = {(row["reason"], row["gsis_id"], row["week"])
+                   for row in audit["diagnostics"]}
+        self.assertIn(("bye_transition", "BYE-QB", 2), reasons)
+        self.assertIn(("recency_expired", "EXPIRED-QB", 10), reasons)
+
+
 class FantasyPopulationTests(unittest.TestCase):
     @staticmethod
     def _row(columns, **values):
