@@ -2038,7 +2038,12 @@ class FantasyBaselineTests(unittest.TestCase):
                     ).hexdigest(),
                     "rows": 1,
                 }
-                for spec in pgo_fantasy.fantasy_source_specs()
+                for spec in sorted(
+                    pgo_fantasy.fantasy_source_specs(),
+                    key=lambda spec: pgo_fantasy._source_key_sort(
+                        (spec.name, spec.season)
+                    ),
+                )
             ],
             "coverage": {
                 str(season): {
@@ -2203,6 +2208,141 @@ class FantasyBaselineTests(unittest.TestCase):
         mismatched["coverage"]["2022"]["eligible"] += 1
         with self.assertRaisesRegex(ValueError, "Source audit"):
             pgo_fantasy.backtest_baselines(rows, mismatched)
+
+
+class PriorObservedBaselineTests(PriorObservedFixture, unittest.TestCase):
+    def _cohort(self, directory, schedule=None, stats=None, counts=None):
+        if schedule is None or stats is None:
+            schedule, stats = self._source_rows(counts=counts)
+        paths = self._write_sources(directory, schedule, stats)
+        with self._schedule_patch(paths):
+            return pgo_fantasy.build_prior_observed_games(paths)
+
+    def test_report_is_development_hold_with_96_weekly_rows(self):
+        with tempfile.TemporaryDirectory() as directory:
+            rows, audit = self._cohort(directory)
+            report, predictions = pgo_fantasy.backtest_baselines(rows, audit)
+        self.assertEqual(report["population"], "PRIOR_OBSERVED_8_WEEK")
+        self.assertEqual(report["stage"], "BASELINE_ONLY")
+        self.assertEqual(report["evidence_role"], "DEVELOPMENT_ONLY")
+        self.assertEqual(report["status"], "HOLD")
+        self.assertEqual(report["publication_status"], "EXPERIMENTAL")
+        self.assertEqual(report["leakage_status"], "REVIEW_REQUIRED")
+        self.assertFalse(any(row["week"] == 1 for row in predictions))
+        for season in pgo_fantasy.TEST_SEASONS:
+            for week in (2, 3):
+                weekly = [row for row in predictions
+                          if (row["season"], row["week"]) == (season, week)]
+                self.assertEqual(sum(row["primary_pool"] for row in weekly), 96)
+
+    def test_same_week_target_does_not_change_same_week_prediction(self):
+        schedule, stats = self._source_rows()
+        with tempfile.TemporaryDirectory() as first_directory:
+            rows, audit = self._cohort(first_directory, schedule, stats)
+            _, first = pgo_fantasy.backtest_baselines(rows, audit)
+        changed = copy.deepcopy(stats)
+        target = next(row for row in changed[2022]
+                      if row["week"] == "2" and row["player_id"] == "RB-00")
+        target["receiving_yards"] = "10000"
+        with tempfile.TemporaryDirectory() as second_directory:
+            rows, audit = self._cohort(second_directory, schedule, changed)
+            _, second = pgo_fantasy.backtest_baselines(rows, audit)
+        before = {(row["season"], row["week"], row["gsis_id"]): row
+                  for row in first}
+        after = {(row["season"], row["week"], row["gsis_id"]): row
+                 for row in second}
+        for key in before:
+            if key[:2] == (2022, 2):
+                self.assertEqual(
+                    (before[key]["null_prediction"],
+                     before[key]["strong_prediction"],
+                     before[key]["primary_pool"]),
+                    (after[key]["null_prediction"],
+                     after[key]["strong_prediction"],
+                     after[key]["primary_pool"]),
+                )
+        self.assertNotEqual(
+            before[(2022, 3, "RB-00")]["strong_prediction"],
+            after[(2022, 3, "RB-00")]["strong_prediction"],
+        )
+
+    def test_week_one_state_seeds_week_two_without_being_predicted(self):
+        schedule, stats = self._source_rows()
+        with tempfile.TemporaryDirectory() as first_directory:
+            rows, audit = self._cohort(first_directory, schedule, stats)
+            _, first = pgo_fantasy.backtest_baselines(rows, audit)
+        changed = copy.deepcopy(stats)
+        target = next(row for row in changed[2022]
+                      if row["week"] == "1" and row["player_id"] == "RB-00")
+        target["receiving_yards"] = "10000"
+        with tempfile.TemporaryDirectory() as second_directory:
+            rows, audit = self._cohort(second_directory, schedule, changed)
+            _, second = pgo_fantasy.backtest_baselines(rows, audit)
+        before = next(row for row in first
+                      if (row["season"], row["week"], row["gsis_id"])
+                      == (2022, 2, "RB-00"))
+        after = next(row for row in second
+                     if (row["season"], row["week"], row["gsis_id"])
+                     == (2022, 2, "RB-00"))
+        self.assertNotEqual(
+            before["strong_prediction"], after["strong_prediction"]
+        )
+        self.assertEqual(before["null_prediction"], after["null_prediction"])
+        self.assertFalse(any(row["week"] == 1 for row in first + second))
+
+    def test_point_coverage_and_primary_pool_fail_closed(self):
+        schedule, stats = self._source_rows()
+        source = next(row for row in stats[2022]
+                      if row["week"] == "2" and row["player_id"] == "QB-00")
+        stats[2022].append({
+            **source, "player_id": "COLD-STAR",
+            "receiving_yards": "100000",
+        })
+        with tempfile.TemporaryDirectory() as directory:
+            rows, audit = self._cohort(directory, schedule, stats)
+        self.assertFalse(audit["checks"]["point_coverage"])
+        with self.assertRaisesRegex(ValueError, "point coverage"):
+            pgo_fantasy.backtest_baselines(rows, audit)
+
+        with tempfile.TemporaryDirectory() as directory:
+            rows, audit = self._cohort(
+                directory,
+                counts={"QB": 23, "RB": 42, "WR": 30, "TE": 20},
+            )
+        with self.assertRaisesRegex(ValueError, "Insufficient primary-pool QB"):
+            pgo_fantasy.backtest_baselines(rows, audit)
+
+    def test_audit_tampering_fails_closed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            rows, audit = self._cohort(directory)
+        cases = []
+        missing_source = copy.deepcopy(audit)
+        missing_source["sources"].pop()
+        cases.append(missing_source)
+        changed_count = copy.deepcopy(audit)
+        changed_count["coverage"][0]["eligible"] += 1
+        cases.append(changed_count)
+        nonfinite = copy.deepcopy(audit)
+        nonfinite["coverage"][0]["positive_points_total"] = math.nan
+        cases.append(nonfinite)
+        reordered = copy.deepcopy(audit)
+        reordered["diagnostics"] = list(reversed(reordered["diagnostics"]))
+        cases.append(reordered)
+        for changed in cases:
+            with self.subTest(changed=changed):
+                with self.assertRaises(ValueError):
+                    pgo_fantasy.backtest_baselines(rows, changed)
+
+    def test_legacy_roster_report_shape_is_unchanged(self):
+        report, _ = pgo_fantasy.backtest_baselines(
+            FantasyBaselineTests()._model_rows(),
+            FantasyBaselineTests._audit(),
+        )
+        self.assertEqual(set(report), {
+            "schema_version", "model", "stage", "status",
+            "publication_status", "status_reason", "scoring", "population",
+            "source_audit_sha256", "folds", "pooled",
+        })
 
 
 class FantasyReceiptTests(unittest.TestCase):

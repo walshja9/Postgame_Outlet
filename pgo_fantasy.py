@@ -161,6 +161,15 @@ PRIOR_OBSERVED_DIAGNOSTIC_CLASSES = (
     "cold_start", "team_transition", "bye_transition",
     "recency_expired", "unsupported_position",
 )
+PRIOR_OBSERVED_COVERAGE_FIELDS = frozenset({
+    "season", "week", "eligible", "matched_stats", "zero_filled",
+    "state_only", "positive_points_captured", "positive_points_total",
+    "positive_point_coverage",
+})
+PRIOR_OBSERVED_DIAGNOSTIC_FIELDS = frozenset({
+    "reason", "season", "week", "game_id", "gsis_id", "team",
+    "last_known_team", "raw_position", "fantasy_points",
+})
 FANTASY_BLOCKING_CLASSES = (
     "incomplete_team_coverage",
     "incomplete_team_week_coverage",
@@ -1306,6 +1315,7 @@ def _validated_baseline_rows(rows):
             gsis_id = source["gsis_id"].strip()
             position = source["position"]
             target = float(source["fantasy_points"])
+            evaluation_eligible = source.get("evaluation_eligible", True)
         except (AttributeError, KeyError, TypeError, ValueError) as error:
             raise ValueError("Invalid baseline player-game row") from error
         if (
@@ -1318,6 +1328,7 @@ def _validated_baseline_rows(rows):
             or not game_id
             or not gsis_id
             or position not in {"QB", "RB", "WR", "TE"}
+            or not isinstance(evaluation_eligible, bool)
             or not math.isfinite(target)
         ):
             raise ValueError("Invalid baseline player-game row")
@@ -1335,17 +1346,20 @@ def _validated_baseline_rows(rows):
     return sorted(validated, key=_row_key)
 
 
+def _is_evaluation_row(row):
+    return row.get("evaluation_eligible", True)
+
+
 def _predict_fold(rows, test_season):
     training = [row for row in rows if row["season"] < test_season]
     position_sums = {position: 0.0 for position in ("QB", "RB", "WR", "TE")}
     position_counts = {position: 0 for position in position_sums}
     histories = {}
     for row in training:
-        position = row["position"]
-        target = row["fantasy_points"]
-        position_sums[position] += target
-        position_counts[position] += 1
-        histories.setdefault(row["gsis_id"], []).append(target)
+        if _is_evaluation_row(row):
+            position_sums[row["position"]] += row["fantasy_points"]
+            position_counts[row["position"]] += 1
+        histories.setdefault(row["gsis_id"], []).append(row["fantasy_points"])
     if any(count == 0 for count in position_counts.values()):
         raise ValueError(f"Training positions are incomplete for {test_season}")
     null_means = {
@@ -1357,13 +1371,17 @@ def _predict_fold(rows, test_season):
     for row in rows:
         if row["season"] == test_season:
             test_weeks.setdefault(row["week"], []).append(row)
-    if not test_weeks:
-        raise ValueError(f"Test season contains zero rows: {test_season}")
+    if not any(_is_evaluation_row(row)
+               for weekly in test_weeks.values() for row in weekly):
+        raise ValueError(f"Test season contains zero evaluation rows: {test_season}")
 
     predictions = []
     for week in sorted(test_weeks):
+        weekly_rows = sorted(test_weeks[week], key=_row_key)
+        evaluation_rows = [row for row in weekly_rows
+                           if _is_evaluation_row(row)]
         week_predictions = []
-        for row in sorted(test_weeks[week], key=_row_key):
+        for row in evaluation_rows:
             position = row["position"]
             live_mean = position_sums[position] / position_counts[position]
             week_predictions.append({
@@ -1373,17 +1391,18 @@ def _predict_fold(rows, test_season):
                     histories.get(row["gsis_id"], []), live_mean
                 ),
             })
-        primary = select_primary_pool(week_predictions)
-        for prediction in week_predictions:
-            prediction["primary_pool"] = _natural_key(prediction) in primary
-        predictions.extend(week_predictions)
+        if week_predictions:
+            primary = select_primary_pool(week_predictions)
+            for prediction in week_predictions:
+                prediction["primary_pool"] = _natural_key(prediction) in primary
+            predictions.extend(week_predictions)
 
-        # Every outcome in the week is hidden until all predictions are complete.
-        for row in sorted(test_weeks[week], key=_row_key):
-            target = row["fantasy_points"]
-            histories.setdefault(row["gsis_id"], []).append(target)
-            position_sums[row["position"]] += target
-            position_counts[row["position"]] += 1
+        # State-only and evaluated outcomes become history only after the week.
+        for row in weekly_rows:
+            histories.setdefault(row["gsis_id"], []).append(row["fantasy_points"])
+            if _is_evaluation_row(row):
+                position_sums[row["position"]] += row["fantasy_points"]
+                position_counts[row["position"]] += 1
     return predictions
 
 
@@ -1466,39 +1485,7 @@ def _validate_source_audit(source_audit):
     if source_audit["blocking_discrepancies"]["total"] != 0:
         raise ValueError("Source audit contract is invalid")
 
-    expected_sources = {
-        (spec.name, spec.season) for spec in fantasy_source_specs()
-    }
-    sources = source_audit.get("sources")
-    if not isinstance(sources, list):
-        raise ValueError("Source audit sources are invalid")
-    received_sources = set()
-    for receipt in sources:
-        if not isinstance(receipt, dict) or set(receipt) != {
-            "name",
-            "season",
-            "bytes",
-            "sha256",
-            "rows",
-        }:
-            raise ValueError("Source audit receipt is invalid")
-        key = (receipt["name"], receipt["season"])
-        digest = receipt["sha256"]
-        if (
-            key in received_sources
-            or key not in expected_sources
-            or type(receipt["bytes"]) is not int
-            or receipt["bytes"] <= 0
-            or type(receipt["rows"]) is not int
-            or receipt["rows"] <= 0
-            or not isinstance(digest, str)
-            or len(digest) != 64
-            or any(character not in "0123456789abcdef" for character in digest)
-        ):
-            raise ValueError("Source audit receipt is invalid")
-        received_sources.add(key)
-    if received_sources != expected_sources:
-        raise ValueError("Source audit inventory is incomplete")
+    _validate_audit_sources(source_audit["sources"], fantasy_source_specs())
 
     coverage = source_audit.get("coverage")
     if not isinstance(coverage, dict) or set(coverage) != {
@@ -1523,6 +1510,139 @@ def _validate_source_audit(source_audit):
             raise ValueError("Source audit coverage is invalid")
 
 
+def _validate_audit_sources(sources, source_specs):
+    expected = {(spec.name, spec.season) for spec in source_specs}
+    if not isinstance(sources, list):
+        raise ValueError("Source audit sources are invalid")
+    received = set()
+    for receipt in sources:
+        if not isinstance(receipt, dict) or set(receipt) != {
+            "name", "season", "bytes", "sha256", "rows",
+        }:
+            raise ValueError("Source audit receipt is invalid")
+        key = receipt["name"], receipt["season"]
+        digest = receipt["sha256"]
+        if (
+            key in received or key not in expected
+            or type(receipt["bytes"]) is not int or receipt["bytes"] <= 0
+            or type(receipt["rows"]) is not int or receipt["rows"] <= 0
+            or not isinstance(digest, str) or len(digest) != 64
+            or any(character not in "0123456789abcdef" for character in digest)
+        ):
+            raise ValueError("Source audit receipt is invalid")
+        received.add(key)
+    order = [(row["name"], row["season"]) for row in sources]
+    if received != expected or order != sorted(order, key=_source_key_sort):
+        raise ValueError("Source audit inventory is incomplete")
+
+
+def _validate_prior_observed_audit(audit, rows):
+    if (
+        not isinstance(audit, dict)
+        or set(audit) != {
+            "schema_version", "population", "scope", "position_authority",
+            "position_mapping", "sources", "coverage", "diagnostics", "checks",
+        }
+        or type(audit["schema_version"]) is not int
+        or audit["schema_version"] != 1
+        or audit["population"] != PRIOR_OBSERVED_POPULATION
+        or audit["scope"] != PRIOR_OBSERVED_SCOPE
+        or audit["position_authority"] != PRIOR_OBSERVED_POSITION_AUTHORITY
+        or audit["position_mapping"] != FANTASY_POSITION_MAPPING
+    ):
+        raise ValueError("Prior-observed source audit is invalid")
+    _validate_audit_sources(audit["sources"], prior_observed_source_specs())
+
+    coverage = audit["coverage"]
+    if not isinstance(coverage, list) or coverage != sorted(
+        coverage, key=lambda row: (row["season"], row["week"])
+    ):
+        raise ValueError("Prior-observed coverage is invalid")
+    seen, row_counts, eligible_counts = set(), {}, {}
+    for row in rows:
+        key = row["season"], row["week"]
+        if not isinstance(row.get("evaluation_eligible"), bool):
+            raise ValueError("Prior-observed evaluation marker is invalid")
+        row_counts[key] = row_counts.get(key, 0) + 1
+        if row["evaluation_eligible"]:
+            eligible_counts[key] = eligible_counts.get(key, 0) + 1
+    for item in coverage:
+        if not isinstance(item, dict) or set(item) != PRIOR_OBSERVED_COVERAGE_FIELDS:
+            raise ValueError("Prior-observed coverage is invalid")
+        key = item["season"], item["week"]
+        numbers = (
+            item["positive_points_captured"], item["positive_points_total"],
+            item["positive_point_coverage"],
+        )
+        if (
+            key in seen or item["season"] not in MODEL_SEASONS
+            or type(item["week"]) is not int or not 1 <= item["week"] <= 18
+            or any(type(item[name]) is not int or item[name] < 0
+                   for name in (
+                       "eligible", "matched_stats", "zero_filled", "state_only"
+                   ))
+            or item["matched_stats"] + item["zero_filled"] != item["eligible"]
+            or row_counts.get(key, 0) != item["eligible"] + item["state_only"]
+            or eligible_counts.get(key, 0) != item["eligible"]
+            or any(isinstance(value, bool)
+                   or not isinstance(value, (int, float))
+                   or not math.isfinite(value) for value in numbers)
+            or not 0.0 <= item["positive_points_captured"]
+            <= item["positive_points_total"]
+        ):
+            raise ValueError("Prior-observed coverage is invalid")
+        expected = (item["positive_points_captured"]
+                    / item["positive_points_total"]
+                    if item["positive_points_total"] > 0.0 else 0.0)
+        if not math.isclose(
+            item["positive_point_coverage"], expected,
+            rel_tol=0.0, abs_tol=1e-12,
+        ):
+            raise ValueError("Prior-observed coverage is invalid")
+        seen.add(key)
+    if set(row_counts) - seen:
+        raise ValueError("Prior-observed population changed")
+
+    diagnostics = audit["diagnostics"]
+    if not isinstance(diagnostics, list) or diagnostics != sorted(
+        diagnostics, key=_prior_observed_diagnostic_key
+    ) or len({_canonical_json_bytes(row) for row in diagnostics}) != len(
+        diagnostics
+    ):
+        raise ValueError("Prior-observed diagnostics are invalid")
+    for row in diagnostics:
+        if (
+            not isinstance(row, dict)
+            or set(row) != PRIOR_OBSERVED_DIAGNOSTIC_FIELDS
+            or row["reason"] not in PRIOR_OBSERVED_DIAGNOSTIC_CLASSES
+            or type(row["season"]) is not int
+            or row["season"] not in MODEL_SEASONS
+            or type(row["week"]) is not int
+            or not 1 <= row["week"] <= 18
+            or any(not isinstance(row[name], str) for name in (
+                "reason", "game_id", "gsis_id", "team", "last_known_team",
+                "raw_position",
+            ))
+            or not isinstance(row["fantasy_points"], (int, float))
+            or isinstance(row["fantasy_points"], bool)
+            or not math.isfinite(row["fantasy_points"])
+        ):
+            raise ValueError("Prior-observed diagnostics are invalid")
+
+    point_ok = (
+        all(any(item["season"] == season for item in coverage)
+            for season in TEST_SEASONS)
+        and all(item["positive_points_total"] > 0.0
+                and item["positive_point_coverage"] >= 0.95
+                for item in coverage
+                if item["season"] in TEST_SEASONS and item["week"] >= 2)
+    )
+    expected_checks = {name: True for name in PRIOR_OBSERVED_CHECKS}
+    expected_checks["point_coverage"] = point_ok
+    if audit["checks"] != expected_checks or not point_ok:
+        raise ValueError("Prior-observed point coverage is blocked")
+
+
 def _validate_audit_population(source_audit, rows):
     for season in MODEL_SEASONS:
         count = sum(row["season"] == season for row in rows)
@@ -1530,11 +1650,19 @@ def _validate_audit_population(source_audit, rows):
             raise ValueError("Source audit population does not match baseline rows")
 
 
+def _validate_baseline_source_audit(audit, rows):
+    if isinstance(audit, dict) and audit.get("population") == PRIOR_OBSERVED_POPULATION:
+        _validate_prior_observed_audit(audit, rows)
+        return PRIOR_OBSERVED_POPULATION
+    _validate_source_audit(audit)
+    _validate_audit_population(audit, rows)
+    return "WEEKLY_ROSTER_ACT_QB_RB_FB_WR_TE"
+
+
 def backtest_baselines(rows, source_audit) -> tuple[dict, list[dict]]:
-    _validate_source_audit(source_audit)
     audit_sha256 = hashlib.sha256(_canonical_json_bytes(source_audit)).hexdigest()
     validated = _validated_baseline_rows(rows)
-    _validate_audit_population(source_audit, validated)
+    population = _validate_baseline_source_audit(source_audit, validated)
     predictions = []
     folds = []
     for test_season in TEST_SEASONS:
@@ -1546,7 +1674,7 @@ def backtest_baselines(rows, source_audit) -> tuple[dict, list[dict]]:
             **_evaluation_metrics(fold_predictions),
         })
     predictions.sort(key=_row_key)
-    return ({
+    report = {
         "schema_version": 1,
         "model": "pgo_fantasy_baselines_v1",
         "stage": "BASELINE_ONLY",
@@ -1554,11 +1682,17 @@ def backtest_baselines(rows, source_audit) -> tuple[dict, list[dict]]:
         "publication_status": "EXPERIMENTAL",
         "status_reason": "No candidate is evaluated in the baseline-only slice",
         "scoring": "HALF_PPR",
-        "population": "WEEKLY_ROSTER_ACT_QB_RB_FB_WR_TE",
+        "population": population,
         "source_audit_sha256": audit_sha256,
         "folds": folds,
         "pooled": _evaluation_metrics(predictions),
-    }, predictions)
+    }
+    if population == PRIOR_OBSERVED_POPULATION:
+        report.update({
+            "evidence_role": "DEVELOPMENT_ONLY",
+            "leakage_status": "REVIEW_REQUIRED",
+        })
+    return report, predictions
 
 
 def serialize_baseline_report(report) -> str:
