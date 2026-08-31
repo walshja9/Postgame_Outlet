@@ -1531,8 +1531,7 @@ def _validate_audit_sources(sources, source_specs):
         ):
             raise ValueError("Source audit receipt is invalid")
         received.add(key)
-    order = [(row["name"], row["season"]) for row in sources]
-    if received != expected or order != sorted(order, key=_source_key_sort):
+    if received != expected:
         raise ValueError("Source audit inventory is incomplete")
 
 
@@ -1552,6 +1551,17 @@ def _validate_prior_observed_audit(audit, rows):
     ):
         raise ValueError("Prior-observed source audit is invalid")
     _validate_audit_sources(audit["sources"], prior_observed_source_specs())
+    order = [(row["name"], row["season"]) for row in audit["sources"]]
+    if order != sorted(order, key=_source_key_sort):
+        raise ValueError("Prior-observed source audit inventory is incomplete")
+    for receipt in audit["sources"]:
+        season = receipt["season"]
+        if (
+            receipt["name"] == "schedule_results" and season is not None
+        ) or (
+            receipt["name"] == "player_weekly_stats" and type(season) is not int
+        ):
+            raise ValueError("Prior-observed source audit receipt is invalid")
 
     coverage = audit["coverage"]
     if not isinstance(coverage, list) or coverage != sorted(
@@ -1559,13 +1569,21 @@ def _validate_prior_observed_audit(audit, rows):
     ):
         raise ValueError("Prior-observed coverage is invalid")
     seen, row_counts, eligible_counts = set(), {}, {}
+    positive_totals, positive_captured, state_only_ids = {}, {}, set()
     for row in rows:
         key = row["season"], row["week"]
         if not isinstance(row.get("evaluation_eligible"), bool):
             raise ValueError("Prior-observed evaluation marker is invalid")
+        if row["week"] == 1 and row["evaluation_eligible"]:
+            raise ValueError("Prior-observed Week 1 rows are state-only")
         row_counts[key] = row_counts.get(key, 0) + 1
+        points = max(row["fantasy_points"], 0.0)
+        positive_totals[key] = positive_totals.get(key, 0.0) + points
         if row["evaluation_eligible"]:
             eligible_counts[key] = eligible_counts.get(key, 0) + 1
+            positive_captured[key] = positive_captured.get(key, 0.0) + points
+        else:
+            state_only_ids.add((row["season"], row["week"], row["gsis_id"]))
     for item in coverage:
         if not isinstance(item, dict) or set(item) != PRIOR_OBSERVED_COVERAGE_FIELDS:
             raise ValueError("Prior-observed coverage is invalid")
@@ -1576,6 +1594,7 @@ def _validate_prior_observed_audit(audit, rows):
         )
         if (
             key in seen or item["season"] not in MODEL_SEASONS
+            or type(item["season"]) is not int
             or type(item["week"]) is not int or not 1 <= item["week"] <= 18
             or any(type(item[name]) is not int or item[name] < 0
                    for name in (
@@ -1587,6 +1606,14 @@ def _validate_prior_observed_audit(audit, rows):
             or any(isinstance(value, bool)
                    or not isinstance(value, (int, float))
                    or not math.isfinite(value) for value in numbers)
+            or not math.isclose(
+                item["positive_points_captured"],
+                positive_captured.get(key, 0.0), rel_tol=0.0, abs_tol=1e-12,
+            )
+            or not math.isclose(
+                item["positive_points_total"],
+                positive_totals.get(key, 0.0), rel_tol=0.0, abs_tol=1e-12,
+            )
             or not 0.0 <= item["positive_points_captured"]
             <= item["positive_points_total"]
         ):
@@ -1600,8 +1627,13 @@ def _validate_prior_observed_audit(audit, rows):
         ):
             raise ValueError("Prior-observed coverage is invalid")
         seen.add(key)
-    if set(row_counts) - seen:
-        raise ValueError("Prior-observed population changed")
+    expected_coverage = {
+        (season, week)
+        for season in MODEL_SEASONS
+        for week in range(1, 18 if season == 2020 else 19)
+    }
+    if seen != expected_coverage or set(row_counts) != expected_coverage:
+        raise ValueError("Prior-observed coverage is incomplete")
 
     diagnostics = audit["diagnostics"]
     if not isinstance(diagnostics, list) or diagnostics != sorted(
@@ -1628,6 +1660,19 @@ def _validate_prior_observed_audit(audit, rows):
             or not math.isfinite(row["fantasy_points"])
         ):
             raise ValueError("Prior-observed diagnostics are invalid")
+    state_diagnostics = [
+        row for row in diagnostics
+        if row["reason"] in {"cold_start", "bye_transition", "recency_expired"}
+    ]
+    state_diagnostic_ids = {
+        (row["season"], row["week"], row["gsis_id"])
+        for row in state_diagnostics
+    }
+    if (
+        len(state_diagnostic_ids) != len(state_diagnostics)
+        or state_diagnostic_ids != state_only_ids
+    ):
+        raise ValueError("Prior-observed state-only diagnostics are invalid")
 
     point_ok = (
         all(any(item["season"] == season for item in coverage)

@@ -2038,12 +2038,7 @@ class FantasyBaselineTests(unittest.TestCase):
                     ).hexdigest(),
                     "rows": 1,
                 }
-                for spec in sorted(
-                    pgo_fantasy.fantasy_source_specs(),
-                    key=lambda spec: pgo_fantasy._source_key_sort(
-                        (spec.name, spec.season)
-                    ),
-                )
+                for spec in pgo_fantasy.fantasy_source_specs()
             ],
             "coverage": {
                 str(season): {
@@ -2211,9 +2206,17 @@ class FantasyBaselineTests(unittest.TestCase):
 
 
 class PriorObservedBaselineTests(PriorObservedFixture, unittest.TestCase):
+    def _baseline_source_rows(self, counts=None):
+        schedule, stats = self._source_rows(weeks=range(1, 19), counts=counts)
+        schedule = [row for row in schedule if not (
+            row["season"] == "2020" and row["week"] == "18"
+        )]
+        stats[2020] = [row for row in stats[2020] if row["week"] != "18"]
+        return schedule, stats
+
     def _cohort(self, directory, schedule=None, stats=None, counts=None):
         if schedule is None or stats is None:
-            schedule, stats = self._source_rows(counts=counts)
+            schedule, stats = self._baseline_source_rows(counts=counts)
         paths = self._write_sources(directory, schedule, stats)
         with self._schedule_patch(paths):
             return pgo_fantasy.build_prior_observed_games(paths)
@@ -2236,7 +2239,7 @@ class PriorObservedBaselineTests(PriorObservedFixture, unittest.TestCase):
                 self.assertEqual(sum(row["primary_pool"] for row in weekly), 96)
 
     def test_same_week_target_does_not_change_same_week_prediction(self):
-        schedule, stats = self._source_rows()
+        schedule, stats = self._baseline_source_rows()
         with tempfile.TemporaryDirectory() as first_directory:
             rows, audit = self._cohort(first_directory, schedule, stats)
             _, first = pgo_fantasy.backtest_baselines(rows, audit)
@@ -2267,7 +2270,7 @@ class PriorObservedBaselineTests(PriorObservedFixture, unittest.TestCase):
         )
 
     def test_week_one_state_seeds_week_two_without_being_predicted(self):
-        schedule, stats = self._source_rows()
+        schedule, stats = self._baseline_source_rows()
         with tempfile.TemporaryDirectory() as first_directory:
             rows, audit = self._cohort(first_directory, schedule, stats)
             _, first = pgo_fantasy.backtest_baselines(rows, audit)
@@ -2291,7 +2294,7 @@ class PriorObservedBaselineTests(PriorObservedFixture, unittest.TestCase):
         self.assertFalse(any(row["week"] == 1 for row in first + second))
 
     def test_point_coverage_and_primary_pool_fail_closed(self):
-        schedule, stats = self._source_rows()
+        schedule, stats = self._baseline_source_rows()
         source = next(row for row in stats[2022]
                       if row["week"] == "2" and row["player_id"] == "QB-00")
         stats[2022].append({
@@ -2331,6 +2334,76 @@ class PriorObservedBaselineTests(PriorObservedFixture, unittest.TestCase):
         for changed in cases:
             with self.subTest(changed=changed):
                 with self.assertRaises(ValueError):
+                    pgo_fantasy.backtest_baselines(rows, changed)
+
+    def test_audit_recomputes_point_coverage_from_rows(self):
+        schedule, stats = self._baseline_source_rows()
+        source = next(row for row in stats[2022]
+                      if row["week"] == "2" and row["player_id"] == "QB-00")
+        stats[2022].append({
+            **source, "player_id": "COLD-STAR",
+            "receiving_yards": "100000",
+        })
+        with tempfile.TemporaryDirectory() as directory:
+            rows, audit = self._cohort(directory, schedule, stats)
+        changed = copy.deepcopy(audit)
+        coverage = next(row for row in changed["coverage"]
+                        if (row["season"], row["week"]) == (2022, 2))
+        coverage["positive_points_captured"] = coverage["positive_points_total"]
+        coverage["positive_point_coverage"] = 1.0
+        changed["checks"]["point_coverage"] = True
+        with self.assertRaisesRegex(ValueError, "coverage"):
+            pgo_fantasy.backtest_baselines(rows, changed)
+
+    def test_complete_historical_week_matrix_is_required(self):
+        schedule, stats = self._baseline_source_rows()
+        schedule = [row for row in schedule if not (
+            row["season"] == "2022" and row["week"] == "2"
+        )]
+        stats[2022] = [row for row in stats[2022] if row["week"] != "2"]
+        with tempfile.TemporaryDirectory() as directory:
+            rows, audit = self._cohort(directory, schedule, stats)
+        with self.assertRaisesRegex(ValueError, "coverage"):
+            pgo_fantasy.backtest_baselines(rows, audit)
+
+    def test_week_one_and_state_only_diagnostics_are_bound(self):
+        with tempfile.TemporaryDirectory() as directory:
+            rows, audit = self._cohort(directory)
+        changed_rows = copy.deepcopy(rows)
+        changed_audit = copy.deepcopy(audit)
+        week_one = [row for row in changed_rows
+                    if (row["season"], row["week"]) == (2022, 1)]
+        for row in week_one:
+            row["evaluation_eligible"] = True
+        coverage = next(row for row in changed_audit["coverage"]
+                        if (row["season"], row["week"]) == (2022, 1))
+        coverage["eligible"] = len(week_one)
+        coverage["matched_stats"] = len(week_one)
+        coverage["state_only"] = 0
+        with self.assertRaisesRegex(ValueError, "Week 1"):
+            pgo_fantasy.backtest_baselines(changed_rows, changed_audit)
+
+        changed_audit = copy.deepcopy(audit)
+        changed_audit["diagnostics"].pop(0)
+        with self.assertRaisesRegex(ValueError, "state-only"):
+            pgo_fantasy.backtest_baselines(rows, changed_audit)
+
+    def test_prior_observed_season_types_are_exact(self):
+        with tempfile.TemporaryDirectory() as directory:
+            rows, audit = self._cohort(directory)
+        for value in (2022.0, True):
+            with self.subTest(coverage=value):
+                changed = copy.deepcopy(audit)
+                next(row for row in changed["coverage"]
+                     if row["season"] == 2022)["season"] = value
+                with self.assertRaisesRegex(ValueError, "coverage"):
+                    pgo_fantasy.backtest_baselines(rows, changed)
+            with self.subTest(receipt=value):
+                changed = copy.deepcopy(audit)
+                next(row for row in changed["sources"]
+                     if (row["name"], row["season"])
+                     == ("player_weekly_stats", 2022))["season"] = value
+                with self.assertRaisesRegex(ValueError, "receipt"):
                     pgo_fantasy.backtest_baselines(rows, changed)
 
     def test_legacy_roster_report_shape_is_unchanged(self):
