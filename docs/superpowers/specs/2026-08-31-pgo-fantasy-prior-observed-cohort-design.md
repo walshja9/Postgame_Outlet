@@ -2,7 +2,7 @@
 
 **Date:** August 31, 2026
 
-**Status:** USER-APPROVED DESIGN; WRITTEN SPEC REVIEW PENDING
+**Status:** APPROVED FOR PLANNING
 
 **Scope:** Add a roster-independent historical development cohort for the
 existing PGO half-PPR fantasy baselines
@@ -108,6 +108,14 @@ For each season, it processes weeks chronologically:
 8. Update histories only after every row in week `w` has been predicted and
    graded.
 
+The builder also returns current-week mapped stat observations that were not
+prediction candidates, including Week 1, first appearances, transition/bye
+misses, and returns after expiry. These rows carry
+`evaluation_eligible: false`. They never enter a pool or metric, but their
+outcomes update player history after the complete week is frozen. Prediction
+rows carry `evaluation_eligible: true`. Each GSIS identity still has at most
+one row per season-week.
+
 The natural identity is `(season, week, gsis_id)`. A team change cannot create
 a second player row. When a predicted player records current-week statistics
 for a different team, the actual target remains attached to the stable GSIS
@@ -134,6 +142,12 @@ and metric functions. It extends the baseline report boundary only enough to
 accept the separately validated cohort audit and emit
 `population: PRIOR_OBSERVED_8_WEEK`. It must not duplicate baseline formulas or
 create a second evaluation framework.
+
+Player histories consume both prediction rows and state-only observations,
+always after the applicable week has been predicted. Training-fold and live
+position means, pool selection, predictions, and metrics consume only
+`evaluation_eligible: true` rows. Legacy roster rows have no marker and retain
+their existing implicit value of `true`.
 
 The primary pool remains exactly:
 
@@ -221,7 +235,9 @@ Synthetic tests must prove:
 - changing current-week or future-week stats cannot alter earlier membership
   or predictions;
 - every week is completely predicted before state updates;
-- week 1 is outside the primary metric;
+- week 1 is outside the primary metric but seeds Week 2 player history;
+- state-only cold-start and transition observations update later player
+  history without entering position means, pools, predictions, or metrics;
 - a first appearance enters no earlier than the following week;
 - a player expires after eight consecutive unobserved weeks;
 - the most recent prior team and position are used and FB maps to RB;
