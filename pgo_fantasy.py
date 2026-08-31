@@ -527,17 +527,17 @@ def _load_prior_observed_stats(source_rows, team_weeks):
                 "raw_position": raw_position,
                 "fantasy_points": fantasy_points,
             }
-            if parsed["position"] is None:
-                diagnostics.append(_prior_observed_diagnostic(
-                    "unsupported_position", parsed
-                ))
-                continue
             if not gsis_id:
                 raise ValueError("Missing prior-observed stat identity")
             key = season, week, gsis_id
             if key in seen:
                 raise ValueError(f"Duplicate prior-observed player-week: {key}")
             seen.add(key)
+            if parsed["position"] is None:
+                diagnostics.append(_prior_observed_diagnostic(
+                    "unsupported_position", parsed
+                ))
+                continue
             by_week.setdefault((season, week), []).append(parsed)
     for rows in by_week.values():
         rows.sort(key=lambda row: (row["gsis_id"], row["game_id"]))

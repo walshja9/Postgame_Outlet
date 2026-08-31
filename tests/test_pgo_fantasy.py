@@ -460,6 +460,14 @@ class PriorObservedCohortTests(PriorObservedFixture, unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "Duplicate prior-observed"):
                 self._build(directory, schedule, stats)
 
+    def test_mixed_position_duplicate_player_week_fails_closed(self):
+        schedule, stats = self._source_rows(counts={"QB": 1})
+        target = next(row for row in stats[2022] if row["week"] == "2")
+        stats[2022].append({**target, "position": "K"})
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaisesRegex(ValueError, "Duplicate prior-observed"):
+                self._build(directory, schedule, stats)
+
     def test_unpinned_schedule_fails_closed(self):
         schedule, stats = self._source_rows(counts={"QB": 1})
         with tempfile.TemporaryDirectory() as directory:
