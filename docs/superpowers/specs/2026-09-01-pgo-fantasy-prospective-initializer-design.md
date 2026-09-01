@@ -2,7 +2,7 @@
 
 **Date:** September 1, 2026
 
-**Status:** APPROVED DESIGN — AWAITING WRITTEN-SPEC REVIEW
+**Status:** APPROVED DESIGN — IMPLEMENTATION PLAN READY
 
 **Scope:** Produce legal pregame 2026 half-PPR projections and standard,
 FLEX, and Superflex rankings from immutable T-60 source snapshots
@@ -198,6 +198,10 @@ Historical weekly roster files are not used to estimate the frozen position
 means, so their unresolved publication vintage is not imported into this
 prospective initializer.
 
+The frozen model configuration records its timezone-bearing freeze time and the
+SHA-256 of the accepted position-mean evidence receipt; a bare set of manually
+entered means is not gradeable.
+
 ### 6.2 Strong baseline
 
 For a player with legal history, use the existing strong-baseline calculation.
@@ -282,6 +286,10 @@ A lock is append-only and bound to one game and model version. It contains:
 - row counts and two-team coverage;
 - prediction-integrity hash; and
 - artifact SHA-256.
+
+The locking command derives wall-clock time and code SHA itself. It refuses a
+lock when any runtime model file differs from that committed SHA; callers do
+not supply backdateable lock times or arbitrary code identities.
 
 The lock and its human-readable prediction table are created as one accepted
 package. An existing target path is a hard stop; no command overwrites it.
