@@ -2,7 +2,7 @@
 
 **Date:** August 31, 2026
 
-**Status:** DRAFT FOR WRITTEN REVIEW
+**Status:** APPROVED FOR PLANNING
 
 **Scope:** Admit one narrow nflverse weekly-stat sentinel shape to the existing
 development-only `PRIOR_OBSERVED_8_WEEK` parser.
