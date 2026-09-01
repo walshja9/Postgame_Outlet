@@ -2,7 +2,7 @@
 
 **Date:** August 31, 2026
 
-**Status:** AWAITING WRITTEN-SPEC REVIEW
+**Status:** APPROVED FOR PLANNING
 
 **Scope:** Explain the frozen prior-observed cohort's 94.4835% minimum weekly
 positive-point coverage without changing the cohort, gate, model, or evidence.
@@ -38,8 +38,10 @@ rule, history window, source, or threshold is reconsidered.
 
 ## 3. Inputs and execution boundary
 
-The diagnostic will run once, uninterrupted, at a separately approved exact
-local `main` SHA. It will consume only:
+The diagnostic will run once, uninterrupted, from the existing clean worktree
+at separately approved code SHA
+`3762847e51f6b4bc2170e90b3a6e23971b8f6cfe`, which is already merged into
+local `main`. It will consume only:
 
 - the frozen source lock whose SHA-256 is
   `e2ec765babdc1319e36255e7ee2f69904aab4db2fd0dc9e7c7f5ea80793ce508`;
@@ -53,9 +55,10 @@ Network access is forbidden. A missing or changed byte, unexpected repository
 state, or protected-path diff stops the process before attribution. There is no
 retry without separate authorization.
 
-The tracked tree must be clean. The primary checkout's existing untracked
-inventory is snapshotted before the process and must match afterward; the
-diagnostic neither reads nor stages those paths.
+The execution worktree's tracked and untracked status must be empty. The
+primary checkout's existing untracked inventory is snapshotted before the
+process and must match afterward; the diagnostic neither reads nor stages
+those paths.
 
 ## 4. Attribution data flow
 
