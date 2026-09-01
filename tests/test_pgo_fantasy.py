@@ -439,6 +439,33 @@ class PriorObservedCohortTests(PriorObservedFixture, unittest.TestCase):
              for row in audit["diagnostics"]},
         )
 
+    def test_zero_point_unidentified_sentinel_is_diagnostic_only(self):
+        schedule, stats = self._source_rows(counts={"QB": 1})
+        with tempfile.TemporaryDirectory() as baseline_directory:
+            baseline_rows, baseline_audit = self._build(
+                baseline_directory, schedule, stats
+            )
+        source = next(row for row in stats[2022] if row["week"] == "2")
+        stats[2022].append({
+            **source,
+            "player_id": "",
+            "position": "",
+            "receiving_yards": "0",
+        })
+
+        with tempfile.TemporaryDirectory() as sentinel_directory:
+            rows, audit = self._build(sentinel_directory, schedule, stats)
+
+        self.assertEqual(rows, baseline_rows)
+        self.assertEqual(audit["coverage"], baseline_audit["coverage"])
+        sentinels = [
+            row for row in audit["diagnostics"]
+            if row["reason"] == "unsupported_position"
+            and row["gsis_id"] == ""
+        ]
+        self.assertEqual(len(sentinels), 1)
+        self.assertEqual(sentinels[0]["fantasy_points"], 0.0)
+
     def test_current_unsupported_position_for_prior_player_fails_closed(self):
         for position in ("K", ""):
             with self.subTest(position=position):
@@ -455,6 +482,9 @@ class PriorObservedCohortTests(PriorObservedFixture, unittest.TestCase):
             lambda row: row.update(player_id=""),
             lambda row: row.update(team="ATL"),
             lambda row: row.update(receiving_yards="NaN"),
+            lambda row: row.update(
+                player_id="", position="K", receiving_yards="10"
+            ),
         )
         for mutate in mutations:
             schedule, stats = self._source_rows(counts={"QB": 1})
