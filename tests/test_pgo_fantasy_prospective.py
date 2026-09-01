@@ -238,6 +238,52 @@ class ProspectiveSourceBoundaryTests(
             with self.assertRaises(ValueError):
                 prospective.load_snapshot(path, "schedule")
 
+    def test_snapshot_rejects_shape_correct_malformed_row_values(self):
+        values, _ = self.source_values()
+        schedule = values["schedule"]["rows"][0]
+        roster = values["roster"]["rows"][0]
+        availability = values["availability"]["rows"][0]
+        history = values["history"]["rows"][0]
+        cases = (
+            ("schedule season boolean", "schedule", {**schedule, "season": True}),
+            ("schedule week boolean", "schedule", {**schedule, "week": True}),
+            ("schedule game ID blank", "schedule", {**schedule, "game_id": " "}),
+            ("schedule game type not text", "schedule", {**schedule, "game_type": 1}),
+            ("schedule kickoff naive", "schedule", {
+                **schedule, "kickoff": "2026-09-09T20:20:00",
+            }),
+            ("schedule team outside envelope", "schedule", {
+                **schedule, "away_team": "MIA",
+            }),
+            ("roster player ID blank", "roster", {**roster, "gsis_id": " "}),
+            ("roster team outside envelope", "roster", {**roster, "team": "MIA"}),
+            ("availability status not text", "availability", {
+                **availability, "status": 1,
+            }),
+            ("availability team outside envelope", "availability", {
+                **availability, "team": "MIA",
+            }),
+            ("history season boolean", "history", {**history, "season": True}),
+            ("history week boolean", "history", {**history, "week": True}),
+            ("history game ID not text", "history", {**history, "game_id": 1}),
+            ("history game type blank", "history", {**history, "game_type": " "}),
+            ("history finalized naive", "history", {
+                **history, "finalized_at": "2026-01-04T19:00:00",
+            }),
+            ("history player ID blank", "history", {**history, "gsis_id": " "}),
+            ("history position not text", "history", {**history, "position": 1}),
+            ("history team outside envelope", "history", {**history, "team": "MIA"}),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for index, (name, kind, row) in enumerate(cases):
+                with self.subTest(name=name):
+                    payload = dict(values[kind])
+                    payload["rows"] = [row]
+                    path = self.write_json(root / f"{index}.json", payload)
+                    with self.assertRaises(ValueError):
+                        prospective.load_snapshot(path, kind)
+
     def test_model_config_requires_exact_canonical_frozen_contract(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -256,3 +302,13 @@ class ProspectiveSourceBoundaryTests(
             )
             with self.assertRaisesRegex(ValueError, "model config"):
                 prospective.load_model_config(changed_path)
+
+    def test_model_config_rejects_an_unfrozen_model_version(self):
+        with tempfile.TemporaryDirectory() as directory:
+            config = self.config()
+            config["model_version"] = "other_v1"
+            path = self.write_json(
+                Path(directory) / "config.json", config, canonical=True
+            )
+            with self.assertRaisesRegex(ValueError, "model config"):
+                prospective.load_model_config(path)

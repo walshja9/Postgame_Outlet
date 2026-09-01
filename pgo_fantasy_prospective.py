@@ -145,6 +145,52 @@ def _validated_teams(values, label):
     return sorted(teams)
 
 
+def _row_integer(row, field, kind):
+    if type(row[field]) is not int:
+        raise ValueError(f"{kind} snapshot {field} is invalid")
+
+
+def _row_text(row, field, kind):
+    row[field] = _required_text(
+        row[field], f"{kind} snapshot {field}"
+    )
+
+
+def _row_team(row, field, teams, kind):
+    try:
+        team = normalize_team(row[field])
+    except (AttributeError, TypeError, ValueError) as error:
+        raise ValueError(f"{kind} snapshot {field} is invalid") from error
+    if team not in teams:
+        raise ValueError(f"{kind} snapshot {field} is outside teams_processed")
+    row[field] = team
+
+
+def _validate_row(row, kind, teams):
+    if kind in {"schedule", "history"}:
+        for field in ("season", "week"):
+            _row_integer(row, field, kind)
+        for field in ("game_id", "game_type"):
+            _row_text(row, field, kind)
+    if kind == "schedule":
+        parse_timestamp(row["kickoff"], f"{kind} snapshot kickoff")
+        for field in ("away_team", "home_team"):
+            _row_team(row, field, teams, kind)
+    elif kind == "roster":
+        for field in ("gsis_id", "player_name", "position", "status"):
+            _row_text(row, field, kind)
+        _row_team(row, "team", teams, kind)
+    elif kind == "availability":
+        for field in ("gsis_id", "status"):
+            _row_text(row, field, kind)
+        _row_team(row, "team", teams, kind)
+    else:
+        parse_timestamp(row["finalized_at"], f"{kind} snapshot finalized_at")
+        for field in ("gsis_id", "position"):
+            _row_text(row, field, kind)
+        _row_team(row, "team", teams, kind)
+
+
 def _snapshot_from_bytes(data, kind):
     if kind not in SOURCE_KINDS:
         raise ValueError(f"Unknown prospective source kind: {kind}")
@@ -169,6 +215,7 @@ def _snapshot_from_bytes(data, kind):
     for row in rows:
         if not isinstance(row, dict) or set(row) != ROW_FIELDS[kind]:
             raise ValueError(f"{kind} snapshot row is invalid")
+        _validate_row(row, kind, teams)
     snapshot = deepcopy(value)
     snapshot["source"] = value["source"].strip()
     snapshot["teams_processed"] = teams
@@ -215,8 +262,7 @@ def _validate_model_config(config):
     if (
         type(config["schema_version"]) is not int
         or config["schema_version"] != 1
-        or not isinstance(config["model_version"], str)
-        or not config["model_version"].strip()
+        or config["model_version"] != "pgo_fantasy_2026_baseline_v1"
         or type(config["trained_through"]) is not int
         or config["trained_through"] != 2025
         or config["scoring"] != "PGO_HALF_PPR_V1"
