@@ -479,7 +479,7 @@ class PriorObservedCohortTests(PriorObservedFixture, unittest.TestCase):
 
     def test_invalid_relevant_stats_fail_closed(self):
         mutations = (
-            lambda row: row.update(player_id=""),
+            lambda row: row.update(player_id="", receiving_yards="0"),
             lambda row: row.update(team="ATL"),
             lambda row: row.update(receiving_yards="NaN"),
             lambda row: row.update(
