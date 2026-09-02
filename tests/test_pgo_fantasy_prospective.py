@@ -1383,7 +1383,7 @@ class ProspectiveFantasyCommandTests(
             ]), 1)
             self.assertEqual(paths["schedule"].read_bytes(), first)
 
-    def test_preview_refuses_to_replace_an_existing_lock_artifact(self):
+    def test_preview_refuses_existing_lock_grade_and_foreign_bytes(self):
         with tempfile.TemporaryDirectory() as directory:
             paths = self.command_fixture(Path(directory))
             sources = {
@@ -1394,9 +1394,49 @@ class ProspectiveFantasyCommandTests(
             lock = prospective.build_game_lock(
                 sources, model, paths["game_id"], self.LOCKED_AT, "a" * 40
             )
-            output = paths["root"] / "fantasy_lock.json"
-            output.write_text(prospective.serialize_game_lock(lock), newline="")
+            for name, content in (
+                ("fantasy_lock.json", prospective.serialize_game_lock(lock).encode("utf-8")),
+                ("fantasy_week_grade.json", b'{"artifact_kind":"PGO_FANTASY_WEEK_GRADE"}\n'),
+                ("foreign.bin", b"foreign bytes\x00"),
+            ):
+                output = paths["root"] / name
+                output.write_bytes(content)
+                self.assertEqual(prospective.main([
+                    "preview", "--schedule", str(paths["schedule"]),
+                    "--roster", str(paths["roster"]),
+                    "--history", str(paths["history"]),
+                    "--config", str(paths["config"]),
+                    "--week", "1", "--as-of", self.CAPTURED,
+                    "--output", str(output),
+                ]), 1)
+                self.assertEqual(output.read_bytes(), content)
+
+    def test_preview_refuses_to_replace_an_existing_canonical_preview(self):
+        with tempfile.TemporaryDirectory() as directory:
+            paths = self.command_fixture(Path(directory))
+            output = paths["root"] / "preview.json"
+            command = [
+                "preview", "--schedule", str(paths["schedule"]),
+                "--roster", str(paths["roster"]),
+                "--history", str(paths["history"]),
+                "--config", str(paths["config"]),
+                "--week", "1", "--as-of", self.CAPTURED,
+                "--output", str(output),
+            ]
+            self.assertEqual(prospective.main(command), 0)
             first = output.read_bytes()
+            self.assertEqual(prospective.main(command), 1)
+            self.assertEqual(output.read_bytes(), first)
+
+    def test_preview_three_writer_foreign_outputs_are_inert(self):
+        with tempfile.TemporaryDirectory() as directory:
+            paths = self.command_fixture(Path(directory))
+            output = paths["root"] / "preview.json"
+            foreign_a = paths["root"] / "foreign-a.json"
+            artifact_a = b'{"accepted":"foreign writer A"}\n'
+            artifact_b = b'{"accepted":"foreign writer B"}\n'
+            foreign_a.write_bytes(artifact_a)
+            output.write_bytes(artifact_b)
             self.assertEqual(prospective.main([
                 "preview", "--schedule", str(paths["schedule"]),
                 "--roster", str(paths["roster"]),
@@ -1405,95 +1445,10 @@ class ProspectiveFantasyCommandTests(
                 "--week", "1", "--as-of", self.CAPTURED,
                 "--output", str(output),
             ]), 1)
-            self.assertEqual(output.read_bytes(), first)
-
-    def test_preview_race_preserves_a_concurrently_created_artifact(self):
-        with tempfile.TemporaryDirectory() as directory:
-            paths = self.command_fixture(Path(directory))
-            output = paths["root"] / "preview.json"
-            preview_command = [
-                "preview", "--schedule", str(paths["schedule"]),
-                "--roster", str(paths["roster"]),
-                "--history", str(paths["history"]),
-                "--config", str(paths["config"]),
-                "--week", "1", "--as-of", self.CAPTURED,
-                "--output", str(output),
-            ]
-            self.assertEqual(prospective.main(preview_command), 0)
-            artifact = b'{"accepted":"concurrent artifact"}\n'
-            detach = prospective.pgo_fantasy._unlink_owned
-
-            def raced(target, state, content):
-                detach(target, state, content)
-                Path(target).write_bytes(artifact)
-
-            with patch.object(
-                prospective.pgo_fantasy, "_unlink_owned", side_effect=raced
-            ):
-                self.assertEqual(prospective.main(preview_command), 1)
-            self.assertEqual(output.read_bytes(), artifact)
-
-    def test_preview_swap_between_read_and_stat_preserves_foreign_artifact(self):
-        with tempfile.TemporaryDirectory() as directory:
-            paths = self.command_fixture(Path(directory))
-            output = paths["root"] / "preview.json"
-            command = [
-                "preview", "--schedule", str(paths["schedule"]),
-                "--roster", str(paths["roster"]),
-                "--history", str(paths["history"]),
-                "--config", str(paths["config"]),
-                "--week", "1", "--as-of", self.CAPTURED,
-                "--output", str(output),
-            ]
-            self.assertEqual(prospective.main(command), 0)
-            foreign = paths["root"] / "foreign.json"
-            artifact = b'{"accepted":"foreign artifact"}\n'
-            foreign.write_bytes(artifact)
-            swapped = False
-            read_state = prospective._read_preview_state
-
-            def swap_after_stable_read(path):
-                nonlocal swapped
-                data, state = read_state(path)
-                foreign.replace(output)
-                swapped = True
-                return data, state
-
-            with patch.object(prospective, "_read_preview_state", side_effect=swap_after_stable_read):
-                self.assertEqual(prospective.main(command), 1)
-            self.assertTrue(swapped)
-            self.assertEqual(output.read_bytes(), artifact)
+            self.assertEqual(foreign_a.read_bytes(), artifact_a)
+            self.assertEqual(output.read_bytes(), artifact_b)
             self.assertFalse((paths["root"] / ".preview.json.preview-claim").exists())
-            self.assertFalse(list(paths["root"].glob("*.preview-rollback")))
-
-    def test_preview_content_change_on_same_inode_is_preserved(self):
-        with tempfile.TemporaryDirectory() as directory:
-            paths = self.command_fixture(Path(directory))
-            output = paths["root"] / "preview.json"
-            command = [
-                "preview", "--schedule", str(paths["schedule"]),
-                "--roster", str(paths["roster"]),
-                "--history", str(paths["history"]),
-                "--config", str(paths["config"]),
-                "--week", "1", "--as-of", self.CAPTURED,
-                "--output", str(output),
-            ]
-            self.assertEqual(prospective.main(command), 0)
-            artifact = b'{"accepted":"same inode artifact"}\n'
-            changed = False
-            read_state = prospective._read_preview_state
-
-            def change_after_stable_read(path):
-                nonlocal changed
-                data, state = read_state(path)
-                output.write_bytes(artifact)
-                changed = True
-                return data, state
-
-            with patch.object(prospective, "_read_preview_state", side_effect=change_after_stable_read):
-                self.assertEqual(prospective.main(command), 1)
-            self.assertTrue(changed)
-            self.assertEqual(output.read_bytes(), artifact)
+            self.assertFalse(list(paths["root"].glob("*.preview.json.*.rollback")))
 
     def test_preview_missing_target_race_cannot_clobber_an_artifact(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -1519,59 +1474,6 @@ class ProspectiveFantasyCommandTests(
                     "--output", str(output),
                 ]), 1)
             self.assertEqual(output.read_bytes(), artifact)
-
-    def test_preview_interrupt_cleans_its_claim_without_writing(self):
-        with tempfile.TemporaryDirectory() as directory:
-            paths = self.command_fixture(Path(directory))
-            output = paths["root"] / "preview.json"
-            original = prospective.pgo_fantasy._exclusive_write_text
-
-            def interrupted(path, text):
-                if Path(path) == output:
-                    raise KeyboardInterrupt()
-                return original(path, text)
-
-            with patch.object(
-                prospective.pgo_fantasy, "_exclusive_write_text", side_effect=interrupted):
-                with self.assertRaises(KeyboardInterrupt):
-                    prospective.main([
-                        "preview", "--schedule", str(paths["schedule"]),
-                        "--roster", str(paths["roster"]),
-                        "--history", str(paths["history"]),
-                        "--config", str(paths["config"]),
-                        "--week", "1", "--as-of", self.CAPTURED,
-                        "--output", str(output),
-                    ])
-            self.assertFalse(output.exists())
-            self.assertFalse((paths["root"] / ".preview.json.preview-claim").exists())
-
-    def test_preview_interrupt_restores_the_replaced_preview(self):
-        with tempfile.TemporaryDirectory() as directory:
-            paths = self.command_fixture(Path(directory))
-            output = paths["root"] / "preview.json"
-            command = [
-                "preview", "--schedule", str(paths["schedule"]),
-                "--roster", str(paths["roster"]),
-                "--history", str(paths["history"]),
-                "--config", str(paths["config"]),
-                "--week", "1", "--as-of", self.CAPTURED,
-                "--output", str(output),
-            ]
-            self.assertEqual(prospective.main(command), 0)
-            first = output.read_bytes()
-            exclusive = prospective.pgo_fantasy._exclusive_write_text
-
-            def interrupted(path, text):
-                if Path(path) == output:
-                    raise KeyboardInterrupt()
-                return exclusive(path, text)
-
-            with patch.object(
-                prospective.pgo_fantasy, "_exclusive_write_text", side_effect=interrupted
-            ):
-                with self.assertRaises(KeyboardInterrupt):
-                    prospective.main(command)
-            self.assertEqual(output.read_bytes(), first)
 
     def test_lock_rechecks_time_before_publication(self):
         with tempfile.TemporaryDirectory() as directory:

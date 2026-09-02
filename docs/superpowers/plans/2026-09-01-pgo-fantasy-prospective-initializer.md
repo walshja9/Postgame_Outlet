@@ -4,7 +4,7 @@
 
 **Goal:** Build a deterministic local preview, T-60 player-game lock, weekly grade, and full-season gate for the existing PGO half-PPR strong baseline.
 
-**Architecture:** Add one focused `pgo_fantasy_prospective.py` module that consumes normalized frozen local JSON snapshots and imports existing scoring, baseline, pool-selection, canonical-JSON, bootstrap, and exclusive-write primitives. Keep preview generation replaceable, keep evidence packages immutable, and bind every grade to exact lock and result bytes without modifying the historical fantasy or team-model pipelines.
+**Architecture:** Add one focused `pgo_fantasy_prospective.py` module that consumes normalized frozen local JSON snapshots and imports existing scoring, baseline, pool-selection, canonical-JSON, bootstrap, and exclusive-write primitives. Keep previews timestamped and ungradeable with append-only output paths, keep evidence packages immutable, and bind every grade to exact lock and result bytes without modifying the historical fantasy or team-model pipelines.
 
 **Tech Stack:** Python standard library, existing NumPy-backed `pgo_challenger.paired_block_bootstrap`, existing PGO modules, `unittest`, Git, and PowerShell. No new dependency, provider SDK, database, service, workflow, or web framework.
 
@@ -25,7 +25,10 @@
 - A weekly primary pool is exactly 24 QB, 24 RB, 24 WR, 12 TE, and 12 remaining RB/WR/TE FLEX rows selected by the existing `pgo_fantasy.select_primary_pool`.
 - Primary metric is player-game-weighted MAE. The full-season gate uses seed `20260901`, 10,000 paired week-block resamples, at least 1% pooled MAE improvement, a positive lower 95% bound, and a strict majority of weekly wins.
 - No scientific PASS before all 18 regular-season weeks are present and the prospective leakage audit is `CLEAN`.
-- Preview output is replaceable. Locks, weekly grades, season grades, and BLOCKED diagnostics use no-overwrite publication.
+- Preview output paths are append-only/no-overwrite. A rerun requires a new
+  path; any existing target fails closed with its bytes preserved. Locks,
+  weekly grades, season grades, and BLOCKED diagnostics also use no-overwrite
+  publication.
 - All accepted JSON uses strict UTF-8, compact canonical JSON, finite values, sorted keys, and one LF terminator.
 - Do not fetch remote data or read the real nflverse cache, `prospective_evidence/`, or accepted research directories during implementation verification. All focused tests use synthetic temporary files.
 - Do not alter `pgo_fantasy.py`, `pgo_prospective.py`, `pgo_challenger.py`, `pgo_sources.py`, `research/`, `data/`, `docs/index.html`, `.github/workflows/`, `SHOPIFY.md`, or store/theme files.

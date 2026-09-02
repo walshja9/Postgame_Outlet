@@ -72,9 +72,11 @@ cohort, the July team-model prospective lock, or any team-rating artifact.
 
 The system has two output classes:
 
-1. **Preview:** A replaceable, timestamped ranking generated earlier in the
-   week from the latest validated inputs. It is useful to readers but is not
-   gradeable evidence.
+1. **Preview:** A timestamped ranking generated earlier in the week from the
+   latest validated inputs. It is useful to readers but is not gradeable
+   evidence. Preview output paths are append-only: every existing target,
+   regardless of type, fails closed with its bytes preserved, and a rerun uses
+   a new output path.
 2. **T-60 lock:** An immutable prediction package for one game, generated from
    inputs captured no later than `T`. Only this package may be graded.
 
@@ -106,7 +108,7 @@ frozen schedule + roster + availability + completed stats
                          |
          existing null and strong baseline math
                   /                  \
-       replaceable preview       immutable T-60 lock
+       append-only preview       immutable T-60 lock
                                          |
                               finalized official results
                                          |

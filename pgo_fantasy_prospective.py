@@ -673,74 +673,10 @@ def serialize_preview(preview):
     return canonical_json(preview) + "\n"
 
 
-def _is_replaceable_preview(data):
-    try:
-        preview = _decode_json(data, "preview output")
-        return (
-            isinstance(preview, dict)
-            and set(preview) == {
-                "schema_version", "artifact_kind", "status", "publication_status",
-                "evidence_mode", "gradeable", "season", "week", "generated_at",
-                "model_version", "config_sha256", "teams_processed", "teams_missing",
-                "source_coverage", "rows", "artifact_sha256",
-            }
-            and preview["artifact_kind"] == PREVIEW_KIND
-            and preview["evidence_mode"] == "PREVIEW"
-            and preview["gradeable"] is False
-            and data == serialize_preview(preview).encode("utf-8")
-        )
-    except (TypeError, ValueError):
-        return False
-
-
-def _read_preview_state(path):
-    with Path(path).open("rb") as handle:
-        data = handle.read()
-        state = os.fstat(handle.fileno())
-    return data, state
-
-
 def _write_preview(output, text):
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
-    claim_path = output.with_name(f".{output.name}.preview-claim")
-    claim = pgo_fantasy._exclusive_write_text(claim_path, os.urandom(16).hex())
-    previous = None
-    backup = None
-    try:
-        if output.exists() or output.is_symlink():
-            if output.is_symlink():
-                raise ValueError("Preview output is not a canonical PGO preview")
-            previous, expected = _read_preview_state(output)
-            if not _is_replaceable_preview(previous):
-                raise ValueError("Preview output is not a canonical PGO preview")
-            descriptor, name = tempfile.mkstemp(
-                dir=output.parent, prefix=f".{output.name}.", suffix=".preview-rollback"
-            )
-            backup = Path(name)
-            with os.fdopen(descriptor, "wb") as handle:
-                handle.write(previous)
-                handle.flush()
-                os.fsync(handle.fileno())
-            pgo_fantasy._unlink_owned(output, expected, previous)
-            if output.exists() or output.is_symlink():
-                raise ValueError("Preview output changed during replacement")
-        try:
-            pgo_fantasy._exclusive_write_text(output, text)
-        except BaseException:
-            if backup is not None:
-                try:
-                    os.link(backup, output)
-                except FileExistsError:
-                    pass
-            raise
-    finally:
-        if backup is not None:
-            try:
-                backup.unlink()
-            except BaseException:
-                pass
-        pgo_fantasy._unlink_owned(claim_path, *claim)
+    pgo_fantasy._exclusive_write_text(output, text)
 
 
 def _validate_lock_predictions(rows, lock=None):
