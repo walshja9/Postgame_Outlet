@@ -1203,10 +1203,58 @@ class ProspectiveSeasonGradeTests(
 
     def test_audit_must_follow_the_latest_frozen_result_capture(self):
         receipt = prospective.grade_season(
-            self.season_weeks(), self.audit(audited_at="2026-09-10T00:30:00-04:00")
+            self.season_weeks(), self.audit(audited_at="2026-09-10T00:29:00-04:00")
         )
         self.assertEqual(receipt["status"], "BLOCKED")
         self.assertFalse(receipt["checks"]["leakage_audit_after_results"])
+
+    def test_equal_result_capture_audit_qualifies_and_forged_pass_fails(self):
+        receipt = prospective.grade_season(
+            self.season_weeks(), self.audit(audited_at="2026-09-10T00:30:00-04:00")
+        )
+        self.assertEqual(receipt["status"], "PASS")
+        forged = deepcopy(receipt)
+        forged.update({
+            "week_grade_sha256": [],
+            "week_grade_bytes": [],
+            "weeks": list(range(1, 19)),
+            "metrics": {
+                "primary_count": 0, "null_mae": None, "strong_mae": None,
+                "relative_improvement": 1.0, "weekly_wins": 18,
+            },
+            "bootstrap": {
+                "mean": 1.0, "lower": 1.0, "upper": 1.0,
+                "samples": 10_000, "seed": 20260901,
+            },
+            "checks": {key: True for key in receipt["checks"]},
+            "status": "PASS", "publication_status": "VALIDATED",
+        })
+        forged["artifact_sha256"] = prospective._artifact_hash(forged)
+        with self.assertRaises(ValueError):
+            prospective.serialize_season_grade(forged)
+
+    def test_rebuilt_diagnostics_are_deterministic_and_tamper_evident(self):
+        receipt = prospective.grade_season(self.season_weeks(), self.audit())
+        diagnostics = receipt["diagnostics"]
+        self.assertEqual(
+            list(diagnostics["by_position"]), ["QB", "RB", "WR", "TE"]
+        )
+        self.assertEqual(
+            [item["week"] for item in diagnostics["weekly_strong_spearman"]],
+            list(range(1, 19)),
+        )
+        misses = diagnostics["largest_strong_misses"]
+        self.assertEqual(
+            misses,
+            sorted(misses, key=lambda row: (
+                -row["strong_absolute_error"], row["game_id"], row["gsis_id"]
+            )),
+        )
+        changed = deepcopy(receipt)
+        changed["diagnostics"]["availability_counts"]["active"] = True
+        changed["artifact_sha256"] = prospective._artifact_hash(changed)
+        with self.assertRaises(ValueError):
+            prospective.serialize_season_grade(changed)
 
     def test_coordinated_weekly_artifact_mutation_still_blocks(self):
         weeks = self.season_weeks()

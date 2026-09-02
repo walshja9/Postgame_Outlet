@@ -1283,7 +1283,8 @@ SEASON_GRADE_KEYS = frozenset({
     "metrics", "bootstrap", "leakage_audit_sha256",
     "leakage_audit_verdict", "leakage_audit_audited_at",
     "latest_result_captured_at", "weeks",
-    "week_grade_sha256", "artifact_sha256",
+    "week_grade_sha256", "week_grade_bytes", "leakage_audit_bytes",
+    "diagnostics", "artifact_sha256",
 })
 SEASON_CHECK_KEYS = frozenset({
     "season_complete", "common_model_epoch", "weekly_primary_pools",
@@ -1363,7 +1364,89 @@ def _season_status(checks):
     return "BLOCKED" if blocked else "PASS" if statistical else "HOLD"
 
 
-def grade_season(week_grades, leakage_audit):
+def _rank_values(values):
+    ordered = sorted(enumerate(values), key=lambda item: item[1])
+    ranks = [0.0] * len(values)
+    start = 0
+    while start < len(ordered):
+        end = start + 1
+        while end < len(ordered) and ordered[end][1] == ordered[start][1]:
+            end += 1
+        rank = (start + 1 + end) / 2.0
+        for index, _ in ordered[start:end]:
+            ranks[index] = rank
+        start = end
+    return ranks
+
+
+def _spearman(rows):
+    if len(rows) < 2:
+        return None
+    actual = _rank_values([row["fantasy_points"] for row in rows])
+    strong = _rank_values([row["strong_prediction"] for row in rows])
+    actual_mean = math.fsum(actual) / len(actual)
+    strong_mean = math.fsum(strong) / len(strong)
+    numerator = math.fsum((x - actual_mean) * (y - strong_mean)
+                         for x, y in zip(actual, strong))
+    denominator = math.sqrt(
+        math.fsum((x - actual_mean) ** 2 for x in actual)
+        * math.fsum((y - strong_mean) ** 2 for y in strong)
+    )
+    return None if denominator == 0.0 else numerator / denominator
+
+
+def _diagnostics(rows, grades, input_count):
+    def summary(values):
+        if not values:
+            return {"count": 0, "null_mae": None, "strong_mae": None,
+                    "null_rmse": None, "strong_rmse": None,
+                    "null_bias": None, "strong_bias": None}
+        def rmse(field):
+            return math.sqrt(math.fsum(
+                (row[field] - row["fantasy_points"]) ** 2 for row in values
+            ) / len(values))
+        def bias(field):
+            return math.fsum(
+                row[field] - row["fantasy_points"] for row in values
+            ) / len(values)
+        return {"count": len(values), "null_mae": _mae(values, "null_prediction"),
+                "strong_mae": _mae(values, "strong_prediction"),
+                "null_rmse": rmse("null_prediction"),
+                "strong_rmse": rmse("strong_prediction"),
+                "null_bias": bias("null_prediction"), "strong_bias": bias("strong_prediction")}
+    weekly = [{"week": grade["week"], "strong_spearman": _spearman([
+        row for row in grade["rows"] if row["primary_pool"]
+    ])} for grade in grades]
+    return {
+        "primary": summary(rows),
+        "by_position": {position: summary([
+            row for row in rows if row["position"] == position
+        ]) for position in POSITIONS},
+        "true_cold_start_primary": summary([
+            row for row in rows if row["initialization_reason"] == "TRUE_COLD_START"
+        ]),
+        "weekly_strong_spearman": weekly,
+        "availability_counts": {
+            "active": sum(row["availability_status"] == "ACTIVE" for grade in grades for row in grade["rows"]),
+            "inactive": sum(row["availability_status"] == "INACTIVE" for grade in grades for row in grade["rows"]),
+        },
+        "largest_strong_misses": [{
+            "game_id": row["game_id"], "gsis_id": row["gsis_id"],
+            "fantasy_points": row["fantasy_points"],
+            "strong_prediction": row["strong_prediction"],
+            "strong_absolute_error": row["strong_absolute_error"],
+        } for row in sorted(
+            (row for grade in grades for row in grade["rows"]),
+            key=lambda row: (-row["strong_absolute_error"], row["game_id"], row["gsis_id"]),
+        )[:10]],
+        "coverage": {"provided_week_grades": input_count,
+                     "valid_week_grades": len(grades),
+                     "missing_weeks": len(set(range(1, 19)) - {grade["week"] for grade in grades}),
+                     "blocked_weeks": input_count - len(grades)},
+    }
+
+
+def _build_season_grade(week_grades, leakage_audit):
     verify_leakage_audit(leakage_audit)
     valid_grades, integrity = [], isinstance(week_grades, list)
     for grade in week_grades if integrity else ():
@@ -1371,6 +1454,7 @@ def grade_season(week_grades, leakage_audit):
             valid_grades.append(verify_week_grade(grade))
         except (TypeError, ValueError):
             integrity = False
+    valid_grades.sort(key=lambda grade: grade["week"])
     epochs = {
         (grade["model_version"], grade["config_sha256"], grade["code_sha"])
         for grade in valid_grades
@@ -1414,7 +1498,7 @@ def grade_season(week_grades, leakage_audit):
     audited_at = leakage_audit["audited_at"]
     audit_after_results = bool(
         result_times and parse_timestamp(audited_at, "leakage audited_at")
-        > max(result_times)[0]
+        >= max(result_times)[0]
     )
     checks = {
         "season_complete": complete,
@@ -1459,9 +1543,18 @@ def grade_season(week_grades, leakage_audit):
         "week_grade_sha256": sorted(
             grade["artifact_sha256"] for grade in valid_grades
         ),
+        "week_grade_bytes": [serialize_week_grade(grade) for grade in valid_grades],
+        "leakage_audit_bytes": canonical_json(leakage_audit) + "\n",
+        "diagnostics": _diagnostics(rows, valid_grades, len(week_grades) if isinstance(week_grades, list) else 0),
     }
     grade["artifact_sha256"] = _artifact_hash(grade)
-    return verify_season_grade(grade)
+    return grade
+
+
+def grade_season(week_grades, leakage_audit):
+    verify_leakage_audit(leakage_audit)
+    grade = _build_season_grade(week_grades, leakage_audit)
+    return grade if not grade["checks"]["artifact_integrity"] else verify_season_grade(grade)
 
 
 def verify_season_grade(grade):
@@ -1483,91 +1576,27 @@ def verify_season_grade(grade):
         or grade["leakage_audit_verdict"] not in {
             "CLEAN", "REVIEW REQUIRED", "NOT CLEAN",
         }
-        or not isinstance(grade["week_grade_sha256"], list)
-        or grade["week_grade_sha256"] != sorted(grade["week_grade_sha256"])
-        or not all(_hex_digest(value, 64) for value in grade["week_grade_sha256"])
-        or not isinstance(grade["weeks"], list)
-        or any(type(week) is not int or not 1 <= week <= 18
-               for week in grade["weeks"])
-        or grade["weeks"] != sorted(set(grade["weeks"]))
+        or not isinstance(grade["week_grade_bytes"], list)
+        or not isinstance(grade["leakage_audit_bytes"], str)
         or not _hex_digest(grade["artifact_sha256"], 64)
     ):
         raise ValueError("Season fantasy grade metadata is invalid")
-    for field, length in (("config_sha256", 64), ("code_sha", 40)):
-        if grade[field] is not None and not _hex_digest(grade[field], length):
-            raise ValueError("Season fantasy grade epoch is invalid")
-    if grade["model_version"] is not None and (
-        not isinstance(grade["model_version"], str)
-        or not grade["model_version"].strip()
-    ):
-        raise ValueError("Season fantasy grade epoch is invalid")
-    if any(value is None for value in (
-        grade["model_version"], grade["config_sha256"], grade["code_sha"]
-    )) and not all(value is None for value in (
-        grade["model_version"], grade["config_sha256"], grade["code_sha"]
-    )):
-        raise ValueError("Season fantasy grade epoch is invalid")
-    for field in ("leakage_audit_audited_at", "latest_result_captured_at"):
-        if grade[field] is not None:
-            parse_timestamp(grade[field], field)
-    metrics = grade["metrics"]
-    if (
-        not isinstance(metrics, dict) or set(metrics) != SEASON_METRIC_KEYS
-        or type(metrics["primary_count"]) is not int
-        or metrics["primary_count"] < 0
-        or type(metrics["weekly_wins"]) is not int
-        or metrics["weekly_wins"] < 0
-        or any(
-            value is not None and (
-                type(value) not in {int, float} or not math.isfinite(value)
-            )
-            for value in (metrics["null_mae"], metrics["strong_mae"])
-        )
-        or type(metrics["relative_improvement"]) not in {int, float}
-        or not math.isfinite(metrics["relative_improvement"])
-    ):
-        raise ValueError("Season fantasy grade metrics are invalid")
-    bootstrap = grade["bootstrap"]
-    if bootstrap is not None and (
-        not isinstance(bootstrap, dict) or set(bootstrap) != SEASON_BOOTSTRAP_KEYS
-        or bootstrap["seed"] != BOOTSTRAP_SEED
-        or bootstrap["samples"] != BOOTSTRAP_SAMPLES
-        or any(
-            type(bootstrap[field]) not in {int, float}
-            or not math.isfinite(bootstrap[field])
-            for field in ("mean", "lower", "upper")
-        )
-        or bootstrap["lower"] > bootstrap["upper"]
-    ):
-        raise ValueError("Season fantasy grade bootstrap is invalid")
-    checks = grade["checks"]
-    complete = grade["weeks"] == list(range(1, 19))
-    audit_after_results = bool(
-        grade["latest_result_captured_at"] is not None
-        and parse_timestamp(
-            grade["leakage_audit_audited_at"], "leakage_audit_audited_at"
-        ) > parse_timestamp(
-            grade["latest_result_captured_at"], "latest_result_captured_at"
-        )
-    )
-    if (
-        checks["season_complete"] != complete
-        or checks["common_model_epoch"] != all(value is not None for value in (
-            grade["model_version"], grade["config_sha256"], grade["code_sha"]
-        ))
-        or checks["leakage_audit_clean"] != (
-            grade["leakage_audit_verdict"] == "CLEAN"
-        )
-        or checks["leakage_audit_after_results"] != audit_after_results
-        or checks["relative_improvement_at_least_1pct"]
-        != (metrics["relative_improvement"] >= 0.01)
-        or checks["bootstrap_lower_positive"]
-        != bool(bootstrap is not None and bootstrap["lower"] > 0.0)
-        or checks["strict_majority_weekly_wins"] != (metrics["weekly_wins"] > 9)
-        or grade["status"] != _season_status(checks)
-        or grade["artifact_sha256"] != _artifact_hash(grade)
-    ):
-        raise ValueError("Season fantasy grade integrity is invalid")
+    try:
+        grade_bytes = [text.encode("utf-8") for text in grade["week_grade_bytes"]]
+        audit_bytes = grade["leakage_audit_bytes"].encode("utf-8")
+    except UnicodeEncodeError as error:
+        raise ValueError("Season fantasy grade evidence is invalid") from error
+    grades = [verify_week_grade(_decode_json(data, "weekly fantasy grade"))
+              for data in grade_bytes]
+    if any(data != serialize_week_grade(item).encode("utf-8")
+           for data, item in zip(grade_bytes, grades)):
+        raise ValueError("Season fantasy grade evidence is not canonical")
+    audit = verify_leakage_audit(_decode_json(audit_bytes, "prospective leakage audit"))
+    if audit_bytes != (canonical_json(audit) + "\n").encode("utf-8"):
+        raise ValueError("Season fantasy grade evidence is not canonical")
+    expected = _build_season_grade(grades, audit)
+    if not _matches_frozen_value(grade, expected):
+        raise ValueError("Season fantasy grade evidence binding is invalid")
     return grade
 
 
