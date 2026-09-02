@@ -1588,6 +1588,9 @@ def verify_season_grade(grade):
         }
         or not isinstance(grade["week_grade_bytes"], list)
         or not isinstance(grade["rejected_week_grade_bytes"], list)
+        or not all(isinstance(text, str) for text in (
+            grade["week_grade_bytes"] + grade["rejected_week_grade_bytes"]
+        ))
         or not isinstance(grade["leakage_audit_bytes"], str)
         or not _hex_digest(grade["artifact_sha256"], 64)
     ):

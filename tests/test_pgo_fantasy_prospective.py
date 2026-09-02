@@ -1288,6 +1288,15 @@ class ProspectiveSeasonGradeTests(
             prospective.serialize_season_grade(prospective.verify_season_grade(receipt)),
         )
 
+    def test_season_evidence_items_must_be_text(self):
+        receipt = prospective.grade_season(self.season_weeks(), self.audit())
+        for field in ("week_grade_bytes", "rejected_week_grade_bytes"):
+            changed = deepcopy(receipt)
+            changed[field] = [1]
+            changed["artifact_sha256"] = prospective._artifact_hash(changed)
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                prospective.serialize_season_grade(changed)
+
     def test_season_writer_never_overwrites_an_existing_artifact(self):
         receipt = prospective.grade_season(self.season_weeks(), self.audit())
         with tempfile.TemporaryDirectory() as directory:
