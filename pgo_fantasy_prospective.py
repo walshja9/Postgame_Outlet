@@ -78,8 +78,9 @@ RESULT_RECEIPT_KEYS = frozenset({
 })
 WEEK_GRADE_KEYS = frozenset({
     "schema_version", "artifact_kind", "status", "publication_status",
-    "season", "week", "model_version", "config_sha256", "lock_sha256",
-    "result_receipt", "checks", "metrics", "rows", "artifact_sha256",
+    "season", "week", "model_version", "config_sha256", "code_sha",
+    "lock_sha256", "lock_bytes", "result_receipt", "result_bytes",
+    "checks", "metrics", "rows", "artifact_sha256",
 })
 WEEK_ROW_FIELDS = frozenset(LOCK_PREDICTION_COLUMNS) | {
     "position_rank", "flex_rank", "superflex_rank", "fantasy_points",
@@ -1000,7 +1001,7 @@ def _mae(rows, prediction):
     ) / len(rows)
 
 
-def grade_week(loaded_locks, loaded_results):
+def _grade_week(loaded_locks, loaded_results):
     if not isinstance(loaded_locks, list) or not loaded_locks:
         raise ValueError("Weekly fantasy locks are missing")
     verify_loaded_results(loaded_results)
@@ -1020,10 +1021,10 @@ def grade_week(loaded_locks, loaded_results):
     first = locks[0]
     common = (
         first["season"], first["week"], first["model_version"],
-        first["config_sha256"],
+        first["config_sha256"], first["code_sha"],
     )
     if any(
-        (lock["season"], lock["week"], lock["model_version"], lock["config_sha256"])
+        (lock["season"], lock["week"], lock["model_version"], lock["config_sha256"], lock["code_sha"])
         != common for lock in locks
     ):
         raise ValueError("Weekly fantasy locks do not share one model epoch")
@@ -1078,9 +1079,13 @@ def grade_week(loaded_locks, loaded_results):
         "publication_status": "EXPERIMENTAL",
         "season": first["season"], "week": first["week"],
         "model_version": first["model_version"],
-        "config_sha256": first["config_sha256"],
+        "config_sha256": first["config_sha256"], "code_sha": first["code_sha"],
         "lock_sha256": sorted(loaded_hashes),
+        "lock_bytes": [data.decode("utf-8") for _, data in sorted(
+            zip(loaded_hashes, (loaded["bytes"] for loaded in loaded_locks))
+        )],
         "result_receipt": loaded_results["receipt"],
+        "result_bytes": loaded_results["bytes"].decode("utf-8"),
         "checks": {
             "complete_game_locks": True,
             "complete_game_results": True,
@@ -1098,7 +1103,42 @@ def grade_week(loaded_locks, loaded_results):
         "rows": sorted(rows, key=lambda row: (row["game_id"], row["gsis_id"])),
     }
     grade["artifact_sha256"] = _artifact_hash(grade)
-    return verify_week_grade(grade)
+    return grade
+
+
+def _grade_evidence(grade):
+    lock_bytes = grade["lock_bytes"]
+    if not isinstance(lock_bytes, list) or len(lock_bytes) != len(grade["lock_sha256"]):
+        raise ValueError("Weekly fantasy grade evidence is invalid")
+    locks = []
+    for text, sha256 in zip(lock_bytes, grade["lock_sha256"]):
+        if not isinstance(text, str):
+            raise ValueError("Weekly fantasy grade evidence is invalid")
+        try:
+            data = text.encode("utf-8")
+        except UnicodeEncodeError as error:
+            raise ValueError("Weekly fantasy grade evidence is invalid") from error
+        lock = _decode_json(data, "fantasy game lock")
+        verify_game_lock(lock)
+        if data != serialize_game_lock(lock).encode("utf-8") or (
+            hashlib.sha256(data).hexdigest() != sha256
+        ):
+            raise ValueError("Weekly fantasy grade evidence binding is invalid")
+        locks.append({"lock": lock, "bytes": data, "sha256": sha256})
+    if not isinstance(grade["result_bytes"], str):
+        raise ValueError("Weekly fantasy grade evidence is invalid")
+    try:
+        result_data = grade["result_bytes"].encode("utf-8")
+    except UnicodeEncodeError as error:
+        raise ValueError("Weekly fantasy grade evidence is invalid") from error
+    results = _results_from_bytes(result_data)
+    if not _matches_frozen_value(results["receipt"], grade["result_receipt"]):
+        raise ValueError("Weekly fantasy result receipt binding is invalid")
+    return locks, results
+
+
+def grade_week(loaded_locks, loaded_results):
+    return verify_week_grade(_grade_week(loaded_locks, loaded_results))
 
 
 def verify_week_grade(grade):
@@ -1110,11 +1150,12 @@ def verify_week_grade(grade):
         or grade["artifact_kind"] != "PGO_FANTASY_WEEK_GRADE"
         or grade["status"] != "HOLD"
         or grade["publication_status"] != "EXPERIMENTAL"
-        or grade["season"] != 2026
+        or type(grade["season"]) is not int or grade["season"] != 2026
         or type(grade["week"]) is not int or not 1 <= grade["week"] <= 18
         or not isinstance(grade["model_version"], str)
         or not grade["model_version"].strip()
         or not _hex_digest(grade["config_sha256"], 64)
+        or not _hex_digest(grade["code_sha"], 40)
         or not isinstance(grade["lock_sha256"], list)
         or grade["lock_sha256"] != sorted(set(grade["lock_sha256"]))
         or not grade["lock_sha256"]
@@ -1125,6 +1166,16 @@ def verify_week_grade(grade):
             "primary_pool_96": True,
             "exact_lock_binding": True,
         }
+    ):
+        raise ValueError("Weekly fantasy grade metadata is invalid")
+    if (
+        not isinstance(grade["checks"], dict)
+        or set(grade["checks"]) != {
+            "complete_game_locks", "complete_game_results", "primary_pool_96",
+            "exact_lock_binding",
+        }
+        or any(type(value) is not bool or value is not True
+               for value in grade["checks"].values())
     ):
         raise ValueError("Weekly fantasy grade metadata is invalid")
     _verify_result_receipt(grade["result_receipt"])
@@ -1154,6 +1205,14 @@ def verify_week_grade(grade):
             or type(row["primary_pool"]) is not bool
             or row["primary_pool"] != (key in primary)
             or type(actual) not in {int, float} or not math.isfinite(actual)
+            or any(
+                value is not None and type(value) is not int
+                for value in (row["position_rank"], row["flex_rank"], row["superflex_rank"])
+            )
+            or any(
+                type(row[field]) not in {int, float} or not math.isfinite(row[field])
+                for field in ("null_absolute_error", "strong_absolute_error", "improvement")
+            )
             or any(row[field] != reranked[key][field] for field in (
                 "position_rank", "flex_rank", "superflex_rank"
             ))
@@ -1177,10 +1236,27 @@ def verify_week_grade(grade):
         ),
         "strong_win": strong_mae < null_mae,
     }}
-    if grade["metrics"] != expected_metrics:
+    metrics = grade["metrics"]
+    primary_metrics = metrics.get("primary") if isinstance(metrics, dict) else None
+    if (
+        not isinstance(primary_metrics, dict)
+        or set(metrics) != {"primary"}
+        or set(primary_metrics) != set(expected_metrics["primary"])
+        or type(primary_metrics["count"]) is not int
+        or any(
+            type(primary_metrics[field]) not in {int, float}
+            or not math.isfinite(primary_metrics[field])
+            for field in ("null_mae", "strong_mae", "improvement", "relative_improvement")
+        )
+        or type(primary_metrics["strong_win"]) is not bool
+        or metrics != expected_metrics
+    ):
         raise ValueError("Weekly fantasy grade metrics are invalid")
     if grade["artifact_sha256"] != _artifact_hash(grade):
         raise ValueError("Weekly fantasy grade integrity is invalid")
+    locks, results = _grade_evidence(grade)
+    if not _matches_frozen_value(grade, _grade_week(locks, results)):
+        raise ValueError("Weekly fantasy grade evidence binding is invalid")
     return grade
 
 

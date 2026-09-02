@@ -1013,3 +1013,49 @@ class ProspectiveWeekGradeTests(
             first = (output / "fantasy_week_grade.json").read_bytes()
             self.assertFalse(prospective.write_week_grade(output, grade))
             self.assertEqual((output / "fantasy_week_grade.json").read_bytes(), first)
+
+    def test_grade_reconstructs_rows_from_exact_embedded_lock_bytes(self):
+        loaded_locks, results = self.week_evidence()
+        changed = prospective.grade_week(loaded_locks, results)
+        changed["rows"][0]["player_name"] = "rewritten"
+        changed["artifact_sha256"] = prospective._artifact_hash(changed)
+        with self.assertRaisesRegex(ValueError, "evidence binding"):
+            prospective.verify_week_grade(changed)
+
+    def test_grade_reconstructs_actuals_from_exact_embedded_result_bytes(self):
+        loaded_locks, results = self.week_evidence()
+        changed = prospective.grade_week(loaded_locks, results)
+        raw = json.loads(changed["result_bytes"])
+        raw["rows"][0]["receiving_yards"] += 100.0
+        changed["result_bytes"] = prospective.canonical_json(raw) + "\n"
+        changed["artifact_sha256"] = prospective._artifact_hash(changed)
+        with self.assertRaisesRegex(ValueError, "result receipt"):
+            prospective.verify_week_grade(changed)
+
+    def test_week_grade_rejects_mixed_code_epoch(self):
+        loaded_locks, results = self.week_evidence()
+        changed = deepcopy(loaded_locks[0])
+        changed["lock"]["code_sha"] = "b" * 40
+        changed["lock"]["artifact_sha256"] = prospective._artifact_hash(changed["lock"])
+        data = prospective.serialize_game_lock(changed["lock"]).encode("utf-8")
+        changed["bytes"] = data
+        changed["sha256"] = hashlib.sha256(data).hexdigest()
+        with self.assertRaisesRegex(ValueError, "one model epoch"):
+            prospective.grade_week([loaded_locks[0], changed], results)
+
+    def test_week_grade_rejects_python_equal_boolean_substitutions(self):
+        loaded_locks, results = self.week_evidence()
+        grade = prospective.grade_week(loaded_locks, results)
+        for field, value in (
+            (("checks", "primary_pool_96"), 1),
+            (("metrics", "primary", "strong_win"), 0),
+            (("rows", 0, "position_rank"), True),
+        ):
+            changed = deepcopy(grade)
+            target = changed
+            for key in field[:-1]:
+                target = target[key]
+            target[field[-1]] = value
+            changed["artifact_sha256"] = prospective._artifact_hash(changed)
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                prospective.verify_week_grade(changed)
