@@ -1059,3 +1059,169 @@ class ProspectiveWeekGradeTests(
             changed["artifact_sha256"] = prospective._artifact_hash(changed)
             with self.subTest(field=field), self.assertRaises(ValueError):
                 prospective.verify_week_grade(changed)
+
+
+class ProspectiveSeasonGradeTests(
+    ProspectiveFantasyFixture, unittest.TestCase
+):
+    def week_grade(self, week, strong_delta=1.0, code_sha="a" * 40):
+        locks, results = ProspectiveWeekGradeTests("runTest").week_evidence()
+        lock = deepcopy(locks[0]["lock"])
+        game_id = f"2026_{week:02d}_BUF_LAR"
+        lock["week"] = week
+        lock["game_id"] = game_id
+        lock["code_sha"] = code_sha
+        lock["scheduled_week_games"] = [game_id]
+        for row in lock["predictions"]:
+            row["week"] = week
+            row["game_id"] = game_id
+            row["null_prediction"] += strong_delta
+        lock["prediction_integrity_sha256"] = prospective._prediction_hash(
+            lock["predictions"]
+        )
+        lock["artifact_sha256"] = prospective._artifact_hash(lock)
+        lock_bytes = prospective.serialize_game_lock(lock).encode("utf-8")
+        loaded = {
+            "lock": lock,
+            "bytes": lock_bytes,
+            "sha256": hashlib.sha256(lock_bytes).hexdigest(),
+        }
+        snapshot = deepcopy(results["snapshot"])
+        for game in snapshot["games"]:
+            game["game_id"] = game_id
+        for row in snapshot["rows"]:
+            row["game_id"] = game_id
+        result_bytes = (prospective.canonical_json(snapshot) + "\n").encode("utf-8")
+        grade = prospective.grade_week(
+            [loaded], prospective._results_from_bytes(result_bytes)
+        )
+        self.assertEqual(sum(row["primary_pool"] for row in grade["rows"]), 96)
+        self.assertEqual(
+            len({(row["game_id"], row["gsis_id"]) for row in grade["rows"]
+                 if row["primary_pool"]}),
+            96,
+        )
+        return grade
+
+    @staticmethod
+    def audit(verdict="CLEAN", audited_at="2026-09-11T00:00:00-04:00"):
+        audit = {
+            "schema_version": 1,
+            "verdict": verdict,
+            "audited_at": audited_at,
+        }
+        audit["artifact_sha256"] = prospective._artifact_hash(audit)
+        return audit
+
+    def season_weeks(self, strong_delta=1.0):
+        return [self.week_grade(week, strong_delta) for week in range(1, 19)]
+
+    def test_complete_verified_weekly_evidence_passes_the_frozen_gate(self):
+        receipt = prospective.grade_season(self.season_weeks(), self.audit())
+        self.assertEqual(receipt["status"], "PASS")
+        self.assertEqual(receipt["publication_status"], "VALIDATED")
+        self.assertEqual(receipt["bootstrap"]["seed"], 20260901)
+        self.assertEqual(receipt["bootstrap"]["samples"], 10_000)
+        self.assertGreater(receipt["bootstrap"]["lower"], 0.0)
+        self.assertEqual(receipt["metrics"]["primary_count"], 18 * 96)
+        self.assertEqual(
+            prospective.serialize_season_grade(receipt),
+            prospective.serialize_season_grade(prospective.verify_season_grade(receipt)),
+        )
+        self.assertEqual(
+            prospective.serialize_season_grade(receipt),
+            prospective.serialize_season_grade(
+                prospective.grade_season(self.season_weeks(), self.audit())
+            ),
+        )
+
+    def test_missing_week_holds_but_duplicate_week_blocks(self):
+        weeks = self.season_weeks()
+        self.assertEqual(
+            prospective.grade_season(weeks[:-1], self.audit())["status"], "HOLD"
+        )
+        weeks[-1] = weeks[-2]
+        self.assertEqual(
+            prospective.grade_season(weeks, self.audit())["status"], "BLOCKED"
+        )
+
+    def test_mixed_code_sha_blocks_the_epoch(self):
+        weeks = self.season_weeks()
+        weeks[-1] = self.week_grade(18, code_sha="b" * 40)
+        receipt = prospective.grade_season(weeks, self.audit())
+        self.assertEqual(receipt["status"], "BLOCKED")
+        self.assertFalse(receipt["checks"]["common_model_epoch"])
+
+    def test_loaders_require_canonical_bytes_and_strict_values(self):
+        grade = self.week_grade(1)
+        audit = self.audit()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            grade_path = root / "grade.json"
+            audit_path = root / "audit.json"
+            grade_path.write_text(prospective.serialize_week_grade(grade), newline="")
+            audit_path.write_text(prospective.canonical_json(audit) + "\n", newline="")
+            self.assertEqual(prospective.load_week_grade(grade_path), grade)
+            self.assertEqual(prospective.load_leakage_audit(audit_path), audit)
+            grade_path.write_text(prospective.serialize_week_grade(grade) + " ", newline="")
+            with self.assertRaisesRegex(ValueError, "canonical"):
+                prospective.load_week_grade(grade_path)
+            audit_path.write_text(
+                prospective.canonical_json(audit) + "\n ", newline=""
+            )
+            with self.assertRaisesRegex(ValueError, "canonical"):
+                prospective.load_leakage_audit(audit_path)
+            audit_path.write_text(
+                prospective.canonical_json({**audit, "schema_version": True}) + "\n",
+                newline="",
+            )
+            with self.assertRaises(ValueError):
+                prospective.load_leakage_audit(audit_path)
+        receipt = prospective.grade_season(self.season_weeks(), self.audit())
+        for field, value in (
+            (("checks", "season_complete"), 1),
+            (("metrics", "primary_count"), True),
+            (("metrics", "null_mae"), float("nan")),
+            (("leakage_audit_audited_at",), "2026-09-10T00:30:00-04:00"),
+            (("weeks",), list(range(1, 18))),
+        ):
+            changed = deepcopy(receipt)
+            target = changed
+            for key in field[:-1]:
+                target = target[key]
+            target[field[-1]] = value
+            if not isinstance(value, float) or math.isfinite(value):
+                changed["artifact_sha256"] = prospective._artifact_hash(changed)
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                prospective.verify_season_grade(changed)
+
+    def test_full_season_statistical_shortfall_is_experimental_hold(self):
+        receipt = prospective.grade_season(self.season_weeks(0.0), self.audit())
+        self.assertEqual(receipt["status"], "HOLD")
+        self.assertEqual(receipt["publication_status"], "EXPERIMENTAL")
+        self.assertFalse(receipt["checks"]["relative_improvement_at_least_1pct"])
+
+    def test_audit_must_follow_the_latest_frozen_result_capture(self):
+        receipt = prospective.grade_season(
+            self.season_weeks(), self.audit(audited_at="2026-09-10T00:30:00-04:00")
+        )
+        self.assertEqual(receipt["status"], "BLOCKED")
+        self.assertFalse(receipt["checks"]["leakage_audit_after_results"])
+
+    def test_coordinated_weekly_artifact_mutation_still_blocks(self):
+        weeks = self.season_weeks()
+        weeks[-1]["rows"][0]["fantasy_points"] += 1.0
+        weeks[-1]["artifact_sha256"] = prospective._artifact_hash(weeks[-1])
+        receipt = prospective.grade_season(weeks, self.audit())
+        self.assertEqual(receipt["status"], "BLOCKED")
+        self.assertFalse(receipt["checks"]["artifact_integrity"])
+
+    def test_season_writer_never_overwrites_an_existing_artifact(self):
+        receipt = prospective.grade_season(self.season_weeks(), self.audit())
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "season"
+            self.assertTrue(prospective.write_season_grade(output, receipt))
+            path = output / "fantasy_season_grade.json"
+            first = path.read_bytes()
+            self.assertFalse(prospective.write_season_grade(output, receipt))
+            self.assertEqual(path.read_bytes(), first)

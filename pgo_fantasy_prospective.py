@@ -1270,3 +1270,314 @@ def write_week_grade(output_dir, grade):
     return pgo_prospective._write_new_outputs(output_dir, (
         (output_dir / "fantasy_week_grade.json", serialize_week_grade(grade)),
     ))
+
+
+BOOTSTRAP_SEED = 20260901
+BOOTSTRAP_SAMPLES = 10_000
+LEAKAGE_AUDIT_KEYS = frozenset({
+    "schema_version", "verdict", "audited_at", "artifact_sha256",
+})
+SEASON_GRADE_KEYS = frozenset({
+    "schema_version", "artifact_kind", "status", "publication_status",
+    "season", "model_version", "config_sha256", "code_sha", "checks",
+    "metrics", "bootstrap", "leakage_audit_sha256",
+    "leakage_audit_verdict", "leakage_audit_audited_at",
+    "latest_result_captured_at", "weeks",
+    "week_grade_sha256", "artifact_sha256",
+})
+SEASON_CHECK_KEYS = frozenset({
+    "season_complete", "common_model_epoch", "weekly_primary_pools",
+    "relative_improvement_at_least_1pct", "bootstrap_lower_positive",
+    "strict_majority_weekly_wins", "leakage_audit_clean",
+    "leakage_audit_after_results", "artifact_integrity",
+})
+SEASON_METRIC_KEYS = frozenset({
+    "primary_count", "null_mae", "strong_mae", "relative_improvement",
+    "weekly_wins",
+})
+SEASON_BOOTSTRAP_KEYS = frozenset({
+    "mean", "lower", "upper", "samples", "seed",
+})
+
+
+def load_week_grade(path):
+    data = Path(path).read_bytes()
+    grade = verify_week_grade(_decode_json(data, "weekly fantasy grade"))
+    if data != serialize_week_grade(grade).encode("utf-8"):
+        raise ValueError("Weekly fantasy grade is not canonical")
+    return grade
+
+
+def verify_leakage_audit(audit):
+    if (
+        not isinstance(audit, dict) or set(audit) != LEAKAGE_AUDIT_KEYS
+        or type(audit["schema_version"]) is not int
+        or audit["schema_version"] != 1
+        or audit["verdict"] not in {"CLEAN", "REVIEW REQUIRED", "NOT CLEAN"}
+        or not _hex_digest(audit["artifact_sha256"], 64)
+    ):
+        raise ValueError("Prospective leakage audit is invalid")
+    parse_timestamp(audit["audited_at"], "leakage audited_at")
+    if audit["artifact_sha256"] != _artifact_hash(audit):
+        raise ValueError("Prospective leakage audit integrity is invalid")
+    return audit
+
+
+def load_leakage_audit(path):
+    data = Path(path).read_bytes()
+    audit = verify_leakage_audit(
+        _decode_json(data, "prospective leakage audit")
+    )
+    if data != (canonical_json(audit) + "\n").encode("utf-8"):
+        raise ValueError("Prospective leakage audit is not canonical")
+    return audit
+
+
+def _bootstrap_rows(rows):
+    return [{
+        "season": row["season"], "week": row["week"],
+        "actual_margin": row["fantasy_points"],
+        "pgo_v0_prediction": row["null_prediction"],
+        "challenger_prediction": row["strong_prediction"],
+    } for row in rows]
+
+
+def _season_status(checks):
+    complete = checks["season_complete"]
+    blocked = (
+        not checks["artifact_integrity"]
+        or not checks["common_model_epoch"]
+        or (complete and not all((
+            checks["weekly_primary_pools"], checks["leakage_audit_clean"],
+            checks["leakage_audit_after_results"],
+        )))
+    )
+    statistical = all((
+        complete, checks["weekly_primary_pools"],
+        checks["relative_improvement_at_least_1pct"],
+        checks["bootstrap_lower_positive"],
+        checks["strict_majority_weekly_wins"],
+        checks["leakage_audit_clean"], checks["leakage_audit_after_results"],
+        checks["artifact_integrity"], checks["common_model_epoch"],
+    ))
+    return "BLOCKED" if blocked else "PASS" if statistical else "HOLD"
+
+
+def grade_season(week_grades, leakage_audit):
+    verify_leakage_audit(leakage_audit)
+    valid_grades, integrity = [], isinstance(week_grades, list)
+    for grade in week_grades if integrity else ():
+        try:
+            valid_grades.append(verify_week_grade(grade))
+        except (TypeError, ValueError):
+            integrity = False
+    epochs = {
+        (grade["model_version"], grade["config_sha256"], grade["code_sha"])
+        for grade in valid_grades
+    }
+    weeks = [grade["week"] for grade in valid_grades]
+    if len(weeks) != len(set(weeks)):
+        integrity = False
+    complete = len(valid_grades) == 18 and set(weeks) == set(range(1, 19))
+    common_epoch = len(epochs) == 1
+    weekly_primary_pools = bool(valid_grades) and all(
+        grade["metrics"]["primary"]["count"] == 96
+        and sum(row["primary_pool"] for row in grade["rows"]) == 96
+        and len({(row["game_id"], row["gsis_id"]) for row in grade["rows"]
+                 if row["primary_pool"]}) == 96
+        for grade in valid_grades
+    )
+    rows = [
+        row for grade in valid_grades for row in grade["rows"]
+        if row["primary_pool"] is True
+    ]
+    if not rows:
+        integrity = False
+    null_mae = _mae(rows, "null_prediction") if rows else None
+    strong_mae = _mae(rows, "strong_prediction") if rows else None
+    relative = (
+        (null_mae - strong_mae) / null_mae
+        if null_mae is not None and null_mae > 0.0 else 0.0
+    )
+    bootstrap = pgo_challenger.paired_block_bootstrap(
+        _bootstrap_rows(rows), BOOTSTRAP_SAMPLES, BOOTSTRAP_SEED
+    ) if rows else None
+    weekly_wins = sum(
+        grade["metrics"]["primary"]["strong_win"] for grade in valid_grades
+    )
+    result_times = [
+        (parse_timestamp(grade["result_receipt"]["captured_at"], "result capture"),
+         grade["result_receipt"]["captured_at"])
+        for grade in valid_grades
+    ]
+    latest_result = max(result_times)[1] if result_times else None
+    audited_at = leakage_audit["audited_at"]
+    audit_after_results = bool(
+        result_times and parse_timestamp(audited_at, "leakage audited_at")
+        > max(result_times)[0]
+    )
+    checks = {
+        "season_complete": complete,
+        "common_model_epoch": common_epoch,
+        "weekly_primary_pools": weekly_primary_pools,
+        "relative_improvement_at_least_1pct": relative >= 0.01,
+        "bootstrap_lower_positive": bool(
+            bootstrap is not None and bootstrap["lower"] > 0.0
+        ),
+        "strict_majority_weekly_wins": weekly_wins > 9,
+        "leakage_audit_clean": leakage_audit["verdict"] == "CLEAN",
+        "leakage_audit_after_results": audit_after_results,
+        "artifact_integrity": integrity,
+    }
+    status = _season_status(checks)
+    model_version, config_sha256, code_sha = (
+        next(iter(epochs)) if common_epoch else (None, None, None)
+    )
+    grade = {
+        "schema_version": 1,
+        "artifact_kind": "PGO_FANTASY_2026_SEASON_GRADE",
+        "status": status,
+        "publication_status": {
+            "PASS": "VALIDATED", "HOLD": "EXPERIMENTAL", "BLOCKED": "BLOCKED",
+        }[status],
+        "season": 2026,
+        "model_version": model_version,
+        "config_sha256": config_sha256,
+        "code_sha": code_sha,
+        "checks": checks,
+        "metrics": {
+            "primary_count": len(rows), "null_mae": null_mae,
+            "strong_mae": strong_mae, "relative_improvement": relative,
+            "weekly_wins": weekly_wins,
+        },
+        "bootstrap": bootstrap,
+        "leakage_audit_sha256": leakage_audit["artifact_sha256"],
+        "leakage_audit_verdict": leakage_audit["verdict"],
+        "leakage_audit_audited_at": audited_at,
+        "latest_result_captured_at": latest_result,
+        "weeks": sorted(set(weeks)),
+        "week_grade_sha256": sorted(
+            grade["artifact_sha256"] for grade in valid_grades
+        ),
+    }
+    grade["artifact_sha256"] = _artifact_hash(grade)
+    return verify_season_grade(grade)
+
+
+def verify_season_grade(grade):
+    if not isinstance(grade, dict) or set(grade) != SEASON_GRADE_KEYS:
+        raise ValueError("Season fantasy grade contract is invalid")
+    if (
+        type(grade["schema_version"]) is not int
+        or grade["schema_version"] != 1
+        or grade["artifact_kind"] != "PGO_FANTASY_2026_SEASON_GRADE"
+        or grade["status"] not in {"PASS", "HOLD", "BLOCKED"}
+        or grade["publication_status"] != {
+            "PASS": "VALIDATED", "HOLD": "EXPERIMENTAL", "BLOCKED": "BLOCKED",
+        }[grade["status"]]
+        or type(grade["season"]) is not int or grade["season"] != 2026
+        or not isinstance(grade["checks"], dict)
+        or set(grade["checks"]) != SEASON_CHECK_KEYS
+        or any(type(value) is not bool for value in grade["checks"].values())
+        or not _hex_digest(grade["leakage_audit_sha256"], 64)
+        or grade["leakage_audit_verdict"] not in {
+            "CLEAN", "REVIEW REQUIRED", "NOT CLEAN",
+        }
+        or not isinstance(grade["week_grade_sha256"], list)
+        or grade["week_grade_sha256"] != sorted(grade["week_grade_sha256"])
+        or not all(_hex_digest(value, 64) for value in grade["week_grade_sha256"])
+        or not isinstance(grade["weeks"], list)
+        or any(type(week) is not int or not 1 <= week <= 18
+               for week in grade["weeks"])
+        or grade["weeks"] != sorted(set(grade["weeks"]))
+        or not _hex_digest(grade["artifact_sha256"], 64)
+    ):
+        raise ValueError("Season fantasy grade metadata is invalid")
+    for field, length in (("config_sha256", 64), ("code_sha", 40)):
+        if grade[field] is not None and not _hex_digest(grade[field], length):
+            raise ValueError("Season fantasy grade epoch is invalid")
+    if grade["model_version"] is not None and (
+        not isinstance(grade["model_version"], str)
+        or not grade["model_version"].strip()
+    ):
+        raise ValueError("Season fantasy grade epoch is invalid")
+    if any(value is None for value in (
+        grade["model_version"], grade["config_sha256"], grade["code_sha"]
+    )) and not all(value is None for value in (
+        grade["model_version"], grade["config_sha256"], grade["code_sha"]
+    )):
+        raise ValueError("Season fantasy grade epoch is invalid")
+    for field in ("leakage_audit_audited_at", "latest_result_captured_at"):
+        if grade[field] is not None:
+            parse_timestamp(grade[field], field)
+    metrics = grade["metrics"]
+    if (
+        not isinstance(metrics, dict) or set(metrics) != SEASON_METRIC_KEYS
+        or type(metrics["primary_count"]) is not int
+        or metrics["primary_count"] < 0
+        or type(metrics["weekly_wins"]) is not int
+        or metrics["weekly_wins"] < 0
+        or any(
+            value is not None and (
+                type(value) not in {int, float} or not math.isfinite(value)
+            )
+            for value in (metrics["null_mae"], metrics["strong_mae"])
+        )
+        or type(metrics["relative_improvement"]) not in {int, float}
+        or not math.isfinite(metrics["relative_improvement"])
+    ):
+        raise ValueError("Season fantasy grade metrics are invalid")
+    bootstrap = grade["bootstrap"]
+    if bootstrap is not None and (
+        not isinstance(bootstrap, dict) or set(bootstrap) != SEASON_BOOTSTRAP_KEYS
+        or bootstrap["seed"] != BOOTSTRAP_SEED
+        or bootstrap["samples"] != BOOTSTRAP_SAMPLES
+        or any(
+            type(bootstrap[field]) not in {int, float}
+            or not math.isfinite(bootstrap[field])
+            for field in ("mean", "lower", "upper")
+        )
+        or bootstrap["lower"] > bootstrap["upper"]
+    ):
+        raise ValueError("Season fantasy grade bootstrap is invalid")
+    checks = grade["checks"]
+    complete = grade["weeks"] == list(range(1, 19))
+    audit_after_results = bool(
+        grade["latest_result_captured_at"] is not None
+        and parse_timestamp(
+            grade["leakage_audit_audited_at"], "leakage_audit_audited_at"
+        ) > parse_timestamp(
+            grade["latest_result_captured_at"], "latest_result_captured_at"
+        )
+    )
+    if (
+        checks["season_complete"] != complete
+        or checks["common_model_epoch"] != all(value is not None for value in (
+            grade["model_version"], grade["config_sha256"], grade["code_sha"]
+        ))
+        or checks["leakage_audit_clean"] != (
+            grade["leakage_audit_verdict"] == "CLEAN"
+        )
+        or checks["leakage_audit_after_results"] != audit_after_results
+        or checks["relative_improvement_at_least_1pct"]
+        != (metrics["relative_improvement"] >= 0.01)
+        or checks["bootstrap_lower_positive"]
+        != bool(bootstrap is not None and bootstrap["lower"] > 0.0)
+        or checks["strict_majority_weekly_wins"] != (metrics["weekly_wins"] > 9)
+        or grade["status"] != _season_status(checks)
+        or grade["artifact_sha256"] != _artifact_hash(grade)
+    ):
+        raise ValueError("Season fantasy grade integrity is invalid")
+    return grade
+
+
+def serialize_season_grade(grade):
+    verify_season_grade(grade)
+    return canonical_json(grade) + "\n"
+
+
+def write_season_grade(output_dir, grade):
+    output_dir = Path(output_dir)
+    return pgo_prospective._write_new_outputs(output_dir, (
+        (output_dir / "fantasy_season_grade.json", serialize_season_grade(grade)),
+    ))
