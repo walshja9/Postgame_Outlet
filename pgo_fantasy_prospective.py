@@ -189,6 +189,7 @@ def _validate_row(row, kind, teams):
         for field in ("gsis_id", "position"):
             _row_text(row, field, kind)
         _row_team(row, "team", teams, kind)
+        pgo_fantasy.half_ppr(row)
 
 
 def _snapshot_from_bytes(data, kind):

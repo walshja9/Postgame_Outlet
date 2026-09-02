@@ -284,6 +284,29 @@ class ProspectiveSourceBoundaryTests(
                     with self.assertRaises(ValueError):
                         prospective.load_snapshot(path, kind)
 
+    def test_history_rejects_invalid_scoring_values(self):
+        values, _ = self.source_values()
+        history = values["history"]["rows"][0]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for index, field in enumerate(sorted(pgo_fantasy.SCORING_FIELDS)):
+                with self.subTest(field=field):
+                    payload = dict(values["history"])
+                    payload["rows"] = [{**history, field: "not-a-number"}]
+                    path = self.write_json(root / f"{index}.json", payload)
+                    with self.assertRaises(ValueError):
+                        prospective.load_snapshot(path, "history")
+
+            overflow = Path(root / "overflow.json")
+            overflow.write_text(
+                prospective.canonical_json(values["history"]).replace(
+                    '"receiving_yards":100.0', '"receiving_yards":1e999'
+                ) + "\n",
+                encoding="utf-8", newline="",
+            )
+            with self.assertRaises(ValueError):
+                prospective.load_snapshot(overflow, "history")
+
     def test_model_config_requires_exact_canonical_frozen_contract(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
