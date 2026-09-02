@@ -107,6 +107,7 @@ Validation requires:
 - a normalized current team;
 - exact position `QB`;
 - an exact integer `depth_rank > 0` with booleans rejected;
+- canonical row order by `(team, depth_rank, gsis_id)`;
 - one row per current ACT-roster QB in the required teams;
 - no extra, duplicate, or display-name-only identity;
 - the same team in roster and depth sources;
@@ -176,6 +177,10 @@ The depth source must appear in:
 - prediction-integrity and artifact hashes through the new row schema; and
 - reconstructive week and season grading through the exact embedded lock bytes.
 
+The prospective leakage-audit contract advances to v2 and adds an explicit
+`qb_depth_eligibility` inventory item covering source vintage, pre-T chronology,
+roster authority, and the one-QB selection rule.
+
 The lock verifier must allow an ACTIVE QB to be ineligible only when another
 non-inactive QB on the same team has the lower frozen depth rank. It must still
 reject an ACTIVE, ineligible RB, WR, or TE.
@@ -215,7 +220,9 @@ Focused tests must prove:
 - strict type checks reject boolean, float, zero, and negative depth ranks;
 - missing, extra, duplicate, team-mismatched, position-mismatched, and late
   depth evidence fails closed;
-- reordered valid source rows produce byte-identical canonical artifacts;
+- noncanonical depth-row order is rejected before projection;
+- any change to the frozen source bytes changes its receipt and downstream
+  artifact hashes;
 - preview coverage, lock receipts, prediction hashes, week grades, and season
   evidence bind the exact depth bytes;
 - a coordinated rehash cannot replace the original depth evidence;
