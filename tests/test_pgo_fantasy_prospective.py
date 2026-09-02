@@ -642,3 +642,108 @@ class ProspectiveProjectionTests(
                             candidate_sources, candidate_model, 1,
                             "2026-09-09T19:30:00-04:00",
                         )
+
+
+class ProspectiveGameLockTests(
+    ProspectiveFantasyFixture, unittest.TestCase
+):
+    def test_lock_is_canonical_deterministic_and_bound_to_predictions(self):
+        with tempfile.TemporaryDirectory() as directory:
+            sources, model, game_id = self.loaded_sources(directory)
+            first = prospective.build_game_lock(
+                sources, model, game_id, self.LOCKED_AT, "a" * 40
+            )
+            second = prospective.build_game_lock(
+                dict(reversed(list(sources.items()))), model, game_id,
+                self.LOCKED_AT, "a" * 40,
+            )
+        self.assertEqual(first, second)
+        self.assertEqual(first["status"], "LOCKED")
+        self.assertEqual(
+            prospective.serialize_game_lock(first),
+            prospective.serialize_game_lock(second),
+        )
+        changed = json.loads(prospective.serialize_game_lock(first))
+        next(
+            row for row in changed["predictions"]
+            if row["availability_status"] == "ACTIVE"
+        )["strong_prediction"] += 1.0
+        with self.assertRaisesRegex(ValueError, "integrity"):
+            prospective.verify_game_lock(changed)
+
+    def test_after_t_lock_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            sources, model, game_id = self.loaded_sources(directory)
+            with self.assertRaisesRegex(ValueError, "T-60"):
+                prospective.build_game_lock(
+                    sources, model, game_id,
+                    "2026-09-09T19:20:01-04:00", "a" * 40,
+                )
+
+    def test_lock_rejects_mutated_source_view_and_incomplete_team_coverage(self):
+        with tempfile.TemporaryDirectory() as directory:
+            sources, model, game_id = self.loaded_sources(directory)
+            sources["schedule"]["snapshot"]["rows"][0]["home_team"] = "SF"
+            with self.assertRaisesRegex(ValueError, "frozen bytes"):
+                prospective.build_game_lock(
+                    sources, model, game_id, self.LOCKED_AT, "a" * 40
+                )
+
+            sources, model, game_id = self.loaded_sources(
+                Path(directory) / "coverage"
+            )
+            incomplete = json.loads(json.dumps(
+                sources["availability"]["snapshot"]
+            ))
+            incomplete["teams_processed"] = ["BUF"]
+            sources["availability"] = prospective.load_snapshot(
+                self.write_json(
+                    Path(directory) / "incomplete.json", incomplete
+                ),
+                "availability",
+            )
+            with self.assertRaisesRegex(ValueError, "coverage"):
+                prospective.build_game_lock(
+                    sources, model, game_id, self.LOCKED_AT, "a" * 40
+                )
+
+    def test_lock_writer_never_overwrites_existing_package(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            sources, model, game_id = self.loaded_sources(root / "inputs")
+            lock = prospective.build_game_lock(
+                sources, model, game_id, self.LOCKED_AT, "a" * 40
+            )
+            output = root / "lock"
+            self.assertTrue(prospective.write_game_lock(output, lock))
+            first = (output / "fantasy_lock.json").read_bytes()
+            self.assertFalse(prospective.write_game_lock(output, lock))
+            self.assertEqual((output / "fantasy_lock.json").read_bytes(), first)
+
+    def test_rescheduled_lock_does_not_rewrite_old_lock(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            sources, model, game_id = self.loaded_sources(root / "inputs")
+            old = prospective.build_game_lock(
+                sources, model, game_id, self.LOCKED_AT, "a" * 40
+            )
+            old_dir = root / "old"
+            self.assertTrue(prospective.write_game_lock(old_dir, old))
+            original = (old_dir / "fantasy_lock.json").read_bytes()
+            rescheduled = json.loads(json.dumps(
+                sources["schedule"]["snapshot"]
+            ))
+            rescheduled["rows"][0]["kickoff"] = (
+                "2026-09-10T20:20:00-04:00"
+            )
+            sources["schedule"] = prospective.load_snapshot(
+                self.write_json(root / "rescheduled.json", rescheduled),
+                "schedule",
+            )
+            new = prospective.build_game_lock(
+                sources, model, game_id,
+                "2026-09-10T19:20:00-04:00", "a" * 40,
+            )
+            self.assertTrue(prospective.write_game_lock(root / "new", new))
+            self.assertEqual((old_dir / "fantasy_lock.json").read_bytes(), original)
+            self.assertNotEqual(old["artifact_sha256"], new["artifact_sha256"])

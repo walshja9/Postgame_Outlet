@@ -48,6 +48,24 @@ CONFIG_KEYS = frozenset({
 POSITIONS = ("QB", "RB", "WR", "TE")
 LOCK_KIND = "PGO_FANTASY_T60_GAME_LOCK"
 PREVIEW_KIND = "PGO_FANTASY_WEEKLY_PREVIEW"
+LOCK_KEYS = frozenset({
+    "schema_version", "artifact_kind", "status", "publication_status",
+    "season", "week", "game_id", "kickoff", "away", "home",
+    "decision_time", "locked_at", "teams_processed", "row_count", "coverage",
+    "model_version", "config_sha256", "code_sha", "scheduled_week_games",
+    "source_receipts", "source_receipts_sha256", "predictions",
+    "prediction_integrity_sha256", "artifact_sha256",
+})
+LOCK_PREDICTION_COLUMNS = (
+    "season", "week", "game_id", "gsis_id", "player_name", "team",
+    "opponent", "position", "null_prediction", "strong_prediction",
+    "history_count", "initialization_reason", "availability_status",
+    "ranking_eligible", "config_sha256",
+)
+SOURCE_RECEIPT_KEYS = frozenset({
+    "schema_version", "kind", "source", "source_as_of", "captured_at",
+    "teams_processed", "bytes", "sha256", "rows",
+})
 
 
 def canonical_json(value):
@@ -628,3 +646,213 @@ def serialize_preview(preview):
     if preview.get("artifact_sha256") != _artifact_hash(preview):
         raise ValueError("Preview artifact hash is invalid")
     return canonical_json(preview) + "\n"
+
+
+def _validate_lock_predictions(rows, lock=None):
+    if not isinstance(rows, list) or not rows:
+        raise ValueError("Fantasy game lock predictions are invalid")
+    seen = set()
+    for row in rows:
+        if not isinstance(row, dict) or set(row) != set(LOCK_PREDICTION_COLUMNS):
+            raise ValueError("Fantasy game lock prediction row is invalid")
+        key = row["game_id"], row["gsis_id"]
+        values = row["null_prediction"], row["strong_prediction"]
+        if (
+            not all(isinstance(value, str) and value.strip() for value in (
+                row["game_id"], row["gsis_id"], row["player_name"],
+                row["team"], row["opponent"], row["position"],
+                row["initialization_reason"], row["availability_status"],
+                row["config_sha256"],
+            ))
+            or key in seen
+            or type(row["season"]) is not int or row["season"] != 2026
+            or type(row["week"]) is not int or not 1 <= row["week"] <= 18
+            or row["position"] not in POSITIONS
+            or row["initialization_reason"] not in {"HISTORY", "TRUE_COLD_START"}
+            or row["availability_status"] not in {"ACTIVE", "INACTIVE"}
+            or type(row["ranking_eligible"]) is not bool
+            or type(row["history_count"]) is not int
+            or not 0 <= row["history_count"] <= 8
+            or not all(
+                type(value) in {int, float} and math.isfinite(value)
+                for value in values
+            )
+        ):
+            raise ValueError("Fantasy game lock prediction row is invalid")
+        seen.add(key)
+        if row["availability_status"] == "INACTIVE" and (
+            values != (0.0, 0.0) or row["ranking_eligible"]
+        ):
+            raise ValueError("Inactive fantasy lock row is invalid")
+        if row["availability_status"] == "ACTIVE" and not row["ranking_eligible"]:
+            raise ValueError("Active fantasy lock row is invalid")
+        if lock is not None and (
+            row["season"] != lock["season"] or row["week"] != lock["week"]
+            or row["game_id"] != lock["game_id"]
+            or row["team"] not in lock["teams_processed"]
+            or row["opponent"] not in lock["teams_processed"]
+            or row["team"] == row["opponent"]
+            or row["config_sha256"] != lock["config_sha256"]
+        ):
+            raise ValueError("Fantasy game lock prediction context is invalid")
+    if rows != sorted(rows, key=lambda row: (row["game_id"], row["gsis_id"])):
+        raise ValueError("Fantasy game lock predictions are not canonical")
+    return rows
+
+
+def _prediction_hash(rows):
+    _validate_lock_predictions(rows)
+    values = [
+        {key: row[key] for key in LOCK_PREDICTION_COLUMNS}
+        for row in sorted(rows, key=lambda row: (row["game_id"], row["gsis_id"]))
+    ]
+    return hashlib.sha256(canonical_json(values).encode("utf-8")).hexdigest()
+
+
+def build_game_lock(sources, model, game_id, locked_at, code_sha):
+    if not _hex_digest(code_sha, 40):
+        raise ValueError("Code SHA is invalid")
+    projected = project_game(sources, model, game_id, locked_at, lock_mode=True)
+    receipts = [deepcopy(sources[kind]["receipt"]) for kind in SOURCE_KINDS]
+    lock = {
+        "schema_version": 1,
+        "artifact_kind": LOCK_KIND,
+        "status": "LOCKED",
+        "publication_status": "EXPERIMENTAL",
+        **projected["game"],
+        "decision_time": projected["decision_time"],
+        "locked_at": locked_at,
+        "model_version": model["config"]["model_version"],
+        "config_sha256": model["sha256"],
+        "code_sha": code_sha,
+        "teams_processed": sorted((
+            projected["game"]["away"], projected["game"]["home"]
+        )),
+        "row_count": len(projected["rows"]),
+        "coverage": {"roster": True, "availability": True},
+        "scheduled_week_games": projected["scheduled_week_games"],
+        "source_receipts": receipts,
+        "source_receipts_sha256": hashlib.sha256(
+            canonical_json(receipts).encode("utf-8")
+        ).hexdigest(),
+        "predictions": projected["rows"],
+    }
+    lock["prediction_integrity_sha256"] = _prediction_hash(lock["predictions"])
+    lock["artifact_sha256"] = _artifact_hash(lock)
+    return verify_game_lock(lock)
+
+
+def verify_game_lock(lock):
+    if not isinstance(lock, dict) or set(lock) != LOCK_KEYS:
+        raise ValueError("Fantasy game lock contract is invalid")
+    if (
+        type(lock["schema_version"]) is not int or lock["schema_version"] != 1
+        or lock["artifact_kind"] != LOCK_KIND or lock["status"] != "LOCKED"
+        or lock["publication_status"] != "EXPERIMENTAL"
+        or type(lock["season"]) is not int or lock["season"] != 2026
+        or type(lock["week"]) is not int or not 1 <= lock["week"] <= 18
+        or not isinstance(lock["game_id"], str) or not lock["game_id"].strip()
+        or not isinstance(lock["model_version"], str)
+        or not lock["model_version"].strip()
+        or not _hex_digest(lock["code_sha"], 40)
+        or not _hex_digest(lock["config_sha256"], 64)
+        or lock["teams_processed"] != sorted((lock["away"], lock["home"]))
+        or len(set(lock["teams_processed"])) != 2
+        or type(lock["row_count"]) is not int or lock["row_count"] <= 0
+        or lock["row_count"] != len(lock["predictions"])
+        or lock["coverage"] != {"roster": True, "availability": True}
+        or lock["scheduled_week_games"] != sorted(set(lock["scheduled_week_games"]))
+        or lock["game_id"] not in lock["scheduled_week_games"]
+        or lock["prediction_integrity_sha256"] != _prediction_hash(lock["predictions"])
+        or lock["source_receipts_sha256"] != hashlib.sha256(
+            canonical_json(lock["source_receipts"]).encode("utf-8")
+        ).hexdigest()
+        or lock["artifact_sha256"] != _artifact_hash(lock)
+    ):
+        raise ValueError("Fantasy game lock integrity is invalid")
+    if (
+        normalize_team(lock["away"]) != lock["away"]
+        or normalize_team(lock["home"]) != lock["home"]
+    ):
+        raise ValueError("Fantasy game lock teams are invalid")
+    _validate_lock_predictions(lock["predictions"], lock)
+    receipts = lock["source_receipts"]
+    if (
+        not isinstance(receipts, list)
+        or len(receipts) != len(SOURCE_KINDS)
+        or any(not isinstance(receipt, dict) for receipt in receipts)
+        or [receipt.get("kind") for receipt in receipts] != list(SOURCE_KINDS)
+        or any(
+            set(receipt) != SOURCE_RECEIPT_KEYS
+            or type(receipt["schema_version"]) is not int
+            or receipt["schema_version"] != 1
+            or not isinstance(receipt["source"], str)
+            or not receipt["source"].strip()
+            or type(receipt["bytes"]) is not int or receipt["bytes"] <= 0
+            or type(receipt["rows"]) is not int or receipt["rows"] < 0
+            or not _hex_digest(receipt["sha256"], 64)
+            for receipt in receipts
+        )
+    ):
+        raise ValueError("Fantasy game lock source receipts are invalid")
+    coverage = {
+        receipt["kind"]: set(lock["teams_processed"])
+        <= set(receipt["teams_processed"])
+        for receipt in receipts
+    }
+    if not coverage["roster"] or not coverage["availability"]:
+        raise ValueError("Fantasy game lock source coverage is invalid")
+    kickoff = parse_timestamp(lock["kickoff"], "kickoff")
+    decision = parse_timestamp(lock["decision_time"], "decision_time")
+    locked = parse_timestamp(lock["locked_at"], "locked_at")
+    if decision != kickoff - timedelta(minutes=60) or locked > decision:
+        raise ValueError("Fantasy game lock T-60 integrity is invalid")
+    for receipt in receipts:
+        captured = parse_timestamp(
+            receipt["captured_at"], f"{receipt['kind']} captured_at"
+        )
+        if captured > locked:
+            raise ValueError("Fantasy game lock source timing is invalid")
+        if receipt["source_as_of"] is not None and parse_timestamp(
+            receipt["source_as_of"], f"{receipt['kind']} source_as_of"
+        ) > captured:
+            raise ValueError("Fantasy game lock source timing is invalid")
+    return lock
+
+
+def serialize_game_lock(lock):
+    verify_game_lock(lock)
+    return canonical_json(lock) + "\n"
+
+
+def game_prediction_csv(lock):
+    verify_game_lock(lock)
+    output = io.StringIO(newline="")
+    writer = csv.DictWriter(
+        output, fieldnames=LOCK_PREDICTION_COLUMNS, lineterminator="\n"
+    )
+    writer.writeheader()
+    for row in lock["predictions"]:
+        writer.writerow({key: row[key] for key in LOCK_PREDICTION_COLUMNS})
+    return output.getvalue()
+
+
+def load_game_lock(path):
+    data = Path(path).read_bytes()
+    lock = _decode_json(data, "fantasy game lock")
+    verify_game_lock(lock)
+    if data != serialize_game_lock(lock).encode("utf-8"):
+        raise ValueError("Fantasy game lock is not canonical")
+    return {
+        "lock": lock, "bytes": data,
+        "sha256": hashlib.sha256(data).hexdigest(),
+    }
+
+
+def write_game_lock(output_dir, lock):
+    output_dir = Path(output_dir)
+    outputs = (
+        (output_dir / "fantasy_lock.json", serialize_game_lock(lock)),
+        (output_dir / "fantasy_predictions.csv", game_prediction_csv(lock)),
+    )
+    return pgo_prospective._write_new_outputs(output_dir, outputs)
