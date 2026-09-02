@@ -810,6 +810,15 @@ class ProspectiveProjectionTests(
             ["BUF", "LAR"],
         )
 
+    def test_preview_reports_depth_coverage(self):
+        with tempfile.TemporaryDirectory() as directory:
+            sources, model, _ = self.loaded_sources(directory, availability=False)
+            preview = prospective.build_preview(sources, model, 1, self.CAPTURED)
+        self.assertEqual(preview["source_coverage"]["depth"]["missing"], [])
+        self.assertEqual(
+            preview["source_coverage"]["depth"]["processed"], ["BUF", "LAR"]
+        )
+
     def test_preview_blocks_incomplete_roster_or_depth_team_coverage(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -1043,6 +1052,18 @@ class ProspectiveGameLockTests(
                 )
                 changed["artifact_sha256"] = prospective._artifact_hash(changed)
                 prospective.verify_game_lock(changed)
+
+    def test_lock_binds_the_exact_depth_receipt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            sources, model, game_id = self.loaded_sources(directory)
+            lock = prospective.build_game_lock(
+                sources, model, game_id, self.LOCKED_AT, "a" * 40
+            )
+        receipt = next(
+            item for item in lock["source_receipts"] if item["kind"] == "depth"
+        )
+        self.assertEqual(receipt, sources["depth"]["receipt"])
+        self.assertTrue(lock["coverage"]["depth"])
 
     def test_after_t_lock_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -1486,6 +1507,21 @@ class ProspectiveWeekGradeTests(
         with self.assertRaisesRegex(ValueError, "evidence binding"):
             prospective.verify_week_grade(changed)
 
+    def test_grade_rejects_a_rehashed_depth_receipt_detached_from_lock_bytes(self):
+        loaded_locks, results = self.week_evidence()
+        changed = deepcopy(loaded_locks)
+        lock = changed[0]["lock"]
+        receipt = next(
+            item for item in lock["source_receipts"] if item["kind"] == "depth"
+        )
+        receipt["sha256"] = "0" * 64
+        lock["source_receipts_sha256"] = hashlib.sha256(
+            prospective.canonical_json(lock["source_receipts"]).encode("utf-8")
+        ).hexdigest()
+        lock["artifact_sha256"] = prospective._artifact_hash(lock)
+        with self.assertRaisesRegex(ValueError, "bytes are not exact"):
+            prospective.grade_week(changed, results)
+
     def test_grade_reconstructs_actuals_from_exact_embedded_result_bytes(self):
         loaded_locks, results = self.week_evidence()
         changed = prospective.grade_week(loaded_locks, results)
@@ -1922,6 +1958,35 @@ class ProspectiveFantasyCommandTests(
                 "--output", str(paths["schedule"]),
             ]), 1)
             self.assertEqual(paths["schedule"].read_bytes(), first)
+
+    def test_depth_input_is_protected_and_late_depth_writes_nothing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            paths = self.command_fixture(Path(directory))
+            original = paths["depth"].read_bytes()
+            self.assertEqual(prospective.main([
+                "preview", "--schedule", str(paths["schedule"]),
+                "--roster", str(paths["roster"]),
+                "--depth", str(paths["depth"]),
+                "--history", str(paths["history"]),
+                "--config", str(paths["config"]),
+                "--week", "1", "--as-of", self.CAPTURED,
+                "--output", str(paths["depth"]),
+            ]), 1)
+            self.assertEqual(paths["depth"].read_bytes(), original)
+
+            late = self.depth_envelope(captured="2026-09-09T19:00:00-04:00")
+            self.write_json(paths["depth"], late)
+            output = paths["root"] / "late-preview.json"
+            self.assertEqual(prospective.main([
+                "preview", "--schedule", str(paths["schedule"]),
+                "--roster", str(paths["roster"]),
+                "--depth", str(paths["depth"]),
+                "--history", str(paths["history"]),
+                "--config", str(paths["config"]),
+                "--week", "1", "--as-of", self.CAPTURED,
+                "--output", str(output),
+            ]), 1)
+            self.assertFalse(output.exists())
 
     def test_unbound_position_means_block_preview_and_lock_before_outputs(self):
         with tempfile.TemporaryDirectory() as directory:
