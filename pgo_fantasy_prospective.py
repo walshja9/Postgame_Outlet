@@ -795,10 +795,21 @@ def verify_game_lock(lock):
         )
     ):
         raise ValueError("Fantasy game lock source receipts are invalid")
+    try:
+        receipt_teams = {
+            receipt["kind"]: _validated_teams(
+                receipt["teams_processed"], f"{receipt['kind']} receipt"
+            )
+            for receipt in receipts
+        }
+    except (AttributeError, TypeError, ValueError) as error:
+        raise ValueError("Fantasy game lock source receipts are invalid") from error
+    if any(receipt["teams_processed"] != receipt_teams[receipt["kind"]]
+           for receipt in receipts):
+        raise ValueError("Fantasy game lock source receipts are invalid")
     coverage = {
-        receipt["kind"]: set(lock["teams_processed"])
-        <= set(receipt["teams_processed"])
-        for receipt in receipts
+        kind: set(lock["teams_processed"]) <= set(teams)
+        for kind, teams in receipt_teams.items()
     }
     if not coverage["roster"] or not coverage["availability"]:
         raise ValueError("Fantasy game lock source coverage is invalid")

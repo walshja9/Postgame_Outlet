@@ -747,3 +747,58 @@ class ProspectiveGameLockTests(
             self.assertTrue(prospective.write_game_lock(root / "new", new))
             self.assertEqual((old_dir / "fantasy_lock.json").read_bytes(), original)
             self.assertNotEqual(old["artifact_sha256"], new["artifact_sha256"])
+
+    def test_lock_rejects_rehashed_noncanonical_receipt_teams(self):
+        with tempfile.TemporaryDirectory() as directory:
+            sources, model, game_id = self.loaded_sources(directory)
+            changed = prospective.build_game_lock(
+                sources, model, game_id, self.LOCKED_AT, "a" * 40
+            )
+        changed["source_receipts"][0]["teams_processed"] = [
+            "BUF", "BUF", "LAR"
+        ]
+        changed["source_receipts_sha256"] = hashlib.sha256(
+            prospective.canonical_json(changed["source_receipts"]).encode("utf-8")
+        ).hexdigest()
+        changed["artifact_sha256"] = prospective._artifact_hash(changed)
+        with self.assertRaisesRegex(ValueError, "source receipts"):
+            prospective.verify_game_lock(changed)
+
+    def test_load_game_lock_returns_exact_bytes_sha_and_lf_csv(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            sources, model, game_id = self.loaded_sources(root / "inputs")
+            lock = prospective.build_game_lock(
+                sources, model, game_id, self.LOCKED_AT, "a" * 40
+            )
+            data = prospective.serialize_game_lock(lock).encode("utf-8")
+            path = root / "fantasy_lock.json"
+            path.write_bytes(data)
+            loaded = prospective.load_game_lock(path)
+        self.assertEqual(loaded["lock"], lock)
+        self.assertEqual(loaded["bytes"], data)
+        self.assertEqual(loaded["sha256"], hashlib.sha256(data).hexdigest())
+        csv_text = prospective.game_prediction_csv(lock)
+        self.assertTrue(csv_text.endswith("\n"))
+        self.assertNotIn("\r", csv_text)
+        self.assertEqual(
+            csv_text.splitlines()[0], ",".join(prospective.LOCK_PREDICTION_COLUMNS)
+        )
+
+    def test_load_game_lock_rejects_noncanonical_and_duplicate_json(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            sources, model, game_id = self.loaded_sources(root / "inputs")
+            lock = prospective.build_game_lock(
+                sources, model, game_id, self.LOCKED_AT, "a" * 40
+            )
+            noncanonical = root / "noncanonical.json"
+            noncanonical.write_bytes(
+                b"\n" + prospective.serialize_game_lock(lock).encode("utf-8")
+            )
+            duplicate = root / "duplicate.json"
+            duplicate.write_bytes(b'{"schema_version":1,"schema_version":1}\n')
+            with self.assertRaisesRegex(ValueError, "canonical"):
+                prospective.load_game_lock(noncanonical)
+            with self.assertRaisesRegex(ValueError, "invalid JSON"):
+                prospective.load_game_lock(duplicate)
