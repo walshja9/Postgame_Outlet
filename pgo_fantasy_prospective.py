@@ -1284,7 +1284,7 @@ SEASON_GRADE_KEYS = frozenset({
     "leakage_audit_verdict", "leakage_audit_audited_at",
     "latest_result_captured_at", "weeks",
     "week_grade_sha256", "week_grade_bytes", "leakage_audit_bytes",
-    "diagnostics", "artifact_sha256",
+    "rejected_week_grade_bytes", "diagnostics", "artifact_sha256",
 })
 SEASON_CHECK_KEYS = frozenset({
     "season_complete", "common_model_epoch", "weekly_primary_pools",
@@ -1448,13 +1448,21 @@ def _diagnostics(rows, grades, input_count):
 
 def _build_season_grade(week_grades, leakage_audit):
     verify_leakage_audit(leakage_audit)
-    valid_grades, integrity = [], isinstance(week_grades, list)
+    valid_grades, rejected, integrity = [], [], isinstance(week_grades, list)
     for grade in week_grades if integrity else ():
         try:
             valid_grades.append(verify_week_grade(grade))
         except (TypeError, ValueError):
             integrity = False
+            try:
+                text = canonical_json(grade) + "\n"
+                if _decode_json(text.encode("utf-8"), "rejected weekly grade") != grade:
+                    raise ValueError("Rejected weekly grade is not canonical")
+            except (TypeError, ValueError, UnicodeEncodeError) as error:
+                raise ValueError("Rejected weekly grade is not finite JSON") from error
+            rejected.append(text)
     valid_grades.sort(key=lambda grade: grade["week"])
+    rejected.sort()
     epochs = {
         (grade["model_version"], grade["config_sha256"], grade["code_sha"])
         for grade in valid_grades
@@ -1544,8 +1552,11 @@ def _build_season_grade(week_grades, leakage_audit):
             grade["artifact_sha256"] for grade in valid_grades
         ),
         "week_grade_bytes": [serialize_week_grade(grade) for grade in valid_grades],
+        "rejected_week_grade_bytes": rejected,
         "leakage_audit_bytes": canonical_json(leakage_audit) + "\n",
-        "diagnostics": _diagnostics(rows, valid_grades, len(week_grades) if isinstance(week_grades, list) else 0),
+        "diagnostics": _diagnostics(
+            rows, valid_grades, len(valid_grades) + len(rejected)
+        ),
     }
     grade["artifact_sha256"] = _artifact_hash(grade)
     return grade
@@ -1553,8 +1564,7 @@ def _build_season_grade(week_grades, leakage_audit):
 
 def grade_season(week_grades, leakage_audit):
     verify_leakage_audit(leakage_audit)
-    grade = _build_season_grade(week_grades, leakage_audit)
-    return grade if not grade["checks"]["artifact_integrity"] else verify_season_grade(grade)
+    return verify_season_grade(_build_season_grade(week_grades, leakage_audit))
 
 
 def verify_season_grade(grade):
@@ -1577,12 +1587,15 @@ def verify_season_grade(grade):
             "CLEAN", "REVIEW REQUIRED", "NOT CLEAN",
         }
         or not isinstance(grade["week_grade_bytes"], list)
+        or not isinstance(grade["rejected_week_grade_bytes"], list)
         or not isinstance(grade["leakage_audit_bytes"], str)
         or not _hex_digest(grade["artifact_sha256"], 64)
     ):
         raise ValueError("Season fantasy grade metadata is invalid")
     try:
         grade_bytes = [text.encode("utf-8") for text in grade["week_grade_bytes"]]
+        rejected_bytes = [text.encode("utf-8")
+                          for text in grade["rejected_week_grade_bytes"]]
         audit_bytes = grade["leakage_audit_bytes"].encode("utf-8")
     except UnicodeEncodeError as error:
         raise ValueError("Season fantasy grade evidence is invalid") from error
@@ -1591,10 +1604,21 @@ def verify_season_grade(grade):
     if any(data != serialize_week_grade(item).encode("utf-8")
            for data, item in zip(grade_bytes, grades)):
         raise ValueError("Season fantasy grade evidence is not canonical")
+    rejected = []
+    for data in rejected_bytes:
+        item = _decode_json(data, "rejected weekly fantasy grade")
+        if data != (canonical_json(item) + "\n").encode("utf-8"):
+            raise ValueError("Season fantasy grade evidence is not canonical")
+        try:
+            verify_week_grade(item)
+        except (TypeError, ValueError):
+            rejected.append(item)
+        else:
+            raise ValueError("Rejected weekly fantasy grade now verifies")
     audit = verify_leakage_audit(_decode_json(audit_bytes, "prospective leakage audit"))
     if audit_bytes != (canonical_json(audit) + "\n").encode("utf-8"):
         raise ValueError("Season fantasy grade evidence is not canonical")
-    expected = _build_season_grade(grades, audit)
+    expected = _build_season_grade(grades + rejected, audit)
     if not _matches_frozen_value(grade, expected):
         raise ValueError("Season fantasy grade evidence binding is invalid")
     return grade

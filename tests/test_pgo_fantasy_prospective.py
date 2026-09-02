@@ -1263,6 +1263,30 @@ class ProspectiveSeasonGradeTests(
         receipt = prospective.grade_season(weeks, self.audit())
         self.assertEqual(receipt["status"], "BLOCKED")
         self.assertFalse(receipt["checks"]["artifact_integrity"])
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "blocked"
+            self.assertTrue(prospective.write_season_grade(output, receipt))
+            path = output / "fantasy_season_grade.json"
+            first = path.read_bytes()
+            self.assertFalse(prospective.write_season_grade(output, receipt))
+            self.assertEqual(path.read_bytes(), first)
+        changed = deepcopy(receipt)
+        changed["rejected_week_grade_bytes"] = [
+            prospective.serialize_week_grade(weeks[0])
+        ]
+        changed["artifact_sha256"] = prospective._artifact_hash(changed)
+        with self.assertRaises(ValueError):
+            prospective.serialize_season_grade(changed)
+
+    def test_json_safe_malformed_week_is_serializable_blocked_evidence(self):
+        receipt = prospective.grade_season([{"unexpected": []}], self.audit())
+        self.assertEqual(receipt["status"], "BLOCKED")
+        self.assertFalse(receipt["checks"]["artifact_integrity"])
+        self.assertEqual(len(receipt["rejected_week_grade_bytes"]), 1)
+        self.assertEqual(
+            prospective.serialize_season_grade(receipt),
+            prospective.serialize_season_grade(prospective.verify_season_grade(receipt)),
+        )
 
     def test_season_writer_never_overwrites_an_existing_artifact(self):
         receipt = prospective.grade_season(self.season_weeks(), self.audit())
