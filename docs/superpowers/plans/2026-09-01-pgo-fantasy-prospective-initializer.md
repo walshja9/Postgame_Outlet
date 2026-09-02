@@ -2581,7 +2581,7 @@ def main(argv=None):
         if args.command == "preview":
             sources, model = _common_sources(args, False)
             preview = build_preview(sources, model, args.week, args.as_of)
-            atomic_write_text(args.output, serialize_preview(preview))
+            _write_preview(args.output, serialize_preview(preview))
             return 0
         if args.command == "lock":
             sources, model = _common_sources(args, True)
