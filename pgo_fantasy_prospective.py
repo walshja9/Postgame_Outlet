@@ -567,10 +567,14 @@ def rank_rows(rows):
 def build_preview(sources, model, week, generated_at):
     if type(week) is not int or not 1 <= week <= 18:
         raise ValueError("Preview week is invalid")
-    _validate_inputs(
-        sources, model, parse_timestamp(generated_at, "prediction generated_at")
-    )
+    generated = parse_timestamp(generated_at, "prediction generated_at")
+    _validate_inputs(sources, model, generated)
     games = _game_rows(sources["schedule"], week)
+    if games:
+        _validate_inputs(
+            sources, model,
+            min(generated, games[0]["kickoff_time"] - timedelta(minutes=60)),
+        )
     scheduled_teams = {
         team for game in games for team in (game["away"], game["home"])
     }

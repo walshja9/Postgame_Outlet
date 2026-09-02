@@ -610,3 +610,35 @@ class ProspectiveProjectionTests(
                     sources, model, game_id,
                     "2026-09-09T19:30:00-04:00", lock_mode=False,
                 )
+
+    def test_zero_coverage_preview_rejects_post_t60_provenance(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            sources, model, _ = self.loaded_sources(directory)
+            sources["roster"] = prospective.load_snapshot(self.write_json(
+                root / "missing-roster.json", self.envelope([], teams=("MIA",))
+            ), "roster")
+            for label in ("source", "model"):
+                with self.subTest(label=label):
+                    candidate_sources = deepcopy(sources)
+                    candidate_model = deepcopy(model)
+                    if label == "source":
+                        late = deepcopy(candidate_sources["availability"]["snapshot"])
+                        late["captured_at"] = "2026-09-09T19:25:00-04:00"
+                        candidate_sources["availability"] = prospective.load_snapshot(
+                            self.write_json(root / "late-availability.json", late),
+                            "availability",
+                        )
+                        error = "captured after"
+                    else:
+                        config = self.config()
+                        config["frozen_at"] = "2026-09-09T19:25:00-04:00"
+                        candidate_model = prospective.load_model_config(
+                            self.write_json(root / "late-config.json", config, canonical=True)
+                        )
+                        error = "frozen after"
+                    with self.assertRaisesRegex(ValueError, error):
+                        prospective.build_preview(
+                            candidate_sources, candidate_model, 1,
+                            "2026-09-09T19:30:00-04:00",
+                        )
