@@ -10,6 +10,8 @@ The earlier file remains unchanged as historical reboot evidence.
 - Worktree: `D:\CodexWorktrees\Postgame_Outlet-fantasy-qb-depth-eligibility`
 - Branch: `codex/pgo-fantasy-qb-depth-eligibility`
 - Verified code commit: `5c9ca270f2c77e842a58092f91809bc270439c96`
+- Local integration: complete; `main` and the feature branch are intended to
+  point to the commit carrying this file.
 - Governing design: `docs/superpowers/specs/2026-09-02-pgo-fantasy-qb-depth-eligibility-design.md`
 - Governing plan: `docs/superpowers/plans/2026-09-02-pgo-fantasy-qb-depth-eligibility.md`
 - Durable evidence: `D:\Claude Context\Postgame_Outlet\.git\worktrees\Postgame_Outlet-fantasy-qb-depth-eligibility\sdd`
@@ -61,6 +63,7 @@ All commands used Python 3.14 with warning-as-error coverage where specified.
 | Prospective module | 94/94, exit 0 | 323.860s | 324.244s |
 | Related fantasy/challenger/comparison/prospective modules | 234/234, exit 0 | 21.072s | 21.526s |
 | Full repository discovery | 388/388, exit 0 | 343.862s | 344.334s |
+| Post-integration `main` discovery | 388/388, exit 0 | 344.293s | 345.120s |
 | `py_compile` | exit 0 | — | — |
 | Diff/whitespace/protected-scope checks | exit 0 | — | — |
 
@@ -69,6 +72,7 @@ Accepted durable logs:
 - `final3-prospective-20260902T174511922.*`
 - `final3-related-20260902T175049575.*`
 - `final3-discover-20260902T175134758.*`
+- `merged-main-discover-20260902T181231379.*`
 - `schema-v1-fix-report.md` and `final-controller-verification-5c9ca27.md`
 
 The protected diff from design commit
@@ -110,8 +114,13 @@ They remain preserved so failed and superseded provenance is explicit.
 ## Operational stop gate
 
 No real provider source was fetched or frozen. No real preview, lock, result,
-grade, or promoted model artifact was created. Nothing was pushed, published,
-deployed, or merged to `main`.
+grade, or promoted model artifact was created. The feature was fast-forwarded
+into local `main` only after its tests and reviews passed. Nothing was pushed,
+published, or deployed, and no branch or worktree was removed.
+
+The primary checkout's 46 pre-existing untracked files were preserved across
+the integration with aggregate content-manifest SHA-256
+`C69BE43245A4095F4683E9B861BF35C5B3967C96EB311A793500794C55693970`.
 
 The separately authorized opening-night phase must use fresh provider bytes,
 recheck all current roster QBs, obtain complete definitive inactive coverage,
