@@ -79,7 +79,7 @@ LOCK_PREDICTION_COLUMNS = (
     "season", "week", "game_id", "gsis_id", "player_name", "team",
     "opponent", "position", "null_prediction", "strong_prediction",
     "history_count", "initialization_reason", "availability_status",
-    "ranking_eligible", "config_sha256",
+    "qb_depth_rank", "ranking_eligible", "config_sha256",
 )
 SOURCE_RECEIPT_KEYS = frozenset({
     "schema_version", "kind", "source", "source_as_of", "captured_at",
@@ -651,6 +651,30 @@ def _depth_ranks(depth, roster, teams):
     return observed
 
 
+def _qb_starters(players, depth_ranks, inactive):
+    teams = {row["team"] for row in players}
+    starters = set()
+    for team in teams:
+        qbs = [
+            row for row in players
+            if row["team"] == team and row["position"] == "QB"
+        ]
+        ranks = [depth_ranks.get(row["gsis_id"]) for row in qbs]
+        if (
+            not qbs
+            or any(type(rank) is not int or rank <= 0 for rank in ranks)
+            or len(set(ranks)) != len(ranks)
+        ):
+            raise ValueError("Prospective QB depth ranks are invalid")
+        available = [row for row in qbs if row["gsis_id"] not in inactive]
+        if not available:
+            raise ValueError("Prospective team has no available QB")
+        starters.add(min(
+            available, key=lambda row: depth_ranks[row["gsis_id"]]
+        )["gsis_id"])
+    return starters
+
+
 def _availability_state(source, teams, lock_mode):
     verified = (
         source is not None
@@ -726,6 +750,8 @@ def project_game(sources, model, game_id, generated_at, lock_mode):
     inactive = _availability_state(
         sources.get("availability"), teams, lock_mode
     )
+    depth_ranks = _depth_ranks(sources["depth"], roster, teams)
+    eligible_qbs = _qb_starters(roster, depth_ranks, inactive or set())
     history = _history(sources["history"], generated, game_id)
     means = model["config"]["position_means"]
     rows = []
@@ -749,7 +775,17 @@ def project_game(sources, model, game_id, generated_at, lock_mode):
             "history_count": len(values),
             "initialization_reason": "HISTORY" if values else "TRUE_COLD_START",
             "availability_status": status,
-            "ranking_eligible": not unavailable,
+            "qb_depth_rank": (
+                depth_ranks[player["gsis_id"]]
+                if player["position"] == "QB" else None
+            ),
+            "ranking_eligible": (
+                not unavailable
+                and (
+                    player["position"] != "QB"
+                    or player["gsis_id"] in eligible_qbs
+                )
+            ),
             "config_sha256": model["sha256"],
         })
     week_games = [item["game_id"] for item in games if item["week"] == game["week"]]
@@ -902,7 +938,19 @@ def _validate_lock_predictions(rows, lock=None):
             values != (0.0, 0.0) or row["ranking_eligible"]
         ):
             raise ValueError("Inactive fantasy lock row is invalid")
-        if row["availability_status"] == "ACTIVE" and not row["ranking_eligible"]:
+        rank = row["qb_depth_rank"]
+        if (
+            (row["position"] == "QB" and (
+                type(rank) is not int or rank <= 0
+            ))
+            or (row["position"] != "QB" and rank is not None)
+        ):
+            raise ValueError("Fantasy game lock QB depth rank is invalid")
+        if (
+            row["position"] != "QB"
+            and row["availability_status"] == "ACTIVE"
+            and not row["ranking_eligible"]
+        ):
             raise ValueError("Active fantasy lock row is invalid")
         if lock is not None and (
             row["season"] != lock["season"] or row["week"] != lock["week"]
@@ -913,6 +961,21 @@ def _validate_lock_predictions(rows, lock=None):
             or row["config_sha256"] != lock["config_sha256"]
         ):
             raise ValueError("Fantasy game lock prediction context is invalid")
+    depth_ranks = {
+        row["gsis_id"]: row["qb_depth_rank"]
+        for row in rows if row["position"] == "QB"
+    }
+    inactive = {
+        row["gsis_id"] for row in rows
+        if row["position"] == "QB" and row["availability_status"] == "INACTIVE"
+    }
+    eligible_qbs = _qb_starters(rows, depth_ranks, inactive)
+    if any(
+        row["position"] == "QB"
+        and row["ranking_eligible"] != (row["gsis_id"] in eligible_qbs)
+        for row in rows
+    ):
+        raise ValueError("Fantasy game lock QB eligibility is invalid")
     if rows != sorted(rows, key=lambda row: (row["game_id"], row["gsis_id"])):
         raise ValueError("Fantasy game lock predictions are not canonical")
     return rows
@@ -1564,10 +1627,10 @@ def write_week_grade(output_dir, grade):
 BOOTSTRAP_SEED = 20260901
 BOOTSTRAP_SAMPLES = 10_000
 LEAKAGE_AUDIT_KIND = "PGO_FANTASY_PROSPECTIVE_LEAKAGE_AUDIT"
-LEAKAGE_AUDIT_CONTRACT = "PGO_FANTASY_PROSPECTIVE_2026_SCIENTIFIC_V1"
+LEAKAGE_AUDIT_CONTRACT = "PGO_FANTASY_PROSPECTIVE_2026_SCIENTIFIC_V2"
 LEAKAGE_AUDIT_ITEMS = (
     "target_outcome_boundary", "history_cutoff", "position_mean_initializer",
-    "roster_availability", "schedule_result_joins", "ranking_primary_pool",
+    "roster_availability", "qb_depth_eligibility", "schedule_result_joins", "ranking_primary_pool",
     "metrics_uncertainty", "epoch_firewall",
 )
 LEAKAGE_AUDIT_KEYS = frozenset({

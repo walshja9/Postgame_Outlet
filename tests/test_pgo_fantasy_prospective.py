@@ -720,6 +720,65 @@ class ProspectiveProjectionTests(
                             loaded, model, game_id, self.LOCKED_AT, lock_mode=True
                         )
 
+    def test_only_depth_qb1_ranks_while_all_qbs_remain_projected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            sources, model, game_id = self.loaded_sources(
+                directory, availability=False
+            )
+            rows = prospective.project_game(
+                sources, model, game_id, self.CAPTURED, lock_mode=False
+            )["rows"]
+        qbs = {row["gsis_id"]: row for row in rows if row["position"] == "QB"}
+        self.assertEqual(set(qbs), {"buf-qb1", "buf-qb2", "lar-qb1", "lar-qb2"})
+        self.assertEqual(
+            {player for player, row in qbs.items() if row["ranking_eligible"]},
+            {"buf-qb1", "lar-qb1"},
+        )
+        self.assertTrue(all(row["strong_prediction"] == 15.0 for row in qbs.values()))
+        self.assertEqual(
+            {player: row["qb_depth_rank"] for player, row in qbs.items()},
+            {"buf-qb1": 1, "buf-qb2": 2, "lar-qb1": 1, "lar-qb2": 2},
+        )
+        ranked = {row["gsis_id"]: row for row in prospective.rank_rows(rows)}
+        self.assertIsNone(ranked["buf-qb2"]["position_rank"])
+        self.assertIsNone(ranked["buf-qb2"]["superflex_rank"])
+
+    def test_verified_inactive_qb1_promotes_qb2_and_no_qb_blocks(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            values, game_id = self.source_values()
+            values["availability"]["rows"].append(
+                {"gsis_id": "buf-qb1", "team": "BUF", "status": "INACTIVE"}
+            )
+            sources = {
+                kind: prospective.load_snapshot(
+                    self.write_json(root / f"{kind}.json", value), kind
+                )
+                for kind, value in values.items()
+            }
+            model = prospective.load_model_config(self.write_json(
+                root / "config.json", self.config(), canonical=True
+            ))
+            rows = prospective.project_game(
+                sources, model, game_id, self.LOCKED_AT, lock_mode=True
+            )["rows"]
+            by_id = {row["gsis_id"]: row for row in rows}
+            self.assertEqual(by_id["buf-qb1"]["strong_prediction"], 0.0)
+            self.assertFalse(by_id["buf-qb1"]["ranking_eligible"])
+            self.assertTrue(by_id["buf-qb2"]["ranking_eligible"])
+
+            values["availability"]["rows"].append(
+                {"gsis_id": "buf-qb2", "team": "BUF", "status": "INACTIVE"}
+            )
+            sources["availability"] = prospective.load_snapshot(
+                self.write_json(root / "all-inactive.json", values["availability"]),
+                "availability",
+            )
+            with self.assertRaisesRegex(ValueError, "available QB"):
+                prospective.project_game(
+                    sources, model, game_id, self.LOCKED_AT, lock_mode=True
+                )
+
     def test_ranking_is_deterministic_and_uses_gsis_id_for_ties(self):
         rows = [
             {"game_id": "g", "gsis_id": "b", "position": "WR",
@@ -958,6 +1017,33 @@ class ProspectiveGameLockTests(
         with self.assertRaisesRegex(ValueError, "integrity"):
             prospective.verify_game_lock(changed)
 
+    def test_lock_reconstructs_qb_depth_eligibility(self):
+        with tempfile.TemporaryDirectory() as directory:
+            sources, model, game_id = self.loaded_sources(directory)
+            lock = prospective.build_game_lock(
+                sources, model, game_id, self.LOCKED_AT, "a" * 40
+            )
+        by_id = {row["gsis_id"]: row for row in lock["predictions"]}
+        self.assertTrue(by_id["buf-qb1"]["ranking_eligible"])
+        self.assertFalse(by_id["buf-qb2"]["ranking_eligible"])
+        self.assertIsNone(by_id["veteran"]["qb_depth_rank"])
+
+        for label, mutate in (
+            ("backup eligible", lambda row: row.update(ranking_eligible=True)),
+            ("duplicate rank", lambda row: row.update(qb_depth_rank=1)),
+        ):
+            with self.subTest(label=label), self.assertRaises(ValueError):
+                changed = deepcopy(lock)
+                mutate(next(
+                    row for row in changed["predictions"]
+                    if row["gsis_id"] == "buf-qb2"
+                ))
+                changed["prediction_integrity_sha256"] = prospective._prediction_hash(
+                    changed["predictions"]
+                )
+                changed["artifact_sha256"] = prospective._artifact_hash(changed)
+                prospective.verify_game_lock(changed)
+
     def test_after_t_lock_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             sources, model, game_id = self.loaded_sources(directory)
@@ -1141,23 +1227,54 @@ class ProspectiveWeekGradeTests(
                 Path(directory) / "results.json", value
             ))
 
-    def week_evidence(self):
-        positions = (("QB", 30), ("RB", 40), ("WR", 40), ("TE", 20))
-        roster_rows = [
+    def week_evidence(self, week=1):
+        teams = tuple(sorted(pgo_fantasy.CURRENT_TEAMS)[:24])
+        matchups = list(zip(teams[::2], teams[1::2]))
+        schedule_rows = [
             {
-                "gsis_id": f"{position}-{index:03d}",
-                "player_name": f"{position} {index:03d}",
-                "team": "BUF" if index % 2 == 0 else "LAR",
-                "position": position,
-                "status": "ACT",
+                "season": 2026,
+                "week": week,
+                "game_id": f"2026_{week:02d}_{away}_{home}",
+                "game_type": "REG",
+                "kickoff": self.KICKOFF,
+                "away_team": away,
+                "home_team": home,
             }
-            for position, count in positions for index in range(count)
+            for away, home in matchups
         ]
+        team_game = {
+            team: game["game_id"]
+            for game in schedule_rows
+            for team in (game["away_team"], game["home_team"])
+        }
+        roster_rows = []
+        depth_rows = []
+        for team in teams:
+            for position, count in (("QB", 1), ("RB", 2), ("WR", 2), ("TE", 1)):
+                for index in range(count):
+                    gsis_id = f"{team}-{position}-{index:02d}"
+                    roster_rows.append({
+                        "gsis_id": gsis_id,
+                        "player_name": gsis_id,
+                        "team": team,
+                        "position": position,
+                        "status": "ACT",
+                    })
+                    if position == "QB":
+                        depth_rows.append({
+                            "gsis_id": gsis_id,
+                            "team": team,
+                            "position": "QB",
+                            "depth_rank": 1,
+                        })
+
+        values, _ = self.source_values(history_rows=[])
+        values["schedule"] = self.envelope(schedule_rows, teams=teams)
+        values["roster"] = self.envelope(roster_rows, teams=teams)
+        values["availability"] = self.envelope([], teams=teams)
+        values["depth"] = self.depth_envelope(depth_rows, teams=teams)
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            values, game_id = self.source_values(history_rows=[])
-            values["roster"] = self.envelope(roster_rows)
-            values["availability"] = self.envelope([])
             sources = {
                 kind: prospective.load_snapshot(
                     self.write_json(root / f"{kind}.json", value), kind
@@ -1167,31 +1284,41 @@ class ProspectiveWeekGradeTests(
             model = prospective.load_model_config(self.write_json(
                 root / "config.json", self.config(), canonical=True
             ))
-            lock = prospective.build_game_lock(
-                sources, model, game_id, self.LOCKED_AT, "a" * 40
-            )
-            lock_bytes = prospective.serialize_game_lock(lock).encode("utf-8")
-            loaded_locks = [{
-                "lock": lock,
-                "bytes": lock_bytes,
-                "sha256": hashlib.sha256(lock_bytes).hexdigest(),
-            }]
-            result_rows = [{
-                "game_id": game_id,
-                "gsis_id": row["gsis_id"],
-                **self.scoring(receiving_yards=10.0),
-            } for row in roster_rows if row["gsis_id"] != "WR-000"]
+            loaded_locks = []
+            for game in schedule_rows:
+                lock = prospective.build_game_lock(
+                    sources, model, game["game_id"], self.LOCKED_AT, "a" * 40
+                )
+                lock_bytes = prospective.serialize_game_lock(lock).encode("utf-8")
+                loaded_locks.append({
+                    "lock": lock,
+                    "bytes": lock_bytes,
+                    "sha256": hashlib.sha256(lock_bytes).hexdigest(),
+                })
+
+            missing_id = f"{teams[0]}-WR-00"
+            result_rows = [
+                {
+                    "game_id": team_game[row["team"]],
+                    "gsis_id": row["gsis_id"],
+                    **self.scoring(receiving_yards=10.0),
+                }
+                for row in roster_rows if row["gsis_id"] != missing_id
+            ]
             results_value = {
                 "schema_version": 1,
                 "source": "synthetic-official-results",
                 "source_as_of": "2026-09-10T00:30:00-04:00",
                 "captured_at": "2026-09-10T00:30:00-04:00",
-                "teams_processed": ["BUF", "LAR"],
-                "games": [{
-                    "game_id": game_id,
-                    "status": "FINAL",
-                    "finalized_at": "2026-09-10T00:20:00-04:00",
-                }],
+                "teams_processed": list(teams),
+                "games": [
+                    {
+                        "game_id": game["game_id"],
+                        "status": "FINAL",
+                        "finalized_at": "2026-09-10T00:20:00-04:00",
+                    }
+                    for game in schedule_rows
+                ],
                 "rows": result_rows,
             }
             results = prospective.load_results(self.write_json(
@@ -1209,7 +1336,12 @@ class ProspectiveWeekGradeTests(
             loaded_locks[0]["lock"]["position_mean_evidence_sha256"],
         )
         self.assertEqual(grade["metrics"]["primary"]["count"], 96)
-        missing = next(row for row in grade["rows"] if row["gsis_id"] == "WR-000")
+        missing = next(
+            row for row in grade["rows"]
+            if row["team"] == sorted(pgo_fantasy.CURRENT_TEAMS)[0]
+            and row["position"] == "WR"
+            and row["gsis_id"].endswith("-00")
+        )
         self.assertEqual(missing["fantasy_points"], 0.0)
         self.assertTrue(grade["checks"]["complete_game_results"])
 
@@ -1414,36 +1546,24 @@ class ProspectiveSeasonGradeTests(
         return evidence
 
     def week_grade(self, week, strong_delta=1.0, code_sha="a" * 40):
-        locks, results = ProspectiveWeekGradeTests("runTest").week_evidence()
-        lock = deepcopy(locks[0]["lock"])
-        game_id = f"2026_{week:02d}_BUF_LAR"
-        lock["week"] = week
-        lock["game_id"] = game_id
-        lock["code_sha"] = code_sha
-        lock["scheduled_week_games"] = [game_id]
-        for row in lock["predictions"]:
-            row["week"] = week
-            row["game_id"] = game_id
-            row["null_prediction"] += strong_delta
-        lock["prediction_integrity_sha256"] = prospective._prediction_hash(
-            lock["predictions"]
-        )
-        lock["artifact_sha256"] = prospective._artifact_hash(lock)
-        lock_bytes = prospective.serialize_game_lock(lock).encode("utf-8")
-        loaded = {
-            "lock": lock,
-            "bytes": lock_bytes,
-            "sha256": hashlib.sha256(lock_bytes).hexdigest(),
-        }
-        snapshot = deepcopy(results["snapshot"])
-        for game in snapshot["games"]:
-            game["game_id"] = game_id
-        for row in snapshot["rows"]:
-            row["game_id"] = game_id
-        result_bytes = (prospective.canonical_json(snapshot) + "\n").encode("utf-8")
-        grade = prospective.grade_week(
-            [loaded], prospective._results_from_bytes(result_bytes)
-        )
+        locks, results = ProspectiveWeekGradeTests("runTest").week_evidence(week)
+        changed_locks = []
+        for loaded in locks:
+            lock = deepcopy(loaded["lock"])
+            lock["code_sha"] = code_sha
+            for row in lock["predictions"]:
+                row["null_prediction"] += strong_delta
+            lock["prediction_integrity_sha256"] = prospective._prediction_hash(
+                lock["predictions"]
+            )
+            lock["artifact_sha256"] = prospective._artifact_hash(lock)
+            data = prospective.serialize_game_lock(lock).encode("utf-8")
+            changed_locks.append({
+                "lock": lock,
+                "bytes": data,
+                "sha256": hashlib.sha256(data).hexdigest(),
+            })
+        grade = prospective.grade_week(changed_locks, results)
         self.assertEqual(sum(row["primary_pool"] for row in grade["rows"]), 96)
         self.assertEqual(
             len({(row["game_id"], row["gsis_id"]) for row in grade["rows"]
