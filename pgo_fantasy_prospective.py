@@ -47,16 +47,29 @@ ROW_FIELDS = {
 CONFIG_KEYS = frozenset({
     "schema_version", "model_version", "frozen_at", "trained_through", "scoring",
     "history_games", "half_life_games", "pseudo_games", "position_means",
-    "position_mean_evidence_sha256",
+    "position_mean_evidence_sha256", "position_mean_evidence_bytes",
 })
 POSITIONS = ("QB", "RB", "WR", "TE")
+POSITION_MEAN_EVIDENCE_KIND = "PGO_FANTASY_POSITION_MEAN_EVIDENCE"
+POSITION_MEAN_EVIDENCE_CONTRACT = "PGO_FANTASY_POSITION_MEANS_2020_2025_V1"
+POSITION_MEAN_EVIDENCE_KEYS = frozenset({
+    "schema_version", "artifact_kind", "status", "contract_version",
+    "source_as_of", "captured_at", "frozen_at", "seasons", "population",
+    "scoring", "position_means", "upstream_provenance", "artifact_sha256",
+})
+POSITION_MEAN_PROVENANCE_KEYS = frozenset({
+    "source", "source_as_of", "captured_at", "sha256",
+})
+POSITION_MEAN_POPULATION = "QUALIFIED_STATS_ONLY_REGULAR_SEASON_PLAYER_GAMES"
 LOCK_KIND = "PGO_FANTASY_T60_GAME_LOCK"
 PREVIEW_KIND = "PGO_FANTASY_WEEKLY_PREVIEW"
 LOCK_KEYS = frozenset({
     "schema_version", "artifact_kind", "status", "publication_status",
     "season", "week", "game_id", "kickoff", "away", "home",
     "decision_time", "locked_at", "teams_processed", "row_count", "coverage",
-    "model_version", "config_sha256", "code_sha", "scheduled_week_games",
+    "model_version", "config_sha256", "config_bytes", "code_sha",
+    "position_mean_evidence_sha256", "position_mean_evidence_bytes",
+    "scheduled_week_games",
     "source_receipts", "source_receipts_sha256", "predictions",
     "prediction_integrity_sha256", "artifact_sha256",
 })
@@ -83,6 +96,7 @@ RESULT_RECEIPT_KEYS = frozenset({
 WEEK_GRADE_KEYS = frozenset({
     "schema_version", "artifact_kind", "status", "publication_status",
     "season", "week", "model_version", "config_sha256", "code_sha",
+    "position_mean_evidence_sha256",
     "lock_sha256", "lock_bytes", "result_receipt", "result_bytes",
     "checks", "metrics", "rows", "artifact_sha256",
 })
@@ -308,6 +322,106 @@ def serialize_model_config(config):
     return canonical_json(config) + "\n"
 
 
+def _position_means(values, label):
+    if not isinstance(values, dict) or set(values) != set(POSITIONS):
+        raise ValueError(f"{label} position means are invalid")
+    means = {}
+    for position in POSITIONS:
+        raw = values[position]
+        if type(raw) not in {int, float}:
+            raise ValueError(f"{label} position mean is invalid")
+        try:
+            value = float(raw)
+        except (TypeError, ValueError) as error:
+            raise ValueError(f"{label} position mean is invalid") from error
+        if not math.isfinite(value) or value <= 0.0:
+            raise ValueError(f"{label} position mean is invalid")
+        means[position] = value
+    return means
+
+
+def verify_position_mean_evidence(receipt):
+    if not isinstance(receipt, dict) or set(receipt) != POSITION_MEAN_EVIDENCE_KEYS:
+        raise ValueError("Position mean evidence is invalid")
+    if (
+        type(receipt["schema_version"]) is not int
+        or receipt["schema_version"] != 1
+        or receipt["artifact_kind"] != POSITION_MEAN_EVIDENCE_KIND
+        or receipt["status"] != "ACCEPTED"
+        or receipt["contract_version"] != POSITION_MEAN_EVIDENCE_CONTRACT
+        or receipt["seasons"] != list(range(2020, 2026))
+        or receipt["population"] != POSITION_MEAN_POPULATION
+        or receipt["scoring"] != "PGO_HALF_PPR_V1"
+        or not _hex_digest(receipt["artifact_sha256"], 64)
+    ):
+        raise ValueError("Position mean evidence is invalid")
+    source_as_of = parse_timestamp(
+        receipt["source_as_of"], "position mean evidence source_as_of"
+    )
+    captured_at = parse_timestamp(
+        receipt["captured_at"], "position mean evidence captured_at"
+    )
+    frozen_at = parse_timestamp(
+        receipt["frozen_at"], "position mean evidence frozen_at"
+    )
+    if source_as_of > captured_at or captured_at > frozen_at:
+        raise ValueError("Position mean evidence chronology is invalid")
+    means = _position_means(receipt["position_means"], "Position mean evidence")
+    provenance = receipt["upstream_provenance"]
+    if not isinstance(provenance, list) or not provenance:
+        raise ValueError("Position mean evidence provenance is invalid")
+    normalized_provenance = []
+    for item in provenance:
+        if not isinstance(item, dict) or set(item) != POSITION_MEAN_PROVENANCE_KEYS:
+            raise ValueError("Position mean evidence provenance is invalid")
+        item_source_as_of = parse_timestamp(
+            item["source_as_of"], "position mean provenance source_as_of"
+        )
+        item_captured_at = parse_timestamp(
+            item["captured_at"], "position mean provenance captured_at"
+        )
+        if (
+            item_source_as_of > item_captured_at
+            or item_captured_at > frozen_at
+            or not _hex_digest(item["sha256"], 64)
+        ):
+            raise ValueError("Position mean evidence provenance is invalid")
+        normalized_provenance.append({
+            "source": _required_text(
+                item["source"], "position mean provenance source"
+            ),
+            "source_as_of": item["source_as_of"],
+            "captured_at": item["captured_at"],
+            "sha256": item["sha256"],
+        })
+    if normalized_provenance != sorted(
+        normalized_provenance,
+        key=lambda item: (
+            item["source"], item["source_as_of"], item["captured_at"], item["sha256"],
+        ),
+    ):
+        raise ValueError("Position mean evidence provenance is not canonical")
+    normalized = deepcopy(receipt)
+    normalized["position_means"] = means
+    normalized["upstream_provenance"] = normalized_provenance
+    if normalized["artifact_sha256"] != _artifact_hash(normalized):
+        raise ValueError("Position mean evidence integrity is invalid")
+    return normalized
+
+
+def serialize_position_mean_evidence(receipt):
+    return canonical_json(verify_position_mean_evidence(receipt)) + "\n"
+
+
+def _position_mean_evidence_from_bytes(data):
+    receipt = verify_position_mean_evidence(
+        _decode_json(data, "position mean evidence")
+    )
+    if data != serialize_position_mean_evidence(receipt).encode("utf-8"):
+        raise ValueError("Position mean evidence is not canonical")
+    return receipt
+
+
 def _validate_model_config(config):
     if not isinstance(config, dict) or set(config) != CONFIG_KEYS:
         raise ValueError("Prospective model config is invalid")
@@ -325,20 +439,26 @@ def _validate_model_config(config):
         or type(config["pseudo_games"]) is not int
         or config["pseudo_games"] != 4
         or not _hex_digest(config["position_mean_evidence_sha256"], 64)
-        or not isinstance(config["position_means"], dict)
-        or set(config["position_means"]) != set(POSITIONS)
+        or not isinstance(config["position_mean_evidence_bytes"], str)
     ):
         raise ValueError("Prospective model config is invalid")
-    parse_timestamp(config["frozen_at"], "model config frozen_at")
-    means = {}
-    for position in POSITIONS:
-        try:
-            value = float(config["position_means"][position])
-        except (TypeError, ValueError) as error:
-            raise ValueError("Prospective model config position mean is invalid") from error
-        if not math.isfinite(value) or value <= 0.0:
-            raise ValueError("Prospective model config position mean is invalid")
-        means[position] = value
+    frozen_at = parse_timestamp(config["frozen_at"], "model config frozen_at")
+    means = _position_means(config["position_means"], "Prospective model config")
+    try:
+        receipt_bytes = config["position_mean_evidence_bytes"].encode("utf-8")
+    except UnicodeEncodeError as error:
+        raise ValueError("Prospective model config position mean evidence is invalid") from error
+    receipt = _position_mean_evidence_from_bytes(receipt_bytes)
+    if (
+        hashlib.sha256(receipt_bytes).hexdigest()
+        != config["position_mean_evidence_sha256"]
+        or not _matches_frozen_value(receipt["position_means"], means)
+        or receipt["scoring"] != config["scoring"]
+        or parse_timestamp(
+            receipt["frozen_at"], "position mean evidence frozen_at"
+        ) > frozen_at
+    ):
+        raise ValueError("Prospective model config position mean evidence is invalid")
     normalized = deepcopy(config)
     normalized["model_version"] = config["model_version"].strip()
     normalized["position_means"] = means
@@ -755,7 +875,10 @@ def build_game_lock(sources, model, game_id, locked_at, code_sha):
         "locked_at": locked_at,
         "model_version": model["config"]["model_version"],
         "config_sha256": model["sha256"],
+        "config_bytes": model["bytes"].decode("utf-8"),
         "code_sha": code_sha,
+        "position_mean_evidence_sha256": model["config"]["position_mean_evidence_sha256"],
+        "position_mean_evidence_bytes": model["config"]["position_mean_evidence_bytes"],
         "teams_processed": sorted((
             projected["game"]["away"], projected["game"]["home"]
         )),
@@ -787,6 +910,9 @@ def verify_game_lock(lock):
         or not lock["model_version"].strip()
         or not _hex_digest(lock["code_sha"], 40)
         or not _hex_digest(lock["config_sha256"], 64)
+        or not _hex_digest(lock["position_mean_evidence_sha256"], 64)
+        or not isinstance(lock["config_bytes"], str)
+        or not isinstance(lock["position_mean_evidence_bytes"], str)
         or lock["teams_processed"] != sorted((lock["away"], lock["home"]))
         or len(set(lock["teams_processed"])) != 2
         or type(lock["row_count"]) is not int or lock["row_count"] <= 0
@@ -801,6 +927,30 @@ def verify_game_lock(lock):
         or lock["artifact_sha256"] != _artifact_hash(lock)
     ):
         raise ValueError("Fantasy game lock integrity is invalid")
+    try:
+        config_data = lock["config_bytes"].encode("utf-8")
+        evidence_data = lock["position_mean_evidence_bytes"].encode("utf-8")
+    except UnicodeEncodeError as error:
+        raise ValueError("Fantasy game lock config evidence is invalid") from error
+    config = _validate_model_config(
+        _decode_json(config_data, "prospective model config")
+    )
+    evidence = _position_mean_evidence_from_bytes(evidence_data)
+    if (
+        config_data != serialize_model_config(config).encode("utf-8")
+        or hashlib.sha256(config_data).hexdigest() != lock["config_sha256"]
+        or config["model_version"] != lock["model_version"]
+        or config["position_mean_evidence_sha256"]
+        != lock["position_mean_evidence_sha256"]
+        or config["position_mean_evidence_bytes"]
+        != lock["position_mean_evidence_bytes"]
+        or hashlib.sha256(evidence_data).hexdigest()
+        != lock["position_mean_evidence_sha256"]
+        or not _matches_frozen_value(
+            evidence["position_means"], config["position_means"]
+        )
+    ):
+        raise ValueError("Fantasy game lock config evidence is invalid")
     if (
         normalize_team(lock["away"]) != lock["away"]
         or normalize_team(lock["home"]) != lock["home"]
@@ -1080,9 +1230,14 @@ def _grade_week(loaded_locks, loaded_results):
     common = (
         first["season"], first["week"], first["model_version"],
         first["config_sha256"], first["code_sha"],
+        first["position_mean_evidence_sha256"],
     )
     if any(
-        (lock["season"], lock["week"], lock["model_version"], lock["config_sha256"], lock["code_sha"])
+        (
+            lock["season"], lock["week"], lock["model_version"],
+            lock["config_sha256"], lock["code_sha"],
+            lock["position_mean_evidence_sha256"],
+        )
         != common for lock in locks
     ):
         raise ValueError("Weekly fantasy locks do not share one model epoch")
@@ -1138,6 +1293,7 @@ def _grade_week(loaded_locks, loaded_results):
         "season": first["season"], "week": first["week"],
         "model_version": first["model_version"],
         "config_sha256": first["config_sha256"], "code_sha": first["code_sha"],
+        "position_mean_evidence_sha256": first["position_mean_evidence_sha256"],
         "lock_sha256": sorted(loaded_hashes),
         "lock_bytes": [data.decode("utf-8") for _, data in sorted(
             zip(loaded_hashes, (loaded["bytes"] for loaded in loaded_locks))
@@ -1214,6 +1370,7 @@ def verify_week_grade(grade):
         or not grade["model_version"].strip()
         or not _hex_digest(grade["config_sha256"], 64)
         or not _hex_digest(grade["code_sha"], 40)
+        or not _hex_digest(grade["position_mean_evidence_sha256"], 64)
         or not isinstance(grade["lock_sha256"], list)
         or grade["lock_sha256"] != sorted(set(grade["lock_sha256"]))
         or not grade["lock_sha256"]
@@ -1332,12 +1489,31 @@ def write_week_grade(output_dir, grade):
 
 BOOTSTRAP_SEED = 20260901
 BOOTSTRAP_SAMPLES = 10_000
+LEAKAGE_AUDIT_KIND = "PGO_FANTASY_PROSPECTIVE_LEAKAGE_AUDIT"
+LEAKAGE_AUDIT_CONTRACT = "PGO_FANTASY_PROSPECTIVE_2026_SCIENTIFIC_V1"
+LEAKAGE_AUDIT_ITEMS = (
+    "target_outcome_boundary", "history_cutoff", "position_mean_initializer",
+    "roster_availability", "schedule_result_joins", "ranking_primary_pool",
+    "metrics_uncertainty", "epoch_firewall",
+)
 LEAKAGE_AUDIT_KEYS = frozenset({
-    "schema_version", "verdict", "audited_at", "artifact_sha256",
+    "schema_version", "artifact_kind", "status", "verdict", "audited_at",
+    "scientific_contract", "model_version", "config_sha256", "code_sha",
+    "position_mean_evidence_sha256", "weekly_evidence", "feature_inventory",
+    "provider_vintage_disposition", "findings", "remediation", "artifact_sha256",
 })
+LEAKAGE_AUDIT_WEEK_KEYS = frozenset({
+    "week", "week_grade_sha256", "lock_sha256", "result_receipt_sha256",
+    "source_receipts",
+})
+LEAKAGE_AUDIT_SOURCE_KEYS = frozenset({
+    "lock_sha256", "source_receipts_sha256",
+})
+LEAKAGE_AUDIT_ITEM_KEYS = frozenset({"item", "outcome", "evidence"})
 SEASON_GRADE_KEYS = frozenset({
     "schema_version", "artifact_kind", "status", "publication_status",
-    "season", "model_version", "config_sha256", "code_sha", "checks",
+    "season", "model_version", "config_sha256", "code_sha",
+    "position_mean_evidence_sha256", "checks",
     "metrics", "bootstrap", "leakage_audit_sha256",
     "leakage_audit_verdict", "leakage_audit_audited_at",
     "latest_result_captured_at", "weeks",
@@ -1348,7 +1524,8 @@ SEASON_CHECK_KEYS = frozenset({
     "season_complete", "common_model_epoch", "weekly_primary_pools",
     "relative_improvement_at_least_1pct", "bootstrap_lower_positive",
     "strict_majority_weekly_wins", "leakage_audit_clean",
-    "leakage_audit_after_results", "artifact_integrity",
+    "leakage_audit_after_results", "leakage_audit_binding",
+    "artifact_integrity",
 })
 SEASON_METRIC_KEYS = frozenset({
     "primary_count", "null_mae", "strong_mae", "relative_improvement",
@@ -1372,11 +1549,79 @@ def verify_leakage_audit(audit):
         not isinstance(audit, dict) or set(audit) != LEAKAGE_AUDIT_KEYS
         or type(audit["schema_version"]) is not int
         or audit["schema_version"] != 1
+        or audit["artifact_kind"] != LEAKAGE_AUDIT_KIND
+        or audit["status"] != "COMPLETE"
         or audit["verdict"] not in {"CLEAN", "REVIEW REQUIRED", "NOT CLEAN"}
+        or audit["scientific_contract"] != LEAKAGE_AUDIT_CONTRACT
+        or not isinstance(audit["model_version"], str)
+        or not audit["model_version"].strip()
+        or not _hex_digest(audit["config_sha256"], 64)
+        or not _hex_digest(audit["code_sha"], 40)
+        or not _hex_digest(audit["position_mean_evidence_sha256"], 64)
+        or audit["provider_vintage_disposition"] not in {
+            "CLEAN", "REVIEW REQUIRED", "NOT CLEAN",
+        }
         or not _hex_digest(audit["artifact_sha256"], 64)
     ):
         raise ValueError("Prospective leakage audit is invalid")
     parse_timestamp(audit["audited_at"], "leakage audited_at")
+    evidence = audit["weekly_evidence"]
+    if not isinstance(evidence, list) or not evidence:
+        raise ValueError("Prospective leakage audit evidence is invalid")
+    weeks = []
+    for item in evidence:
+        if (
+            not isinstance(item, dict) or set(item) != LEAKAGE_AUDIT_WEEK_KEYS
+            or type(item["week"]) is not int or not 1 <= item["week"] <= 18
+            or not _hex_digest(item["week_grade_sha256"], 64)
+            or not isinstance(item["lock_sha256"], list)
+            or item["lock_sha256"] != sorted(set(item["lock_sha256"]))
+            or not item["lock_sha256"]
+            or not all(_hex_digest(value, 64) for value in item["lock_sha256"])
+            or not _hex_digest(item["result_receipt_sha256"], 64)
+            or not isinstance(item["source_receipts"], list)
+        ):
+            raise ValueError("Prospective leakage audit evidence is invalid")
+        sources = item["source_receipts"]
+        if (
+            len(sources) != len(item["lock_sha256"])
+            or any(
+                not isinstance(source, dict)
+                or set(source) != LEAKAGE_AUDIT_SOURCE_KEYS
+                or not _hex_digest(source["lock_sha256"], 64)
+                or not _hex_digest(source["source_receipts_sha256"], 64)
+                for source in sources
+            )
+            or [source["lock_sha256"] for source in sources]
+            != item["lock_sha256"]
+        ):
+            raise ValueError("Prospective leakage audit evidence is invalid")
+        weeks.append(item["week"])
+    if weeks != sorted(set(weeks)):
+        raise ValueError("Prospective leakage audit evidence is not canonical")
+    inventory = audit["feature_inventory"]
+    if (
+        not isinstance(inventory, list) or len(inventory) != len(LEAKAGE_AUDIT_ITEMS)
+        or any(
+            not isinstance(item, dict) or set(item) != LEAKAGE_AUDIT_ITEM_KEYS
+            or item["outcome"] not in {"PASS", "REVIEW REQUIRED", "NOT CLEAN"}
+            or not isinstance(item["evidence"], str) or not item["evidence"].strip()
+            for item in inventory
+        )
+        or [item["item"] for item in inventory] != list(LEAKAGE_AUDIT_ITEMS)
+    ):
+        raise ValueError("Prospective leakage audit inventory is invalid")
+    for field in ("findings", "remediation"):
+        if (
+            not isinstance(audit[field], list) or not audit[field]
+            or not all(isinstance(item, str) and item.strip() for item in audit[field])
+        ):
+            raise ValueError("Prospective leakage audit record is invalid")
+    if audit["verdict"] == "CLEAN" and (
+        audit["provider_vintage_disposition"] != "CLEAN"
+        or any(item["outcome"] != "PASS" for item in inventory)
+    ):
+        raise ValueError("Prospective leakage audit clean verdict is invalid")
     if audit["artifact_sha256"] != _artifact_hash(audit):
         raise ValueError("Prospective leakage audit integrity is invalid")
     return audit
@@ -1390,6 +1635,49 @@ def load_leakage_audit(path):
     if data != (canonical_json(audit) + "\n").encode("utf-8"):
         raise ValueError("Prospective leakage audit is not canonical")
     return audit
+
+
+def _audit_weekly_evidence(grades):
+    evidence = []
+    for grade in sorted(grades, key=lambda grade: grade["week"]):
+        locks, _ = _grade_evidence(grade)
+        evidence.append({
+            "week": grade["week"],
+            "week_grade_sha256": grade["artifact_sha256"],
+            "lock_sha256": grade["lock_sha256"],
+            "result_receipt_sha256": grade["result_receipt"]["sha256"],
+            "source_receipts": [{
+                "lock_sha256": loaded["sha256"],
+                "source_receipts_sha256": (
+                    loaded["lock"]["source_receipts_sha256"]
+                ),
+            } for loaded in locks],
+        })
+    return evidence
+
+
+def _audit_matches_grades(audit, grades):
+    epochs = {
+        (
+            grade["model_version"], grade["config_sha256"], grade["code_sha"],
+            grade["position_mean_evidence_sha256"],
+        )
+        for grade in grades
+    }
+    if not grades or len(epochs) != 1:
+        return False
+    model_version, config_sha256, code_sha, position_mean_evidence_sha256 = (
+        next(iter(epochs))
+    )
+    return all((
+        audit["model_version"] == model_version,
+        audit["config_sha256"] == config_sha256,
+        audit["code_sha"] == code_sha,
+        audit["position_mean_evidence_sha256"] == position_mean_evidence_sha256,
+        _matches_frozen_value(
+            audit["weekly_evidence"], _audit_weekly_evidence(grades)
+        ),
+    ))
 
 
 def _bootstrap_rows(rows):
@@ -1408,7 +1696,7 @@ def _season_status(checks):
         or not checks["common_model_epoch"]
         or (complete and not all((
             checks["weekly_primary_pools"], checks["leakage_audit_clean"],
-            checks["leakage_audit_after_results"],
+            checks["leakage_audit_after_results"], checks["leakage_audit_binding"],
         )))
     )
     statistical = all((
@@ -1417,6 +1705,7 @@ def _season_status(checks):
         checks["bootstrap_lower_positive"],
         checks["strict_majority_weekly_wins"],
         checks["leakage_audit_clean"], checks["leakage_audit_after_results"],
+        checks["leakage_audit_binding"],
         checks["artifact_integrity"], checks["common_model_epoch"],
     ))
     return "BLOCKED" if blocked else "PASS" if statistical else "HOLD"
@@ -1522,7 +1811,10 @@ def _build_season_grade(week_grades, leakage_audit):
     valid_grades.sort(key=lambda grade: grade["week"])
     rejected.sort()
     epochs = {
-        (grade["model_version"], grade["config_sha256"], grade["code_sha"])
+        (
+            grade["model_version"], grade["config_sha256"], grade["code_sha"],
+            grade["position_mean_evidence_sha256"],
+        )
         for grade in valid_grades
     }
     weeks = [grade["week"] for grade in valid_grades]
@@ -1566,6 +1858,7 @@ def _build_season_grade(week_grades, leakage_audit):
         result_times and parse_timestamp(audited_at, "leakage audited_at")
         >= max(result_times)[0]
     )
+    audit_binding = _audit_matches_grades(leakage_audit, valid_grades)
     checks = {
         "season_complete": complete,
         "common_model_epoch": common_epoch,
@@ -1575,13 +1868,16 @@ def _build_season_grade(week_grades, leakage_audit):
             bootstrap is not None and bootstrap["lower"] > 0.0
         ),
         "strict_majority_weekly_wins": weekly_wins > 9,
-        "leakage_audit_clean": leakage_audit["verdict"] == "CLEAN",
+        "leakage_audit_clean": (
+            leakage_audit["verdict"] == "CLEAN" and audit_binding
+        ),
         "leakage_audit_after_results": audit_after_results,
+        "leakage_audit_binding": audit_binding,
         "artifact_integrity": integrity,
     }
     status = _season_status(checks)
-    model_version, config_sha256, code_sha = (
-        next(iter(epochs)) if common_epoch else (None, None, None)
+    model_version, config_sha256, code_sha, position_mean_evidence_sha256 = (
+        next(iter(epochs)) if common_epoch else (None, None, None, None)
     )
     grade = {
         "schema_version": 1,
@@ -1594,6 +1890,7 @@ def _build_season_grade(week_grades, leakage_audit):
         "model_version": model_version,
         "config_sha256": config_sha256,
         "code_sha": code_sha,
+        "position_mean_evidence_sha256": position_mean_evidence_sha256,
         "checks": checks,
         "metrics": {
             "primary_count": len(rows), "null_mae": null_mae,
@@ -1641,6 +1938,14 @@ def verify_season_grade(grade):
         or set(grade["checks"]) != SEASON_CHECK_KEYS
         or any(type(value) is not bool for value in grade["checks"].values())
         or not _hex_digest(grade["leakage_audit_sha256"], 64)
+        or (
+            grade["checks"]["common_model_epoch"]
+            and not _hex_digest(grade["position_mean_evidence_sha256"], 64)
+        )
+        or (
+            not grade["checks"]["common_model_epoch"]
+            and grade["position_mean_evidence_sha256"] is not None
+        )
         or grade["leakage_audit_verdict"] not in {
             "CLEAN", "REVIEW REQUIRED", "NOT CLEAN",
         }
@@ -1745,6 +2050,17 @@ def _require_distinct(path, protected, label):
         raise ValueError(f"{label} aliases frozen evidence")
 
 
+def _require_disjoint(path, protected, label):
+    resolved = Path(path).resolve(strict=False)
+    if any(
+        resolved == Path(item).resolve(strict=False)
+        or resolved in Path(item).resolve(strict=False).parents
+        or Path(item).resolve(strict=False) in resolved.parents
+        for item in protected
+    ):
+        raise ValueError(f"{label} overlaps frozen evidence")
+
+
 def _common_sources(args, availability_required):
     sources = {
         "schedule": load_snapshot(args.schedule, "schedule"),
@@ -1775,7 +2091,7 @@ def _blocked(mode, error):
 
 
 def _write_blocked(path, mode, error, protected=()):
-    _require_distinct(path, protected, "Diagnostic output")
+    _require_disjoint(path, protected, "Diagnostic output")
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     pgo_fantasy._exclusive_write_text(path, _blocked(mode, error))
@@ -1848,6 +2164,11 @@ def _outputs(args):
     return (args.output_dir / "fantasy_season_grade.json",)
 
 
+def _diagnostic_protected(args, inputs, outputs):
+    packages = () if args.command == "preview" else (args.output_dir,)
+    return (*inputs, *(Path(path).parent for path in inputs), *outputs, *packages)
+
+
 def _lock_publication_guard(lock):
     if _now() > parse_timestamp(lock["decision_time"], "decision time"):
         raise ValueError("Fantasy game lock T-60 window has closed")
@@ -1895,7 +2216,10 @@ def main(argv=None):
             print(f"ERROR: {error}", file=sys.stderr)
             return 1
         try:
-            _write_blocked(diagnostic, args.command, error, (*inputs, *outputs))
+            _write_blocked(
+                diagnostic, args.command, error,
+                _diagnostic_protected(args, inputs, outputs),
+            )
         except (OSError, TypeError, ValueError):
             return 2
         return 1

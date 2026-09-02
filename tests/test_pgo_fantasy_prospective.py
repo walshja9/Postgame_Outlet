@@ -34,7 +34,7 @@ class ProspectiveFantasyFixture:
             "rows": rows,
         }
 
-    def config(self):
+    def _bare_config(self):
         return {
             "schema_version": 1,
             "model_version": "pgo_fantasy_2026_baseline_v1",
@@ -49,6 +49,44 @@ class ProspectiveFantasyFixture:
                 "QB": 15.0, "RB": 8.0, "WR": 7.0, "TE": 5.0,
             },
         }
+
+    def position_mean_evidence(self):
+        receipt = {
+            "schema_version": 1,
+            "artifact_kind": "PGO_FANTASY_POSITION_MEAN_EVIDENCE",
+            "status": "ACCEPTED",
+            "contract_version": "PGO_FANTASY_POSITION_MEANS_2020_2025_V1",
+            "source_as_of": "2026-08-31T12:00:00-04:00",
+            "captured_at": "2026-08-31T12:00:00-04:00",
+            "frozen_at": "2026-09-01T11:00:00-04:00",
+            "seasons": [2020, 2021, 2022, 2023, 2024, 2025],
+            "population": "QUALIFIED_STATS_ONLY_REGULAR_SEASON_PLAYER_GAMES",
+            "scoring": "PGO_HALF_PPR_V1",
+            "position_means": {
+                "QB": 15.0, "RB": 8.0, "WR": 7.0, "TE": 5.0,
+            },
+            "upstream_provenance": [{
+                "source": "synthetic-qualified-stats",
+                "source_as_of": "2026-08-31T12:00:00-04:00",
+                "captured_at": "2026-08-31T12:00:00-04:00",
+                "sha256": "e" * 64,
+            }],
+        }
+        receipt["artifact_sha256"] = prospective._artifact_hash(receipt)
+        return receipt
+
+    def bound_config(self, evidence=None):
+        receipt = self.position_mean_evidence() if evidence is None else evidence
+        data = (prospective.canonical_json(receipt) + "\n").encode("utf-8")
+        config = self._bare_config()
+        config.update({
+            "position_mean_evidence_sha256": hashlib.sha256(data).hexdigest(),
+            "position_mean_evidence_bytes": data.decode("utf-8"),
+        })
+        return config
+
+    def config(self):
+        return self.bound_config()
 
     def source_values(self, *, availability=True, history_rows=None):
         game_id = "2026_01_BUF_LAR"
@@ -103,12 +141,14 @@ class ProspectiveFantasyFixture:
     def command_fixture(self, root):
         root = Path(root)
         root.mkdir(parents=True, exist_ok=True)
+        inputs = root / "inputs"
+        inputs.mkdir()
         values, game_id = self.source_values()
         paths = {"root": root, "game_id": game_id}
         for kind, value in values.items():
-            paths[kind] = self.write_json(root / f"{kind}.json", value)
+            paths[kind] = self.write_json(inputs / f"{kind}.json", value)
         paths["config"] = self.write_json(
-            root / "config.json", self.config(), canonical=True
+            inputs / "config.json", self.config(), canonical=True
         )
         return paths
 
@@ -126,6 +166,94 @@ class ProspectiveFantasyFixture:
 class ProspectiveSourceBoundaryTests(
     ProspectiveFantasyFixture, unittest.TestCase
 ):
+    def test_model_config_rejects_an_unbound_position_mean_digest(self):
+        with tempfile.TemporaryDirectory() as directory:
+            config = self.config()
+            config["position_mean_evidence_sha256"] = "0" * 64
+            path = self.write_json(
+                Path(directory) / "config.json", config, canonical=True
+            )
+            with self.assertRaises(ValueError):
+                prospective.load_model_config(path)
+
+    def test_model_config_binds_an_accepted_position_mean_receipt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            config = self.bound_config()
+            path = self.write_json(
+                Path(directory) / "config.json", config, canonical=True
+            )
+            model = prospective.load_model_config(path)
+        self.assertEqual(
+            model["config"]["position_mean_evidence_bytes"],
+            config["position_mean_evidence_bytes"],
+        )
+
+    def test_model_config_rejects_invalid_position_mean_receipt_bindings(self):
+        def rehash(receipt):
+            changed = deepcopy(receipt)
+            changed["artifact_sha256"] = prospective._artifact_hash(changed)
+            return changed
+
+        cases = [("bare", self._bare_config())]
+        unknown = self.config()
+        unknown["position_mean_evidence_sha256"] = "0" * 64
+        cases.append(("unknown", unknown))
+        mismatch = self.config()
+        mismatch["position_mean_evidence_bytes"] = (
+            prospective.canonical_json(rehash({
+                **self.position_mean_evidence(),
+                "position_means": {"QB": 16.0, "RB": 8.0, "WR": 7.0, "TE": 5.0},
+            })) + "\n"
+        )
+        cases.append(("mismatch", mismatch))
+        for field, value in (
+            ("seasons", [2021, 2022, 2023, 2024, 2025]),
+            ("population", "ROSTERED_PLAYER_GAMES"),
+            ("scoring", "OTHER_SCORING"),
+            ("frozen_at", "2026-09-02T12:00:00-04:00"),
+            ("status", "PENDING"),
+            ("upstream_provenance", []),
+        ):
+            receipt = self.position_mean_evidence()
+            receipt[field] = value
+            cases.append((field, self.bound_config(rehash(receipt))))
+        tampered = self.position_mean_evidence()
+        tampered["position_means"]["QB"] = 16.0
+        cases.append(("rehash", self.bound_config(rehash(tampered))))
+        boolean_mean = self.position_mean_evidence()
+        boolean_mean["position_means"]["QB"] = True
+        cases.append(("boolean", self.bound_config(rehash(boolean_mean))))
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name, config in cases:
+                with self.subTest(name=name):
+                    path = self.write_json(
+                        root / f"{name}.json", config, canonical=True
+                    )
+                    with self.assertRaises(ValueError):
+                        prospective.load_model_config(path)
+
+    def test_diagnostic_containment_resolves_parent_aliases(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            inputs = root / "inputs"
+            inputs.mkdir()
+            schedule = inputs / "schedule.json"
+            schedule.write_text("{}\n", newline="")
+            alias_output = root / "inputs-alias" / "blocked.json"
+            original = Path.resolve
+
+            def resolved(path, strict=False):
+                if path == alias_output:
+                    return inputs / "blocked.json"
+                return original(path, strict=strict)
+
+            with patch.object(Path, "resolve", autospec=True, side_effect=resolved):
+                with self.assertRaisesRegex(ValueError, "overlaps"):
+                    prospective._require_disjoint(
+                        alias_output, (schedule, schedule.parent), "Diagnostic output"
+                    )
+
     def test_snapshot_reads_one_byte_sequence_and_receipts_exact_bytes(self):
         rows = [{
             "season": 2026, "week": 1, "game_id": "2026_01_BUF_LAR",
@@ -661,6 +789,14 @@ class ProspectiveGameLockTests(
         self.assertEqual(first, second)
         self.assertEqual(first["status"], "LOCKED")
         self.assertEqual(
+            first["position_mean_evidence_sha256"],
+            model["config"]["position_mean_evidence_sha256"],
+        )
+        self.assertEqual(
+            first["position_mean_evidence_bytes"],
+            model["config"]["position_mean_evidence_bytes"],
+        )
+        self.assertEqual(
             prospective.serialize_game_lock(first),
             prospective.serialize_game_lock(second),
         )
@@ -896,6 +1032,10 @@ class ProspectiveWeekGradeTests(
         grade = prospective.grade_week(loaded_locks, results)
         self.assertEqual(grade["status"], "HOLD")
         self.assertEqual(grade["publication_status"], "EXPERIMENTAL")
+        self.assertEqual(
+            grade["position_mean_evidence_sha256"],
+            loaded_locks[0]["lock"]["position_mean_evidence_sha256"],
+        )
         self.assertEqual(grade["metrics"]["primary"]["count"], 96)
         missing = next(row for row in grade["rows"] if row["gsis_id"] == "WR-000")
         self.assertEqual(missing["fantasy_points"], 0.0)
@@ -1084,6 +1224,23 @@ class ProspectiveWeekGradeTests(
 class ProspectiveSeasonGradeTests(
     ProspectiveFantasyFixture, unittest.TestCase
 ):
+    @staticmethod
+    def audit_weekly_evidence(weeks):
+        evidence = []
+        for grade in sorted(weeks, key=lambda grade: grade["week"]):
+            locks, _ = prospective._grade_evidence(grade)
+            evidence.append({
+                "week": grade["week"],
+                "week_grade_sha256": grade["artifact_sha256"],
+                "lock_sha256": grade["lock_sha256"],
+                "result_receipt_sha256": grade["result_receipt"]["sha256"],
+                "source_receipts": [{
+                    "lock_sha256": loaded["sha256"],
+                    "source_receipts_sha256": loaded["lock"]["source_receipts_sha256"],
+                } for loaded in locks],
+            })
+        return evidence
+
     def week_grade(self, week, strong_delta=1.0, code_sha="a" * 40):
         locks, results = ProspectiveWeekGradeTests("runTest").week_evidence()
         lock = deepcopy(locks[0]["lock"])
@@ -1123,23 +1280,58 @@ class ProspectiveSeasonGradeTests(
         )
         return grade
 
-    @staticmethod
-    def audit(verdict="CLEAN", audited_at="2026-09-11T00:00:00-04:00"):
+    def audit(self, verdict="CLEAN", audited_at="2026-09-11T00:00:00-04:00"):
+        weeks = getattr(self, "_audit_weeks", None)
+        if weeks is None:
+            weeks = self.season_weeks()
+        epochs = {
+            (
+                grade["model_version"], grade["config_sha256"], grade["code_sha"],
+                grade["position_mean_evidence_sha256"],
+            )
+            for grade in weeks
+        }
+        self.assertEqual(len(epochs), 1)
+        model_version, config_sha256, code_sha, position_mean_evidence_sha256 = (
+            next(iter(epochs))
+        )
         audit = {
             "schema_version": 1,
+            "artifact_kind": prospective.LEAKAGE_AUDIT_KIND,
+            "status": "COMPLETE",
             "verdict": verdict,
             "audited_at": audited_at,
+            "scientific_contract": prospective.LEAKAGE_AUDIT_CONTRACT,
+            "model_version": model_version,
+            "config_sha256": config_sha256,
+            "code_sha": code_sha,
+            "position_mean_evidence_sha256": position_mean_evidence_sha256,
+            "weekly_evidence": self.audit_weekly_evidence(weeks),
+            "feature_inventory": [{
+                "item": item,
+                "outcome": "PASS",
+                "evidence": "Synthetic fixture review evidence.",
+            } for item in prospective.LEAKAGE_AUDIT_ITEMS],
+            "provider_vintage_disposition": "CLEAN",
+            "findings": ["Synthetic fixture has no unresolved leakage finding."],
+            "remediation": ["Production source provenance requires independent review."],
         }
         audit["artifact_sha256"] = prospective._artifact_hash(audit)
         return audit
 
     def season_weeks(self, strong_delta=1.0):
-        return [self.week_grade(week, strong_delta) for week in range(1, 19)]
+        weeks = [self.week_grade(week, strong_delta) for week in range(1, 19)]
+        self._audit_weeks = deepcopy(weeks)
+        return weeks
 
     def test_complete_verified_weekly_evidence_passes_the_frozen_gate(self):
         receipt = prospective.grade_season(self.season_weeks(), self.audit())
         self.assertEqual(receipt["status"], "PASS")
         self.assertEqual(receipt["publication_status"], "VALIDATED")
+        self.assertEqual(
+            receipt["position_mean_evidence_sha256"],
+            self.audit()["position_mean_evidence_sha256"],
+        )
         self.assertEqual(receipt["bootstrap"]["seed"], 20260901)
         self.assertEqual(receipt["bootstrap"]["samples"], 10_000)
         self.assertGreater(receipt["bootstrap"]["lower"], 0.0)
@@ -1154,6 +1346,59 @@ class ProspectiveSeasonGradeTests(
                 prospective.grade_season(self.season_weeks(), self.audit())
             ),
         )
+
+    def test_minimal_clean_audit_cannot_pass(self):
+        audit = {
+            "schema_version": 1,
+            "verdict": "CLEAN",
+            "audited_at": "2026-09-11T00:00:00-04:00",
+        }
+        audit["artifact_sha256"] = prospective._artifact_hash(audit)
+        with self.assertRaises(ValueError):
+            prospective.grade_season(self.season_weeks(), audit)
+
+    def test_audit_requires_reconstructed_epoch_week_and_lineage_bindings(self):
+        weeks = self.season_weeks()
+        cases = []
+        foreign_epoch = self.audit()
+        foreign_epoch["config_sha256"] = "b" * 64
+        cases.append(foreign_epoch)
+        foreign_lineage = self.audit()
+        foreign_lineage["weekly_evidence"][0]["source_receipts"][0][
+            "source_receipts_sha256"
+        ] = "c" * 64
+        cases.append(foreign_lineage)
+        missing_week = self.audit()
+        missing_week["weekly_evidence"].pop()
+        cases.append(missing_week)
+        foreign_result = self.audit()
+        foreign_result["weekly_evidence"][0]["result_receipt_sha256"] = "d" * 64
+        cases.append(foreign_result)
+        for audit in cases:
+            audit["artifact_sha256"] = prospective._artifact_hash(audit)
+            with self.subTest(audit=audit["config_sha256"]):
+                receipt = prospective.grade_season(weeks, audit)
+                self.assertEqual(receipt["status"], "BLOCKED")
+                self.assertFalse(receipt["checks"]["leakage_audit_clean"])
+
+    def test_audit_review_not_clean_and_missing_record_cannot_pass(self):
+        weeks = self.season_weeks()
+        for verdict, disposition, outcome in (
+            ("REVIEW REQUIRED", "REVIEW REQUIRED", "REVIEW REQUIRED"),
+            ("NOT CLEAN", "NOT CLEAN", "NOT CLEAN"),
+        ):
+            audit = self.audit(verdict=verdict)
+            audit["provider_vintage_disposition"] = disposition
+            audit["feature_inventory"][0]["outcome"] = outcome
+            audit["artifact_sha256"] = prospective._artifact_hash(audit)
+            with self.subTest(verdict=verdict):
+                self.assertEqual(
+                    prospective.grade_season(weeks, audit)["status"], "BLOCKED"
+                )
+        missing = self.audit()
+        del missing["findings"]
+        with self.assertRaises(ValueError):
+            prospective.grade_season(weeks, missing)
 
     def test_missing_week_holds_but_duplicate_week_blocks(self):
         weeks = self.season_weeks()
@@ -1383,6 +1628,39 @@ class ProspectiveFantasyCommandTests(
             ]), 1)
             self.assertEqual(paths["schedule"].read_bytes(), first)
 
+    def test_unbound_position_means_block_preview_and_lock_before_outputs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            paths = self.command_fixture(Path(directory))
+            self.write_json(paths["config"], self._bare_config(), canonical=True)
+            preview = paths["root"] / "preview.json"
+            self.assertEqual(prospective.main([
+                "preview", "--schedule", str(paths["schedule"]),
+                "--roster", str(paths["roster"]),
+                "--history", str(paths["history"]),
+                "--config", str(paths["config"]),
+                "--week", "1", "--as-of", self.CAPTURED,
+                "--output", str(preview),
+            ]), 1)
+            self.assertFalse(preview.exists())
+            lock_dir = paths["root"] / "lock"
+            diagnostic = paths["root"] / "blocked.json"
+            with patch.object(prospective, "_current_code_sha") as code_sha:
+                self.assertEqual(prospective.main([
+                    "lock", "--schedule", str(paths["schedule"]),
+                    "--roster", str(paths["roster"]),
+                    "--availability", str(paths["availability"]),
+                    "--history", str(paths["history"]),
+                    "--config", str(paths["config"]),
+                    "--game-id", paths["game_id"],
+                    "--output-dir", str(lock_dir),
+                    "--diagnostic-output", str(diagnostic),
+                ]), 1)
+            code_sha.assert_not_called()
+            self.assertFalse(lock_dir.exists())
+            self.assertEqual(
+                json.loads(diagnostic.read_text())["status"], "BLOCKED"
+            )
+
     def test_preview_refuses_existing_lock_grade_and_foreign_bytes(self):
         with tempfile.TemporaryDirectory() as directory:
             paths = self.command_fixture(Path(directory))
@@ -1542,6 +1820,66 @@ class ProspectiveFantasyCommandTests(
                 ]), 2)
             self.assertEqual(diagnostic.read_bytes(), first)
 
+    def test_diagnostics_cannot_enter_inputs_or_foreign_packages(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths = self.command_fixture(root / "lock-inputs")
+            lock_diagnostic = paths["schedule"].parent / "blocked.json"
+            with patch.object(
+                prospective, "_now",
+                return_value=prospective.parse_timestamp(
+                    "2026-09-09T19:21:00-04:00", "test clock"
+                ),
+            ):
+                self.assertEqual(prospective.main([
+                    "lock", "--schedule", str(paths["schedule"]),
+                    "--roster", str(paths["roster"]),
+                    "--availability", str(paths["availability"]),
+                    "--history", str(paths["history"]),
+                    "--config", str(paths["config"]),
+                    "--game-id", paths["game_id"],
+                    "--output-dir", str(root / "lock-output"),
+                    "--diagnostic-output", str(lock_diagnostic),
+                ]), 2)
+            self.assertFalse(lock_diagnostic.exists())
+
+            foreign_week = root / "foreign-week"
+            foreign_week.mkdir()
+            week_sentinel = foreign_week / "fantasy_week_grade.json"
+            week_sentinel.write_bytes(b"foreign weekly evidence\n")
+            week_diagnostic = foreign_week / "blocked.json"
+            with patch.object(
+                prospective, "load_game_lock", side_effect=ValueError("forced")
+            ):
+                self.assertEqual(prospective.main([
+                    "grade-week", "--lock", str(root / "lock.json"),
+                    "--results", str(root / "results.json"),
+                    "--output-dir", str(foreign_week),
+                    "--diagnostic-output", str(week_diagnostic),
+                ]), 2)
+            self.assertEqual(week_sentinel.read_bytes(), b"foreign weekly evidence\n")
+            self.assertFalse(week_diagnostic.exists())
+
+            season_input = root / "season-input"
+            season_input.mkdir()
+            grade_path = season_input / "grade.json"
+            audit_path = season_input / "audit.json"
+            grade_path.write_bytes(b"frozen weekly grade\n")
+            audit_path.write_bytes(b"frozen audit\n")
+            season_diagnostic = season_input / "blocked.json"
+            with patch.object(
+                prospective, "load_week_grade", side_effect=ValueError("forced")
+            ):
+                self.assertEqual(prospective.main([
+                    "grade-season", "--week-grade", str(grade_path),
+                    "--leakage-audit", str(audit_path),
+                    "--output-dir", str(root / "season-output"),
+                    "--diagnostic-output", str(season_diagnostic),
+                ]), 2)
+            self.assertEqual(grade_path.read_bytes(), b"frozen weekly grade\n")
+            self.assertEqual(audit_path.read_bytes(), b"frozen audit\n")
+            self.assertFalse(season_diagnostic.exists())
+
     def test_grade_commands_route_hold_and_pass_exit_codes(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -1584,6 +1922,7 @@ class ProspectiveFantasyCommandTests(
     def test_grade_commands_require_the_frozen_runtime_epoch(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
+            inputs = root / "inputs"
             diagnostic = root / "blocked.json"
             with (
                 patch.object(
@@ -1594,8 +1933,8 @@ class ProspectiveFantasyCommandTests(
                 patch.object(prospective, "grade_week") as grade_week,
             ):
                 self.assertEqual(prospective.main([
-                    "grade-week", "--lock", str(root / "lock.json"),
-                    "--results", str(root / "results.json"),
+                    "grade-week", "--lock", str(inputs / "lock.json"),
+                    "--results", str(inputs / "results.json"),
                     "--output-dir", str(root / "week"),
                     "--diagnostic-output", str(diagnostic),
                 ]), 1)
@@ -1613,8 +1952,8 @@ class ProspectiveFantasyCommandTests(
                 patch.object(prospective, "grade_season") as grade_season,
             ):
                 self.assertEqual(prospective.main([
-                    "grade-season", "--week-grade", str(root / "week.json"),
-                    "--leakage-audit", str(root / "audit.json"),
+                    "grade-season", "--week-grade", str(inputs / "week.json"),
+                    "--leakage-audit", str(inputs / "audit.json"),
                     "--output-dir", str(root / "season"),
                     "--diagnostic-output", str(diagnostic),
                 ]), 1)

@@ -200,9 +200,20 @@ Historical weekly roster files are not used to estimate the frozen position
 means, so their unresolved publication vintage is not imported into this
 prospective initializer.
 
-The frozen model configuration records its timezone-bearing freeze time and the
-SHA-256 of the accepted position-mean evidence receipt; a bare set of manually
-entered means is not gradeable.
+The frozen model configuration records its timezone-bearing freeze time, the
+exact strict-UTF-8 canonical bytes of one accepted position-mean evidence
+receipt, and that receipt's SHA-256. The receipt has a fixed artifact
+kind/status and contract version; it declares the exact 2020-2025 season set,
+stats-only regular-season player-game population, half-PPR scoring, finite QB/
+RB/WR/TE means, a freeze no later than the config freeze, and nonempty,
+chronologically legal upstream provenance. The embedded receipt bytes, digest,
+and means must agree exactly. A bare mean vector, an absent/unknown receipt, or
+a rehashed receipt with mismatched means is not gradeable.
+
+Every lock embeds the exact canonical config bytes and the same position-mean
+receipt identity; weekly grades and season evidence retain that identity as part
+of their common epoch. This prevents a later initializer change from being
+claimed under the frozen epoch.
 
 ### 6.2 Strong baseline
 
@@ -364,7 +375,14 @@ Scientific `PASS` requires every condition below:
    folds; a tie is not a win.
 6. Source, identity, chronology, finiteness, common-row, hash, and grade-binding
    checks all pass.
-7. A completed manual prospective leakage audit returns `CLEAN`.
+7. A completed canonical prospective leakage audit returns `CLEAN`. It must
+   bind the exact scientific contract version; model/config/code/position-mean
+   epoch; every supplied weekly-grade hash and its result, lock, and source
+   receipt identities; the fixed reviewed feature/lineage inventory with an
+   outcome for each item; a provider-vintage disposition; and nonempty
+   findings and remediation records. The audit must be after all supplied
+   result captures, and all of those bindings are reconstructed from embedded
+   weekly evidence before `CLEAN` can qualify the season.
 
 A statistical shortfall is `HOLD` with publication status `EXPERIMENTAL`.
 Missing, contradictory, after-T, or integrity-invalid evidence is `BLOCKED`.
@@ -387,6 +405,10 @@ from different versions cannot be pooled. A midseason version may run as a
 clearly labeled shadow, but it cannot rewrite earlier locks or inherit the
 original full-season promotion claim.
 
+The leakage audit is part of that firewall rather than a free-standing
+self-attestation: an audit from a different epoch or a different set of
+embedded weekly/result/lock/source receipts cannot produce a PASS.
+
 Historical roster provenance remains `REVIEW_REQUIRED`. Clean prospective 2026
 captures do not retroactively certify historical source availability.
 
@@ -400,6 +422,11 @@ Complete outputs are staged and durably flushed before exclusive promotion.
 On failure, cleanup removes only paths demonstrably owned by that run. A failed
 run leaves no accepted partial lock and never deletes or overwrites a foreign
 artifact.
+
+A `BLOCKED` diagnostic is also append-only and must be path-disjoint, in both
+ancestor and descendant directions after symlink resolution, from every frozen
+input directory and every artifact output/package directory. A conflicting or
+unwritable diagnostic fails closed without adding a file to that evidence.
 
 A retry may occur only while the current time is no later than `T`. Once `T`
 passes, a missing lock produces a `BLOCKED` diagnostic and cannot be recreated

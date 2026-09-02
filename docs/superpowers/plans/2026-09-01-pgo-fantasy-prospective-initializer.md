@@ -20,16 +20,30 @@
 - Current team, opponent, position, and eligibility come only from the frozen pregame roster snapshot. FB maps to RB.
 - Player history uses at most eight completed regular-season games from 2025 and 2026, with a four-game half-life and four frozen position-mean pseudo-games through the existing `pgo_fantasy.strong_baseline`.
 - A player with no legal history receives the frozen position mean and `TRUE_COLD_START`.
+- The frozen config embeds exact canonical strict-UTF-8 bytes and SHA-256 for
+  one `ACCEPTED` position-mean receipt. That receipt must declare the fixed
+  2020-2025 stats-only regular-season player-game population, half-PPR scoring,
+  finite QB/RB/WR/TE means equal to config means, legal freeze chronology, and
+  nonempty upstream provenance. Locks retain the config and receipt bytes;
+  weekly and season epochs retain the receipt hash.
 - Verified inactive players lock at `0.0` and are not ranking eligible. Unverified availability may appear only in preview and blocks a T-60 lock.
 - A game lock requires complete roster and availability coverage for both participating teams and stable GSIS identity for every normalized fantasy row.
 - A weekly primary pool is exactly 24 QB, 24 RB, 24 WR, 12 TE, and 12 remaining RB/WR/TE FLEX rows selected by the existing `pgo_fantasy.select_primary_pool`.
 - Primary metric is player-game-weighted MAE. The full-season gate uses seed `20260901`, 10,000 paired week-block resamples, at least 1% pooled MAE improvement, a positive lower 95% bound, and a strict majority of weekly wins.
-- No scientific PASS before all 18 regular-season weeks are present and the prospective leakage audit is `CLEAN`.
+- No scientific PASS before all 18 regular-season weeks are present and the
+  canonical prospective leakage audit is `CLEAN`. The audit binds the exact
+  scientific contract/version, model/config/code/position-mean epoch, all
+  supplied weekly-grade/result/lock/source receipt identities, fixed reviewed
+  feature/lineage outcomes, provider-vintage disposition, and nonempty
+  findings/remediation; those bindings are reconstructed from embedded grades.
 - Preview output paths are append-only/no-overwrite. A rerun requires a new
   path; any existing target fails closed with its bytes preserved. Locks,
   weekly grades, season grades, and BLOCKED diagnostics also use no-overwrite
   publication.
 - All accepted JSON uses strict UTF-8, compact canonical JSON, finite values, sorted keys, and one LF terminator.
+- A `BLOCKED` diagnostic must resolve path-disjoint in both ancestor and
+  descendant directions (including aliases) from frozen input directories and
+  artifact output/package directories; otherwise it fails closed with exit 2.
 - Do not fetch remote data or read the real nflverse cache, `prospective_evidence/`, or accepted research directories during implementation verification. All focused tests use synthetic temporary files.
 - Do not alter `pgo_fantasy.py`, `pgo_prospective.py`, `pgo_challenger.py`, `pgo_sources.py`, `research/`, `data/`, `docs/index.html`, `.github/workflows/`, `SHOPIFY.md`, or store/theme files.
 - Do not rewrite the July team-model lock, historical snapshots, McCabe comparison, or public `Experimental model — HOLD` label.
@@ -57,6 +71,8 @@
 - Produces `verify_loaded_snapshot(loaded: dict, kind: str) -> dict` so later callers cannot use a mutated parsed view that no longer matches the frozen bytes.
 - Produces `serialize_model_config(config: dict) -> str`.
 - Produces `load_model_config(path: Path) -> dict` with exact keys `config`, `sha256`, and immutable `bytes`, plus `verify_model_config(model: dict) -> dict`.
+- Produces `verify_position_mean_evidence(receipt: dict) -> dict` and validates
+  the exact receipt bytes embedded in the model config before preview or lock.
 - Produces test fixture `ProspectiveFantasyFixture` for Tasks 2-6.
 
 - [ ] **Step 1: Create the fixture and RED trust-boundary tests**
@@ -98,7 +114,32 @@ class ProspectiveFantasyFixture:
             "rows": rows,
         }
 
+    def position_mean_evidence(self):
+        receipt = {
+            "schema_version": 1,
+            "artifact_kind": "PGO_FANTASY_POSITION_MEAN_EVIDENCE",
+            "status": "ACCEPTED",
+            "contract_version": "PGO_FANTASY_POSITION_MEANS_2020_2025_V1",
+            "source_as_of": "2026-08-31T12:00:00-04:00",
+            "captured_at": "2026-08-31T12:00:00-04:00",
+            "frozen_at": "2026-09-01T11:00:00-04:00",
+            "seasons": [2020, 2021, 2022, 2023, 2024, 2025],
+            "population": "QUALIFIED_STATS_ONLY_REGULAR_SEASON_PLAYER_GAMES",
+            "scoring": "PGO_HALF_PPR_V1",
+            "position_means": {"QB": 15.0, "RB": 8.0, "WR": 7.0, "TE": 5.0},
+            "upstream_provenance": [{
+                "source": "synthetic-qualified-stats",
+                "source_as_of": "2026-08-31T12:00:00-04:00",
+                "captured_at": "2026-08-31T12:00:00-04:00",
+                "sha256": "e" * 64,
+            }],
+        }
+        receipt["artifact_sha256"] = prospective._artifact_hash(receipt)
+        return receipt
+
     def config(self):
+        receipt = self.position_mean_evidence()
+        receipt_bytes = prospective.canonical_json(receipt) + "\n"
         return {
             "schema_version": 1,
             "model_version": "pgo_fantasy_2026_baseline_v1",
@@ -108,7 +149,10 @@ class ProspectiveFantasyFixture:
             "history_games": 8,
             "half_life_games": 4,
             "pseudo_games": 4,
-            "position_mean_evidence_sha256": "d" * 64,
+            "position_mean_evidence_sha256": hashlib.sha256(
+                receipt_bytes.encode("utf-8")
+            ).hexdigest(),
+            "position_mean_evidence_bytes": receipt_bytes,
             "position_means": {
                 "QB": 15.0, "RB": 8.0, "WR": 7.0, "TE": 5.0,
             },
@@ -343,7 +387,7 @@ ROW_FIELDS = {
 CONFIG_KEYS = frozenset({
     "schema_version", "model_version", "frozen_at", "trained_through", "scoring",
     "history_games", "half_life_games", "pseudo_games", "position_means",
-    "position_mean_evidence_sha256",
+    "position_mean_evidence_sha256", "position_mean_evidence_bytes",
 })
 POSITIONS = ("QB", "RB", "WR", "TE")
 
@@ -495,11 +539,21 @@ def _validate_model_config(config):
         or type(config["pseudo_games"]) is not int
         or config["pseudo_games"] != 4
         or not _hex_digest(config["position_mean_evidence_sha256"], 64)
+        or not isinstance(config["position_mean_evidence_bytes"], str)
         or not isinstance(config["position_means"], dict)
         or set(config["position_means"]) != set(POSITIONS)
     ):
         raise ValueError("Prospective model config is invalid")
-    parse_timestamp(config["frozen_at"], "model config frozen_at")
+    frozen_at = parse_timestamp(config["frozen_at"], "model config frozen_at")
+    evidence_bytes = config["position_mean_evidence_bytes"].encode("utf-8")
+    evidence = _position_mean_evidence_from_bytes(evidence_bytes)
+    if (
+        hashlib.sha256(evidence_bytes).hexdigest()
+        != config["position_mean_evidence_sha256"]
+        or parse_timestamp(evidence["frozen_at"], "position evidence frozen_at")
+        > frozen_at
+    ):
+        raise ValueError("Prospective model config position evidence is invalid")
     means = {}
     for position in POSITIONS:
         try:
@@ -509,6 +563,8 @@ def _validate_model_config(config):
         if not math.isfinite(value) or value <= 0.0:
             raise ValueError("Prospective model config position mean is invalid")
         means[position] = value
+    if evidence["position_means"] != means:
+        raise ValueError("Prospective model config position evidence is invalid")
     normalized = deepcopy(config)
     normalized["model_version"] = config["model_version"].strip()
     normalized["position_means"] = means
@@ -1971,12 +2027,24 @@ The exact helpers below build canonical 96-row weekly grades in memory. PASS fix
 
 ```python
 class ProspectiveSeasonGradeTests(unittest.TestCase):
-    @staticmethod
-    def audit(verdict):
+    def audit(self, weeks, verdict="CLEAN"):
+        model_version, config_sha256, code_sha, position_mean_sha256 = epoch(weeks)
         audit = {
             "schema_version": 1,
+            "artifact_kind": "PGO_FANTASY_PROSPECTIVE_LEAKAGE_AUDIT",
+            "status": "COMPLETE",
             "verdict": verdict,
             "audited_at": "2027-01-11T12:00:00-05:00",
+            "scientific_contract": "PGO_FANTASY_PROSPECTIVE_2026_SCIENTIFIC_V1",
+            "model_version": model_version,
+            "config_sha256": config_sha256,
+            "code_sha": code_sha,
+            "position_mean_evidence_sha256": position_mean_sha256,
+            "weekly_evidence": audit_weekly_evidence(weeks),
+            "feature_inventory": reviewed_inventory_with_outcomes(),
+            "provider_vintage_disposition": "CLEAN",
+            "findings": ["completed review record"],
+            "remediation": ["completed remediation record"],
         }
         audit["artifact_sha256"] = prospective._artifact_hash(audit)
         return audit
@@ -2063,13 +2131,13 @@ class ProspectiveSeasonGradeTests(unittest.TestCase):
 
     def test_incomplete_season_cannot_pass(self):
         weeks = [self.week_grade(week, strong_delta=1.0) for week in range(1, 18)]
-        receipt = prospective.grade_season(weeks, self.audit("CLEAN"))
+        receipt = prospective.grade_season(weeks, self.audit(weeks, "CLEAN"))
         self.assertEqual(receipt["status"], "HOLD")
         self.assertFalse(receipt["checks"]["season_complete"])
 
     def test_complete_clear_improvement_passes_locked_gate(self):
         weeks = [self.week_grade(week, strong_delta=1.0) for week in range(1, 19)]
-        receipt = prospective.grade_season(weeks, self.audit("CLEAN"))
+        receipt = prospective.grade_season(weeks, self.audit(weeks, "CLEAN"))
         self.assertEqual(receipt["status"], "PASS")
         self.assertEqual(receipt["publication_status"], "VALIDATED")
         self.assertEqual(receipt["bootstrap"]["seed"], 20260901)
@@ -2078,23 +2146,25 @@ class ProspectiveSeasonGradeTests(unittest.TestCase):
 
     def test_statistical_shortfall_holds_and_unclean_audit_blocks(self):
         weeks = [self.week_grade(week, strong_delta=0.0) for week in range(1, 19)]
-        hold = prospective.grade_season(weeks, self.audit("CLEAN"))
+        hold = prospective.grade_season(weeks, self.audit(weeks, "CLEAN"))
         self.assertEqual(hold["status"], "HOLD")
-        blocked = prospective.grade_season(weeks, self.audit("REVIEW REQUIRED"))
+        blocked = prospective.grade_season(
+            weeks, self.audit(weeks, "REVIEW REQUIRED")
+        )
         self.assertEqual(blocked["status"], "BLOCKED")
 
     def test_mixed_model_versions_are_blocked(self):
         weeks = [self.week_grade(week, strong_delta=1.0) for week in range(1, 19)]
         weeks[-1]["model_version"] = "different"
         weeks[-1]["artifact_sha256"] = prospective._artifact_hash(weeks[-1])
-        receipt = prospective.grade_season(weeks, self.audit("CLEAN"))
+        receipt = prospective.grade_season(weeks, self.audit(weeks, "CLEAN"))
         self.assertEqual(receipt["status"], "BLOCKED")
 
     def test_rehashed_incomplete_weekly_pool_cannot_pass(self):
         weeks = [self.week_grade(week, strong_delta=1.0) for week in range(1, 19)]
         weeks[-1]["rows"].pop()
         weeks[-1]["artifact_sha256"] = prospective._artifact_hash(weeks[-1])
-        receipt = prospective.grade_season(weeks, self.audit("CLEAN"))
+        receipt = prospective.grade_season(weeks, self.audit(weeks, "CLEAN"))
         self.assertEqual(receipt["status"], "BLOCKED")
         self.assertFalse(receipt["checks"]["artifact_integrity"])
 ```
@@ -2114,7 +2184,10 @@ Expected: ERROR for missing season-grade functions.
 BOOTSTRAP_SEED = 20260901
 BOOTSTRAP_SAMPLES = 10_000
 LEAKAGE_AUDIT_KEYS = frozenset({
-    "schema_version", "verdict", "audited_at", "artifact_sha256",
+    "schema_version", "artifact_kind", "status", "verdict", "audited_at",
+    "scientific_contract", "model_version", "config_sha256", "code_sha",
+    "position_mean_evidence_sha256", "weekly_evidence", "feature_inventory",
+    "provider_vintage_disposition", "findings", "remediation", "artifact_sha256",
 })
 
 
@@ -2132,10 +2205,17 @@ def verify_leakage_audit(audit):
         not isinstance(audit, dict) or set(audit) != LEAKAGE_AUDIT_KEYS
         or type(audit["schema_version"]) is not int
         or audit["schema_version"] != 1
+        or audit["artifact_kind"] != "PGO_FANTASY_PROSPECTIVE_LEAKAGE_AUDIT"
+        or audit["status"] != "COMPLETE"
         or audit["verdict"] not in {"CLEAN", "REVIEW REQUIRED", "NOT CLEAN"}
+        or audit["scientific_contract"] != "PGO_FANTASY_PROSPECTIVE_2026_SCIENTIFIC_V1"
     ):
         raise ValueError("Prospective leakage audit is invalid")
     parse_timestamp(audit["audited_at"], "leakage audited_at")
+    # Require canonical, nonempty weekly evidence (week grade, result, lock,
+    # source-receipt identities), the exact reviewed inventory, provider
+    # disposition, and nonempty findings/remediation. CLEAN requires every
+    # item and provider disposition to be CLEAN/PASS.
     if audit["artifact_sha256"] != _artifact_hash(audit):
         raise ValueError("Prospective leakage audit integrity is invalid")
     return audit
@@ -2172,13 +2252,17 @@ def grade_season(week_grades, leakage_audit):
             continue
         valid_grades.append(grade)
     versions = {
-        (grade.get("model_version"), grade.get("config_sha256"))
+        (
+            grade.get("model_version"), grade.get("config_sha256"),
+            grade.get("code_sha"), grade.get("position_mean_evidence_sha256"),
+        )
         for grade in valid_grades
     }
     weeks = {grade.get("week") for grade in valid_grades}
     complete = weeks == set(range(1, 19)) and len(valid_grades) == 18
     common_epoch = len(versions) == 1
-    audit_clean = leakage_audit.get("verdict") == "CLEAN"
+    audit_binding = _audit_matches_grades(leakage_audit, valid_grades)
+    audit_clean = leakage_audit["verdict"] == "CLEAN" and audit_binding
     weekly_primary_pools = (
         len(valid_grades) == len(week_grades)
         and all(
@@ -2211,15 +2295,15 @@ def grade_season(week_grades, leakage_audit):
     statistical = bool(
         complete and weekly_primary_pools
         and relative >= 0.01 and bootstrap is not None
-        and bootstrap["lower"] > 0.0 and weekly_wins > 9
+        and bootstrap["lower"] > 0.0 and weekly_wins > 9 and audit_clean
     )
     blocked = (
         not integrity or not common_epoch
         or (complete and (not audit_clean or not weekly_primary_pools))
     )
     status = "BLOCKED" if blocked else "PASS" if statistical else "HOLD"
-    model_version, config_sha256 = (
-        next(iter(versions)) if len(versions) == 1 else (None, None)
+    model_version, config_sha256, code_sha, position_mean_evidence_sha256 = (
+        next(iter(versions)) if len(versions) == 1 else (None, None, None, None)
     )
     receipt = {
         "schema_version": 1,
@@ -2231,6 +2315,8 @@ def grade_season(week_grades, leakage_audit):
         "season": 2026,
         "model_version": model_version,
         "config_sha256": config_sha256,
+        "code_sha": code_sha,
+        "position_mean_evidence_sha256": position_mean_evidence_sha256,
         "checks": {
             "season_complete": complete,
             "common_model_epoch": common_epoch,
@@ -2241,6 +2327,7 @@ def grade_season(week_grades, leakage_audit):
             ),
             "strict_majority_weekly_wins": weekly_wins > 9,
             "leakage_audit_clean": audit_clean,
+            "leakage_audit_binding": audit_binding,
             "artifact_integrity": integrity,
         },
         "metrics": {
@@ -2469,7 +2556,7 @@ import subprocess
 
 CODE_PATHS = (
     "pgo_fantasy_prospective.py", "pgo_fantasy.py", "pgo_prospective.py",
-    "pgo_challenger.py", "pgo_sources.py",
+    "pgo_challenger.py", "pgo_sources.py", "pgo_model.py", "release_ratings.py",
 )
 
 
@@ -2526,7 +2613,19 @@ def _blocked(mode, error):
     return canonical_json(receipt) + "\n"
 
 
-def _write_blocked(path, mode, error):
+def _require_disjoint(path, protected, label):
+    resolved = Path(path).resolve(strict=False)
+    if any(
+        resolved == Path(item).resolve(strict=False)
+        or resolved in Path(item).resolve(strict=False).parents
+        or Path(item).resolve(strict=False) in resolved.parents
+        for item in protected
+    ):
+        raise ValueError(f"{label} overlaps frozen evidence")
+
+
+def _write_blocked(path, mode, error, protected=()):
+    _require_disjoint(path, protected, "Diagnostic output")
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     pgo_fantasy._exclusive_write_text(path, _blocked(mode, error))
@@ -2577,6 +2676,7 @@ def _parser():
 
 def main(argv=None):
     args = _parser().parse_args(argv)
+    inputs, outputs = _inputs(args), _outputs(args)
     try:
         if args.command == "preview":
             sources, model = _common_sources(args, False)
@@ -2611,7 +2711,10 @@ def main(argv=None):
             print(f"ERROR: {error}", file=sys.stderr)
             return 1
         try:
-            _write_blocked(diagnostic, args.command, error)
+            _write_blocked(
+                diagnostic, args.command, error,
+                _diagnostic_protected(args, inputs, outputs),
+            )
         except (OSError, TypeError, ValueError):
             return 2
         return 1
