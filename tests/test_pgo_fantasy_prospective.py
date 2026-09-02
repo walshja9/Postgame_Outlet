@@ -2,6 +2,7 @@ import hashlib
 import json
 import math
 import tempfile
+import subprocess
 import unittest
 from copy import deepcopy
 from pathlib import Path
@@ -1306,3 +1307,236 @@ class ProspectiveSeasonGradeTests(
             first = path.read_bytes()
             self.assertFalse(prospective.write_season_grade(output, receipt))
             self.assertEqual(path.read_bytes(), first)
+
+
+class ProspectiveFantasyCommandTests(
+    ProspectiveFantasyFixture, unittest.TestCase
+):
+    def test_preview_and_lock_use_only_supplied_local_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            paths = self.command_fixture(Path(directory))
+            preview = paths["root"] / "preview.json"
+            with (
+                patch("urllib.request.urlopen") as remote,
+                patch.object(
+                    prospective, "_now",
+                    return_value=prospective.parse_timestamp(
+                        self.LOCKED_AT, "test clock"
+                    ),
+                ),
+                patch.object(
+                    prospective, "_current_code_sha", return_value="a" * 40
+                ),
+            ):
+                self.assertEqual(prospective.main([
+                    "preview", "--schedule", str(paths["schedule"]),
+                    "--roster", str(paths["roster"]),
+                    "--history", str(paths["history"]),
+                    "--config", str(paths["config"]),
+                    "--week", "1", "--as-of", self.CAPTURED,
+                    "--output", str(preview),
+                ]), 0)
+                self.assertEqual(prospective.main([
+                    "lock", "--schedule", str(paths["schedule"]),
+                    "--roster", str(paths["roster"]),
+                    "--availability", str(paths["availability"]),
+                    "--history", str(paths["history"]),
+                    "--config", str(paths["config"]),
+                    "--game-id", paths["game_id"],
+                    "--output-dir", str(paths["root"] / "lock"),
+                    "--diagnostic-output", str(paths["root"] / "lock-blocked.json"),
+                ]), 0)
+            remote.assert_not_called()
+            self.assertTrue(preview.is_file())
+            self.assertTrue((paths["root"] / "lock" / "fantasy_lock.json").is_file())
+
+    def test_preview_cannot_replace_a_supplied_frozen_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            paths = self.command_fixture(Path(directory))
+            first = paths["schedule"].read_bytes()
+            self.assertEqual(prospective.main([
+                "preview", "--schedule", str(paths["schedule"]),
+                "--roster", str(paths["roster"]),
+                "--history", str(paths["history"]),
+                "--config", str(paths["config"]),
+                "--week", "1", "--as-of", self.CAPTURED,
+                "--output", str(paths["schedule"]),
+            ]), 1)
+            self.assertEqual(paths["schedule"].read_bytes(), first)
+
+    def test_lock_rechecks_time_before_publication(self):
+        with tempfile.TemporaryDirectory() as directory:
+            paths = self.command_fixture(Path(directory))
+            output = paths["root"] / "late-lock"
+            diagnostic = paths["root"] / "late-blocked.json"
+            events = []
+
+            def code_sha():
+                events.append("sha")
+                return "a" * 40
+
+            def clock():
+                events.append("now")
+                return prospective.parse_timestamp(
+                    (self.LOCKED_AT if events.count("now") == 1
+                     else "2026-09-09T19:21:00-04:00"),
+                    "test clock",
+                )
+
+            with (
+                patch.object(prospective, "_now", side_effect=clock),
+                patch.object(prospective, "_current_code_sha", side_effect=code_sha),
+            ):
+                result = prospective.main([
+                    "lock", "--schedule", str(paths["schedule"]),
+                    "--roster", str(paths["roster"]),
+                    "--availability", str(paths["availability"]),
+                    "--history", str(paths["history"]),
+                    "--config", str(paths["config"]),
+                    "--game-id", paths["game_id"], "--output-dir", str(output),
+                    "--diagnostic-output", str(diagnostic),
+                ])
+            self.assertEqual(result, 1)
+            self.assertEqual(events[:2], ["sha", "now"])
+            self.assertEqual(events.count("now"), 2)
+            self.assertFalse(output.exists())
+            self.assertEqual(json.loads(diagnostic.read_text())["status"], "BLOCKED")
+
+    def test_existing_diagnostic_is_never_replaced(self):
+        with tempfile.TemporaryDirectory() as directory:
+            paths = self.command_fixture(Path(directory))
+            diagnostic = paths["root"] / "blocked.json"
+            diagnostic.write_text("frozen evidence\n", newline="")
+            first = diagnostic.read_bytes()
+            with (
+                patch.object(
+                    prospective, "_now",
+                    return_value=prospective.parse_timestamp(
+                        "2026-09-09T19:21:00-04:00", "test clock"
+                    ),
+                ),
+                patch.object(
+                    prospective, "_current_code_sha", return_value="a" * 40
+                ),
+            ):
+                self.assertEqual(prospective.main([
+                    "lock", "--schedule", str(paths["schedule"]),
+                    "--roster", str(paths["roster"]),
+                    "--availability", str(paths["availability"]),
+                    "--history", str(paths["history"]),
+                    "--config", str(paths["config"]),
+                    "--game-id", paths["game_id"],
+                    "--output-dir", str(paths["root"] / "lock"),
+                    "--diagnostic-output", str(diagnostic),
+                ]), 2)
+            self.assertEqual(diagnostic.read_bytes(), first)
+
+    def test_grade_commands_route_hold_and_pass_exit_codes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with (
+                patch.object(
+                    prospective, "load_game_lock",
+                    return_value={"lock": {"code_sha": "a" * 40}},
+                ),
+                patch.object(prospective, "load_results", return_value={}),
+                patch.object(prospective, "_current_code_sha", return_value="a" * 40),
+                patch.object(
+                    prospective, "grade_week", return_value={"status": "HOLD"}
+                ),
+                patch.object(prospective, "write_week_grade", return_value=True),
+            ):
+                self.assertEqual(prospective.main([
+                    "grade-week", "--lock", str(root / "lock.json"),
+                    "--results", str(root / "results.json"),
+                    "--output-dir", str(root / "week"),
+                    "--diagnostic-output", str(root / "week-blocked.json"),
+                ]), 1)
+            with (
+                patch.object(
+                    prospective, "load_week_grade", return_value={"code_sha": "a" * 40}
+                ),
+                patch.object(prospective, "load_leakage_audit", return_value={}),
+                patch.object(prospective, "_current_code_sha", return_value="a" * 40),
+                patch.object(
+                    prospective, "grade_season", return_value={"status": "PASS"}
+                ),
+                patch.object(prospective, "write_season_grade", return_value=True),
+            ):
+                self.assertEqual(prospective.main([
+                    "grade-season", "--week-grade", str(root / "week.json"),
+                    "--leakage-audit", str(root / "audit.json"),
+                    "--output-dir", str(root / "season"),
+                    "--diagnostic-output", str(root / "season-blocked.json"),
+                ]), 0)
+
+    def test_grade_commands_require_the_frozen_runtime_epoch(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            diagnostic = root / "blocked.json"
+            with (
+                patch.object(
+                    prospective, "load_game_lock",
+                    return_value={"lock": {"code_sha": "a" * 40}},
+                ),
+                patch.object(prospective, "_current_code_sha", return_value="b" * 40),
+                patch.object(prospective, "grade_week") as grade_week,
+            ):
+                self.assertEqual(prospective.main([
+                    "grade-week", "--lock", str(root / "lock.json"),
+                    "--results", str(root / "results.json"),
+                    "--output-dir", str(root / "week"),
+                    "--diagnostic-output", str(diagnostic),
+                ]), 1)
+            grade_week.assert_not_called()
+            self.assertIn("runtime code", json.loads(diagnostic.read_text())["error"])
+            diagnostic.unlink()
+            with (
+                patch.object(
+                    prospective, "load_week_grade", return_value={"code_sha": "a" * 40}
+                ),
+                patch.object(
+                    prospective, "_current_code_sha",
+                    side_effect=ValueError("Prospective fantasy runtime code is not clean"),
+                ),
+                patch.object(prospective, "grade_season") as grade_season,
+            ):
+                self.assertEqual(prospective.main([
+                    "grade-season", "--week-grade", str(root / "week.json"),
+                    "--leakage-audit", str(root / "audit.json"),
+                    "--output-dir", str(root / "season"),
+                    "--diagnostic-output", str(diagnostic),
+                ]), 1)
+            grade_season.assert_not_called()
+
+    def test_code_sha_requires_a_clean_tracked_runtime_and_wraps_git_errors(self):
+        head = prospective.subprocess.CompletedProcess(
+            (), 0, stdout="a" * 40 + "\n", stderr=""
+        )
+        clean = prospective.subprocess.CompletedProcess((), 0, stdout="", stderr="")
+        tracked = prospective.subprocess.CompletedProcess(
+            (), 0, stdout="\n".join(prospective.CODE_PATHS) + "\n", stderr=""
+        )
+        dirty = prospective.subprocess.CompletedProcess(
+            (), 0, stdout=" M pgo_fantasy.py\n", stderr=""
+        )
+        with patch.object(
+            prospective.subprocess, "run", side_effect=(head, clean, tracked)
+        ):
+            self.assertEqual(prospective._current_code_sha(), "a" * 40)
+        with patch.object(
+            prospective.subprocess, "run", side_effect=(head, dirty)
+        ):
+            with self.assertRaisesRegex(ValueError, "not clean"):
+                prospective._current_code_sha()
+        with patch.object(
+            prospective.subprocess, "run",
+            side_effect=subprocess.CalledProcessError(1, ("git",)),
+        ):
+            with self.assertRaisesRegex(ValueError, "identity"):
+                prospective._current_code_sha()
+
+    def test_cli_help_lists_only_four_local_operations(self):
+        with self.assertRaises(SystemExit) as caught:
+            prospective.main(["--help"])
+        self.assertEqual(caught.exception.code, 0)

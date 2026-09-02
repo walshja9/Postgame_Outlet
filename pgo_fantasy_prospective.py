@@ -1,10 +1,12 @@
 """Prospective 2026 half-PPR fantasy previews, locks, and grades."""
 
+import argparse
 import csv
 import hashlib
 import io
 import json
 import math
+import subprocess
 import sys
 from copy import deepcopy
 from datetime import datetime, timedelta
@@ -1637,3 +1639,205 @@ def write_season_grade(output_dir, grade):
     return pgo_prospective._write_new_outputs(output_dir, (
         (output_dir / "fantasy_season_grade.json", serialize_season_grade(grade)),
     ))
+
+
+CODE_PATHS = (
+    "pgo_fantasy_prospective.py", "pgo_fantasy.py", "pgo_prospective.py",
+    "pgo_challenger.py", "pgo_sources.py",
+)
+
+
+def _now():
+    return datetime.now().astimezone()
+
+
+def _current_code_sha():
+    root = Path(__file__).resolve().parent
+    try:
+        head = subprocess.run(
+            ("git", "rev-parse", "HEAD"), cwd=root, check=True,
+            capture_output=True, text=True,
+        ).stdout.strip()
+        status = subprocess.run(
+            (
+                "git", "status", "--porcelain=v1", "--untracked-files=all",
+                "--", *CODE_PATHS,
+            ),
+            cwd=root, check=True, capture_output=True, text=True,
+        ).stdout
+        if not _hex_digest(head, 40):
+            raise ValueError("Current code SHA is invalid")
+        if status.strip():
+            raise ValueError("Prospective fantasy runtime code is not clean")
+        tracked = subprocess.run(
+            ("git", "ls-files", "--error-unmatch", "--", *CODE_PATHS),
+            cwd=root, check=True, capture_output=True, text=True,
+        ).stdout.splitlines()
+    except (OSError, subprocess.SubprocessError) as error:
+        raise ValueError("Unable to determine prospective fantasy runtime identity") from error
+    if set(tracked) != set(CODE_PATHS):
+        raise ValueError("Prospective fantasy runtime code is not fully tracked")
+    return head
+
+
+def _same_path(first, second):
+    return Path(first).resolve(strict=False) == Path(second).resolve(strict=False)
+
+
+def _require_distinct(path, protected, label):
+    if any(_same_path(path, item) for item in protected):
+        raise ValueError(f"{label} aliases frozen evidence")
+
+
+def _common_sources(args, availability_required):
+    sources = {
+        "schedule": load_snapshot(args.schedule, "schedule"),
+        "roster": load_snapshot(args.roster, "roster"),
+        "history": load_snapshot(args.history, "history"),
+    }
+    if getattr(args, "availability", None) is not None:
+        sources["availability"] = load_snapshot(
+            args.availability, "availability"
+        )
+    if availability_required and "availability" not in sources:
+        raise ValueError("Availability source is required")
+    return sources, load_model_config(args.config)
+
+
+def _blocked(mode, error):
+    receipt = {
+        "schema_version": 1,
+        "artifact_kind": "PGO_FANTASY_BLOCKED_DIAGNOSTIC",
+        "status": "BLOCKED",
+        "publication_status": "BLOCKED",
+        "mode": mode,
+        "error_type": type(error).__name__,
+        "error": str(error),
+    }
+    receipt["artifact_sha256"] = _artifact_hash(receipt)
+    return canonical_json(receipt) + "\n"
+
+
+def _write_blocked(path, mode, error, protected=()):
+    _require_distinct(path, protected, "Diagnostic output")
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    pgo_fantasy._exclusive_write_text(path, _blocked(mode, error))
+
+
+def _runtime_matches(code_shas):
+    values = set(code_shas)
+    if len(values) != 1 or not _hex_digest(next(iter(values), ""), 40):
+        raise ValueError("Frozen evidence does not share one runtime code epoch")
+    if _current_code_sha() != next(iter(values)):
+        raise ValueError("Current runtime code does not match the frozen evidence epoch")
+
+
+def _parser():
+    parser = argparse.ArgumentParser(
+        description="Build and grade local PGO fantasy prospective evidence"
+    )
+    commands = parser.add_subparsers(dest="command", required=True)
+
+    def sources(command, availability=False):
+        command.add_argument("--schedule", type=Path, required=True)
+        command.add_argument("--roster", type=Path, required=True)
+        command.add_argument("--history", type=Path, required=True)
+        command.add_argument("--config", type=Path, required=True)
+        command.add_argument("--availability", type=Path, required=availability)
+
+    preview = commands.add_parser("preview")
+    sources(preview)
+    preview.add_argument("--week", type=int, required=True)
+    preview.add_argument("--as-of", required=True)
+    preview.add_argument("--output", type=Path, required=True)
+
+    lock = commands.add_parser("lock")
+    sources(lock, availability=True)
+    lock.add_argument("--game-id", required=True)
+    lock.add_argument("--output-dir", type=Path, required=True)
+    lock.add_argument("--diagnostic-output", type=Path, required=True)
+
+    week = commands.add_parser("grade-week")
+    week.add_argument("--lock", type=Path, action="append", required=True)
+    week.add_argument("--results", type=Path, required=True)
+    week.add_argument("--output-dir", type=Path, required=True)
+    week.add_argument("--diagnostic-output", type=Path, required=True)
+
+    season = commands.add_parser("grade-season")
+    season.add_argument("--week-grade", type=Path, action="append", required=True)
+    season.add_argument("--leakage-audit", type=Path, required=True)
+    season.add_argument("--output-dir", type=Path, required=True)
+    season.add_argument("--diagnostic-output", type=Path, required=True)
+    return parser
+
+
+def _inputs(args):
+    if args.command in {"preview", "lock"}:
+        return (args.schedule, args.roster, args.history, args.config,
+                *(() if args.availability is None else (args.availability,)))
+    if args.command == "grade-week":
+        return (*args.lock, args.results)
+    return (*args.week_grade, args.leakage_audit)
+
+
+def _outputs(args):
+    if args.command == "preview":
+        return (args.output,)
+    if args.command == "lock":
+        return (args.output_dir / "fantasy_lock.json",
+                args.output_dir / "fantasy_predictions.csv")
+    if args.command == "grade-week":
+        return (args.output_dir / "fantasy_week_grade.json",)
+    return (args.output_dir / "fantasy_season_grade.json",)
+
+
+def main(argv=None):
+    args = _parser().parse_args(argv)
+    inputs, outputs = _inputs(args), _outputs(args)
+    try:
+        for output in outputs:
+            _require_distinct(output, inputs, "Artifact output")
+        if args.command == "preview":
+            sources, model = _common_sources(args, False)
+            preview = build_preview(sources, model, args.week, args.as_of)
+            atomic_write_text(args.output, serialize_preview(preview))
+            return 0
+        if args.command == "lock":
+            sources, model = _common_sources(args, True)
+            code_sha = _current_code_sha()
+            locked_at = _now().isoformat()
+            lock = build_game_lock(sources, model, args.game_id, locked_at, code_sha)
+            if _now() > parse_timestamp(lock["decision_time"], "decision time"):
+                raise ValueError("Fantasy game lock T-60 window has closed")
+            if not write_game_lock(args.output_dir, lock):
+                raise ValueError("Fantasy game lock output already exists")
+            return 0
+        if args.command == "grade-week":
+            locks = [load_game_lock(path) for path in args.lock]
+            _runtime_matches(loaded["lock"].get("code_sha") for loaded in locks)
+            grade = grade_week(locks, load_results(args.results))
+            if not write_week_grade(args.output_dir, grade):
+                raise ValueError("Fantasy week grade output already exists")
+            return 1
+        grades = [load_week_grade(path) for path in args.week_grade]
+        _runtime_matches(grade.get("code_sha") for grade in grades)
+        grade = grade_season(grades, load_leakage_audit(args.leakage_audit))
+        if not write_season_grade(args.output_dir, grade):
+            raise ValueError("Fantasy season grade output already exists")
+        return 0 if grade["status"] == "PASS" else 1
+    except (OSError, TypeError, ValueError, json.JSONDecodeError,
+            subprocess.SubprocessError) as error:
+        diagnostic = getattr(args, "diagnostic_output", None)
+        if diagnostic is None:
+            print(f"ERROR: {error}", file=sys.stderr)
+            return 1
+        try:
+            _write_blocked(diagnostic, args.command, error, (*inputs, *outputs))
+        except (OSError, TypeError, ValueError):
+            return 2
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
