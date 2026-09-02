@@ -189,6 +189,12 @@ def _validate_row(row, kind, teams):
         for field in ("gsis_id", "position"):
             _row_text(row, field, kind)
         _row_team(row, "team", teams, kind)
+        for field in pgo_fantasy.SCORING_FIELDS:
+            if (
+                type(row[field]) not in (int, float)
+                or not math.isfinite(row[field])
+            ):
+                raise ValueError(f"{kind} snapshot {field} is invalid")
         pgo_fantasy.half_ppr(row)
 
 

@@ -307,6 +307,14 @@ class ProspectiveSourceBoundaryTests(
             with self.assertRaises(ValueError):
                 prospective.load_snapshot(overflow, "history")
 
+            for index, field in enumerate(sorted(pgo_fantasy.SCORING_FIELDS)):
+                with self.subTest(boolean_field=field):
+                    payload = dict(values["history"])
+                    payload["rows"] = [{**history, field: True}]
+                    path = self.write_json(root / f"boolean-{index}.json", payload)
+                    with self.assertRaises(ValueError):
+                        prospective.load_snapshot(path, "history")
+
     def test_model_config_requires_exact_canonical_frozen_contract(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
