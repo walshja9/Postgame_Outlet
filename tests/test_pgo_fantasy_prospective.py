@@ -1395,6 +1395,7 @@ class ProspectiveWeekGradeTests(
                 "games": [
                     {
                         "game_id": game["game_id"],
+                        "kickoff": game["kickoff"],
                         "status": "FINAL",
                         "finalized_at": "2026-09-10T00:20:00-04:00",
                     }
@@ -1465,6 +1466,10 @@ class ProspectiveWeekGradeTests(
         changed["games"][0]["finalized_at"] = "2026-09-10T00:31:00-04:00"
         with self.assertRaisesRegex(ValueError, "after result capture"):
             self.load_result_value(changed)
+        changed = deepcopy(results["snapshot"])
+        changed["games"][0]["kickoff"] = "2026-09-09T20:20:00"
+        with self.assertRaisesRegex(ValueError, "timestamp"):
+            self.load_result_value(changed)
 
     def test_week_grade_requires_finalization_strictly_after_kickoff(self):
         loaded_locks, results = self.week_evidence()
@@ -1491,6 +1496,15 @@ class ProspectiveWeekGradeTests(
             "HOLD",
         )
 
+    def test_week_grade_rejects_result_kickoff_that_differs_from_lock(self):
+        loaded_locks, results = self.week_evidence()
+        changed = deepcopy(results["snapshot"])
+        changed["games"][0]["kickoff"] = "2026-09-10T20:20:00-04:00"
+        with self.assertRaisesRegex(ValueError, "kickoff does not match lock"):
+            prospective.grade_week(
+                loaded_locks, self.load_result_value(changed)
+            )
+
     def test_week_grade_rejects_missing_final_game_extra_or_cross_week_results(self):
         loaded_locks, results = self.week_evidence()
         missing_value = deepcopy(results["snapshot"])
@@ -1508,7 +1522,8 @@ class ProspectiveWeekGradeTests(
             prospective.grade_week(loaded_locks, self.load_result_value(extra_value))
         cross_week = deepcopy(results["snapshot"])
         cross_week["games"].append({
-            "game_id": "2026_02_MIA_NYJ", "status": "FINAL",
+            "game_id": "2026_02_MIA_NYJ", "kickoff": self.KICKOFF,
+            "status": "FINAL",
             "finalized_at": "2026-09-10T00:20:00-04:00",
         })
         cross_week["rows"].append({

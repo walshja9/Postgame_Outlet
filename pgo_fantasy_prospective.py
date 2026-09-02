@@ -89,7 +89,7 @@ RESULT_ENVELOPE_KEYS = frozenset({
     "schema_version", "source", "source_as_of", "captured_at",
     "teams_processed", "games", "rows",
 })
-RESULT_GAME_FIELDS = frozenset({"game_id", "status", "finalized_at"})
+RESULT_GAME_FIELDS = frozenset({"game_id", "kickoff", "status", "finalized_at"})
 RESULT_ROW_FIELDS = frozenset({"game_id", "gsis_id"}) | pgo_fantasy.SCORING_FIELDS
 RESULT_RECEIPT_KEYS = frozenset({
     "schema_version", "source", "source_as_of", "captured_at",
@@ -1276,6 +1276,7 @@ def _results_from_bytes(data):
         game_id = _required_text(game["game_id"], "result game_id")
         if game_id in seen_games or game["status"] != "FINAL":
             raise ValueError("Fantasy final game row is invalid")
+        parse_timestamp(game["kickoff"], "result kickoff")
         if parse_timestamp(game["finalized_at"], "game finalized_at") > captured:
             raise ValueError("Fantasy final game is after result capture")
         seen_games.add(game_id)
@@ -1406,6 +1407,12 @@ def _grade_week(loaded_locks, loaded_results):
     }
     if set(final_games) != expected_games:
         raise ValueError("Weekly fantasy final game coverage is incomplete")
+    if any(
+        parse_timestamp(final_games[lock["game_id"]]["kickoff"], "result kickoff")
+        != parse_timestamp(lock["kickoff"], "kickoff")
+        for lock in locks
+    ):
+        raise ValueError("Weekly fantasy result kickoff does not match lock")
     if any(
         parse_timestamp(
             final_games[lock["game_id"]]["finalized_at"], "game finalized_at"
