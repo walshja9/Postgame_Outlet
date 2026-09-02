@@ -1421,16 +1421,78 @@ class ProspectiveFantasyCommandTests(
             ]
             self.assertEqual(prospective.main(preview_command), 0)
             artifact = b'{"accepted":"concurrent artifact"}\n'
-            detach = prospective.pgo_prospective._detach_output
+            detach = prospective.pgo_fantasy._unlink_owned
 
-            def raced(target, state):
-                detach(target, state)
+            def raced(target, state, content):
+                detach(target, state, content)
                 Path(target).write_bytes(artifact)
 
             with patch.object(
-                prospective.pgo_prospective, "_detach_output", side_effect=raced
+                prospective.pgo_fantasy, "_unlink_owned", side_effect=raced
             ):
                 self.assertEqual(prospective.main(preview_command), 1)
+            self.assertEqual(output.read_bytes(), artifact)
+
+    def test_preview_swap_between_read_and_stat_preserves_foreign_artifact(self):
+        with tempfile.TemporaryDirectory() as directory:
+            paths = self.command_fixture(Path(directory))
+            output = paths["root"] / "preview.json"
+            command = [
+                "preview", "--schedule", str(paths["schedule"]),
+                "--roster", str(paths["roster"]),
+                "--history", str(paths["history"]),
+                "--config", str(paths["config"]),
+                "--week", "1", "--as-of", self.CAPTURED,
+                "--output", str(output),
+            ]
+            self.assertEqual(prospective.main(command), 0)
+            foreign = paths["root"] / "foreign.json"
+            artifact = b'{"accepted":"foreign artifact"}\n'
+            foreign.write_bytes(artifact)
+            swapped = False
+            read_state = prospective._read_preview_state
+
+            def swap_after_stable_read(path):
+                nonlocal swapped
+                data, state = read_state(path)
+                foreign.replace(output)
+                swapped = True
+                return data, state
+
+            with patch.object(prospective, "_read_preview_state", side_effect=swap_after_stable_read):
+                self.assertEqual(prospective.main(command), 1)
+            self.assertTrue(swapped)
+            self.assertEqual(output.read_bytes(), artifact)
+            self.assertFalse((paths["root"] / ".preview.json.preview-claim").exists())
+            self.assertFalse(list(paths["root"].glob("*.preview-rollback")))
+
+    def test_preview_content_change_on_same_inode_is_preserved(self):
+        with tempfile.TemporaryDirectory() as directory:
+            paths = self.command_fixture(Path(directory))
+            output = paths["root"] / "preview.json"
+            command = [
+                "preview", "--schedule", str(paths["schedule"]),
+                "--roster", str(paths["roster"]),
+                "--history", str(paths["history"]),
+                "--config", str(paths["config"]),
+                "--week", "1", "--as-of", self.CAPTURED,
+                "--output", str(output),
+            ]
+            self.assertEqual(prospective.main(command), 0)
+            artifact = b'{"accepted":"same inode artifact"}\n'
+            changed = False
+            read_state = prospective._read_preview_state
+
+            def change_after_stable_read(path):
+                nonlocal changed
+                data, state = read_state(path)
+                output.write_bytes(artifact)
+                changed = True
+                return data, state
+
+            with patch.object(prospective, "_read_preview_state", side_effect=change_after_stable_read):
+                self.assertEqual(prospective.main(command), 1)
+            self.assertTrue(changed)
             self.assertEqual(output.read_bytes(), artifact)
 
     def test_preview_missing_target_race_cannot_clobber_an_artifact(self):

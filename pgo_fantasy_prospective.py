@@ -693,6 +693,13 @@ def _is_replaceable_preview(data):
         return False
 
 
+def _read_preview_state(path):
+    with Path(path).open("rb") as handle:
+        data = handle.read()
+        state = os.fstat(handle.fileno())
+    return data, state
+
+
 def _write_preview(output, text):
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -704,7 +711,7 @@ def _write_preview(output, text):
         if output.exists() or output.is_symlink():
             if output.is_symlink():
                 raise ValueError("Preview output is not a canonical PGO preview")
-            previous = output.read_bytes()
+            previous, expected = _read_preview_state(output)
             if not _is_replaceable_preview(previous):
                 raise ValueError("Preview output is not a canonical PGO preview")
             descriptor, name = tempfile.mkstemp(
@@ -715,8 +722,7 @@ def _write_preview(output, text):
                 handle.write(previous)
                 handle.flush()
                 os.fsync(handle.fileno())
-            expected = output.stat(follow_symlinks=False)
-            pgo_prospective._detach_output(output, expected)
+            pgo_fantasy._unlink_owned(output, expected, previous)
             if output.exists() or output.is_symlink():
                 raise ValueError("Preview output changed during replacement")
         try:
