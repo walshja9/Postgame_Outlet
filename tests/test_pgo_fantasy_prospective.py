@@ -3,6 +3,7 @@ import json
 import math
 import tempfile
 import unittest
+from copy import deepcopy
 from pathlib import Path
 from unittest.mock import patch
 
@@ -529,3 +530,83 @@ class ProspectiveProjectionTests(
             preview["source_coverage"]["availability"]["missing"],
             ["BUF", "LAR"],
         )
+
+    def test_preview_revalidates_inputs_when_roster_skips_every_game(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            sources, model, _ = self.loaded_sources(directory)
+            sources["roster"] = prospective.load_snapshot(self.write_json(
+                root / "missing-roster.json", self.envelope([], teams=("MIA",))
+            ), "roster")
+            for label in ("source", "model"):
+                with self.subTest(label=label):
+                    candidate_sources = deepcopy(sources)
+                    candidate_model = deepcopy(model)
+                    if label == "source":
+                        candidate_sources["schedule"]["snapshot"]["rows"][0][
+                            "game_id"
+                        ] = "tampered"
+                    else:
+                        candidate_model["config"]["history_games"] = 7
+                    with self.assertRaisesRegex(ValueError, "frozen bytes"):
+                        prospective.build_preview(
+                            candidate_sources, candidate_model, 1, self.CAPTURED
+                        )
+
+    def test_preview_checks_chronology_when_roster_skips_every_game(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            sources, model, _ = self.loaded_sources(directory)
+            sources["roster"] = prospective.load_snapshot(self.write_json(
+                root / "missing-roster.json", self.envelope([], teams=("MIA",))
+            ), "roster")
+            for label in ("source", "model"):
+                with self.subTest(label=label):
+                    candidate_sources = deepcopy(sources)
+                    candidate_model = deepcopy(model)
+                    if label == "source":
+                        late = deepcopy(candidate_sources["availability"]["snapshot"])
+                        late["captured_at"] = "2026-09-09T19:00:00-04:00"
+                        candidate_sources["availability"] = prospective.load_snapshot(
+                            self.write_json(root / "late-availability.json", late),
+                            "availability",
+                        )
+                        error = "captured after"
+                    else:
+                        config = self.config()
+                        config["frozen_at"] = "2026-09-09T19:00:00-04:00"
+                        candidate_model = prospective.load_model_config(
+                            self.write_json(root / "late-config.json", config, canonical=True)
+                        )
+                        error = "frozen after"
+                    with self.assertRaisesRegex(ValueError, error):
+                        prospective.build_preview(
+                            candidate_sources, candidate_model, 1, self.CAPTURED
+                        )
+
+    def test_late_preview_rejects_history_captured_after_t60(self):
+        history = [{
+            "season": 2026, "week": 1, "game_id": "2026_01_MIA_NYJ",
+            "game_type": "REG", "finalized_at": "2026-09-09T19:25:00-04:00",
+            "gsis_id": "veteran", "team": "BUF", "position": "WR",
+            **self.scoring(receiving_yards=999.0),
+        }]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            values, game_id = self.source_values(history_rows=history)
+            values["history"]["source_as_of"] = "2026-09-09T19:25:00-04:00"
+            values["history"]["captured_at"] = "2026-09-09T19:25:00-04:00"
+            sources = {
+                kind: prospective.load_snapshot(
+                    self.write_json(root / f"{kind}.json", value), kind
+                )
+                for kind, value in values.items()
+            }
+            model = prospective.load_model_config(self.write_json(
+                root / "config.json", self.config(), canonical=True
+            ))
+            with self.assertRaisesRegex(ValueError, "captured after"):
+                prospective.project_game(
+                    sources, model, game_id,
+                    "2026-09-09T19:30:00-04:00", lock_mode=False,
+                )

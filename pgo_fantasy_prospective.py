@@ -374,6 +374,25 @@ def _ensure_captured(source, cutoff, label):
         raise ValueError(f"{label} source was captured after prediction time")
 
 
+def _validate_inputs(sources, model, cutoff=None):
+    required = {"schedule", "roster", "history"}
+    if set(sources) - {"schedule", "roster", "availability", "history"}:
+        raise ValueError("Unexpected prospective source")
+    if not required <= set(sources):
+        raise ValueError("Missing prospective source")
+    verify_model_config(model)
+    for kind, source in sources.items():
+        verify_loaded_snapshot(source, kind)
+    if cutoff is None:
+        return
+    if parse_timestamp(
+        model["config"]["frozen_at"], "model config frozen_at"
+    ) > cutoff:
+        raise ValueError("Prospective model config was frozen after prediction time")
+    for kind, source in sources.items():
+        _ensure_captured(source, cutoff, kind)
+
+
 def _roster_rows(roster, teams):
     if not set(teams) <= set(roster["receipt"]["teams_processed"]):
         raise ValueError("Prospective roster coverage is incomplete")
@@ -463,19 +482,8 @@ def _history(history_source, cutoff, current_game):
 
 
 def project_game(sources, model, game_id, generated_at, lock_mode):
-    required = {"schedule", "roster", "history"}
-    if set(sources) - {"schedule", "roster", "availability", "history"}:
-        raise ValueError("Unexpected prospective source")
-    if not required <= set(sources):
-        raise ValueError("Missing prospective source")
-    verify_model_config(model)
-    for kind, source in sources.items():
-        verify_loaded_snapshot(source, kind)
     generated = parse_timestamp(generated_at, "prediction generated_at")
-    if parse_timestamp(
-        model["config"]["frozen_at"], "model config frozen_at"
-    ) > generated:
-        raise ValueError("Prospective model config was frozen after prediction time")
+    _validate_inputs(sources, model)
     games = _game_rows(sources["schedule"])
     matches = [game for game in games if game["game_id"] == game_id]
     if len(matches) != 1:
@@ -484,8 +492,7 @@ def project_game(sources, model, game_id, generated_at, lock_mode):
     decision = game["kickoff_time"] - timedelta(minutes=60)
     if lock_mode and generated > decision:
         raise ValueError("T-60 decision time has passed")
-    for kind in sources:
-        _ensure_captured(sources[kind], generated, kind)
+    _validate_inputs(sources, model, min(generated, decision))
     teams = {game["away"], game["home"]}
     roster = _roster_rows(sources["roster"], teams)
     inactive = _availability_state(
@@ -560,6 +567,9 @@ def rank_rows(rows):
 def build_preview(sources, model, week, generated_at):
     if type(week) is not int or not 1 <= week <= 18:
         raise ValueError("Preview week is invalid")
+    _validate_inputs(
+        sources, model, parse_timestamp(generated_at, "prediction generated_at")
+    )
     games = _game_rows(sources["schedule"], week)
     scheduled_teams = {
         team for game in games for team in (game["away"], game["home"])
