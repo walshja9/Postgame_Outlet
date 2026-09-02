@@ -779,6 +779,27 @@ class ProspectiveProjectionTests(
                     sources, model, game_id, self.LOCKED_AT, lock_mode=True
                 )
 
+    def test_availability_team_cannot_contradict_current_roster(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            values, game_id = self.source_values()
+            values["availability"]["rows"].append(
+                {"gsis_id": "buf-qb1", "team": "LAR", "status": "INACTIVE"}
+            )
+            sources = {
+                kind: prospective.load_snapshot(
+                    self.write_json(root / f"{kind}.json", value), kind
+                )
+                for kind, value in values.items()
+            }
+            model = prospective.load_model_config(self.write_json(
+                root / "config.json", self.config(), canonical=True
+            ))
+            with self.assertRaisesRegex(ValueError, "contradicts roster"):
+                prospective.project_game(
+                    sources, model, game_id, self.LOCKED_AT, lock_mode=True
+                )
+
     def test_ranking_is_deterministic_and_uses_gsis_id_for_ties(self):
         rows = [
             {"game_id": "g", "gsis_id": "b", "position": "WR",
@@ -918,6 +939,27 @@ class ProspectiveProjectionTests(
                     "2026-09-09T19:30:00-04:00", lock_mode=False,
                 )
 
+    def test_late_preview_accepts_depth_captured_after_t60(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            values, _ = self.source_values()
+            values["depth"] = self.depth_envelope(
+                captured="2026-09-09T19:25:00-04:00"
+            )
+            sources = {
+                kind: prospective.load_snapshot(
+                    self.write_json(root / f"{kind}.json", value), kind
+                )
+                for kind, value in values.items()
+            }
+            model = prospective.load_model_config(self.write_json(
+                root / "config.json", self.config(), canonical=True
+            ))
+            preview = prospective.build_preview(
+                sources, model, 1, "2026-09-09T19:30:00-04:00"
+            )
+        self.assertEqual(preview["source_coverage"]["depth"]["missing"], [])
+
     def test_zero_coverage_preview_rejects_post_t60_provenance(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -1052,6 +1094,24 @@ class ProspectiveGameLockTests(
                 )
                 changed["artifact_sha256"] = prospective._artifact_hash(changed)
                 prospective.verify_game_lock(changed)
+
+    def test_lock_rejects_rehashed_missing_required_team_predictions(self):
+        with tempfile.TemporaryDirectory() as directory:
+            sources, model, game_id = self.loaded_sources(directory)
+            changed = prospective.build_game_lock(
+                sources, model, game_id, self.LOCKED_AT, "a" * 40
+            )
+        changed["predictions"] = [
+            row for row in changed["predictions"]
+            if row["team"] != changed["home"]
+        ]
+        changed["row_count"] = len(changed["predictions"])
+        changed["prediction_integrity_sha256"] = prospective._prediction_hash(
+            changed["predictions"]
+        )
+        changed["artifact_sha256"] = prospective._artifact_hash(changed)
+        with self.assertRaisesRegex(ValueError, "prediction context"):
+            prospective.verify_game_lock(changed)
 
     def test_lock_binds_the_exact_depth_receipt(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -1405,6 +1465,31 @@ class ProspectiveWeekGradeTests(
         changed["games"][0]["finalized_at"] = "2026-09-10T00:31:00-04:00"
         with self.assertRaisesRegex(ValueError, "after result capture"):
             self.load_result_value(changed)
+
+    def test_week_grade_requires_finalization_strictly_after_kickoff(self):
+        loaded_locks, results = self.week_evidence()
+        for label, finalized_at in (
+            ("before T", "2026-09-09T19:19:59-04:00"),
+            ("at T", "2026-09-09T19:20:00-04:00"),
+            ("before kickoff", "2026-09-09T20:19:59-04:00"),
+        ):
+            changed = deepcopy(results["snapshot"])
+            changed["games"][0]["finalized_at"] = finalized_at
+            with self.subTest(label=label), self.assertRaisesRegex(
+                ValueError, "finalized_at"
+            ):
+                prospective.grade_week(
+                    loaded_locks, self.load_result_value(changed)
+                )
+
+        changed = deepcopy(results["snapshot"])
+        changed["games"][0]["finalized_at"] = "2026-09-09T20:20:01-04:00"
+        self.assertEqual(
+            prospective.grade_week(
+                loaded_locks, self.load_result_value(changed)
+            )["status"],
+            "HOLD",
+        )
 
     def test_week_grade_rejects_missing_final_game_extra_or_cross_week_results(self):
         loaded_locks, results = self.week_evidence()

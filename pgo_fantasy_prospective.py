@@ -578,7 +578,7 @@ def _ensure_captured(source, cutoff, label):
         raise ValueError(f"{label} source was captured after prediction time")
 
 
-def _validate_inputs(sources, model, cutoff=None):
+def _validate_inputs(sources, model, cutoff=None, depth_cutoff=None):
     required = {"schedule", "roster", "history", "depth"}
     if set(sources) - set(SOURCE_KINDS):
         raise ValueError("Unexpected prospective source")
@@ -594,7 +594,11 @@ def _validate_inputs(sources, model, cutoff=None):
     ) > cutoff:
         raise ValueError("Prospective model config was frozen after prediction time")
     for kind, source in sources.items():
-        _ensure_captured(source, cutoff, kind)
+        _ensure_captured(
+            source,
+            depth_cutoff if kind == "depth" and depth_cutoff is not None else cutoff,
+            kind,
+        )
 
 
 def _roster_rows(roster, teams):
@@ -675,7 +679,7 @@ def _qb_starters(players, depth_ranks, inactive):
     return starters
 
 
-def _availability_state(source, teams, lock_mode):
+def _availability_state(source, roster, teams, lock_mode):
     verified = (
         source is not None
         and set(teams) <= set(source["receipt"]["teams_processed"])
@@ -684,12 +688,15 @@ def _availability_state(source, teams, lock_mode):
         raise ValueError("Prospective availability coverage is incomplete")
     if not verified:
         return None
+    roster_teams = {row["gsis_id"]: row["team"] for row in roster}
     inactive = set()
     for row in source["snapshot"]["rows"]:
         team = normalize_team(_required_text(row["team"], "availability team"))
         gsis_id = _required_text(row["gsis_id"], "availability gsis_id")
         if not gsis_id or row["status"] != "INACTIVE":
             raise ValueError("Prospective availability row is invalid")
+        if gsis_id in roster_teams and roster_teams[gsis_id] != team:
+            raise ValueError("Prospective availability identity contradicts roster")
         if team not in teams:
             continue
         if gsis_id in inactive:
@@ -744,11 +751,14 @@ def project_game(sources, model, game_id, generated_at, lock_mode):
     decision = game["kickoff_time"] - timedelta(minutes=60)
     if lock_mode and generated > decision:
         raise ValueError("T-60 decision time has passed")
-    _validate_inputs(sources, model, min(generated, decision))
+    _validate_inputs(
+        sources, model, min(generated, decision),
+        depth_cutoff=generated if not lock_mode else None,
+    )
     teams = {game["away"], game["home"]}
     roster = _roster_rows(sources["roster"], teams)
     inactive = _availability_state(
-        sources.get("availability"), teams, lock_mode
+        sources.get("availability"), roster, teams, lock_mode
     )
     depth_ranks = _depth_ranks(sources["depth"], roster, teams)
     eligible_qbs = _qb_starters(roster, depth_ranks, inactive or set())
@@ -838,6 +848,7 @@ def build_preview(sources, model, week, generated_at):
         _validate_inputs(
             sources, model,
             min(generated, games[0]["kickoff_time"] - timedelta(minutes=60)),
+            depth_cutoff=generated,
         )
     scheduled_teams = {
         team for game in games for team in (game["away"], game["home"])
@@ -961,6 +972,10 @@ def _validate_lock_predictions(rows, lock=None):
             or row["config_sha256"] != lock["config_sha256"]
         ):
             raise ValueError("Fantasy game lock prediction context is invalid")
+    if lock is not None and {
+        row["team"] for row in rows
+    } != set(lock["teams_processed"]):
+        raise ValueError("Fantasy game lock prediction context is invalid")
     depth_ranks = {
         row["gsis_id"]: row["qb_depth_rank"]
         for row in rows if row["position"] == "QB"
@@ -1386,9 +1401,18 @@ def _grade_week(loaded_locks, loaded_results):
     expected_teams = {team for lock in locks for team in lock["teams_processed"]}
     if not expected_teams <= set(loaded_results["receipt"]["teams_processed"]):
         raise ValueError("Weekly fantasy result team coverage is incomplete")
-    final_games = {game["game_id"] for game in loaded_results["snapshot"]["games"]}
-    if final_games != expected_games:
+    final_games = {
+        game["game_id"]: game for game in loaded_results["snapshot"]["games"]
+    }
+    if set(final_games) != expected_games:
         raise ValueError("Weekly fantasy final game coverage is incomplete")
+    if any(
+        parse_timestamp(
+            final_games[lock["game_id"]]["finalized_at"], "game finalized_at"
+        ) <= parse_timestamp(lock["kickoff"], "kickoff")
+        for lock in locks
+    ):
+        raise ValueError("Weekly fantasy result finalized_at is not after kickoff")
     predictions = rank_rows([
         row for lock in locks for row in lock["predictions"]
     ])
