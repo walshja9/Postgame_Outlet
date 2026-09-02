@@ -194,6 +194,18 @@ def _hex_digest(value, length):
     )
 
 
+def _valid_depth_source_identity(source, source_as_of):
+    if not isinstance(source, str) or source_as_of is None:
+        return False
+    identity, marker, digest = source.rpartition("|sha256:")
+    return (
+        identity.strip()
+        and marker == "|sha256:"
+        and source.count("|sha256:") == 1
+        and _hex_digest(digest, 64)
+    )
+
+
 def _validated_teams(values, label):
     if not isinstance(values, list):
         raise ValueError(f"{label} teams_processed is invalid")
@@ -295,13 +307,10 @@ def _snapshot_from_bytes(data, kind):
             raise ValueError(f"{kind} snapshot row is invalid")
         _validate_row(row, kind, teams)
     if kind == "depth":
-        identity, marker, digest = value["source"].rpartition("|sha256:")
         if (
-            not identity.strip()
-            or marker != "|sha256:"
-            or value["source"].count("|sha256:") != 1
-            or not _hex_digest(digest, 64)
-            or value["source_as_of"] is None
+            not _valid_depth_source_identity(
+                value["source"], value["source_as_of"]
+            )
             or rows != sorted(
                 rows,
                 key=lambda row: (
@@ -1032,6 +1041,13 @@ def verify_game_lock(lock):
             or not _hex_digest(receipt["sha256"], 64)
             for receipt in receipts
         )
+    ):
+        raise ValueError("Fantasy game lock source receipts are invalid")
+    depth_receipt = next(
+        receipt for receipt in receipts if receipt["kind"] == "depth"
+    )
+    if not _valid_depth_source_identity(
+        depth_receipt["source"], depth_receipt["source_as_of"]
     ):
         raise ValueError("Fantasy game lock source receipts are invalid")
     try:

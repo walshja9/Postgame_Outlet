@@ -1070,6 +1070,28 @@ class ProspectiveGameLockTests(
         with self.assertRaisesRegex(ValueError, "source receipts"):
             prospective.verify_game_lock(changed)
 
+    def test_lock_rejects_rehashed_depth_receipt_source_contract_mutations(self):
+        with tempfile.TemporaryDirectory() as directory:
+            sources, model, game_id = self.loaded_sources(directory)
+            lock = prospective.build_game_lock(
+                sources, model, game_id, self.LOCKED_AT, "a" * 40
+            )
+        for field, value in (("source", "forged-depth"), ("source_as_of", None)):
+            with self.subTest(field=field):
+                changed = deepcopy(lock)
+                next(
+                    receipt for receipt in changed["source_receipts"]
+                    if receipt["kind"] == "depth"
+                )[field] = value
+                changed["source_receipts_sha256"] = hashlib.sha256(
+                    prospective.canonical_json(
+                        changed["source_receipts"]
+                    ).encode("utf-8")
+                ).hexdigest()
+                changed["artifact_sha256"] = prospective._artifact_hash(changed)
+                with self.assertRaisesRegex(ValueError, "source receipts"):
+                    prospective.verify_game_lock(changed)
+
     def test_load_game_lock_returns_exact_bytes_sha_and_lf_csv(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
