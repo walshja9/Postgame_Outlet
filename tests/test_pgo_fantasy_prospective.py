@@ -802,3 +802,214 @@ class ProspectiveGameLockTests(
                 prospective.load_game_lock(noncanonical)
             with self.assertRaisesRegex(ValueError, "invalid JSON"):
                 prospective.load_game_lock(duplicate)
+
+
+class ProspectiveWeekGradeTests(
+    ProspectiveFantasyFixture, unittest.TestCase
+):
+    def load_result_value(self, value):
+        with tempfile.TemporaryDirectory() as directory:
+            return prospective.load_results(self.write_json(
+                Path(directory) / "results.json", value
+            ))
+
+    def week_evidence(self):
+        positions = (("QB", 30), ("RB", 40), ("WR", 40), ("TE", 20))
+        roster_rows = [
+            {
+                "gsis_id": f"{position}-{index:03d}",
+                "player_name": f"{position} {index:03d}",
+                "team": "BUF" if index % 2 == 0 else "LAR",
+                "position": position,
+                "status": "ACT",
+            }
+            for position, count in positions for index in range(count)
+        ]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            values, game_id = self.source_values(history_rows=[])
+            values["roster"] = self.envelope(roster_rows)
+            values["availability"] = self.envelope([])
+            sources = {
+                kind: prospective.load_snapshot(
+                    self.write_json(root / f"{kind}.json", value), kind
+                )
+                for kind, value in values.items()
+            }
+            model = prospective.load_model_config(self.write_json(
+                root / "config.json", self.config(), canonical=True
+            ))
+            lock = prospective.build_game_lock(
+                sources, model, game_id, self.LOCKED_AT, "a" * 40
+            )
+            lock_bytes = prospective.serialize_game_lock(lock).encode("utf-8")
+            loaded_locks = [{
+                "lock": lock,
+                "bytes": lock_bytes,
+                "sha256": hashlib.sha256(lock_bytes).hexdigest(),
+            }]
+            result_rows = [{
+                "game_id": game_id,
+                "gsis_id": row["gsis_id"],
+                **self.scoring(receiving_yards=10.0),
+            } for row in roster_rows if row["gsis_id"] != "WR-000"]
+            results_value = {
+                "schema_version": 1,
+                "source": "synthetic-official-results",
+                "source_as_of": "2026-09-10T00:30:00-04:00",
+                "captured_at": "2026-09-10T00:30:00-04:00",
+                "teams_processed": ["BUF", "LAR"],
+                "games": [{
+                    "game_id": game_id,
+                    "status": "FINAL",
+                    "finalized_at": "2026-09-10T00:20:00-04:00",
+                }],
+                "rows": result_rows,
+            }
+            results = prospective.load_results(self.write_json(
+                root / "results.json", results_value
+            ))
+        return loaded_locks, results
+
+    def test_week_grade_uses_exact_locks_and_zero_fills_missing_stats(self):
+        loaded_locks, results = self.week_evidence()
+        grade = prospective.grade_week(loaded_locks, results)
+        self.assertEqual(grade["status"], "HOLD")
+        self.assertEqual(grade["publication_status"], "EXPERIMENTAL")
+        self.assertEqual(grade["metrics"]["primary"]["count"], 96)
+        missing = next(row for row in grade["rows"] if row["gsis_id"] == "WR-000")
+        self.assertEqual(missing["fantasy_points"], 0.0)
+        self.assertTrue(grade["checks"]["complete_game_results"])
+
+    def test_results_load_once_with_exact_bytes_and_reject_bad_json_values(self):
+        _, results = self.week_evidence()
+        self.assertEqual(
+            results["receipt"]["sha256"],
+            hashlib.sha256(results["bytes"]).hexdigest(),
+        )
+        self.assertIs(prospective.verify_loaded_results(results), results)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name, data in (
+                ("duplicate", b'{"schema_version":1,"schema_version":1}\n'),
+                ("nonfinite", b'{"schema_version":NaN}\n'),
+            ):
+                path = root / f"{name}.json"
+                path.write_bytes(data)
+                with self.assertRaisesRegex(ValueError, "invalid JSON"):
+                    prospective.load_results(path)
+        results["receipt"]["rows"] += 1
+        with self.assertRaisesRegex(ValueError, "frozen bytes"):
+            prospective.verify_loaded_results(results)
+
+    def test_results_reject_invalid_types_nonfinite_scoring_and_finalization_timing(self):
+        _, results = self.week_evidence()
+        for field, value, error in (
+            ("schema_version", True, "schema"),
+            ("captured_at", "2026-09-10T00:00:00", "timestamp"),
+        ):
+            changed = deepcopy(results["snapshot"])
+            changed[field] = value
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, error):
+                self.load_result_value(changed)
+        changed = deepcopy(results["snapshot"])
+        changed["rows"][0]["receiving_yards"] = float("inf")
+        with self.assertRaisesRegex(ValueError, "invalid JSON"):
+            self.load_result_value(changed)
+        changed = deepcopy(results["snapshot"])
+        changed["games"][0]["finalized_at"] = "2026-09-10T00:31:00-04:00"
+        with self.assertRaisesRegex(ValueError, "after result capture"):
+            self.load_result_value(changed)
+
+    def test_week_grade_rejects_missing_final_game_extra_or_cross_week_results(self):
+        loaded_locks, results = self.week_evidence()
+        missing_value = deepcopy(results["snapshot"])
+        missing_value["games"] = []
+        missing_value["rows"] = []
+        with self.assertRaisesRegex(ValueError, "final game"):
+            prospective.grade_week(loaded_locks, self.load_result_value(missing_value))
+        extra_value = deepcopy(results["snapshot"])
+        extra_value["rows"].append({
+            "game_id": loaded_locks[0]["lock"]["game_id"],
+            "gsis_id": "not-locked",
+            **self.scoring(receiving_yards=1.0),
+        })
+        with self.assertRaisesRegex(ValueError, "result identity"):
+            prospective.grade_week(loaded_locks, self.load_result_value(extra_value))
+        cross_week = deepcopy(results["snapshot"])
+        cross_week["games"].append({
+            "game_id": "2026_02_MIA_NYJ", "status": "FINAL",
+            "finalized_at": "2026-09-10T00:20:00-04:00",
+        })
+        cross_week["rows"].append({
+            "game_id": "2026_02_MIA_NYJ", "gsis_id": "other",
+            **self.scoring(),
+        })
+        with self.assertRaisesRegex(ValueError, "final game coverage"):
+            prospective.grade_week(loaded_locks, self.load_result_value(cross_week))
+
+    def test_week_grade_rejects_rehashed_or_noncanonical_lock_and_epoch_mismatch(self):
+        loaded_locks, results = self.week_evidence()
+        changed = deepcopy(loaded_locks[0])
+        changed["lock"]["predictions"][0]["strong_prediction"] += 5.0
+        with self.assertRaisesRegex(ValueError, "integrity"):
+            prospective.grade_week([changed], results)
+        changed = deepcopy(loaded_locks[0])
+        changed["lock"]["week"] = 2
+        for row in changed["lock"]["predictions"]:
+            row["week"] = 2
+        changed["lock"]["prediction_integrity_sha256"] = prospective._prediction_hash(
+            changed["lock"]["predictions"]
+        )
+        changed["lock"]["artifact_sha256"] = prospective._artifact_hash(changed["lock"])
+        data = prospective.serialize_game_lock(changed["lock"]).encode("utf-8")
+        changed["bytes"] = data
+        changed["sha256"] = hashlib.sha256(data).hexdigest()
+        with self.assertRaisesRegex(ValueError, "one model epoch"):
+            prospective.grade_week([loaded_locks[0], changed], results)
+
+    def test_weekly_ranks_and_primary_pool_do_not_depend_on_results(self):
+        loaded_locks, results = self.week_evidence()
+        first = prospective.grade_week(loaded_locks, results)
+        changed_value = deepcopy(results["snapshot"])
+        for index, row in enumerate(changed_value["rows"]):
+            row.update(self.scoring(receiving_yards=float(index * 100)))
+        second = prospective.grade_week(
+            loaded_locks, self.load_result_value(changed_value)
+        )
+
+        def selections(grade):
+            return {
+                (row["game_id"], row["gsis_id"], row["position_rank"],
+                 row["flex_rank"], row["superflex_rank"])
+                for row in grade["rows"] if row["primary_pool"]
+            }
+
+        self.assertEqual(selections(first), selections(second))
+
+    def test_week_grade_rejects_rehashed_metric_or_artifact_tampering(self):
+        loaded_locks, results = self.week_evidence()
+        grade = prospective.grade_week(loaded_locks, results)
+        changed = deepcopy(grade)
+        changed["metrics"]["primary"]["strong_mae"] += 1.0
+        changed["artifact_sha256"] = prospective._artifact_hash(changed)
+        with self.assertRaisesRegex(ValueError, "metrics"):
+            prospective.verify_week_grade(changed)
+        changed = deepcopy(grade)
+        changed["rows"][0]["fantasy_points"] += 1.0
+        with self.assertRaisesRegex(ValueError, "row binding"):
+            prospective.serialize_week_grade(changed)
+        changed = deepcopy(grade)
+        changed["artifact_sha256"] = "0" * 64
+        with self.assertRaisesRegex(ValueError, "integrity"):
+            prospective.serialize_week_grade(changed)
+
+    def test_week_grade_writer_never_overwrites_an_existing_artifact(self):
+        loaded_locks, results = self.week_evidence()
+        grade = prospective.grade_week(loaded_locks, results)
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "grade"
+            self.assertTrue(prospective.write_week_grade(output, grade))
+            first = (output / "fantasy_week_grade.json").read_bytes()
+            self.assertFalse(prospective.write_week_grade(output, grade))
+            self.assertEqual((output / "fantasy_week_grade.json").read_bytes(), first)

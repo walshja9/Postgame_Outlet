@@ -66,6 +66,26 @@ SOURCE_RECEIPT_KEYS = frozenset({
     "schema_version", "kind", "source", "source_as_of", "captured_at",
     "teams_processed", "bytes", "sha256", "rows",
 })
+RESULT_ENVELOPE_KEYS = frozenset({
+    "schema_version", "source", "source_as_of", "captured_at",
+    "teams_processed", "games", "rows",
+})
+RESULT_GAME_FIELDS = frozenset({"game_id", "status", "finalized_at"})
+RESULT_ROW_FIELDS = frozenset({"game_id", "gsis_id"}) | pgo_fantasy.SCORING_FIELDS
+RESULT_RECEIPT_KEYS = frozenset({
+    "schema_version", "source", "source_as_of", "captured_at",
+    "teams_processed", "games", "rows", "bytes", "sha256",
+})
+WEEK_GRADE_KEYS = frozenset({
+    "schema_version", "artifact_kind", "status", "publication_status",
+    "season", "week", "model_version", "config_sha256", "lock_sha256",
+    "result_receipt", "checks", "metrics", "rows", "artifact_sha256",
+})
+WEEK_ROW_FIELDS = frozenset(LOCK_PREDICTION_COLUMNS) | {
+    "position_rank", "flex_rank", "superflex_rank", "fantasy_points",
+    "primary_pool", "null_absolute_error", "strong_absolute_error",
+    "improvement",
+}
 
 
 def canonical_json(value):
@@ -867,3 +887,310 @@ def write_game_lock(output_dir, lock):
         (output_dir / "fantasy_predictions.csv", game_prediction_csv(lock)),
     )
     return pgo_prospective._write_new_outputs(output_dir, outputs)
+
+
+def _results_from_bytes(data):
+    value = _decode_json(data, "fantasy results")
+    if not isinstance(value, dict) or set(value) != RESULT_ENVELOPE_KEYS:
+        raise ValueError("Fantasy result envelope is invalid")
+    if (
+        type(value["schema_version"]) is not int
+        or value["schema_version"] != 1
+        or not isinstance(value["source"], str)
+        or not value["source"].strip()
+    ):
+        raise ValueError("Fantasy result schema is invalid")
+    captured = parse_timestamp(value["captured_at"], "result captured_at")
+    if value["source_as_of"] is not None and parse_timestamp(
+        value["source_as_of"], "result source_as_of"
+    ) > captured:
+        raise ValueError("Fantasy result source_as_of is after capture")
+    teams = _validated_teams(value["teams_processed"], "results")
+    games, seen_games = [], set()
+    if not isinstance(value["games"], list):
+        raise ValueError("Fantasy final game rows are invalid")
+    for game in value["games"]:
+        if not isinstance(game, dict) or set(game) != RESULT_GAME_FIELDS:
+            raise ValueError("Fantasy final game row is invalid")
+        game_id = _required_text(game["game_id"], "result game_id")
+        if game_id in seen_games or game["status"] != "FINAL":
+            raise ValueError("Fantasy final game row is invalid")
+        if parse_timestamp(game["finalized_at"], "game finalized_at") > captured:
+            raise ValueError("Fantasy final game is after result capture")
+        seen_games.add(game_id)
+        games.append(deepcopy(game))
+    if not isinstance(value["rows"], list):
+        raise ValueError("Fantasy result player rows are invalid")
+    rows, seen_rows = [], set()
+    for row in value["rows"]:
+        if not isinstance(row, dict) or set(row) != RESULT_ROW_FIELDS:
+            raise ValueError("Fantasy result player row is invalid")
+        key = (
+            _required_text(row["game_id"], "result game_id"),
+            _required_text(row["gsis_id"], "result gsis_id"),
+        )
+        if key in seen_rows or key[0] not in seen_games or not all(
+            type(row[field]) in {int, float} and math.isfinite(row[field])
+            for field in pgo_fantasy.SCORING_FIELDS
+        ):
+            raise ValueError("Fantasy result player row is invalid")
+        pgo_fantasy.half_ppr(row)
+        seen_rows.add(key)
+        rows.append(deepcopy(row))
+    snapshot = deepcopy(value)
+    snapshot["source"] = value["source"].strip()
+    snapshot["teams_processed"] = teams
+    snapshot["games"] = sorted(games, key=lambda game: game["game_id"])
+    snapshot["rows"] = sorted(rows, key=lambda row: (row["game_id"], row["gsis_id"]))
+    return {
+        "snapshot": snapshot,
+        "receipt": {
+            "schema_version": 1,
+            "source": snapshot["source"], "source_as_of": value["source_as_of"],
+            "captured_at": value["captured_at"], "teams_processed": teams,
+            "games": len(games), "rows": len(rows), "bytes": len(data),
+            "sha256": hashlib.sha256(data).hexdigest(),
+        },
+        "bytes": data,
+    }
+
+
+def load_results(path):
+    return _results_from_bytes(Path(path).read_bytes())
+
+
+def verify_loaded_results(loaded):
+    if not isinstance(loaded, dict) or set(loaded) != {
+        "snapshot", "receipt", "bytes",
+    } or not isinstance(loaded["bytes"], bytes):
+        raise ValueError("Loaded fantasy results are invalid")
+    if not _matches_frozen_value(loaded, _results_from_bytes(loaded["bytes"])):
+        raise ValueError("Parsed fantasy results do not match frozen bytes")
+    return loaded
+
+
+def _verify_result_receipt(receipt):
+    if not isinstance(receipt, dict) or set(receipt) != RESULT_RECEIPT_KEYS:
+        raise ValueError("Weekly fantasy result receipt is invalid")
+    if (
+        type(receipt["schema_version"]) is not int
+        or receipt["schema_version"] != 1
+        or not isinstance(receipt["source"], str)
+        or not receipt["source"].strip()
+        or type(receipt["games"]) is not int or receipt["games"] < 0
+        or type(receipt["rows"]) is not int or receipt["rows"] < 0
+        or type(receipt["bytes"]) is not int or receipt["bytes"] <= 0
+        or not _hex_digest(receipt["sha256"], 64)
+    ):
+        raise ValueError("Weekly fantasy result receipt is invalid")
+    captured = parse_timestamp(receipt["captured_at"], "result receipt captured_at")
+    if receipt["source_as_of"] is not None and parse_timestamp(
+        receipt["source_as_of"], "result receipt source_as_of"
+    ) > captured:
+        raise ValueError("Weekly fantasy result receipt is invalid")
+    teams = _validated_teams(receipt["teams_processed"], "result receipt")
+    if receipt["teams_processed"] != teams:
+        raise ValueError("Weekly fantasy result receipt is invalid")
+    return receipt
+
+
+def _mae(rows, prediction):
+    return math.fsum(
+        abs(row["fantasy_points"] - row[prediction]) for row in rows
+    ) / len(rows)
+
+
+def grade_week(loaded_locks, loaded_results):
+    if not isinstance(loaded_locks, list) or not loaded_locks:
+        raise ValueError("Weekly fantasy locks are missing")
+    verify_loaded_results(loaded_results)
+    locks, loaded_hashes = [], []
+    for loaded in loaded_locks:
+        if not isinstance(loaded, dict) or set(loaded) != {"lock", "bytes", "sha256"}:
+            raise ValueError("Loaded fantasy game lock is invalid")
+        lock = verify_game_lock(loaded["lock"])
+        if not isinstance(loaded["bytes"], bytes) or (
+            loaded["bytes"] != serialize_game_lock(lock).encode("utf-8")
+        ):
+            raise ValueError("Fantasy game lock bytes are not exact")
+        if loaded["sha256"] != hashlib.sha256(loaded["bytes"]).hexdigest():
+            raise ValueError("Fantasy game lock hash is invalid")
+        locks.append(lock)
+        loaded_hashes.append(loaded["sha256"])
+    first = locks[0]
+    common = (
+        first["season"], first["week"], first["model_version"],
+        first["config_sha256"],
+    )
+    if any(
+        (lock["season"], lock["week"], lock["model_version"], lock["config_sha256"])
+        != common for lock in locks
+    ):
+        raise ValueError("Weekly fantasy locks do not share one model epoch")
+    expected_games = set(first["scheduled_week_games"])
+    if any(set(lock["scheduled_week_games"]) != expected_games for lock in locks):
+        raise ValueError("Weekly fantasy schedule manifests disagree")
+    if {lock["game_id"] for lock in locks} != expected_games or len(locks) != len(expected_games):
+        raise ValueError("Weekly fantasy lock coverage is incomplete")
+    expected_teams = {team for lock in locks for team in lock["teams_processed"]}
+    if not expected_teams <= set(loaded_results["receipt"]["teams_processed"]):
+        raise ValueError("Weekly fantasy result team coverage is incomplete")
+    final_games = {game["game_id"] for game in loaded_results["snapshot"]["games"]}
+    if final_games != expected_games:
+        raise ValueError("Weekly fantasy final game coverage is incomplete")
+    predictions = rank_rows([
+        row for lock in locks for row in lock["predictions"]
+    ])
+    prediction_keys = {(row["game_id"], row["gsis_id"]) for row in predictions}
+    result_rows = {
+        (row["game_id"], row["gsis_id"]): row
+        for row in loaded_results["snapshot"]["rows"]
+    }
+    if not set(result_rows) <= prediction_keys:
+        raise ValueError("Fantasy result identity is not in the locked population")
+    primary = pgo_fantasy.select_primary_pool([
+        row for row in predictions if row["ranking_eligible"]
+    ])
+    if len(primary) != 96:
+        raise ValueError("Weekly fantasy primary pool is not 96 rows")
+    rows = []
+    for prediction in predictions:
+        key = prediction["game_id"], prediction["gsis_id"]
+        actual = pgo_fantasy.half_ppr(result_rows[key]) if key in result_rows else 0.0
+        rows.append({
+            **prediction,
+            "fantasy_points": actual,
+            "primary_pool": key in primary,
+            "null_absolute_error": abs(actual - prediction["null_prediction"]),
+            "strong_absolute_error": abs(actual - prediction["strong_prediction"]),
+            "improvement": (
+                abs(actual - prediction["null_prediction"])
+                - abs(actual - prediction["strong_prediction"])
+            ),
+        })
+    selected = [row for row in rows if row["primary_pool"]]
+    null_mae = _mae(selected, "null_prediction")
+    strong_mae = _mae(selected, "strong_prediction")
+    grade = {
+        "schema_version": 1,
+        "artifact_kind": "PGO_FANTASY_WEEK_GRADE",
+        "status": "HOLD",
+        "publication_status": "EXPERIMENTAL",
+        "season": first["season"], "week": first["week"],
+        "model_version": first["model_version"],
+        "config_sha256": first["config_sha256"],
+        "lock_sha256": sorted(loaded_hashes),
+        "result_receipt": loaded_results["receipt"],
+        "checks": {
+            "complete_game_locks": True,
+            "complete_game_results": True,
+            "primary_pool_96": True,
+            "exact_lock_binding": True,
+        },
+        "metrics": {"primary": {
+            "count": 96, "null_mae": null_mae, "strong_mae": strong_mae,
+            "improvement": null_mae - strong_mae,
+            "relative_improvement": (
+                (null_mae - strong_mae) / null_mae if null_mae > 0.0 else 0.0
+            ),
+            "strong_win": strong_mae < null_mae,
+        }},
+        "rows": sorted(rows, key=lambda row: (row["game_id"], row["gsis_id"])),
+    }
+    grade["artifact_sha256"] = _artifact_hash(grade)
+    return verify_week_grade(grade)
+
+
+def verify_week_grade(grade):
+    if not isinstance(grade, dict) or set(grade) != WEEK_GRADE_KEYS:
+        raise ValueError("Weekly fantasy grade contract is invalid")
+    if (
+        type(grade["schema_version"]) is not int
+        or grade["schema_version"] != 1
+        or grade["artifact_kind"] != "PGO_FANTASY_WEEK_GRADE"
+        or grade["status"] != "HOLD"
+        or grade["publication_status"] != "EXPERIMENTAL"
+        or grade["season"] != 2026
+        or type(grade["week"]) is not int or not 1 <= grade["week"] <= 18
+        or not isinstance(grade["model_version"], str)
+        or not grade["model_version"].strip()
+        or not _hex_digest(grade["config_sha256"], 64)
+        or not isinstance(grade["lock_sha256"], list)
+        or grade["lock_sha256"] != sorted(set(grade["lock_sha256"]))
+        or not grade["lock_sha256"]
+        or not all(_hex_digest(value, 64) for value in grade["lock_sha256"])
+        or grade["checks"] != {
+            "complete_game_locks": True,
+            "complete_game_results": True,
+            "primary_pool_96": True,
+            "exact_lock_binding": True,
+        }
+    ):
+        raise ValueError("Weekly fantasy grade metadata is invalid")
+    _verify_result_receipt(grade["result_receipt"])
+    rows = grade["rows"]
+    if (
+        not isinstance(rows, list) or not rows
+        or rows != sorted(rows, key=lambda row: (row["game_id"], row["gsis_id"]))
+        or any(not isinstance(row, dict) or set(row) != WEEK_ROW_FIELDS for row in rows)
+    ):
+        raise ValueError("Weekly fantasy grade rows are invalid")
+    base_rows = [{field: row[field] for field in LOCK_PREDICTION_COLUMNS} for row in rows]
+    _validate_lock_predictions(base_rows)
+    reranked = {
+        (row["game_id"], row["gsis_id"]): row for row in rank_rows(base_rows)
+    }
+    primary = pgo_fantasy.select_primary_pool([
+        row for row in base_rows if row["ranking_eligible"]
+    ])
+    if len(primary) != 96:
+        raise ValueError("Weekly fantasy grade primary pool is invalid")
+    for row in rows:
+        key = row["game_id"], row["gsis_id"]
+        actual = row["fantasy_points"]
+        if (
+            row["season"] != 2026 or row["week"] != grade["week"]
+            or row["config_sha256"] != grade["config_sha256"]
+            or type(row["primary_pool"]) is not bool
+            or row["primary_pool"] != (key in primary)
+            or type(actual) not in {int, float} or not math.isfinite(actual)
+            or any(row[field] != reranked[key][field] for field in (
+                "position_rank", "flex_rank", "superflex_rank"
+            ))
+            or row["null_absolute_error"] != abs(actual - row["null_prediction"])
+            or row["strong_absolute_error"] != abs(actual - row["strong_prediction"])
+            or row["improvement"] != (
+                row["null_absolute_error"] - row["strong_absolute_error"]
+            )
+        ):
+            raise ValueError("Weekly fantasy grade row binding is invalid")
+    selected = [row for row in rows if row["primary_pool"]]
+    null_mae = _mae(selected, "null_prediction")
+    strong_mae = _mae(selected, "strong_prediction")
+    expected_metrics = {"primary": {
+        "count": 96,
+        "null_mae": null_mae,
+        "strong_mae": strong_mae,
+        "improvement": null_mae - strong_mae,
+        "relative_improvement": (
+            (null_mae - strong_mae) / null_mae if null_mae > 0.0 else 0.0
+        ),
+        "strong_win": strong_mae < null_mae,
+    }}
+    if grade["metrics"] != expected_metrics:
+        raise ValueError("Weekly fantasy grade metrics are invalid")
+    if grade["artifact_sha256"] != _artifact_hash(grade):
+        raise ValueError("Weekly fantasy grade integrity is invalid")
+    return grade
+
+
+def serialize_week_grade(grade):
+    verify_week_grade(grade)
+    return canonical_json(grade) + "\n"
+
+
+def write_week_grade(output_dir, grade):
+    output_dir = Path(output_dir)
+    return pgo_prospective._write_new_outputs(output_dir, (
+        (output_dir / "fantasy_week_grade.json", serialize_week_grade(grade)),
+    ))
