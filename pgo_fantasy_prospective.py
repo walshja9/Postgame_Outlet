@@ -21,7 +21,7 @@ from pgo_sources import atomic_write_text, normalize_team
 
 
 SCHEMA_VERSION = 1
-SOURCE_KINDS = ("schedule", "roster", "availability", "history")
+SOURCE_KINDS = ("schedule", "roster", "availability", "history", "depth")
 ENVELOPE_KEYS = frozenset({
     "schema_version", "source", "source_as_of", "captured_at",
     "teams_processed", "rows",
@@ -34,6 +34,7 @@ ROSTER_FIELDS = frozenset({
     "gsis_id", "player_name", "team", "position", "status",
 })
 AVAILABILITY_FIELDS = frozenset({"gsis_id", "team", "status"})
+DEPTH_FIELDS = frozenset({"gsis_id", "team", "position", "depth_rank"})
 HISTORY_FIELDS = frozenset({
     "season", "week", "game_id", "game_type", "finalized_at",
     "gsis_id", "team", "position",
@@ -43,6 +44,7 @@ ROW_FIELDS = {
     "roster": ROSTER_FIELDS,
     "availability": AVAILABILITY_FIELDS,
     "history": HISTORY_FIELDS,
+    "depth": DEPTH_FIELDS,
 }
 CONFIG_KEYS = frozenset({
     "schema_version", "model_version", "frozen_at", "trained_through", "scoring",
@@ -243,6 +245,16 @@ def _validate_row(row, kind, teams):
         for field in ("gsis_id", "status"):
             _row_text(row, field, kind)
         _row_team(row, "team", teams, kind)
+    elif kind == "depth":
+        for field in ("gsis_id", "position"):
+            _row_text(row, field, kind)
+        _row_team(row, "team", teams, kind)
+        if (
+            row["position"] != "QB"
+            or type(row["depth_rank"]) is not int
+            or row["depth_rank"] <= 0
+        ):
+            raise ValueError("depth snapshot row is invalid")
     else:
         parse_timestamp(row["finalized_at"], f"{kind} snapshot finalized_at")
         for field in ("gsis_id", "position"):
@@ -282,6 +294,26 @@ def _snapshot_from_bytes(data, kind):
         if not isinstance(row, dict) or set(row) != ROW_FIELDS[kind]:
             raise ValueError(f"{kind} snapshot row is invalid")
         _validate_row(row, kind, teams)
+    if kind == "depth":
+        identity, marker, digest = value["source"].rpartition("|sha256:")
+        if (
+            not identity.strip()
+            or marker != "|sha256:"
+            or value["source"].count("|sha256:") != 1
+            or not _hex_digest(digest, 64)
+            or value["source_as_of"] is None
+            or rows != sorted(
+                rows,
+                key=lambda row: (
+                    normalize_team(row["team"]),
+                    row["depth_rank"],
+                    row["gsis_id"],
+                ),
+            )
+            or len({row["gsis_id"] for row in rows}) != len(rows)
+            or len({(row["team"], row["depth_rank"]) for row in rows}) != len(rows)
+        ):
+            raise ValueError("depth snapshot contract is invalid")
     snapshot = deepcopy(value)
     snapshot["source"] = value["source"].strip()
     snapshot["teams_processed"] = teams
@@ -428,7 +460,7 @@ def _validate_model_config(config):
     if (
         type(config["schema_version"]) is not int
         or config["schema_version"] != 1
-        or config["model_version"] != "pgo_fantasy_2026_baseline_v1"
+        or config["model_version"] != "pgo_fantasy_2026_baseline_v2"
         or type(config["trained_through"]) is not int
         or config["trained_through"] != 2025
         or config["scoring"] != "PGO_HALF_PPR_V1"
@@ -538,8 +570,8 @@ def _ensure_captured(source, cutoff, label):
 
 
 def _validate_inputs(sources, model, cutoff=None):
-    required = {"schedule", "roster", "history"}
-    if set(sources) - {"schedule", "roster", "availability", "history"}:
+    required = {"schedule", "roster", "history", "depth"}
+    if set(sources) - set(SOURCE_KINDS):
         raise ValueError("Unexpected prospective source")
     if not required <= set(sources):
         raise ValueError("Missing prospective source")
@@ -584,6 +616,30 @@ def _roster_rows(roster, teams):
     if not parsed:
         raise ValueError("Prospective roster contains no modeled players")
     return sorted(parsed, key=lambda row: row["gsis_id"])
+
+
+def _depth_ranks(depth, roster, teams):
+    required = set(teams)
+    if not required <= set(depth["receipt"]["teams_processed"]):
+        raise ValueError("Prospective depth coverage is incomplete")
+    roster_qbs = {
+        row["gsis_id"]: row for row in roster if row["position"] == "QB"
+    }
+    if {row["team"] for row in roster_qbs.values()} != required:
+        raise ValueError("Prospective roster QB coverage is incomplete")
+    observed = {}
+    for row in depth["snapshot"]["rows"]:
+        team = normalize_team(_required_text(row["team"], "depth team"))
+        if team not in required:
+            continue
+        gsis_id = _required_text(row["gsis_id"], "depth gsis_id")
+        player = roster_qbs.get(gsis_id)
+        if player is None or player["team"] != team or row["position"] != "QB":
+            raise ValueError("Prospective depth identity contradicts roster")
+        observed[gsis_id] = row["depth_rank"]
+    if set(observed) != set(roster_qbs):
+        raise ValueError("Prospective depth QB coverage is incomplete")
+    return observed
 
 
 def _availability_state(source, teams, lock_mode):
@@ -742,12 +798,13 @@ def build_preview(sources, model, week, generated_at):
         team for game in games for team in (game["away"], game["home"])
     }
     roster_teams = set(sources["roster"]["receipt"]["teams_processed"])
-    rows, missing = [], set()
+    depth_teams = set(sources["depth"]["receipt"]["teams_processed"])
+    if not scheduled_teams <= roster_teams:
+        raise ValueError("Prospective preview roster coverage is incomplete")
+    if not scheduled_teams <= depth_teams:
+        raise ValueError("Prospective preview depth coverage is incomplete")
+    rows = []
     for game in games:
-        teams = {game["away"], game["home"]}
-        if not teams <= roster_teams:
-            missing.update(teams - roster_teams)
-            continue
         rows.extend(project_game(
             sources, model, game["game_id"], generated_at, lock_mode=False
         )["rows"])
@@ -764,7 +821,7 @@ def build_preview(sources, model, week, generated_at):
         "model_version": model["config"]["model_version"],
         "config_sha256": model["sha256"],
         "teams_processed": sorted(roster_teams),
-        "teams_missing": sorted(missing),
+        "teams_missing": [],
         "source_coverage": {
             kind: {
                 "processed": sorted(
@@ -779,6 +836,7 @@ def build_preview(sources, model, week, generated_at):
                 ("availability", sources.get("availability", {
                     "receipt": {"teams_processed": []},
                 })),
+                ("depth", sources["depth"]),
             )
         },
         "rows": rank_rows(rows),
@@ -883,7 +941,7 @@ def build_game_lock(sources, model, game_id, locked_at, code_sha):
             projected["game"]["away"], projected["game"]["home"]
         )),
         "row_count": len(projected["rows"]),
-        "coverage": {"roster": True, "availability": True},
+        "coverage": {"roster": True, "availability": True, "depth": True},
         "scheduled_week_games": projected["scheduled_week_games"],
         "source_receipts": receipts,
         "source_receipts_sha256": hashlib.sha256(
@@ -917,7 +975,7 @@ def verify_game_lock(lock):
         or len(set(lock["teams_processed"])) != 2
         or type(lock["row_count"]) is not int or lock["row_count"] <= 0
         or lock["row_count"] != len(lock["predictions"])
-        or lock["coverage"] != {"roster": True, "availability": True}
+        or lock["coverage"] != {"roster": True, "availability": True, "depth": True}
         or lock["scheduled_week_games"] != sorted(set(lock["scheduled_week_games"]))
         or lock["game_id"] not in lock["scheduled_week_games"]
         or lock["prediction_integrity_sha256"] != _prediction_hash(lock["predictions"])
@@ -992,7 +1050,7 @@ def verify_game_lock(lock):
         kind: set(lock["teams_processed"]) <= set(teams)
         for kind, teams in receipt_teams.items()
     }
-    if not coverage["roster"] or not coverage["availability"]:
+    if not all(coverage[kind] for kind in ("roster", "availability", "depth")):
         raise ValueError("Fantasy game lock source coverage is invalid")
     kickoff = parse_timestamp(lock["kickoff"], "kickoff")
     decision = parse_timestamp(lock["decision_time"], "decision_time")
@@ -2065,6 +2123,7 @@ def _common_sources(args, availability_required):
     sources = {
         "schedule": load_snapshot(args.schedule, "schedule"),
         "roster": load_snapshot(args.roster, "roster"),
+        "depth": load_snapshot(args.depth, "depth"),
         "history": load_snapshot(args.history, "history"),
     }
     if getattr(args, "availability", None) is not None:
@@ -2114,6 +2173,7 @@ def _parser():
     def sources(command, availability=False):
         command.add_argument("--schedule", type=Path, required=True)
         command.add_argument("--roster", type=Path, required=True)
+        command.add_argument("--depth", type=Path, required=True)
         command.add_argument("--history", type=Path, required=True)
         command.add_argument("--config", type=Path, required=True)
         command.add_argument("--availability", type=Path, required=availability)
@@ -2146,7 +2206,7 @@ def _parser():
 
 def _inputs(args):
     if args.command in {"preview", "lock"}:
-        return (args.schedule, args.roster, args.history, args.config,
+        return (args.schedule, args.roster, args.depth, args.history, args.config,
                 *(() if args.availability is None else (args.availability,)))
     if args.command == "grade-week":
         return (*args.lock, args.results)

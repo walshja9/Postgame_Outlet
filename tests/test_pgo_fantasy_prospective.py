@@ -34,10 +34,28 @@ class ProspectiveFantasyFixture:
             "rows": rows,
         }
 
+    @staticmethod
+    def depth_rows():
+        return [
+            {"gsis_id": "buf-qb1", "team": "BUF", "position": "QB", "depth_rank": 1},
+            {"gsis_id": "buf-qb2", "team": "BUF", "position": "QB", "depth_rank": 2},
+            {"gsis_id": "lar-qb1", "team": "LAR", "position": "QB", "depth_rank": 1},
+            {"gsis_id": "lar-qb2", "team": "LAR", "position": "QB", "depth_rank": 2},
+        ]
+
+    def depth_envelope(self, rows=None, teams=("BUF", "LAR"), captured=None):
+        value = self.envelope(
+            self.depth_rows() if rows is None else rows,
+            teams=teams,
+            captured=captured,
+        )
+        value["source"] = "synthetic-depth|sha256:" + "f" * 64
+        return value
+
     def _bare_config(self):
         return {
             "schema_version": 1,
-            "model_version": "pgo_fantasy_2026_baseline_v1",
+            "model_version": "pgo_fantasy_2026_baseline_v2",
             "frozen_at": "2026-09-01T12:00:00-04:00",
             "trained_through": 2025,
             "scoring": "PGO_HALF_PPR_V1",
@@ -102,6 +120,10 @@ class ProspectiveFantasyFixture:
              "team": "LAR", "position": "WR", "status": "ACT"},
             {"gsis_id": "inactive", "player_name": "Inactive",
              "team": "BUF", "position": "RB", "status": "ACT"},
+            {"gsis_id": "buf-qb1", "player_name": "BUF QB1", "team": "BUF", "position": "QB", "status": "ACT"},
+            {"gsis_id": "buf-qb2", "player_name": "BUF QB2", "team": "BUF", "position": "QB", "status": "ACT"},
+            {"gsis_id": "lar-qb1", "player_name": "LAR QB1", "team": "LAR", "position": "QB", "status": "ACT"},
+            {"gsis_id": "lar-qb2", "player_name": "LAR QB2", "team": "LAR", "position": "QB", "status": "ACT"},
         ])
         inactive = self.envelope([
             {"gsis_id": "inactive", "team": "BUF", "status": "INACTIVE"},
@@ -119,6 +141,7 @@ class ProspectiveFantasyFixture:
                 default_history if history_rows is None else history_rows
             ),
         }
+        values["depth"] = self.depth_envelope()
         if availability:
             values["availability"] = inactive
         return values, game_id
@@ -474,6 +497,74 @@ class ProspectiveSourceBoundaryTests(
             with self.assertRaisesRegex(ValueError, "model config"):
                 prospective.load_model_config(path)
 
+    def test_depth_snapshot_requires_raw_digest_and_strict_qb_rows(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            valid = prospective.load_snapshot(
+                self.write_json(root / "depth.json", self.depth_envelope()),
+                "depth",
+            )
+            self.assertEqual(valid["receipt"]["kind"], "depth")
+            self.assertEqual(valid["snapshot"]["rows"], self.depth_rows())
+
+            cases = []
+            bare = self.depth_envelope()
+            bare["source"] = "https://example.invalid/depth.csv.gz"
+            cases.append(("bare-source", bare))
+            missing_as_of = self.depth_envelope()
+            missing_as_of["source_as_of"] = None
+            cases.append(("missing-as-of", missing_as_of))
+            for label, value in (
+                ("boolean", True), ("float", 1.0), ("zero", 0), ("negative", -1),
+            ):
+                changed = self.depth_envelope()
+                changed["rows"][0]["depth_rank"] = value
+                cases.append((label, changed))
+            wrong_position = self.depth_envelope()
+            wrong_position["rows"][0]["position"] = "WR"
+            cases.append(("position", wrong_position))
+            reversed_rows = self.depth_envelope(list(reversed(self.depth_rows())))
+            cases.append(("row-order", reversed_rows))
+
+            for label, value in cases:
+                with self.subTest(label=label):
+                    with self.assertRaises(ValueError):
+                        prospective.load_snapshot(
+                            self.write_json(root / f"{label}.json", value), "depth"
+                        )
+
+    def test_depth_snapshot_rejects_duplicate_identity_and_team_rank(self):
+        cases = []
+        duplicate_id = self.depth_rows()
+        duplicate_id[1] = {**duplicate_id[1], "gsis_id": "buf-qb1"}
+        cases.append(("identity", duplicate_id))
+        duplicate_rank = self.depth_rows()
+        duplicate_rank[1] = {**duplicate_rank[1], "depth_rank": 1}
+        cases.append(("rank", duplicate_rank))
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for label, rows in cases:
+                with self.subTest(label=label), self.assertRaises(ValueError):
+                    prospective.load_snapshot(
+                        self.write_json(root / f"{label}.json", self.depth_envelope(rows)),
+                        "depth",
+                    )
+
+    def test_model_config_requires_the_qb_depth_v2_epoch(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            current = self.config()
+            current["model_version"] = "pgo_fantasy_2026_baseline_v2"
+            prospective.load_model_config(
+                self.write_json(root / "v2.json", current, canonical=True)
+            )
+            old = self.config()
+            old["model_version"] = "pgo_fantasy_2026_baseline_v1"
+            with self.assertRaisesRegex(ValueError, "model config"):
+                prospective.load_model_config(
+                    self.write_json(root / "v1.json", old, canonical=True)
+                )
+
 
 class ProspectiveProjectionTests(
     ProspectiveFantasyFixture, unittest.TestCase
@@ -660,6 +751,25 @@ class ProspectiveProjectionTests(
             ["BUF", "LAR"],
         )
 
+    def test_preview_blocks_incomplete_roster_or_depth_team_coverage(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            sources, model, _ = self.loaded_sources(root)
+            for kind in ("roster", "depth"):
+                with self.subTest(kind=kind):
+                    changed = deepcopy(sources)
+                    snapshot = deepcopy(changed[kind]["snapshot"])
+                    snapshot["teams_processed"] = ["BUF"]
+                    snapshot["rows"] = [
+                        row for row in snapshot["rows"] if row["team"] == "BUF"
+                    ]
+                    changed[kind] = prospective.load_snapshot(
+                        self.write_json(root / f"missing-{kind}.json", snapshot),
+                        kind,
+                    )
+                    with self.assertRaisesRegex(ValueError, "coverage"):
+                        prospective.build_preview(changed, model, 1, self.CAPTURED)
+
     def test_preview_revalidates_inputs_when_roster_skips_every_game(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -771,6 +881,46 @@ class ProspectiveProjectionTests(
                             candidate_sources, candidate_model, 1,
                             "2026-09-09T19:30:00-04:00",
                         )
+
+    def test_depth_rows_exactly_match_current_roster_qbs(self):
+        roster_rows = [
+            {"gsis_id": "buf-qb1", "player_name": "BUF QB1", "team": "BUF", "position": "QB", "status": "ACT"},
+            {"gsis_id": "buf-qb2", "player_name": "BUF QB2", "team": "BUF", "position": "QB", "status": "ACT"},
+            {"gsis_id": "lar-qb1", "player_name": "LAR QB1", "team": "LAR", "position": "QB", "status": "ACT"},
+            {"gsis_id": "lar-qb2", "player_name": "LAR QB2", "team": "LAR", "position": "QB", "status": "ACT"},
+        ]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            roster_source = prospective.load_snapshot(
+                self.write_json(root / "roster.json", self.envelope(roster_rows)),
+                "roster",
+            )
+            roster = prospective._roster_rows(roster_source, {"BUF", "LAR"})
+            valid = prospective.load_snapshot(
+                self.write_json(root / "depth.json", self.depth_envelope()), "depth"
+            )
+            self.assertEqual(
+                prospective._depth_ranks(valid, roster, {"BUF", "LAR"}),
+                {"buf-qb1": 1, "buf-qb2": 2, "lar-qb1": 1, "lar-qb2": 2},
+            )
+
+            cases = {}
+            cases["missing"] = self.depth_rows()[:-1]
+            cases["extra"] = self.depth_rows() + [
+                {"gsis_id": "lar-qb3", "team": "LAR", "position": "QB", "depth_rank": 3}
+            ]
+            cases["team"] = sorted([
+                *self.depth_rows()[:3],
+                {**self.depth_rows()[3], "team": "BUF", "depth_rank": 3},
+            ], key=lambda row: (row["team"], row["depth_rank"], row["gsis_id"]))
+            for label, rows in cases.items():
+                with self.subTest(label=label):
+                    loaded = prospective.load_snapshot(
+                        self.write_json(root / f"{label}.json", self.depth_envelope(rows)),
+                        "depth",
+                    )
+                    with self.assertRaises(ValueError):
+                        prospective._depth_ranks(loaded, roster, {"BUF", "LAR"})
 
 
 class ProspectiveGameLockTests(
@@ -1595,6 +1745,7 @@ class ProspectiveFantasyCommandTests(
                 self.assertEqual(prospective.main([
                     "preview", "--schedule", str(paths["schedule"]),
                     "--roster", str(paths["roster"]),
+                    "--depth", str(paths["depth"]),
                     "--history", str(paths["history"]),
                     "--config", str(paths["config"]),
                     "--week", "1", "--as-of", self.CAPTURED,
@@ -1603,6 +1754,7 @@ class ProspectiveFantasyCommandTests(
                 self.assertEqual(prospective.main([
                     "lock", "--schedule", str(paths["schedule"]),
                     "--roster", str(paths["roster"]),
+                    "--depth", str(paths["depth"]),
                     "--availability", str(paths["availability"]),
                     "--history", str(paths["history"]),
                     "--config", str(paths["config"]),
@@ -1621,6 +1773,7 @@ class ProspectiveFantasyCommandTests(
             self.assertEqual(prospective.main([
                 "preview", "--schedule", str(paths["schedule"]),
                 "--roster", str(paths["roster"]),
+                "--depth", str(paths["depth"]),
                 "--history", str(paths["history"]),
                 "--config", str(paths["config"]),
                 "--week", "1", "--as-of", self.CAPTURED,
@@ -1636,6 +1789,7 @@ class ProspectiveFantasyCommandTests(
             self.assertEqual(prospective.main([
                 "preview", "--schedule", str(paths["schedule"]),
                 "--roster", str(paths["roster"]),
+                "--depth", str(paths["depth"]),
                 "--history", str(paths["history"]),
                 "--config", str(paths["config"]),
                 "--week", "1", "--as-of", self.CAPTURED,
@@ -1648,6 +1802,7 @@ class ProspectiveFantasyCommandTests(
                 self.assertEqual(prospective.main([
                     "lock", "--schedule", str(paths["schedule"]),
                     "--roster", str(paths["roster"]),
+                    "--depth", str(paths["depth"]),
                     "--availability", str(paths["availability"]),
                     "--history", str(paths["history"]),
                     "--config", str(paths["config"]),
@@ -1666,7 +1821,7 @@ class ProspectiveFantasyCommandTests(
             paths = self.command_fixture(Path(directory))
             sources = {
                 kind: prospective.load_snapshot(paths[kind], kind)
-                for kind in ("schedule", "roster", "availability", "history")
+                for kind in ("schedule", "roster", "availability", "history", "depth")
             }
             model = prospective.load_model_config(paths["config"])
             lock = prospective.build_game_lock(
@@ -1682,6 +1837,7 @@ class ProspectiveFantasyCommandTests(
                 self.assertEqual(prospective.main([
                     "preview", "--schedule", str(paths["schedule"]),
                     "--roster", str(paths["roster"]),
+                    "--depth", str(paths["depth"]),
                     "--history", str(paths["history"]),
                     "--config", str(paths["config"]),
                     "--week", "1", "--as-of", self.CAPTURED,
@@ -1696,6 +1852,7 @@ class ProspectiveFantasyCommandTests(
             command = [
                 "preview", "--schedule", str(paths["schedule"]),
                 "--roster", str(paths["roster"]),
+                "--depth", str(paths["depth"]),
                 "--history", str(paths["history"]),
                 "--config", str(paths["config"]),
                 "--week", "1", "--as-of", self.CAPTURED,
@@ -1718,6 +1875,7 @@ class ProspectiveFantasyCommandTests(
             self.assertEqual(prospective.main([
                 "preview", "--schedule", str(paths["schedule"]),
                 "--roster", str(paths["roster"]),
+                "--depth", str(paths["depth"]),
                 "--history", str(paths["history"]),
                 "--config", str(paths["config"]),
                 "--week", "1", "--as-of", self.CAPTURED,
@@ -1746,6 +1904,7 @@ class ProspectiveFantasyCommandTests(
                 self.assertEqual(prospective.main([
                     "preview", "--schedule", str(paths["schedule"]),
                     "--roster", str(paths["roster"]),
+                    "--depth", str(paths["depth"]),
                     "--history", str(paths["history"]),
                     "--config", str(paths["config"]),
                     "--week", "1", "--as-of", self.CAPTURED,
@@ -1779,6 +1938,7 @@ class ProspectiveFantasyCommandTests(
                 result = prospective.main([
                     "lock", "--schedule", str(paths["schedule"]),
                     "--roster", str(paths["roster"]),
+                    "--depth", str(paths["depth"]),
                     "--availability", str(paths["availability"]),
                     "--history", str(paths["history"]),
                     "--config", str(paths["config"]),
@@ -1811,6 +1971,7 @@ class ProspectiveFantasyCommandTests(
                 self.assertEqual(prospective.main([
                     "lock", "--schedule", str(paths["schedule"]),
                     "--roster", str(paths["roster"]),
+                    "--depth", str(paths["depth"]),
                     "--availability", str(paths["availability"]),
                     "--history", str(paths["history"]),
                     "--config", str(paths["config"]),
@@ -1834,6 +1995,7 @@ class ProspectiveFantasyCommandTests(
                 self.assertEqual(prospective.main([
                     "lock", "--schedule", str(paths["schedule"]),
                     "--roster", str(paths["roster"]),
+                    "--depth", str(paths["depth"]),
                     "--availability", str(paths["availability"]),
                     "--history", str(paths["history"]),
                     "--config", str(paths["config"]),
