@@ -6,8 +6,10 @@ import hashlib
 import io
 import json
 import math
+import os
 import subprocess
 import sys
+import tempfile
 from copy import deepcopy
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -671,6 +673,70 @@ def serialize_preview(preview):
     return canonical_json(preview) + "\n"
 
 
+def _is_replaceable_preview(data):
+    try:
+        preview = _decode_json(data, "preview output")
+        return (
+            isinstance(preview, dict)
+            and set(preview) == {
+                "schema_version", "artifact_kind", "status", "publication_status",
+                "evidence_mode", "gradeable", "season", "week", "generated_at",
+                "model_version", "config_sha256", "teams_processed", "teams_missing",
+                "source_coverage", "rows", "artifact_sha256",
+            }
+            and preview["artifact_kind"] == PREVIEW_KIND
+            and preview["evidence_mode"] == "PREVIEW"
+            and preview["gradeable"] is False
+            and data == serialize_preview(preview).encode("utf-8")
+        )
+    except (TypeError, ValueError):
+        return False
+
+
+def _write_preview(output, text):
+    output = Path(output)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    claim_path = output.with_name(f".{output.name}.preview-claim")
+    claim = pgo_fantasy._exclusive_write_text(claim_path, os.urandom(16).hex())
+    previous = None
+    backup = None
+    try:
+        if output.exists() or output.is_symlink():
+            if output.is_symlink():
+                raise ValueError("Preview output is not a canonical PGO preview")
+            previous = output.read_bytes()
+            if not _is_replaceable_preview(previous):
+                raise ValueError("Preview output is not a canonical PGO preview")
+            descriptor, name = tempfile.mkstemp(
+                dir=output.parent, prefix=f".{output.name}.", suffix=".preview-rollback"
+            )
+            backup = Path(name)
+            with os.fdopen(descriptor, "wb") as handle:
+                handle.write(previous)
+                handle.flush()
+                os.fsync(handle.fileno())
+            expected = output.stat(follow_symlinks=False)
+            pgo_prospective._detach_output(output, expected)
+            if output.exists() or output.is_symlink():
+                raise ValueError("Preview output changed during replacement")
+        try:
+            pgo_fantasy._exclusive_write_text(output, text)
+        except BaseException:
+            if backup is not None:
+                try:
+                    os.link(backup, output)
+                except FileExistsError:
+                    pass
+            raise
+    finally:
+        if backup is not None:
+            try:
+                backup.unlink()
+            except BaseException:
+                pass
+        pgo_fantasy._unlink_owned(claim_path, *claim)
+
+
 def _validate_lock_predictions(rows, lock=None):
     if not isinstance(rows, list) or not rows:
         raise ValueError("Fantasy game lock predictions are invalid")
@@ -883,12 +949,60 @@ def load_game_lock(path):
     }
 
 
-def write_game_lock(output_dir, lock):
+def _write_guarded_game_lock(output_dir, outputs, publication_guard):
+    staged, owned = [], {}
+    owns_output_dir = success = False
+    failure = None
+    try:
+        output_dir.mkdir(parents=True)
+        owns_output_dir = True
+        for target, content in outputs:
+            descriptor, name = tempfile.mkstemp(
+                dir=target.parent, prefix=f".{target.name}.", suffix=".pending"
+            )
+            os.close(descriptor)
+            staged_path = Path(name)
+            staged.append(staged_path)
+            atomic_write_text(staged_path, content)
+        for (target, _), staged_path in zip(outputs, staged):
+            publication_guard()
+            state = staged_path.stat(follow_symlinks=False)
+            owned[target] = state
+            os.link(staged_path, target)
+        if any(
+            not os.path.samestat(target.stat(follow_symlinks=False), state)
+            for target, state in owned.items()
+        ):
+            raise OSError("Output reservation ownership changed")
+        success = True
+    except BaseException as error:
+        failure = error
+        for target, state in owned.items():
+            pgo_prospective._detach_output(target, state)
+    finally:
+        for staged_path in staged:
+            try:
+                staged_path.unlink(missing_ok=True)
+            except BaseException:
+                pass
+        if owns_output_dir and not success:
+            try:
+                output_dir.rmdir()
+            except BaseException:
+                pass
+    if isinstance(failure, (KeyboardInterrupt, SystemExit, ValueError)):
+        raise failure
+    return success
+
+
+def write_game_lock(output_dir, lock, publication_guard=None):
     output_dir = Path(output_dir)
     outputs = (
         (output_dir / "fantasy_lock.json", serialize_game_lock(lock)),
         (output_dir / "fantasy_predictions.csv", game_prediction_csv(lock)),
     )
+    if publication_guard is not None:
+        return _write_guarded_game_lock(output_dir, outputs, publication_guard)
     return pgo_prospective._write_new_outputs(output_dir, outputs)
 
 
@@ -1643,7 +1757,7 @@ def write_season_grade(output_dir, grade):
 
 CODE_PATHS = (
     "pgo_fantasy_prospective.py", "pgo_fantasy.py", "pgo_prospective.py",
-    "pgo_challenger.py", "pgo_sources.py",
+    "pgo_challenger.py", "pgo_sources.py", "pgo_model.py", "release_ratings.py",
 )
 
 
@@ -1792,6 +1906,11 @@ def _outputs(args):
     return (args.output_dir / "fantasy_season_grade.json",)
 
 
+def _lock_publication_guard(lock):
+    if _now() > parse_timestamp(lock["decision_time"], "decision time"):
+        raise ValueError("Fantasy game lock T-60 window has closed")
+
+
 def main(argv=None):
     args = _parser().parse_args(argv)
     inputs, outputs = _inputs(args), _outputs(args)
@@ -1801,16 +1920,17 @@ def main(argv=None):
         if args.command == "preview":
             sources, model = _common_sources(args, False)
             preview = build_preview(sources, model, args.week, args.as_of)
-            atomic_write_text(args.output, serialize_preview(preview))
+            _write_preview(args.output, serialize_preview(preview))
             return 0
         if args.command == "lock":
             sources, model = _common_sources(args, True)
             code_sha = _current_code_sha()
             locked_at = _now().isoformat()
             lock = build_game_lock(sources, model, args.game_id, locked_at, code_sha)
-            if _now() > parse_timestamp(lock["decision_time"], "decision time"):
-                raise ValueError("Fantasy game lock T-60 window has closed")
-            if not write_game_lock(args.output_dir, lock):
+            _lock_publication_guard(lock)
+            if not write_game_lock(
+                args.output_dir, lock, lambda: _lock_publication_guard(lock)
+            ):
                 raise ValueError("Fantasy game lock output already exists")
             return 0
         if args.command == "grade-week":
