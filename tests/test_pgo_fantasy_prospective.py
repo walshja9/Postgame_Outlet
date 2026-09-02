@@ -343,3 +343,189 @@ class ProspectiveSourceBoundaryTests(
             )
             with self.assertRaisesRegex(ValueError, "model config"):
                 prospective.load_model_config(path)
+
+
+class ProspectiveProjectionTests(
+    ProspectiveFantasyFixture, unittest.TestCase
+):
+    def test_projection_uses_history_cold_start_and_verified_inactive(self):
+        with tempfile.TemporaryDirectory() as directory:
+            sources, model, game_id = self.loaded_sources(directory)
+            result = prospective.project_game(
+                sources, model, game_id, self.LOCKED_AT, lock_mode=True
+            )
+        rows = {row["gsis_id"]: row for row in result["rows"]}
+        self.assertGreater(rows["veteran"]["strong_prediction"], 7.0)
+        self.assertEqual(rows["veteran"]["history_count"], 1)
+        self.assertEqual(rows["veteran"]["initialization_reason"], "HISTORY")
+        self.assertEqual(rows["rookie"]["strong_prediction"], 7.0)
+        self.assertEqual(
+            rows["rookie"]["initialization_reason"], "TRUE_COLD_START"
+        )
+        self.assertEqual(rows["inactive"]["strong_prediction"], 0.0)
+        self.assertFalse(rows["inactive"]["ranking_eligible"])
+
+    def test_preview_keeps_unverified_players_but_lock_rejects_them(self):
+        with tempfile.TemporaryDirectory() as directory:
+            sources, model, game_id = self.loaded_sources(
+                directory, availability=False
+            )
+            preview = prospective.project_game(
+                sources, model, game_id, self.CAPTURED, lock_mode=False
+            )
+            self.assertTrue(all(
+                row["availability_status"] == "UNVERIFIED"
+                for row in preview["rows"]
+            ))
+            with self.assertRaisesRegex(ValueError, "availability"):
+                prospective.project_game(
+                    sources, model, game_id, self.LOCKED_AT, lock_mode=True
+                )
+
+    def test_future_or_current_game_history_cannot_change_projection(self):
+        future = [{
+            "season": 2026, "week": 1, "game_id": "2026_01_BUF_LAR",
+            "game_type": "REG", "finalized_at": "2026-09-09T23:59:00-04:00",
+            "gsis_id": "veteran", "team": "BUF", "position": "WR",
+            **self.scoring(receiving_yards=999.0),
+        }]
+        with tempfile.TemporaryDirectory() as directory:
+            sources, model, game_id = self.loaded_sources(
+                directory, history_rows=future
+            )
+            with self.assertRaisesRegex(ValueError, "history"):
+                prospective.project_game(
+                    sources, model, game_id, self.LOCKED_AT, lock_mode=True
+                )
+
+    def test_preview_rejects_any_supplied_source_captured_after_preview_time(self):
+        with tempfile.TemporaryDirectory() as directory:
+            sources, model, game_id = self.loaded_sources(directory)
+            sources["availability"]["snapshot"]["captured_at"] = (
+                "2026-09-09T19:00:00-04:00"
+            )
+            sources["availability"]["bytes"] = json.dumps(
+                sources["availability"]["snapshot"], ensure_ascii=False
+            ).encode("utf-8") + b"\n"
+            sources["availability"] = prospective.load_snapshot(
+                self.write_json(
+                    Path(directory) / "late-availability.json",
+                    sources["availability"]["snapshot"],
+                ),
+                "availability",
+            )
+            with self.assertRaisesRegex(ValueError, "captured after"):
+                prospective.project_game(
+                    sources, model, game_id, self.CAPTURED, lock_mode=False
+                )
+
+    def test_projection_rejects_model_config_frozen_after_prediction_time(self):
+        with tempfile.TemporaryDirectory() as directory:
+            sources, _, game_id = self.loaded_sources(directory)
+            config = self.config()
+            config["frozen_at"] = "2026-09-09T19:00:00-04:00"
+            model = prospective.load_model_config(self.write_json(
+                Path(directory) / "future-config.json", config, canonical=True
+            ))
+            with self.assertRaisesRegex(ValueError, "frozen after"):
+                prospective.project_game(
+                    sources, model, game_id, self.CAPTURED, lock_mode=False
+                )
+
+    def test_history_is_eight_games_and_current_roster_context_wins(self):
+        history = [{
+            "season": 2024, "week": 18, "game_id": "old",
+            "game_type": "REG", "finalized_at": "2025-01-05T19:00:00-05:00",
+            "gsis_id": "veteran", "team": "BUF", "position": "RB",
+            **self.scoring(receiving_yards=999.0),
+        }]
+        history.extend({
+            "season": 2025, "week": week, "game_id": f"2025_{week:02d}",
+            "game_type": "REG",
+            "finalized_at": f"2025-{9 + week // 4:02d}-{1 + week:02d}T19:00:00-04:00",
+            "gsis_id": "veteran", "team": "LAR", "position": "RB",
+            **self.scoring(receiving_yards=10.0 * week),
+        } for week in range(1, 10))
+        with tempfile.TemporaryDirectory() as directory:
+            sources, model, game_id = self.loaded_sources(
+                directory, history_rows=history
+            )
+            row = next(item for item in prospective.project_game(
+                sources, model, game_id, self.LOCKED_AT, lock_mode=True
+            )["rows"] if item["gsis_id"] == "veteran")
+        self.assertEqual(row["history_count"], 8)
+        self.assertEqual(row["team"], "BUF")
+        self.assertEqual(row["position"], "WR")
+        self.assertEqual(row["opponent"], "LAR")
+        self.assertAlmostEqual(
+            row["strong_prediction"],
+            pgo_fantasy.strong_baseline(list(range(2, 10)), 7.0),
+        )
+
+    def test_fb_maps_to_rb_but_unsupported_or_duplicate_roster_blocks(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            values, game_id = self.source_values()
+            values["roster"]["rows"][2]["position"] = "FB"
+            loaded = {
+                kind: prospective.load_snapshot(
+                    self.write_json(root / f"{kind}.json", value), kind
+                )
+                for kind, value in values.items()
+            }
+            model = prospective.load_model_config(self.write_json(
+                root / "config.json", self.config(), canonical=True
+            ))
+            rows = prospective.project_game(
+                loaded, model, game_id, self.LOCKED_AT, lock_mode=True
+            )["rows"]
+            self.assertEqual(
+                next(row for row in rows if row["gsis_id"] == "inactive")["position"],
+                "RB",
+            )
+
+            for change in ("unsupported", "duplicate"):
+                broken = json.loads(json.dumps(values["roster"]))
+                if change == "unsupported":
+                    broken["rows"][0]["position"] = "K"
+                else:
+                    broken["rows"][1]["gsis_id"] = broken["rows"][0]["gsis_id"]
+                loaded["roster"] = prospective.load_snapshot(
+                    self.write_json(root / f"{change}.json", broken), "roster"
+                )
+                with self.subTest(change=change):
+                    with self.assertRaises(ValueError):
+                        prospective.project_game(
+                            loaded, model, game_id, self.LOCKED_AT, lock_mode=True
+                        )
+
+    def test_ranking_is_deterministic_and_uses_gsis_id_for_ties(self):
+        rows = [
+            {"game_id": "g", "gsis_id": "b", "position": "WR",
+             "strong_prediction": 10.0, "ranking_eligible": True},
+            {"game_id": "g", "gsis_id": "a", "position": "WR",
+             "strong_prediction": 10.0, "ranking_eligible": True},
+            {"game_id": "g", "gsis_id": "q", "position": "QB",
+             "strong_prediction": 20.0, "ranking_eligible": True},
+        ]
+        ranked = prospective.rank_rows(list(reversed(rows)))
+        by_id = {row["gsis_id"]: row for row in ranked}
+        self.assertEqual(by_id["a"]["position_rank"], 1)
+        self.assertEqual(by_id["b"]["position_rank"], 2)
+        self.assertEqual(by_id["a"]["flex_rank"], 1)
+        self.assertEqual(by_id["q"]["superflex_rank"], 1)
+
+    def test_preview_is_explicitly_ungradeable_and_reports_source_coverage(self):
+        with tempfile.TemporaryDirectory() as directory:
+            sources, model, _ = self.loaded_sources(
+                directory, availability=False
+            )
+            preview = prospective.build_preview(
+                sources, model, 1, self.CAPTURED
+            )
+        self.assertEqual(preview["evidence_mode"], "PREVIEW")
+        self.assertFalse(preview["gradeable"])
+        self.assertEqual(
+            preview["source_coverage"]["availability"]["missing"],
+            ["BUF", "LAR"],
+        )

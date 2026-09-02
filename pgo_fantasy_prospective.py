@@ -46,6 +46,8 @@ CONFIG_KEYS = frozenset({
     "position_mean_evidence_sha256",
 })
 POSITIONS = ("QB", "RB", "WR", "TE")
+LOCK_KIND = "PGO_FANTASY_T60_GAME_LOCK"
+PREVIEW_KIND = "PGO_FANTASY_WEEKLY_PREVIEW"
 
 
 def canonical_json(value):
@@ -328,3 +330,287 @@ def verify_model_config(model):
     ):
         raise ValueError("Prospective model config does not match frozen bytes")
     return model
+
+
+def _artifact_hash(value):
+    payload = deepcopy(value)
+    payload.pop("artifact_sha256", None)
+    return hashlib.sha256(canonical_json(payload).encode("utf-8")).hexdigest()
+
+
+def _game_rows(schedule, week=None):
+    games = []
+    seen = set()
+    for row in schedule["snapshot"]["rows"]:
+        if (
+            type(row["season"]) is not int or row["season"] != 2026
+            or type(row["week"]) is not int or not 1 <= row["week"] <= 18
+            or row["game_type"] != "REG"
+            or not isinstance(row["game_id"], str) or not row["game_id"].strip()
+        ):
+            raise ValueError("Prospective schedule row is invalid")
+        game_id = row["game_id"].strip()
+        if game_id in seen:
+            raise ValueError(f"Duplicate prospective game: {game_id}")
+        seen.add(game_id)
+        away = normalize_team(_required_text(row["away_team"], "away team"))
+        home = normalize_team(_required_text(row["home_team"], "home team"))
+        if away == home:
+            raise ValueError("Prospective schedule teams match")
+        kickoff = parse_timestamp(row["kickoff"], "scheduled kickoff")
+        parsed = {
+            "season": 2026, "week": row["week"], "game_id": game_id,
+            "kickoff": row["kickoff"], "kickoff_time": kickoff,
+            "away": away, "home": home,
+        }
+        if week is None or row["week"] == week:
+            games.append(parsed)
+    return sorted(games, key=lambda game: (game["kickoff_time"], game["game_id"]))
+
+
+def _ensure_captured(source, cutoff, label):
+    captured = parse_timestamp(source["receipt"]["captured_at"], f"{label} capture")
+    if captured > cutoff:
+        raise ValueError(f"{label} source was captured after prediction time")
+
+
+def _roster_rows(roster, teams):
+    if not set(teams) <= set(roster["receipt"]["teams_processed"]):
+        raise ValueError("Prospective roster coverage is incomplete")
+    parsed, seen = [], set()
+    for row in roster["snapshot"]["rows"]:
+        team = normalize_team(_required_text(row["team"], "roster team"))
+        if team not in teams:
+            continue
+        gsis_id = _required_text(row["gsis_id"], "roster gsis_id")
+        name = _required_text(row["player_name"], "roster player_name")
+        raw_position = _required_text(
+            row["position"], "roster position"
+        ).upper()
+        if (
+            not gsis_id or not name or row["status"] != "ACT"
+            or raw_position not in pgo_fantasy.POSITION_MAP
+        ):
+            raise ValueError("Prospective roster row is invalid")
+        if gsis_id in seen:
+            raise ValueError(f"Duplicate prospective roster identity: {gsis_id}")
+        seen.add(gsis_id)
+        parsed.append({
+            "gsis_id": gsis_id, "player_name": name, "team": team,
+            "position": pgo_fantasy.POSITION_MAP[raw_position],
+        })
+    if not parsed:
+        raise ValueError("Prospective roster contains no modeled players")
+    return sorted(parsed, key=lambda row: row["gsis_id"])
+
+
+def _availability_state(source, teams, lock_mode):
+    verified = (
+        source is not None
+        and set(teams) <= set(source["receipt"]["teams_processed"])
+    )
+    if lock_mode and not verified:
+        raise ValueError("Prospective availability coverage is incomplete")
+    if not verified:
+        return None
+    inactive = set()
+    for row in source["snapshot"]["rows"]:
+        team = normalize_team(_required_text(row["team"], "availability team"))
+        gsis_id = _required_text(row["gsis_id"], "availability gsis_id")
+        if not gsis_id or row["status"] != "INACTIVE":
+            raise ValueError("Prospective availability row is invalid")
+        if team not in teams:
+            continue
+        if gsis_id in inactive:
+            raise ValueError(f"Duplicate inactive identity: {gsis_id}")
+        inactive.add(gsis_id)
+    return inactive
+
+
+def _history(history_source, cutoff, current_game):
+    by_player, seen = {}, set()
+    captured = parse_timestamp(
+        history_source["receipt"]["captured_at"], "history capture"
+    )
+    for row in history_source["snapshot"]["rows"]:
+        finalized = parse_timestamp(row["finalized_at"], "history finalized_at")
+        gsis_id = _required_text(row["gsis_id"], "history gsis_id")
+        game_id = _required_text(row["game_id"], "history game_id")
+        normalize_team(_required_text(row["team"], "history team"))
+        _required_text(row["position"], "history position")
+        key = game_id, gsis_id
+        if type(row["season"]) is not int:
+            raise ValueError("Prospective history season is invalid")
+        if row["season"] < 2025:
+            continue
+        if (
+            row["season"] not in {2025, 2026}
+            or type(row["week"]) is not int or not 1 <= row["week"] <= 18
+            or row["game_type"] != "REG" or not game_id or not gsis_id
+            or finalized > captured or finalized > cutoff
+            or game_id == current_game
+        ):
+            raise ValueError("Prospective history row is invalid")
+        if key in seen:
+            raise ValueError(f"Duplicate prospective history row: {key}")
+        seen.add(key)
+        value = pgo_fantasy.half_ppr(row)
+        by_player.setdefault(gsis_id, []).append((finalized, game_id, value))
+    return {
+        player: [item[2] for item in sorted(items)[-8:]]
+        for player, items in by_player.items()
+    }
+
+
+def project_game(sources, model, game_id, generated_at, lock_mode):
+    required = {"schedule", "roster", "history"}
+    if set(sources) - {"schedule", "roster", "availability", "history"}:
+        raise ValueError("Unexpected prospective source")
+    if not required <= set(sources):
+        raise ValueError("Missing prospective source")
+    verify_model_config(model)
+    for kind, source in sources.items():
+        verify_loaded_snapshot(source, kind)
+    generated = parse_timestamp(generated_at, "prediction generated_at")
+    if parse_timestamp(
+        model["config"]["frozen_at"], "model config frozen_at"
+    ) > generated:
+        raise ValueError("Prospective model config was frozen after prediction time")
+    games = _game_rows(sources["schedule"])
+    matches = [game for game in games if game["game_id"] == game_id]
+    if len(matches) != 1:
+        raise ValueError("Prospective game identity is invalid")
+    game = matches[0]
+    decision = game["kickoff_time"] - timedelta(minutes=60)
+    if lock_mode and generated > decision:
+        raise ValueError("T-60 decision time has passed")
+    for kind in sources:
+        _ensure_captured(sources[kind], generated, kind)
+    teams = {game["away"], game["home"]}
+    roster = _roster_rows(sources["roster"], teams)
+    inactive = _availability_state(
+        sources.get("availability"), teams, lock_mode
+    )
+    history = _history(sources["history"], generated, game_id)
+    means = model["config"]["position_means"]
+    rows = []
+    for player in roster:
+        values = history.get(player["gsis_id"], [])
+        unavailable = inactive is not None and player["gsis_id"] in inactive
+        status = (
+            "INACTIVE" if unavailable
+            else "ACTIVE" if inactive is not None
+            else "UNVERIFIED"
+        )
+        mean = means[player["position"]]
+        rows.append({
+            "season": 2026, "week": game["week"], "game_id": game_id,
+            "gsis_id": player["gsis_id"],
+            "player_name": player["player_name"], "team": player["team"],
+            "opponent": game["home"] if player["team"] == game["away"] else game["away"],
+            "position": player["position"],
+            "null_prediction": 0.0 if unavailable else mean,
+            "strong_prediction": 0.0 if unavailable else pgo_fantasy.strong_baseline(values, mean),
+            "history_count": len(values),
+            "initialization_reason": "HISTORY" if values else "TRUE_COLD_START",
+            "availability_status": status,
+            "ranking_eligible": not unavailable,
+            "config_sha256": model["sha256"],
+        })
+    week_games = [item["game_id"] for item in games if item["week"] == game["week"]]
+    return {
+        "game": {key: game[key] for key in (
+            "season", "week", "game_id", "kickoff", "away", "home"
+        )},
+        "decision_time": decision.isoformat(),
+        "generated_at": generated_at,
+        "scheduled_week_games": sorted(week_games),
+        "rows": sorted(rows, key=lambda row: row["gsis_id"]),
+    }
+
+
+def rank_rows(rows):
+    ranked = [deepcopy(row) for row in rows]
+    seen = set()
+    for row in ranked:
+        key = row["game_id"], row["gsis_id"]
+        if key in seen:
+            raise ValueError(f"Duplicate ranking row: {key}")
+        seen.add(key)
+        row.update({"position_rank": None, "flex_rank": None, "superflex_rank": None})
+
+    def assign(field, allowed):
+        selected = sorted(
+            (
+                row for row in ranked
+                if row["ranking_eligible"] and row["position"] in allowed
+            ),
+            key=lambda row: (-row["strong_prediction"], row["gsis_id"]),
+        )
+        for index, row in enumerate(selected, 1):
+            row[field] = index
+
+    for position in POSITIONS:
+        assign("position_rank", {position})
+    assign("flex_rank", {"RB", "WR", "TE"})
+    assign("superflex_rank", set(POSITIONS))
+    return sorted(ranked, key=lambda row: (row["game_id"], row["gsis_id"]))
+
+
+def build_preview(sources, model, week, generated_at):
+    if type(week) is not int or not 1 <= week <= 18:
+        raise ValueError("Preview week is invalid")
+    games = _game_rows(sources["schedule"], week)
+    scheduled_teams = {
+        team for game in games for team in (game["away"], game["home"])
+    }
+    roster_teams = set(sources["roster"]["receipt"]["teams_processed"])
+    rows, missing = [], set()
+    for game in games:
+        teams = {game["away"], game["home"]}
+        if not teams <= roster_teams:
+            missing.update(teams - roster_teams)
+            continue
+        rows.extend(project_game(
+            sources, model, game["game_id"], generated_at, lock_mode=False
+        )["rows"])
+    preview = {
+        "schema_version": 1,
+        "artifact_kind": PREVIEW_KIND,
+        "status": "HOLD",
+        "publication_status": "EXPERIMENTAL",
+        "evidence_mode": "PREVIEW",
+        "gradeable": False,
+        "season": 2026,
+        "week": week,
+        "generated_at": generated_at,
+        "model_version": model["config"]["model_version"],
+        "config_sha256": model["sha256"],
+        "teams_processed": sorted(roster_teams),
+        "teams_missing": sorted(missing),
+        "source_coverage": {
+            kind: {
+                "processed": sorted(
+                    scheduled_teams & set(source["receipt"]["teams_processed"])
+                ),
+                "missing": sorted(
+                    scheduled_teams - set(source["receipt"]["teams_processed"])
+                ),
+            }
+            for kind, source in (
+                ("roster", sources["roster"]),
+                ("availability", sources.get("availability", {
+                    "receipt": {"teams_processed": []},
+                })),
+            )
+        },
+        "rows": rank_rows(rows),
+    }
+    preview["artifact_sha256"] = _artifact_hash(preview)
+    return preview
+
+
+def serialize_preview(preview):
+    if preview.get("artifact_sha256") != _artifact_hash(preview):
+        raise ValueError("Preview artifact hash is invalid")
+    return canonical_json(preview) + "\n"
