@@ -99,6 +99,10 @@
   outline-offset: 0.3rem;
 }
 
+.postgame-featured-story :focus-visible {
+  outline: 0.3rem solid var(--postgame-orange);
+}
+
 @media screen and (min-width: 750px) {
   .postgame-featured-story { grid-template-columns: minmax(0, 1.45fr) minmax(0, 0.75fr); }
   .postgame-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }

@@ -110,6 +110,17 @@ class ShopifyThemeTests(unittest.TestCase):
         combined = json.dumps(data("templates/index.json")) + json.dumps(footer)
         self.assertEqual(1, combined.count("form-embed-block"))
 
+    def test_featured_story_uses_a_high_contrast_focus_outline(self):
+        css = text("assets/postgame-content.css")
+        self.assertIn(".postgame-featured-story :focus-visible", css)
+        self.assertIn("outline: 0.3rem solid var(--postgame-orange)", css)
+
+    def test_ratings_preview_counts_only_renderable_movers(self):
+        section = text("sections/postgame-ratings-preview.liquid")
+        self.assertIn("assign mover_count = 0", section)
+        self.assertIn("assign mover_count = mover_count | plus: 1", section)
+        self.assertNotIn("section.blocks | where: 'type', 'mover' | size", section)
+
 
 if __name__ == "__main__":
     unittest.main()
