@@ -1,0 +1,433 @@
+{% doc %}
+  @prompt
+    Add an additional menu block with links to the different sports collections we have.  One for basketball, one for football, one for hockey, one for baseball
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .ai-sports-menu-{{ ai_gen_id }} {
+    display: block;
+    width: {{ block.settings.desktop_width_percent }}%;
+    max-width: 100%;
+    padding: {{ block.settings.padding }}px;
+    background-color: {{ block.settings.background_color }};
+    border-radius: {{ block.settings.border_radius }}px;
+  }
+
+  .ai-sports-menu__heading-{{ ai_gen_id }} {
+    margin: 0 0 {{ block.settings.spacing }}px;
+    font-size: {{ block.settings.heading_size }}px;
+    color: {{ block.settings.heading_color }};
+    text-align: {{ block.settings.text_alignment }};
+    font-family: {{ block.settings.heading_font.family }}, {{ block.settings.heading_font.fallback_families }};
+    font-weight: {{ block.settings.heading_font.weight }};
+  }
+
+  .ai-sports-menu__list-{{ ai_gen_id }} {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: {{ block.settings.layout }};
+    gap: {{ block.settings.spacing }}px;
+    {% if block.settings.layout == 'row' %}
+      flex-wrap: wrap;
+      justify-content: {{ block.settings.text_alignment }};
+    {% endif %}
+  }
+
+  .ai-sports-menu__item-{{ ai_gen_id }} {
+    {% if block.settings.layout == 'column' %}
+      width: 100%;
+    {% endif %}
+  }
+
+  .ai-sports-menu__link-{{ ai_gen_id }} {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: {{ block.settings.link_padding }}px;
+    background-color: {{ block.settings.link_background }};
+    color: {{ block.settings.link_color }};
+    text-decoration: none;
+    border-radius: {{ block.settings.link_border_radius }}px;
+    transition: all 0.3s ease;
+    font-size: {{ block.settings.link_font_size }}px;
+    border: {{ block.settings.link_border_width }}px solid {{ block.settings.link_border_color }};
+    {% if block.settings.layout == 'row' %}
+      justify-content: center;
+    {% endif %}
+  }
+
+  .ai-sports-menu__link-{{ ai_gen_id }}:hover {
+    background-color: {{ block.settings.link_hover_background }};
+    color: {{ block.settings.link_hover_color }};
+    border-color: {{ block.settings.link_hover_border_color }};
+    transform: translateY(-2px);
+  }
+
+  .ai-sports-menu__icon-{{ ai_gen_id }} {
+    width: {{ block.settings.icon_size }}px;
+    height: {{ block.settings.icon_size }}px;
+    flex-shrink: 0;
+  }
+
+  .ai-sports-menu__text-{{ ai_gen_id }} {
+    font-weight: 500;
+  }
+
+  @media screen and (max-width: 749px) {
+    .ai-sports-menu__list-{{ ai_gen_id }} {
+      flex-direction: column;
+    }
+
+    .ai-sports-menu__item-{{ ai_gen_id }} {
+      width: 100%;
+    }
+
+    .ai-sports-menu__link-{{ ai_gen_id }} {
+      justify-content: flex-start;
+    }
+  }
+{% endstyle %}
+
+<sports-menu-{{ ai_gen_id }} class="ai-sports-menu-{{ ai_gen_id }}" {{ block.shopify_attributes }}>
+  {% if block.settings.heading != blank %}
+    <h2 class="ai-sports-menu__heading-{{ ai_gen_id }}">{{ block.settings.heading }}</h2>
+  {% endif %}
+
+  <ul class="ai-sports-menu__list-{{ ai_gen_id }}">
+    {% if block.settings.basketball_collection != blank %}
+      <li class="ai-sports-menu__item-{{ ai_gen_id }}">
+        <a href="{{ block.settings.basketball_collection.url }}" class="ai-sports-menu__link-{{ ai_gen_id }}">
+          <svg class="ai-sports-menu__icon-{{ ai_gen_id }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
+            <path d="M2 12h20"></path>
+          </svg>
+          <span class="ai-sports-menu__text-{{ ai_gen_id }}">{{ block.settings.basketball_collection.title }}</span>
+        </a>
+      </li>
+    {% endif %}
+
+    {% if block.settings.football_collection != blank %}
+      <li class="ai-sports-menu__item-{{ ai_gen_id }}">
+        <a href="{{ block.settings.football_collection.url }}" class="ai-sports-menu__link-{{ ai_gen_id }}">
+          <svg class="ai-sports-menu__icon-{{ ai_gen_id }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <ellipse cx="12" cy="12" rx="10" ry="7"></ellipse>
+            <path d="M12 5v14"></path>
+            <path d="M5 9h14"></path>
+            <path d="M5 15h14"></path>
+          </svg>
+          <span class="ai-sports-menu__text-{{ ai_gen_id }}">{{ block.settings.football_collection.title }}</span>
+        </a>
+      </li>
+    {% endif %}
+
+    {% if block.settings.hockey_collection != blank %}
+      <li class="ai-sports-menu__item-{{ ai_gen_id }}">
+        <a href="{{ block.settings.hockey_collection.url }}" class="ai-sports-menu__link-{{ ai_gen_id }}">
+          <svg class="ai-sports-menu__icon-{{ ai_gen_id }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+          <span class="ai-sports-menu__text-{{ ai_gen_id }}">{{ block.settings.hockey_collection.title }}</span>
+        </a>
+      </li>
+    {% endif %}
+
+    {% if block.settings.baseball_collection != blank %}
+      <li class="ai-sports-menu__item-{{ ai_gen_id }}">
+        <a href="{{ block.settings.baseball_collection.url }}" class="ai-sports-menu__link-{{ ai_gen_id }}">
+          <svg class="ai-sports-menu__icon-{{ ai_gen_id }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M4.93 4.93l4.24 4.24"></path>
+            <path d="M14.83 9.17l4.24-4.24"></path>
+            <path d="M14.83 14.83l4.24 4.24"></path>
+            <path d="M9.17 14.83l-4.24 4.24"></path>
+            <path d="M4.93 19.07l4.24-4.24"></path>
+            <path d="M14.83 9.17l4.24 4.24"></path>
+          </svg>
+          <span class="ai-sports-menu__text-{{ ai_gen_id }}">{{ block.settings.baseball_collection.title }}</span>
+        </a>
+      </li>
+    {% endif %}
+  </ul>
+</sports-menu-{{ ai_gen_id }}>
+
+<script>
+  (function() {
+    class SportsMenu{{ ai_gen_id }} extends HTMLElement {
+      constructor() {
+        super();
+      }
+
+      connectedCallback() {
+        this.links = this.querySelectorAll('.ai-sports-menu__link-{{ ai_gen_id }}');
+        this.setupAccessibility();
+      }
+
+      setupAccessibility() {
+        this.links.forEach((link) => {
+          link.addEventListener('focus', function() {
+            this.style.outline = '2px solid currentColor';
+            this.style.outlineOffset = '2px';
+          });
+
+          link.addEventListener('blur', function() {
+            this.style.outline = '';
+            this.style.outlineOffset = '';
+          });
+        });
+      }
+    }
+
+    customElements.define('sports-menu-{{ ai_gen_id }}', SportsMenu{{ ai_gen_id }});
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Sports menu",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Heading"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Shop by Sport"
+    },
+    {
+      "type": "font_picker",
+      "id": "heading_font",
+      "label": "Heading font",
+      "default": "oswald_n4"
+    },
+    {
+      "type": "range",
+      "id": "heading_size",
+      "label": "Heading size",
+      "min": 16,
+      "max": 48,
+      "step": 2,
+      "unit": "px",
+      "default": 24
+    },
+    {
+      "type": "color",
+      "id": "heading_color",
+      "label": "Heading color",
+      "default": "#121212"
+    },
+    {
+      "type": "header",
+      "content": "Collections"
+    },
+    {
+      "type": "collection",
+      "id": "basketball_collection",
+      "label": "Basketball collection"
+    },
+    {
+      "type": "collection",
+      "id": "football_collection",
+      "label": "Football collection"
+    },
+    {
+      "type": "collection",
+      "id": "hockey_collection",
+      "label": "Hockey collection"
+    },
+    {
+      "type": "collection",
+      "id": "baseball_collection",
+      "label": "Baseball collection"
+    },
+    {
+      "type": "header",
+      "content": "Layout"
+    },
+    {
+      "type": "select",
+      "id": "layout",
+      "label": "Layout direction",
+      "options": [
+        {
+          "value": "row",
+          "label": "Horizontal"
+        },
+        {
+          "value": "column",
+          "label": "Vertical"
+        }
+      ],
+      "default": "row"
+    },
+    {
+      "type": "select",
+      "id": "text_alignment",
+      "label": "Alignment",
+      "options": [
+        {
+          "value": "flex-start",
+          "label": "Left"
+        },
+        {
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "flex-end",
+          "label": "Right"
+        }
+      ],
+      "default": "flex-start"
+    },
+    {
+      "type": "range",
+      "id": "desktop_width_percent",
+      "label": "Desktop width",
+      "min": 50,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    },
+    {
+      "type": "range",
+      "id": "padding",
+      "label": "Container padding",
+      "min": 0,
+      "max": 60,
+      "step": 4,
+      "unit": "px",
+      "default": 20
+    },
+    {
+      "type": "range",
+      "id": "spacing",
+      "label": "Spacing",
+      "min": 8,
+      "max": 40,
+      "step": 4,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "label": "Border radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 4
+    },
+    {
+      "type": "header",
+      "content": "Link style"
+    },
+    {
+      "type": "range",
+      "id": "link_font_size",
+      "label": "Font size",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "link_padding",
+      "label": "Padding",
+      "min": 8,
+      "max": 32,
+      "step": 2,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "icon_size",
+      "label": "Icon size",
+      "min": 16,
+      "max": 48,
+      "step": 2,
+      "unit": "px",
+      "default": 24
+    },
+    {
+      "type": "color",
+      "id": "link_background",
+      "label": "Background",
+      "default": "#384f6f"
+    },
+    {
+      "type": "color",
+      "id": "link_color",
+      "label": "Text color",
+      "default": "#fdfdfd"
+    },
+    {
+      "type": "color",
+      "id": "link_hover_background",
+      "label": "Hover background",
+      "default": "#fce477"
+    },
+    {
+      "type": "color",
+      "id": "link_hover_color",
+      "label": "Hover text color",
+      "default": "#121212"
+    },
+    {
+      "type": "range",
+      "id": "link_border_width",
+      "label": "Border width",
+      "min": 0,
+      "max": 4,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "color",
+      "id": "link_border_color",
+      "label": "Border color",
+      "default": "#384f6f"
+    },
+    {
+      "type": "color",
+      "id": "link_hover_border_color",
+      "label": "Hover border color",
+      "default": "#fce477"
+    },
+    {
+      "type": "range",
+      "id": "link_border_radius",
+      "label": "Border radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 4
+    }
+  ],
+  "presets": [
+    {
+      "name": "Sports menu"
+    }
+  ]
+}
+{% endschema %}
