@@ -121,6 +121,47 @@ class ShopifyThemeTests(unittest.TestCase):
         self.assertIn("assign mover_count = mover_count | plus: 1", section)
         self.assertNotIn("section.blocks | where: 'type', 'mover' | size", section)
 
+    def test_power_ratings_has_native_context_before_origin_checked_embed(self):
+        template = data("templates/page.power-ratings.json")
+        self.assertEqual("postgame-ratings", template["sections"]["main"]["type"])
+        section = text("sections/postgame-ratings.liquid")
+        native = section.split("<iframe", 1)[0]
+        schema = json.loads(section.split("{% schema %}", 1)[1].split("{% endschema %}", 1)[0])
+        for setting_id in ("ratings_url", "methodology_link", "accountability_link", "archive_link"):
+            setting = next(item for item in schema["settings"] if item["id"] == setting_id)
+            self.assertNotIn("default", setting, setting_id)
+        settings = template["sections"]["main"]["settings"]
+        self.assertEqual("https://walshja9.github.io/Postgame_Outlet/", settings["ratings_url"])
+        self.assertEqual("/pages/methodology-preview", settings["methodology_link"])
+        self.assertEqual("/pages/accountability", settings["accountability_link"])
+        self.assertEqual("/blogs/poweratings", settings["archive_link"])
+        self.assertLess(section.index("<h1"), section.index("<iframe"))
+        for value in (
+            "A Power Rating estimates",
+            "PGO v1",
+            "McCabe's human rating",
+            "never blended",
+            "hypothetical full-strength roster",
+            "current-lineup",
+            "section.settings.status_label",
+            "data-postgame-ratings-frame",
+        ):
+            self.assertIn(value, native)
+        self.assertNotIn("MAE", native)
+        self.assertNotIn("backtest", native)
+
+    def test_fantasy_is_editorial_dynasty_and_dfs_without_a_tool(self):
+        template = data("templates/page.fantasy.json")
+        self.assertEqual(
+            ["main-page", "postgame-tagged-articles", "postgame-tagged-articles"],
+            [template["sections"][key]["type"] for key in template["order"]],
+        )
+        self.assertEqual("dynasty", template["sections"]["dynasty"]["settings"]["required_tag"])
+        self.assertEqual("dfs", template["sections"]["dfs"]["settings"]["required_tag"])
+        source = text("templates/page.fantasy.json").lower()
+        for forbidden in ("assistant", "league sync", "projection tool", "healthy assumption"):
+            self.assertNotIn(forbidden, source)
+
 
 if __name__ == "__main__":
     unittest.main()

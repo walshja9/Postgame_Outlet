@@ -1,0 +1,29 @@
+{
+  "sections": {
+    "main": {
+      "type": "main-page",
+      "settings": { "padding_top": 36, "padding_bottom": 20 }
+    },
+    "dynasty": {
+      "type": "postgame-tagged-articles",
+      "settings": {
+        "heading": "Dynasty",
+        "blog": "poweratings",
+        "required_tag": "dynasty",
+        "alternate_tag": "",
+        "limit": 3
+      }
+    },
+    "dfs": {
+      "type": "postgame-tagged-articles",
+      "settings": {
+        "heading": "DFS",
+        "blog": "poweratings",
+        "required_tag": "dfs",
+        "alternate_tag": "",
+        "limit": 3
+      }
+    }
+  },
+  "order": ["main", "dynasty", "dfs"]
+}

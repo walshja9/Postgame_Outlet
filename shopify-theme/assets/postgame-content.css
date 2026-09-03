@@ -94,6 +94,39 @@
   border-radius: 0.8rem;
 }
 
+.postgame-ratings {
+  border-top: 0.4rem solid var(--postgame-orange);
+  padding: 2.4rem;
+  background: var(--postgame-soft);
+}
+
+.postgame-ratings__meta,
+.postgame-ratings__links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.8rem 1.6rem;
+  margin: 1.6rem 0;
+}
+
+.postgame-ratings__meta .postgame-meta,
+.postgame-status-badge { margin: 0; }
+
+.postgame-status-badge {
+  padding: 0.3rem 0.8rem;
+  border: 0.1rem solid var(--postgame-orange);
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+[data-postgame-content-id="fantasy"] #MainContent {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+[data-postgame-content-id="fantasy"] #MainContent > :first-child { grid-column: 1 / -1; }
+
 .postgame-shell :focus-visible {
   outline: 0.3rem solid var(--postgame-slate);
   outline-offset: 0.3rem;
@@ -117,4 +150,5 @@
   .postgame-grid--5 .postgame-card { width: 100%; margin-bottom: 1rem; }
   /* smaller first-paint placeholder on phones; JS height takes over on npr:height */
   .postgame-ratings-frame { min-height: 100rem; }
+  [data-postgame-content-id="fantasy"] #MainContent { display: block; }
 }

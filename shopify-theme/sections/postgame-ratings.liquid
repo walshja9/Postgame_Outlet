@@ -1,0 +1,56 @@
+<section class="postgame-shell postgame-ratings" aria-labelledby="ratings-title-{{ section.id }}">
+  {%- if section.settings.edition != blank -%}<p class="postgame-kicker">NFL · {{ section.settings.edition | escape }}</p>{%- endif -%}
+  <h1 id="ratings-title-{{ section.id }}">{{ page.title | escape }}</h1>
+  <div class="postgame-ratings__meta">
+    {%- if section.settings.status_label != blank -%}<p class="postgame-status-badge">{{ section.settings.status_label | escape }}</p>{%- endif -%}
+  {%- if section.settings.author != blank or section.settings.published_at != blank or section.settings.updated_at != blank -%}
+    <p class="postgame-meta">
+      {%- if section.settings.author != blank -%}By {{ section.settings.author | escape }}{%- endif -%}
+      {%- if section.settings.published_at != blank -%} · Published {{ section.settings.published_at | escape }}{%- endif -%}
+      {%- if section.settings.updated_at != blank -%} · Updated {{ section.settings.updated_at | escape }}{%- endif -%}
+    </p>
+  {%- else -%}
+    <p class="postgame-meta">Edition details will appear after editorial review.</p>
+  {%- endif -%}
+  </div>
+  <p>A Power Rating estimates how many points stronger or weaker a team is than a league-average team on a neutral field.</p>
+  <p>PGO v1 is Postgame Outlet's primary statistical team rating. McCabe's human rating remains available as a separate comparison; the two are never blended. The default board represents a hypothetical full-strength roster, while the current-lineup view applies documented availability adjustments.</p>
+  {%- if section.settings.methodology_link != blank or section.settings.accountability_link != blank or section.settings.archive_link != blank -%}
+    <nav class="postgame-ratings__links" aria-label="Power Ratings links">
+      {%- if section.settings.methodology_link != blank -%}<a href="{{ section.settings.methodology_link }}">Methodology</a>{%- endif -%}
+      {%- if section.settings.methodology_link != blank and section.settings.accountability_link != blank %} · {% endif -%}
+      {%- if section.settings.accountability_link != blank -%}<a href="{{ section.settings.accountability_link }}">Corrections and accountability</a>{%- endif -%}
+      {%- if section.settings.archive_link != blank -%}<a href="{{ section.settings.archive_link }}">Archived editions</a>{%- endif -%}
+    </nav>
+  {%- endif -%}
+  {%- if section.settings.summary != blank -%}<div class="rte postgame-ratings__summary">{{ section.settings.summary }}</div>{%- endif -%}
+  {%- if section.settings.ratings_url != blank -%}
+    <!-- data-postgame-ratings-frame remains on the iframe for origin-checked resize messages. -->
+    <iframe
+      class="postgame-ratings-frame"
+      src="{{ section.settings.ratings_url | escape }}"
+      title="NFL Power Ratings"
+      loading="eager"
+      data-postgame-ratings-frame
+    ></iframe>
+  {%- endif -%}
+</section>
+
+{% schema %}
+{
+  "name": "Postgame Power Ratings",
+  "settings": [
+    { "type": "text", "id": "edition", "label": "Edition" },
+    { "type": "text", "id": "author", "label": "Author" },
+    { "type": "text", "id": "published_at", "label": "Published time" },
+    { "type": "text", "id": "updated_at", "label": "Updated time" },
+    { "type": "text", "id": "status_label", "label": "Status label" },
+    { "type": "richtext", "id": "summary", "label": "Current-edition summary" },
+    { "type": "url", "id": "ratings_url", "label": "Ratings application URL" },
+    { "type": "url", "id": "methodology_link", "label": "Methodology page" },
+    { "type": "url", "id": "accountability_link", "label": "Accountability page" },
+    { "type": "url", "id": "archive_link", "label": "Archive page" }
+  ],
+  "presets": [{ "name": "Postgame Power Ratings" }]
+}
+{% endschema %}
