@@ -56,6 +56,60 @@ class ShopifyThemeTests(unittest.TestCase):
         ):
             self.assertIn(value, script)
 
+    def test_homepage_has_approved_content_order(self):
+        template = data("templates/index.json")
+        types = [
+            template["sections"][section_id]["type"]
+            for section_id in template["order"]
+            if not template["sections"][section_id].get("disabled", False)
+        ]
+        self.assertEqual(
+            [
+                "postgame-featured-story",
+                "postgame-ratings-preview",
+                "postgame-tagged-articles",
+                "postgame-tagged-articles",
+                "postgame-tagged-articles",
+                "multicolumn",
+                "apps",
+                "featured-collection",
+            ],
+            types,
+        )
+        self.assertEqual("dynasty", template["sections"]["dynasty"]["settings"]["required_tag"])
+        self.assertEqual("dfs", template["sections"]["dfs"]["settings"]["required_tag"])
+        self.assertEqual("/pages/accountability", template["sections"]["accountability"]["settings"]["button_link"])
+        self.assertEqual(4, template["sections"]["merch"]["settings"]["products_to_show"])
+
+    def test_featured_story_supports_reviewed_status_without_requiring_it(self):
+        section = text("sections/postgame-featured-story.liquid")
+        for value in ("section.settings.article", "status_label", "status_body", "postgame-model-status"):
+            self.assertIn(value, section)
+        self.assertIn("featured_article != blank", section)
+
+    def test_ratings_preview_requires_reviewed_five_and_supports_movers(self):
+        section = text("sections/postgame-ratings-preview.liquid")
+        for value in (
+            "team_count != 5",
+            "block.type == 'team'",
+            "block.type == 'mover'",
+            "Rating points represent neutral-field strength",
+            "View all 32 teams",
+            "section.settings.ratings_link",
+        ):
+            self.assertIn(value, section)
+
+    def test_preview_navigation_footer_and_email_are_isolated(self):
+        header = data("sections/header-group.json")
+        footer = data("sections/footer-group.json")
+        self.assertEqual("content-first-preview", header["sections"]["header"]["settings"]["menu"])
+        self.assertEqual(
+            "content-footer-preview",
+            footer["sections"]["footer"]["blocks"]["content_links"]["settings"]["menu"],
+        )
+        combined = json.dumps(data("templates/index.json")) + json.dumps(footer)
+        self.assertEqual(1, combined.count("form-embed-block"))
+
 
 if __name__ == "__main__":
     unittest.main()
