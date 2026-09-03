@@ -1,6 +1,6 @@
 # Content-First Fresh-Base Port Design
 
-**Status:** Approved design; written specification awaiting final review
+**Status:** Approved design and written specification
 
 **Date:** September 2, 2026
 
@@ -311,7 +311,7 @@ commerce smoke-test record, and rollback identity.
 1. **Design gate — passed:** Fresh-base port selected.
 2. **Mockup gate — passed:** Editorial-first responsive homepage, Power Ratings,
    and Fantasy structures approved.
-3. **Written-spec gate — pending:** User reviews this file.
+3. **Written-spec gate — passed:** User approved this file on September 2, 2026.
 4. **Implementation-plan gate — pending:** No port begins before plan review.
 5. **Draft gate — pending:** No Shopify draft resources are created before local
    qualification and action-time confirmation.
