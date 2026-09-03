@@ -1,0 +1,90 @@
+:root {
+  --postgame-navy: #263b58;
+  --postgame-slate: #384f6f;
+  --postgame-orange: #fd962f;
+  --postgame-soft: #f5f7fa;
+  --postgame-hold: #fff7ed;
+}
+
+.postgame-shell {
+  width: min(100% - 3rem, 120rem);
+  margin: 0 auto;
+  padding: 3.6rem 0;
+}
+
+.postgame-grid {
+  display: grid;
+  gap: 2rem;
+}
+
+.postgame-featured-story {
+  display: grid;
+  gap: 2.4rem;
+  align-items: center;
+}
+
+.postgame-featured-story img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.postgame-card,
+.postgame-takeaway {
+  border: 0.1rem solid rgba(56, 79, 111, 0.25);
+  border-radius: 0.8rem;
+  padding: 2rem;
+}
+
+.postgame-takeaway {
+  border-left: 0.4rem solid var(--postgame-orange);
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.postgame-kicker,
+.postgame-meta {
+  color: var(--postgame-slate);
+  font-size: 1.4rem;
+}
+
+.postgame-kicker::before {
+  content: "\25cf  ";
+  color: var(--postgame-orange);
+}
+
+.postgame-shell a {
+  text-underline-offset: 0.2em;
+}
+
+.postgame-shell a:hover {
+  text-decoration-color: var(--postgame-orange);
+}
+
+.postgame-ratings-frame {
+  display: block;
+  width: 100%;
+  min-height: 160rem;
+  border: 0;
+  /* visible while the embedded app loads; its own background covers this */
+  background: #f4f6fa;
+  border-radius: 0.8rem;
+}
+
+.postgame-shell :focus-visible {
+  outline: 0.3rem solid var(--postgame-slate);
+  outline-offset: 0.3rem;
+}
+
+@media screen and (min-width: 750px) {
+  .postgame-featured-story { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }
+  .postgame-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .postgame-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .postgame-grid--5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+
+@media screen and (max-width: 749px) {
+  .postgame-shell { width: min(100% - 2rem, 120rem); }
+  /* smaller first-paint placeholder on phones; JS height takes over on npr:height */
+  .postgame-ratings-frame { min-height: 100rem; }
+}
