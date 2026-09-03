@@ -43,9 +43,52 @@
         "content"
       ],
       "settings": {}
+    },
+    "related_analysis": {
+      "type": "postgame-tagged-articles",
+      "settings": {
+        "heading": "Related analysis",
+        "blog": "poweratings",
+        "required_tag": "",
+        "alternate_tag": "",
+        "limit": 3
+      }
+    },
+    "related_product": {
+      "type": "featured-product",
+      "blocks": {
+        "title": { "type": "title", "settings": {} },
+        "price": { "type": "price", "settings": {} },
+        "variant_picker": {
+          "type": "variant_picker",
+          "settings": { "picker_type": "dropdown", "swatch_shape": "circle" }
+        },
+        "buy_buttons": {
+          "type": "buy_buttons",
+          "settings": { "show_dynamic_checkout": false, "show_gift_card_recipient": false }
+        }
+      },
+      "block_order": ["title", "price", "variant_picker", "buy_buttons"],
+      "disabled": true,
+      "settings": {
+        "product": "",
+        "color_scheme": "scheme-1",
+        "secondary_background": false,
+        "media_size": "medium",
+        "constrain_to_viewport": true,
+        "media_fit": "contain",
+        "media_position": "left",
+        "image_zoom": "lightbox",
+        "hide_variants": false,
+        "enable_video_looping": false,
+        "padding_top": 36,
+        "padding_bottom": 36
+      }
     }
   },
   "order": [
-    "main"
+    "main",
+    "related_analysis",
+    "related_product"
   ]
 }

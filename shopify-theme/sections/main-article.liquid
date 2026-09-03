@@ -51,15 +51,24 @@
           >
             {{ article.title | escape }}
           </h1>
-          {%- if block.settings.blog_show_date -%}
-            <span class="circle-divider caption-with-letter-spacing">
-              {{- article.published_at | time_tag: format: 'date' -}}
-            </span>
-          {%- endif -%}
-          {%- if block.settings.blog_show_author -%}
-            <span class="caption-with-letter-spacing">
-              <span>{{ article.author }}</span>
-            </span>
+          {%- liquid
+            assign deck = article.metafields.custom.deck.value
+            assign byline = article.metafields.custom.byline.value | default: article.author
+            assign updated_at = article.metafields.custom.updated_at.value
+            assign model_version = article.metafields.custom.model_version.value
+            assign key_takeaway = article.metafields.custom.key_takeaway.value
+          -%}
+          {%- if deck != blank -%}<p class="postgame-article-deck">{{ deck | escape }}</p>{%- endif -%}
+          <p class="postgame-meta">
+            By {{ byline | escape }} · Published {{ article.published_at | time_tag: format: 'date_at_time' }}
+            {%- if updated_at != blank -%} · Updated {{ updated_at | time_tag: format: 'date_at_time' }}{%- endif -%}
+            {%- if model_version != blank -%} · Model/data version {{ model_version | escape }}{%- endif -%}
+          </p>
+          {%- if key_takeaway != blank -%}
+            <aside class="postgame-takeaway" aria-label="Key takeaway">
+              <strong>Key takeaway</strong>
+              <p>{{ key_takeaway | escape | newline_to_br }}</p>
+            </aside>
           {%- endif -%}
         </header>
 
@@ -69,6 +78,29 @@
           {{ block.shopify_attributes }}
         >
           {{ article.content }}
+          {%- liquid
+            assign sources = article.metafields.custom.sources
+            assign methodology = article.metafields.custom.methodology.value
+            assign correction_history = article.metafields.custom.correction_history
+          -%}
+          {%- if sources.value != blank -%}
+            <section aria-labelledby="article-sources-{{ article.id }}">
+              <h2 id="article-sources-{{ article.id }}">Sources</h2>
+              {{ sources | metafield_tag }}
+            </section>
+          {%- endif -%}
+          {%- if methodology != blank -%}
+            <section aria-labelledby="article-methodology-{{ article.id }}">
+              <h2 id="article-methodology-{{ article.id }}">Methodology</h2>
+              <p><a href="{{ methodology.url }}">{{ methodology.title | escape }}</a></p>
+            </section>
+          {%- endif -%}
+          {%- if correction_history.value != blank -%}
+            <section aria-labelledby="article-corrections-{{ article.id }}">
+              <h2 id="article-corrections-{{ article.id }}">Correction history</h2>
+              {{ correction_history | metafield_tag }}
+            </section>
+          {%- endif -%}
         </div>
 
       {%- when 'share' -%}

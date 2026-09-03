@@ -63,12 +63,24 @@
   border-left: 0.4rem solid var(--postgame-orange);
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
+  max-width: 70ch;
 }
 
 .postgame-kicker,
 .postgame-meta {
   color: var(--postgame-slate);
   font-size: 1.4rem;
+}
+
+.postgame-article-deck,
+.postgame-meta { max-width: 70ch; }
+
+.postgame-article-deck { margin: 1.2rem 0 0; }
+
+.postgame-meta a:focus-visible,
+.postgame-takeaway a:focus-visible {
+  outline: 0.3rem solid var(--postgame-orange);
+  outline-offset: 0.3rem;
 }
 
 .postgame-kicker::before {

@@ -162,6 +162,33 @@ class ShopifyThemeTests(unittest.TestCase):
         for forbidden in ("assistant", "league sync", "projection tool", "healthy assumption"):
             self.assertNotIn(forbidden, source)
 
+    def test_articles_expose_trust_fields_and_native_related_modules(self):
+        article = text("sections/main-article.liquid")
+        for field in (
+            "custom.deck",
+            "custom.byline",
+            "custom.updated_at",
+            "custom.model_version",
+            "custom.key_takeaway",
+            "custom.sources",
+            "custom.methodology",
+            "custom.correction_history",
+        ):
+            self.assertIn(field, article)
+        template = data("templates/article.json")
+        ordered_types = [template["sections"][key]["type"] for key in template["order"]]
+        main_index = ordered_types.index("main-article")
+        related_index = ordered_types.index("postgame-tagged-articles")
+        product_index = ordered_types.index("featured-product")
+        self.assertLess(main_index, related_index)
+        self.assertLess(related_index, product_index)
+        product_key = template["order"][product_index]
+        self.assertTrue(template["sections"][product_key]["disabled"])
+        self.assertIn("candidate.id == article.id", text("sections/postgame-tagged-articles.liquid"))
+        blog = data("templates/blog.json")["sections"]["main"]["settings"]
+        self.assertEqual("grid", blog["layout"])
+        self.assertTrue(blog["show_author"])
+
 
 if __name__ == "__main__":
     unittest.main()
