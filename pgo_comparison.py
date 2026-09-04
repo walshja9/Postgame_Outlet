@@ -976,14 +976,16 @@ def extract_comparison_panel(existing_html):
 def _extract_published_fantasy_panel(existing_html):
     tab_count = existing_html.count('id="tab-fantasy"')
     panel_count = existing_html.count('id="panel-fantasy"')
-    if tab_count == panel_count == 0:
+    css_count = existing_html.count(FANTASY_CSS)
+    script_count = existing_html.count(FANTASY_SCRIPT)
+    if tab_count == panel_count == css_count == script_count == 0:
         return None
     if (
         tab_count != 1
         or panel_count != 1
         or existing_html.count(FANTASY_TAB) != 1
-        or existing_html.count(FANTASY_CSS) != 1
-        or existing_html.count(FANTASY_SCRIPT) != 1
+        or css_count != 1
+        or script_count != 1
     ):
         raise ValueError("Existing fantasy preview markers are incomplete or duplicated")
     start_marker = '<section class="panel active" id="panel-fantasy"'

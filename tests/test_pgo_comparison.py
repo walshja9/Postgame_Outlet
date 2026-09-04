@@ -865,6 +865,8 @@ class ComparisonTests(unittest.TestCase):
         invalid_pages = (
             comparison.replace(pgo_comparison.COMPARISON_TAB, pgo_comparison.COMPARISON_TAB + pgo_comparison.FANTASY_TAB, 1),
             complete.replace(pgo_comparison.FANTASY_TAB, pgo_comparison.FANTASY_TAB + pgo_comparison.FANTASY_TAB, 1),
+            comparison.replace("</style>", pgo_comparison.FANTASY_CSS + "\n</style>", 1),
+            comparison.replace("</body>", pgo_comparison.FANTASY_SCRIPT + "\n</body>", 1),
         )
         with (
             patch.object(pgo_comparison, "load_mccabe_rows", return_value=current_rows),
