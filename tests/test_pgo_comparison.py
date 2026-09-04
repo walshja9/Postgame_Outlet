@@ -629,6 +629,11 @@ class ComparisonTests(unittest.TestCase):
         )
         self.assertNotIn(r'querySelector(\"', plan)
         self.assertNotIn(r'querySelectorAll(\"', plan)
+        self.assertIn(
+            """$env:PGO_EVAL = 'document.querySelector(".fantasy-sort[data-column=''5'']").click()'""",
+            plan,
+        )
+        self.assertNotIn("[data-column=5]", plan)
         self.assertIn("requests --static", plan)
         self.assertNotIn("pgo-fantasy-week1 network", plan)
 
