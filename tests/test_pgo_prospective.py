@@ -21,12 +21,13 @@ AS_OF = "2026-08-20T12:00:00-04:00"
 
 
 class ProspectiveBlendByteContractTests(unittest.TestCase):
-    def test_blend_json_files_have_lf_checkout_attribute(self):
+    def test_byte_contract_files_have_checkout_attributes(self):
         result = subprocess.run(
             [
                 "git", "check-attr", "eol", "--",
                 "research/pgo_stability_blend/development.json",
                 "research/pgo_stability_blend/prospective_attestation.json",
+                "research/pgo_v1/validation_predictions.csv",
             ],
             cwd=Path(__file__).resolve().parents[1],
             check=True,
@@ -36,6 +37,7 @@ class ProspectiveBlendByteContractTests(unittest.TestCase):
         self.assertEqual(result.stdout.splitlines(), [
             "research/pgo_stability_blend/development.json: eol: lf",
             "research/pgo_stability_blend/prospective_attestation.json: eol: lf",
+            "research/pgo_v1/validation_predictions.csv: eol: crlf",
         ])
 
 
