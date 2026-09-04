@@ -875,6 +875,25 @@ class ComparisonTests(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, "fantasy preview markers are incomplete or duplicated"):
                         pgo_comparison.refresh_mccabe_page(self._base_html(), page)
 
+    def test_refresh_mccabe_rejects_inactive_comparison_without_fantasy(self):
+        comparison = pgo_comparison.inject_comparison(
+            self._base_html(),
+            pgo_comparison.render_comparison_panel([], self._held_receipt()),
+        )
+        inactive = comparison.replace(
+            '<section class="panel active" id="panel-comparison"',
+            '<section class="panel" id="panel-comparison"',
+            1,
+        ).replace(
+            'aria-labelledby="tab-comparison">',
+            'aria-labelledby="tab-comparison" hidden>',
+            1,
+        )
+        with self.assertRaisesRegex(
+            ValueError, "Existing PGO comparison panel must be active"
+        ):
+            pgo_comparison.refresh_mccabe_page(self._base_html(), inactive)
+
     def test_comparison_team_labels_have_contrasting_backgrounds(self):
         self.assertIn(
             "#panel-comparison .comparison-table thead th:first-child {\n"

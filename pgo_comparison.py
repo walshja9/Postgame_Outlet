@@ -1155,6 +1155,11 @@ def refresh_mccabe_page(base_html, existing_html, mccabe_path=MCCABE_PATH):
                 1,
             ).replace(hidden_label, 'aria-labelledby="tab-comparison">', 1)
         )
+    elif (
+        comparison_panel.count('<section class="panel active" id="panel-comparison"') != 1
+        or comparison_panel.count('aria-labelledby="tab-comparison">') != 1
+    ):
+        raise ValueError("Existing PGO comparison panel must be active")
     panel = _refresh_comparison_panel(
         comparison_panel,
         mccabe_rows,
