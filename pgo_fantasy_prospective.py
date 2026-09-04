@@ -81,6 +81,17 @@ LOCK_PREDICTION_COLUMNS = (
     "history_count", "initialization_reason", "availability_status",
     "qb_depth_rank", "ranking_eligible", "config_sha256",
 )
+PREVIEW_KEYS = frozenset({
+    "schema_version", "artifact_kind", "artifact_sha256", "config_sha256",
+    "evidence_mode", "generated_at", "gradeable", "model_version",
+    "publication_status", "rows", "season", "source_coverage", "status",
+    "teams_missing", "teams_processed", "week",
+})
+PREVIEW_COVERAGE_KINDS = ("roster", "availability", "depth")
+PREVIEW_COVERAGE_KEYS = frozenset({"processed", "missing"})
+PREVIEW_ROW_FIELDS = frozenset(LOCK_PREDICTION_COLUMNS) | {
+    "position_rank", "flex_rank", "superflex_rank",
+}
 SOURCE_RECEIPT_KEYS = frozenset({
     "schema_version", "kind", "source", "source_as_of", "captured_at",
     "teams_processed", "bytes", "sha256", "rows",
@@ -905,6 +916,163 @@ def serialize_preview(preview):
     if preview.get("artifact_sha256") != _artifact_hash(preview):
         raise ValueError("Preview artifact hash is invalid")
     return canonical_json(preview) + "\n"
+
+
+def verify_week1_preview(preview):
+    teams = list(pgo_fantasy.CURRENT_TEAMS)
+    if not isinstance(preview, dict) or set(preview) != PREVIEW_KEYS:
+        raise ValueError("Fantasy Week 1 preview contract is invalid")
+    if (
+        type(preview["schema_version"]) is not int
+        or preview["schema_version"] != 1
+        or preview["artifact_kind"] != PREVIEW_KIND
+        or preview["status"] != "HOLD"
+        or preview["publication_status"] != "EXPERIMENTAL"
+        or preview["evidence_mode"] != "PREVIEW"
+        or preview["gradeable"] is not False
+        or type(preview["season"]) is not int
+        or preview["season"] != 2026
+        or type(preview["week"]) is not int
+        or preview["week"] != 1
+        or preview["model_version"] != "pgo_fantasy_2026_baseline_v2"
+        or not _hex_digest(preview["config_sha256"], 64)
+        or not _hex_digest(preview["artifact_sha256"], 64)
+        or preview["artifact_sha256"] != _artifact_hash(preview)
+        or preview["teams_processed"] != teams
+        or preview["teams_missing"] != []
+    ):
+        raise ValueError("Fantasy Week 1 preview metadata is invalid")
+    parse_timestamp(preview["generated_at"], "fantasy preview generated_at")
+
+    expected_coverage = {
+        "roster": {"processed": teams, "missing": []},
+        "availability": {"processed": [], "missing": teams},
+        "depth": {"processed": teams, "missing": []},
+    }
+    coverage = preview["source_coverage"]
+    if (
+        not isinstance(coverage, dict)
+        or set(coverage) != set(PREVIEW_COVERAGE_KINDS)
+        or any(
+            not isinstance(coverage[kind], dict)
+            or set(coverage[kind]) != PREVIEW_COVERAGE_KEYS
+            for kind in PREVIEW_COVERAGE_KINDS
+        )
+        or coverage != expected_coverage
+    ):
+        raise ValueError("Fantasy Week 1 preview source coverage is invalid")
+
+    rows = preview["rows"]
+    if not isinstance(rows, list) or not rows:
+        raise ValueError("Fantasy Week 1 preview rows are invalid")
+
+    seen = set()
+    qb_depth_keys = set()
+    eligible_qb_teams = []
+    for row in rows:
+        if not isinstance(row, dict) or set(row) != PREVIEW_ROW_FIELDS:
+            raise ValueError("Fantasy Week 1 preview row contract is invalid")
+
+        for field in ("game_id", "gsis_id", "player_name"):
+            if _required_text(row[field], f"fantasy preview {field}") != row[field]:
+                raise ValueError(f"Fantasy Week 1 preview {field} is invalid")
+        game_parts = row["game_id"].split("_")
+        try:
+            team = normalize_team(row["team"])
+            opponent = normalize_team(row["opponent"])
+            game_teams = {
+                normalize_team(value) for value in game_parts[2:]
+            }
+        except (AttributeError, TypeError, ValueError) as error:
+            raise ValueError("Fantasy Week 1 preview teams are invalid") from error
+
+        if (
+            team != row["team"]
+            or opponent != row["opponent"]
+            or team == opponent
+            or len(game_parts) != 4
+            or game_parts[:2] != ["2026", "01"]
+            or game_teams != {team, opponent}
+            or type(row["season"]) is not int
+            or row["season"] != 2026
+            or type(row["week"]) is not int
+            or row["week"] != 1
+            or row["position"] not in POSITIONS
+            or row["availability_status"] != "UNVERIFIED"
+            or row["config_sha256"] != preview["config_sha256"]
+            or type(row["ranking_eligible"]) is not bool
+            or type(row["history_count"]) is not int
+            or row["history_count"] < 0
+            or row["initialization_reason"] != (
+                "HISTORY" if row["history_count"] else "TRUE_COLD_START"
+            )
+        ):
+            raise ValueError("Fantasy Week 1 preview row context is invalid")
+
+        for field in ("null_prediction", "strong_prediction"):
+            if type(row[field]) not in (int, float) or not math.isfinite(row[field]):
+                raise ValueError(
+                    f"Fantasy Week 1 preview {field} is invalid"
+                )
+
+        if row["position"] == "QB":
+            if (
+                type(row["qb_depth_rank"]) is not int
+                or row["qb_depth_rank"] <= 0
+            ):
+                raise ValueError("Fantasy Week 1 QB depth rank is invalid")
+            depth_key = row["team"], row["qb_depth_rank"]
+            if depth_key in qb_depth_keys:
+                raise ValueError("Fantasy Week 1 QB depth rank is duplicated")
+            qb_depth_keys.add(depth_key)
+        elif row["qb_depth_rank"] is not None:
+            raise ValueError("Fantasy Week 1 non-QB depth rank is invalid")
+
+        expected_eligible = (
+            row["position"] != "QB" or row["qb_depth_rank"] == 1
+        )
+        if row["ranking_eligible"] is not expected_eligible:
+            raise ValueError("Fantasy Week 1 ranking eligibility is invalid")
+
+        expected_ranks = {
+            "position_rank": expected_eligible,
+            "flex_rank": expected_eligible and row["position"] != "QB",
+            "superflex_rank": expected_eligible,
+        }
+        for field, required in expected_ranks.items():
+            value = row[field]
+            if required and (type(value) is not int or value <= 0):
+                raise ValueError(f"Fantasy Week 1 {field} is invalid")
+            if not required and value is not None:
+                raise ValueError(f"Fantasy Week 1 {field} is invalid")
+
+        key = row["season"], row["week"], row["game_id"], row["gsis_id"]
+        if key in seen:
+            raise ValueError(f"Duplicate Fantasy Week 1 preview row: {key}")
+        seen.add(key)
+        if row["position"] == "QB" and row["ranking_eligible"]:
+            eligible_qb_teams.append(row["team"])
+
+    if (
+        len(eligible_qb_teams) != 32
+        or set(eligible_qb_teams) != set(teams)
+    ):
+        raise ValueError(
+            "Fantasy Week 1 preview requires one eligible QB per team"
+        )
+    if rows != rank_rows(rows):
+        raise ValueError("Fantasy Week 1 preview ranks or row order are invalid")
+    return preview
+
+
+def load_week1_preview(path):
+    data = Path(path).read_bytes()
+    preview = verify_week1_preview(
+        _decode_json(data, "Fantasy Week 1 preview")
+    )
+    if data != serialize_preview(preview).encode("utf-8"):
+        raise ValueError("Fantasy Week 1 preview is not canonical")
+    return preview
 
 
 def _write_preview(output, text):

@@ -185,6 +185,112 @@ class ProspectiveFantasyFixture:
         Path(path).write_text(text, encoding="utf-8", newline="")
         return Path(path)
 
+    def week1_site_preview(self):
+        teams = list(pgo_fantasy.CURRENT_TEAMS)
+        config_sha256 = "a" * 64
+        matchups = {}
+        rows = []
+
+        for index in range(0, len(teams), 2):
+            away, home = teams[index:index + 2]
+            away_id = "LA" if away == "LAR" else away
+            home_id = "LA" if home == "LAR" else home
+            game_id = f"2026_01_{away_id}_{home_id}"
+            matchups[away] = (game_id, home)
+            matchups[home] = (game_id, away)
+
+        def add_row(
+            gsis_id,
+            player_name,
+            team,
+            position,
+            strong_prediction,
+            *,
+            history_count=1,
+            qb_depth_rank=None,
+            ranking_eligible=True,
+        ):
+            game_id, opponent = matchups[team]
+            rows.append({
+                "season": 2026,
+                "week": 1,
+                "game_id": game_id,
+                "gsis_id": gsis_id,
+                "player_name": player_name,
+                "team": team,
+                "opponent": opponent,
+                "position": position,
+                "null_prediction": strong_prediction - 1.0,
+                "strong_prediction": strong_prediction,
+                "history_count": history_count,
+                "initialization_reason": (
+                    "HISTORY" if history_count else "TRUE_COLD_START"
+                ),
+                "availability_status": "UNVERIFIED",
+                "qb_depth_rank": qb_depth_rank,
+                "ranking_eligible": ranking_eligible,
+                "config_sha256": config_sha256,
+            })
+
+        for index, team in enumerate(teams):
+            add_row(
+                f"qb1-{team.lower()}",
+                f"{team} QB1",
+                team,
+                "QB",
+                40.0 - index,
+                qb_depth_rank=1,
+            )
+
+        add_row(
+            f"qb2-{teams[0].lower()}",
+            f"{teams[0]} QB2",
+            teams[0],
+            "QB",
+            50.0,
+            qb_depth_rank=2,
+            ranking_eligible=False,
+        )
+        add_row("rb-1", "Synthetic RB", teams[0], "RB", 12.0)
+        add_row("wr-1", "Synthetic WR", teams[1], "WR", 11.0)
+        add_row(
+            "te-1",
+            "Synthetic TE",
+            teams[2],
+            "TE",
+            10.0,
+            history_count=0,
+        )
+
+        preview = {
+            "schema_version": 1,
+            "artifact_kind": "PGO_FANTASY_WEEKLY_PREVIEW",
+            "status": "HOLD",
+            "publication_status": "EXPERIMENTAL",
+            "evidence_mode": "PREVIEW",
+            "gradeable": False,
+            "season": 2026,
+            "week": 1,
+            "generated_at": "2026-09-03T13:52:56-04:00",
+            "model_version": "pgo_fantasy_2026_baseline_v2",
+            "config_sha256": config_sha256,
+            "teams_processed": list(teams),
+            "teams_missing": [],
+            "source_coverage": {
+                "roster": {"processed": list(teams), "missing": []},
+                "availability": {"processed": [], "missing": list(teams)},
+                "depth": {"processed": list(teams), "missing": []},
+            },
+            "rows": prospective.rank_rows(rows),
+        }
+        preview["artifact_sha256"] = prospective._artifact_hash(preview)
+        return preview
+
+    @staticmethod
+    def rehash_preview(preview):
+        preview["artifact_sha256"] = prospective._artifact_hash(preview)
+        return preview
+
 
 class ProspectiveSourceBoundaryTests(
     ProspectiveFantasyFixture, unittest.TestCase
@@ -1031,6 +1137,215 @@ class ProspectiveProjectionTests(
                     )
                     with self.assertRaises(ValueError):
                         prospective._depth_ranks(loaded, roster, {"BUF", "LAR"})
+
+
+class ProspectiveWeek1PreviewLoadTests(
+    ProspectiveFantasyFixture, unittest.TestCase
+):
+    def test_week1_preview_loader_accepts_canonical_artifact(self):
+        preview = self.week1_site_preview()
+        with tempfile.TemporaryDirectory() as directory:
+            path = self.write_json(
+                Path(directory) / "preview.json",
+                preview,
+                canonical=True,
+            )
+            loaded = prospective.load_week1_preview(path)
+
+        self.assertEqual(loaded, preview)
+
+    def test_week1_preview_loader_rejects_invalid_and_noncanonical_json(self):
+        preview = self.week1_site_preview()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            duplicate = root / "duplicate.json"
+            duplicate.write_bytes(b'{"week":1,"week":1}\n')
+            nonfinite = root / "nonfinite.json"
+            nonfinite.write_bytes(b'{"value":NaN}\n')
+            pretty = root / "pretty.json"
+            pretty.write_text(
+                json.dumps(preview, indent=2) + "\n",
+                encoding="utf-8",
+                newline="",
+            )
+
+            with self.assertRaisesRegex(ValueError, "invalid JSON"):
+                prospective.load_week1_preview(duplicate)
+            with self.assertRaisesRegex(ValueError, "invalid JSON"):
+                prospective.load_week1_preview(nonfinite)
+            with self.assertRaisesRegex(ValueError, "not canonical"):
+                prospective.load_week1_preview(pretty)
+
+    def test_week1_preview_loader_rejects_metadata_and_coverage_drift(self):
+        cases = (
+            ("missing-field", lambda value: value.pop("generated_at")),
+            ("extra-field", lambda value: value.update(extra=True)),
+            ("schema", lambda value: value.update(schema_version=2)),
+            ("kind", lambda value: value.update(artifact_kind="OTHER")),
+            ("season", lambda value: value.update(season=2025)),
+            ("week", lambda value: value.update(week=2)),
+            ("model", lambda value: value.update(model_version="other")),
+            ("evidence", lambda value: value.update(evidence_mode="LOCK")),
+            ("status", lambda value: value.update(status="PASS")),
+            (
+                "publication",
+                lambda value: value.update(publication_status="VALIDATED"),
+            ),
+            ("gradeable", lambda value: value.update(gradeable=True)),
+            (
+                "timestamp",
+                lambda value: value.update(generated_at="2026-09-03"),
+            ),
+            ("teams", lambda value: value["teams_processed"].pop()),
+            (
+                "depth-coverage",
+                lambda value: value["source_coverage"]["depth"].update(
+                    processed=value["teams_processed"][1:],
+                    missing=[value["teams_processed"][0]],
+                ),
+            ),
+            (
+                "availability-coverage",
+                lambda value: value["source_coverage"]["availability"].update(
+                    processed=[value["teams_processed"][0]],
+                    missing=value["teams_processed"][1:],
+                ),
+            ),
+            (
+                "coverage-key",
+                lambda value: value["source_coverage"].update(extra={}),
+            ),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for label, mutate in cases:
+                with self.subTest(label=label):
+                    changed = deepcopy(self.week1_site_preview())
+                    mutate(changed)
+                    self.rehash_preview(changed)
+                    path = self.write_json(
+                        root / f"{label}.json",
+                        changed,
+                        canonical=True,
+                    )
+                    with self.assertRaises(ValueError):
+                        prospective.load_week1_preview(path)
+
+            corrupt = self.week1_site_preview()
+            corrupt["artifact_sha256"] = "0" * 64
+            corrupt_path = self.write_json(
+                root / "corrupt-hash.json",
+                corrupt,
+                canonical=True,
+            )
+            with self.assertRaisesRegex(ValueError, "metadata"):
+                prospective.load_week1_preview(corrupt_path)
+
+    def test_week1_preview_loader_rejects_row_and_rank_drift(self):
+        def first_row(value, predicate):
+            return next(row for row in value["rows"] if predicate(row))
+
+        cases = (
+            (
+                "missing-row-field",
+                lambda value: value["rows"][0].pop("player_name"),
+            ),
+            (
+                "extra-row-field",
+                lambda value: value["rows"][0].update(extra=True),
+            ),
+            (
+                "boolean-history",
+                lambda value: value["rows"][0].update(history_count=True),
+            ),
+            (
+                "negative-history",
+                lambda value: value["rows"][0].update(history_count=-1),
+            ),
+            (
+                "initialization",
+                lambda value: value["rows"][0].update(
+                    initialization_reason="TRUE_COLD_START"
+                ),
+            ),
+            (
+                "blank-player",
+                lambda value: value["rows"][0].update(player_name=" "),
+            ),
+            (
+                "unknown-team",
+                lambda value: value["rows"][0].update(team="XXX"),
+            ),
+            (
+                "same-opponent",
+                lambda value: value["rows"][0].update(
+                    opponent=value["rows"][0]["team"]
+                ),
+            ),
+            ("game-id", lambda value: value["rows"][0].update(game_id="bad")),
+            ("position", lambda value: value["rows"][0].update(position="K")),
+            (
+                "availability",
+                lambda value: value["rows"][0].update(
+                    availability_status="ACTIVE"
+                ),
+            ),
+            (
+                "row-config",
+                lambda value: value["rows"][0].update(
+                    config_sha256="b" * 64
+                ),
+            ),
+            (
+                "non-qb-depth",
+                lambda value: first_row(
+                    value, lambda row: row["position"] == "RB"
+                ).update(qb_depth_rank=1),
+            ),
+            (
+                "backup-eligible",
+                lambda value: first_row(
+                    value,
+                    lambda row: (
+                        row["position"] == "QB"
+                        and row["qb_depth_rank"] == 2
+                    ),
+                ).update(ranking_eligible=True),
+            ),
+            (
+                "missing-rank",
+                lambda value: first_row(
+                    value, lambda row: row["ranking_eligible"]
+                ).update(superflex_rank=None),
+            ),
+            (
+                "duplicate-rank",
+                lambda value: value["rows"][1].update(
+                    superflex_rank=value["rows"][0]["superflex_rank"]
+                ),
+            ),
+            (
+                "duplicate-row",
+                lambda value: value["rows"].append(
+                    deepcopy(value["rows"][0])
+                ),
+            ),
+            ("row-order", lambda value: value["rows"].reverse()),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for label, mutate in cases:
+                with self.subTest(label=label):
+                    changed = deepcopy(self.week1_site_preview())
+                    mutate(changed)
+                    self.rehash_preview(changed)
+                    path = self.write_json(
+                        root / f"{label}.json",
+                        changed,
+                        canonical=True,
+                    )
+                    with self.assertRaises(ValueError):
+                        prospective.load_week1_preview(path)
 
 
 class ProspectiveGameLockTests(
