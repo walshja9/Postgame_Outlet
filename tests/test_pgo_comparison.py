@@ -1,3 +1,4 @@
+import hashlib
 import io
 import tempfile
 import unittest
@@ -54,6 +55,135 @@ class ComparisonTests(unittest.TestCase):
                 "upper": 0.144917,
             },
             "receipt_ref": "test-receipt-ref",
+        }
+
+    @staticmethod
+    def _fantasy_preview():
+        config_sha256 = "a" * 64
+
+        def row(
+            gsis_id,
+            player_name,
+            position,
+            team,
+            opponent,
+            strong_prediction,
+            position_rank,
+            flex_rank,
+            superflex_rank,
+            *,
+            qb_depth_rank=None,
+            ranking_eligible=True,
+            history_count=1,
+        ):
+            return {
+                "season": 2026,
+                "week": 1,
+                "game_id": "2026_01_BUF_LAR",
+                "gsis_id": gsis_id,
+                "player_name": player_name,
+                "team": team,
+                "opponent": opponent,
+                "position": position,
+                "null_prediction": strong_prediction - 1.0,
+                "strong_prediction": strong_prediction,
+                "history_count": history_count,
+                "initialization_reason": (
+                    "HISTORY" if history_count else "TRUE_COLD_START"
+                ),
+                "availability_status": "UNVERIFIED",
+                "qb_depth_rank": qb_depth_rank,
+                "ranking_eligible": ranking_eligible,
+                "config_sha256": config_sha256,
+                "position_rank": position_rank,
+                "flex_rank": flex_rank,
+                "superflex_rank": superflex_rank,
+            }
+
+        return {
+            "schema_version": 1,
+            "artifact_kind": "PGO_FANTASY_WEEKLY_PREVIEW",
+            "artifact_sha256": "b" * 64,
+            "config_sha256": config_sha256,
+            "evidence_mode": "PREVIEW",
+            "generated_at": "2026-09-03T13:52:56-04:00",
+            "gradeable": False,
+            "model_version": "pgo_fantasy_2026_baseline_v2",
+            "publication_status": "EXPERIMENTAL",
+            "season": 2026,
+            "source_coverage": {
+                "roster": {"processed": ["BUF", "LAR"], "missing": []},
+                "availability": {
+                    "processed": [],
+                    "missing": ["BUF", "LAR"],
+                },
+                "depth": {"processed": ["BUF", "LAR"], "missing": []},
+            },
+            "status": "HOLD",
+            "teams_missing": [],
+            "teams_processed": ["BUF", "LAR"],
+            "week": 1,
+            "rows": [
+                row(
+                    "qb-buf",
+                    "Buffalo QB",
+                    "QB",
+                    "BUF",
+                    "LAR",
+                    20.0,
+                    1,
+                    None,
+                    1,
+                    qb_depth_rank=1,
+                ),
+                row(
+                    "qb-buf-backup",
+                    "Buffalo Backup",
+                    "QB",
+                    "BUF",
+                    "LAR",
+                    19.0,
+                    None,
+                    None,
+                    None,
+                    qb_depth_rank=2,
+                    ranking_eligible=False,
+                ),
+                row(
+                    "rb-lar",
+                    "Los Angeles RB",
+                    "RB",
+                    "LAR",
+                    "BUF",
+                    15.0,
+                    1,
+                    1,
+                    2,
+                ),
+                row(
+                    "wr-buf",
+                    "Rookie <script>alert(1)</script>",
+                    "WR",
+                    "BUF",
+                    "LAR",
+                    14.0,
+                    1,
+                    2,
+                    3,
+                    history_count=0,
+                ),
+                row(
+                    "te-lar",
+                    "Los Angeles TE",
+                    "TE",
+                    "LAR",
+                    "BUF",
+                    10.0,
+                    1,
+                    3,
+                    4,
+                ),
+            ],
         }
 
     def test_mccabe_review_flag_blocks_comparison(self):
@@ -253,6 +383,139 @@ class ComparisonTests(unittest.TestCase):
         self.assertIn(
             "a.children[0].dataset.sort.localeCompare(",
             output,
+        )
+
+    def test_fantasy_panel_is_reader_first_and_excludes_ineligible_rows(self):
+        panel = pgo_comparison.render_fantasy_panel(
+            self._fantasy_preview()
+        )
+
+        self.assertEqual(panel.count('class="fantasy-row"'), 4)
+        self.assertNotIn("Buffalo Backup", panel)
+        self.assertEqual(panel.count('class="fantasy-view-button"'), 6)
+        self.assertIn(
+            'data-view="SUPERFLEX" aria-pressed="true"',
+            panel,
+        )
+        self.assertIn('id="fantasy-player-search"', panel)
+        self.assertIn('id="fantasy-team"', panel)
+        self.assertIn('id="fantasy-columns"', panel)
+        for label in ("SF#", "Player", "Pos", "Team", "Opp.", "Proj."):
+            self.assertIn(f">{label}</button>", panel)
+        for label in (
+            "Pos #",
+            "FLEX #",
+            "SF #",
+            "Baseline",
+            "Delta",
+            "History",
+            "Init",
+            "Availability",
+        ):
+            self.assertIn(f">{label}</button>", panel)
+        self.assertIn("PREVIEW / HOLD", panel)
+        self.assertIn("pre-lock half-PPR", panel)
+        self.assertIn("not gradeable", panel)
+        self.assertIn("Player availability is unverified", panel)
+        self.assertIn('role="status" aria-live="polite"', panel)
+        self.assertIn("2026-09-03T13:52:56-04:00", panel)
+        self.assertIn("pgo_fantasy_2026_baseline_v2", panel)
+        self.assertIn("b" * 64, panel)
+        self.assertIn("a" * 64, panel)
+        self.assertNotIn("qb-buf", panel)
+
+    def test_fantasy_panel_escapes_source_text(self):
+        panel = pgo_comparison.render_fantasy_panel(
+            self._fantasy_preview()
+        )
+
+        self.assertIn(
+            "Rookie &lt;script&gt;alert(1)&lt;/script&gt;",
+            panel,
+        )
+        self.assertNotIn("<script>alert(1)</script>", panel)
+
+    def test_fantasy_assets_cover_filters_sorting_columns_and_mobile(self):
+        self.assertIn("dataset.view", pgo_comparison.FANTASY_SCRIPT)
+        self.assertIn("fantasy-player-search", pgo_comparison.FANTASY_SCRIPT)
+        self.assertIn("fantasy-team", pgo_comparison.FANTASY_SCRIPT)
+        self.assertIn("fantasy-columns", pgo_comparison.FANTASY_SCRIPT)
+        self.assertIn("aria-sort", pgo_comparison.FANTASY_SCRIPT)
+        self.assertNotIn("fetch(", pgo_comparison.FANTASY_SCRIPT)
+        self.assertIn("@media (max-width:480px)", pgo_comparison.FANTASY_CSS)
+        self.assertIn(
+            "#panel-fantasy.show-technical .fantasy-technical",
+            pgo_comparison.FANTASY_CSS,
+        )
+
+    def test_fantasy_injection_selects_new_tab_and_preserves_other_panels(self):
+        comparison = pgo_comparison.render_comparison_panel(
+            [], self._held_receipt()
+        )
+        fantasy = pgo_comparison.render_fantasy_panel(
+            self._fantasy_preview()
+        )
+
+        existing = pgo_comparison.inject_comparison(
+            self._base_html(), comparison
+        )
+        output = pgo_comparison.inject_fantasy_preview(
+            existing, fantasy
+        )
+
+        self.assertLess(
+            output.index('id="tab-comparison"'),
+            output.index('id="tab-fantasy"'),
+        )
+        self.assertLess(
+            output.index('id="tab-fantasy"'),
+            output.index('id="tab-ratings"'),
+        )
+        self.assertIn(
+            'class="tab active" id="tab-fantasy"',
+            output,
+        )
+        self.assertIn(
+            'aria-selected="true" aria-controls="panel-fantasy"',
+            output,
+        )
+        self.assertIn(
+            'class="tab" id="tab-comparison"',
+            output,
+        )
+        self.assertIn(
+            'aria-selected="false" aria-controls="panel-comparison"',
+            output,
+        )
+        self.assertIn(
+            'class="panel" id="panel-comparison"',
+            output,
+        )
+        self.assertIn(
+            'aria-labelledby="tab-comparison" hidden>',
+            output,
+        )
+        self.assertIn(
+            'class="panel active" id="panel-fantasy"',
+            output,
+        )
+        self.assertIn('id="panel-ratings" hidden', output)
+        self.assertIn("McCabe Ratings</button>", output)
+        self.assertIn("McCabe QBs</button>", output)
+        self.assertIn("McCabe Method</button>", output)
+        self.assertEqual(output.count(pgo_comparison.FANTASY_SCRIPT), 1)
+        with self.assertRaisesRegex(ValueError, "already has"):
+            pgo_comparison.inject_fantasy_preview(output, fantasy)
+
+    def test_injection_without_fantasy_remains_byte_identical(self):
+        output = pgo_comparison.inject_comparison(
+            self._base_html(),
+            '<section id="panel-comparison">Rows</section>',
+        )
+        digest = hashlib.sha256(output.encode("utf-8")).hexdigest()
+        self.assertEqual(
+            digest,
+            "6da6eac6d26cf88ecd3679f0706f430c4352d128af7d2eb039fd3c920f8bc50f",
         )
 
     def test_injection_adds_one_accessible_tab_and_preserves_base_page(self):

@@ -296,8 +296,277 @@ MODEL_CSS = """
 """
 
 
+FANTASY_CSS = """
+#panel-fantasy .fantasy-status {
+  display:inline-block; margin:0 0 10px; padding:6px 10px;
+  border:1px solid var(--orange); border-radius:999px;
+  color:var(--ink); font-weight:700;
+}
+#panel-fantasy .fantasy-warning {
+  max-width:78ch; margin:0 0 16px; color:var(--mut);
+}
+#panel-fantasy .fantasy-controls {
+  display:flex; flex-wrap:wrap; gap:10px 14px; align-items:end;
+  margin:16px 0 10px;
+}
+#panel-fantasy .fantasy-field {
+  display:grid; gap:4px; color:var(--mut); font-size:12px; font-weight:600;
+}
+#panel-fantasy .fantasy-field input[type="search"],
+#panel-fantasy .fantasy-field select {
+  min-height:38px; border:1px solid var(--border); border-radius:8px;
+  background:var(--panel); color:var(--ink); font:inherit; padding:7px 9px;
+}
+#panel-fantasy .fantasy-view-buttons {
+  display:flex; flex-wrap:wrap; gap:7px; margin:0 0 12px;
+}
+#panel-fantasy .fantasy-view-button {
+  border:1px solid var(--border); border-radius:999px; background:var(--panel);
+  color:var(--ink); cursor:pointer; font:inherit; font-size:12px;
+  font-weight:700; padding:7px 11px;
+}
+#panel-fantasy .fantasy-view-button[aria-pressed="true"] {
+  border-color:var(--orange); background:var(--orange); color:#1e2a3c;
+}
+#panel-fantasy .fantasy-result-count {
+  margin:8px 0; color:var(--mut); font-size:13px;
+}
+#panel-fantasy .fantasy-table th:nth-child(2),
+#panel-fantasy .fantasy-table td:nth-child(2) { text-align:left; }
+#panel-fantasy .fantasy-player {
+  text-align:left; white-space:normal; overflow-wrap:anywhere;
+}
+#panel-fantasy .fantasy-technical { display:none; }
+#panel-fantasy.show-technical .fantasy-technical { display:table-cell; }
+#panel-fantasy.show-technical .fantasy-table { min-width:1080px; }
+#panel-fantasy .fantasy-details {
+  margin-top:16px; color:var(--mut); font-size:12px;
+}
+#panel-fantasy .fantasy-details summary {
+  color:var(--ink); cursor:pointer; font-weight:700;
+}
+#panel-fantasy .fantasy-details code { overflow-wrap:anywhere; }
+@media (max-width:480px) {
+  #panel-fantasy .fantasy-controls { display:grid; grid-template-columns:1fr 1fr; }
+  #panel-fantasy .fantasy-field:first-child { grid-column:1 / -1; }
+  #panel-fantasy:not(.show-technical) .fantasy-table {
+    table-layout:fixed; font-size:11px;
+  }
+  #panel-fantasy:not(.show-technical) .fantasy-table th,
+  #panel-fantasy:not(.show-technical) .fantasy-table td { padding:6px 3px; }
+  #panel-fantasy:not(.show-technical) .fantasy-table th:nth-child(1) { width:9%; }
+  #panel-fantasy:not(.show-technical) .fantasy-table th:nth-child(2) { width:34%; }
+  #panel-fantasy:not(.show-technical) .fantasy-table th:nth-child(3) { width:10%; }
+  #panel-fantasy:not(.show-technical) .fantasy-table th:nth-child(4) { width:12%; }
+  #panel-fantasy:not(.show-technical) .fantasy-table th:nth-child(5) { width:12%; }
+  #panel-fantasy:not(.show-technical) .fantasy-table th:nth-child(6) { width:23%; }
+}
+"""
+
+
 def _signed(value):
     return f"{value:+.1f}"
+
+
+def _optional_rank(value):
+    return ("", "&mdash;") if value is None else (str(value), str(value))
+
+
+def render_fantasy_panel(preview):
+    eligible = sorted(
+        (
+            row for row in preview["rows"]
+            if row["ranking_eligible"]
+        ),
+        key=lambda row: row["superflex_rank"],
+    )
+    if not eligible:
+        raise ValueError("Fantasy Week 1 preview has no eligible rows")
+
+    teams = sorted({row["team"] for row in eligible})
+    options = "\n".join(
+        f'<option value="{html.escape(team, quote=True)}">'
+        f"{html.escape(team)}</option>"
+        for team in teams
+    )
+    body = []
+    for row in eligible:
+        position_sort, position_text = _optional_rank(row["position_rank"])
+        flex_sort, flex_text = _optional_rank(row["flex_rank"])
+        superflex_sort, superflex_text = _optional_rank(
+            row["superflex_rank"]
+        )
+        player = html.escape(row["player_name"])
+        player_sort = html.escape(row["player_name"].lower(), quote=True)
+        position = html.escape(row["position"], quote=True)
+        team = html.escape(row["team"], quote=True)
+        opponent = html.escape(row["opponent"], quote=True)
+        initialization = html.escape(row["initialization_reason"])
+        availability = html.escape(row["availability_status"])
+        delta = row["strong_prediction"] - row["null_prediction"]
+        body.append(
+            f'<tr class="fantasy-row" data-position="{position}" '
+            f'data-team="{team}" data-player="{player_sort}" '
+            f'data-position-rank="{position_sort}" '
+            f'data-flex-rank="{flex_sort}" '
+            f'data-superflex-rank="{superflex_sort}">'
+            f'<td class="fantasy-rank" data-sort="{superflex_sort}">'
+            f"{superflex_text}</td>"
+            f'<th scope="row" class="fantasy-player" data-sort="{player_sort}">'
+            f"{player}</th>"
+            f'<td data-sort="{position}">{position}</td>'
+            f'<td data-sort="{team}">{team}</td>'
+            f'<td data-sort="{opponent}">{opponent}</td>'
+            f'<td data-sort="{row["strong_prediction"]}">'
+            f'{row["strong_prediction"]:.1f}</td>'
+            f'<td class="fantasy-technical" data-sort="{position_sort}">'
+            f"{position_text}</td>"
+            f'<td class="fantasy-technical" data-sort="{flex_sort}">'
+            f"{flex_text}</td>"
+            f'<td class="fantasy-technical" data-sort="{superflex_sort}">'
+            f"{superflex_text}</td>"
+            f'<td class="fantasy-technical" data-sort="{row["null_prediction"]}">'
+            f'{row["null_prediction"]:.1f}</td>'
+            f'<td class="fantasy-technical" data-sort="{delta}">'
+            f"{delta:+.1f}</td>"
+            f'<td class="fantasy-technical" data-sort="{row["history_count"]}">'
+            f'{row["history_count"]}</td>'
+            f'<td class="fantasy-technical" '
+            f'data-sort="{html.escape(row["initialization_reason"].lower(), quote=True)}">'
+            f"{initialization}</td>"
+            f'<td class="fantasy-technical" '
+            f'data-sort="{html.escape(row["availability_status"].lower(), quote=True)}">'
+            f"{availability}</td>"
+            "</tr>"
+        )
+
+    generated = html.escape(preview["generated_at"], quote=True)
+    model = html.escape(preview["model_version"])
+    artifact_sha = html.escape(preview["artifact_sha256"])
+    config_sha = html.escape(preview["config_sha256"])
+    coverage = preview["source_coverage"]
+    total = len(preview["rows"])
+    visible = len(eligible)
+    return f"""
+  <section class="panel active" id="panel-fantasy" role="tabpanel"
+    aria-labelledby="tab-fantasy">
+    <div class="fantasy-status">PREVIEW / HOLD</div>
+    <h2>2026 Week 1 Fantasy Rankings</h2>
+    <p class="fantasy-warning">These are pre-lock half-PPR projections.
+      Player availability is unverified, rankings may change before lock,
+      and this artifact is not gradeable. Generated
+      <time datetime="{generated}">{generated}</time>.</p>
+    <div class="fantasy-view-buttons" role="group"
+      aria-label="Fantasy ranking view">
+      <button type="button" class="fantasy-view-button"
+        data-view="SUPERFLEX" aria-pressed="true"
+        aria-controls="fantasy-table">SUPERFLEX</button>
+      <button type="button" class="fantasy-view-button"
+        data-view="QB" aria-pressed="false"
+        aria-controls="fantasy-table">QB</button>
+      <button type="button" class="fantasy-view-button"
+        data-view="RB" aria-pressed="false"
+        aria-controls="fantasy-table">RB</button>
+      <button type="button" class="fantasy-view-button"
+        data-view="WR" aria-pressed="false"
+        aria-controls="fantasy-table">WR</button>
+      <button type="button" class="fantasy-view-button"
+        data-view="TE" aria-pressed="false"
+        aria-controls="fantasy-table">TE</button>
+      <button type="button" class="fantasy-view-button"
+        data-view="FLEX" aria-pressed="false"
+        aria-controls="fantasy-table">FLEX</button>
+    </div>
+    <div class="fantasy-controls">
+      <label class="fantasy-field" for="fantasy-player-search">
+        Player
+        <input id="fantasy-player-search" type="search"
+          autocomplete="off" placeholder="Search player">
+      </label>
+      <label class="fantasy-field" for="fantasy-team">
+        Team
+        <select id="fantasy-team">
+          <option value="">All teams</option>
+          {options}
+        </select>
+      </label>
+      <label class="fantasy-field" for="fantasy-columns">
+        Columns
+        <span><input id="fantasy-columns" type="checkbox">
+          Show all columns</span>
+      </label>
+    </div>
+    <p class="fantasy-result-count" id="fantasy-result-count"
+      role="status" aria-live="polite">{visible} players shown</p>
+    <p class="visually-hidden fantasy-sort-status"
+      role="status" aria-live="polite"></p>
+    <div class="table-shell">
+      <table class="fantasy-table" id="fantasy-table">
+        <caption class="visually-hidden">
+          Eligible 2026 Week 1 half-PPR fantasy projections
+        </caption>
+        <thead><tr>
+          <th scope="col" aria-sort="ascending">
+            <button type="button" class="sort-button fantasy-sort"
+              data-column="0" data-kind="number">SF#</button></th>
+          <th scope="col" aria-sort="none">
+            <button type="button" class="sort-button fantasy-sort"
+              data-column="1" data-kind="text">Player</button></th>
+          <th scope="col" aria-sort="none">
+            <button type="button" class="sort-button fantasy-sort"
+              data-column="2" data-kind="text">Pos</button></th>
+          <th scope="col" aria-sort="none">
+            <button type="button" class="sort-button fantasy-sort"
+              data-column="3" data-kind="text">Team</button></th>
+          <th scope="col" aria-sort="none">
+            <button type="button" class="sort-button fantasy-sort"
+              data-column="4" data-kind="text">Opp.</button></th>
+          <th scope="col" aria-sort="none">
+            <button type="button" class="sort-button fantasy-sort"
+              data-column="5" data-kind="number">Proj.</button></th>
+          <th scope="col" class="fantasy-technical" aria-sort="none">
+            <button type="button" class="sort-button fantasy-sort"
+              data-column="6" data-kind="number">Pos #</button></th>
+          <th scope="col" class="fantasy-technical" aria-sort="none">
+            <button type="button" class="sort-button fantasy-sort"
+              data-column="7" data-kind="number">FLEX #</button></th>
+          <th scope="col" class="fantasy-technical" aria-sort="none">
+            <button type="button" class="sort-button fantasy-sort"
+              data-column="8" data-kind="number">SF #</button></th>
+          <th scope="col" class="fantasy-technical" aria-sort="none">
+            <button type="button" class="sort-button fantasy-sort"
+              data-column="9" data-kind="number">Baseline</button></th>
+          <th scope="col" class="fantasy-technical" aria-sort="none">
+            <button type="button" class="sort-button fantasy-sort"
+              data-column="10" data-kind="number">Delta</button></th>
+          <th scope="col" class="fantasy-technical" aria-sort="none">
+            <button type="button" class="sort-button fantasy-sort"
+              data-column="11" data-kind="number">History</button></th>
+          <th scope="col" class="fantasy-technical" aria-sort="none">
+            <button type="button" class="sort-button fantasy-sort"
+              data-column="12" data-kind="text">Init</button></th>
+          <th scope="col" class="fantasy-technical" aria-sort="none">
+            <button type="button" class="sort-button fantasy-sort"
+              data-column="13" data-kind="text">Availability</button></th>
+        </tr></thead>
+        <tbody id="fantasy-rows">{"".join(body)}</tbody>
+      </table>
+    </div>
+    <details class="fantasy-details">
+      <summary>Preview details</summary>
+      <p>Model <code>{model}</code>; generated
+        <time datetime="{generated}">{generated}</time>.<br>
+        Artifact SHA-256 <code>{artifact_sha}</code>.<br>
+        Config SHA-256 <code>{config_sha}</code>.<br>
+        Rows: {total} total, {visible} ranking-eligible.<br>
+        Coverage: roster {len(coverage["roster"]["processed"])}/32;
+        depth {len(coverage["depth"]["processed"])}/32;
+        availability {len(coverage["availability"]["processed"])}/32.
+        Status: PREVIEW / HOLD, EXPERIMENTAL, non-gradeable.
+        Availability remains unverified.</p>
+    </details>
+  </section>
+"""
 
 
 def render_comparison_panel(rows, receipt):
@@ -398,6 +667,13 @@ COMPARISON_TAB = """
 """
 
 
+FANTASY_TAB = """
+    <button type="button" class="tab active" id="tab-fantasy" role="tab"
+      aria-selected="true" aria-controls="panel-fantasy" tabindex="0"
+      data-panel="fantasy">Fantasy Week 1</button>
+"""
+
+
 COMPARISON_SCRIPT = """
 <script>
   (() => {
@@ -442,6 +718,133 @@ COMPARISON_SCRIPT = """
           + (ascending ? 'ascending' : 'descending');
       });
     });
+  })();
+</script>
+"""
+
+
+FANTASY_SCRIPT = """
+<script>
+  (() => {
+    const panel = document.querySelector('#panel-fantasy');
+    const body = panel && panel.querySelector('#fantasy-rows');
+    const viewButtons = panel
+      ? [...panel.querySelectorAll('.fantasy-view-button')]
+      : [];
+    const sortButtons = panel
+      ? [...panel.querySelectorAll('.fantasy-sort')]
+      : [];
+    const search = panel && panel.querySelector('#fantasy-player-search');
+    const team = panel && panel.querySelector('#fantasy-team');
+    const columns = panel && panel.querySelector('#fantasy-columns');
+    const count = panel && panel.querySelector('#fantasy-result-count');
+    const sortStatus = panel && panel.querySelector('.fantasy-sort-status');
+    const rankButton = panel
+      && panel.querySelector('.fantasy-sort[data-column="0"]');
+    if (
+      !body || viewButtons.length !== 6 || sortButtons.length !== 14
+      || !search || !team || !columns || !count || !sortStatus || !rankButton
+    ) return;
+
+    const rows = [...body.rows];
+    const views = {
+      SUPERFLEX: {rank: 'superflexRank', label: 'SF#'},
+      QB: {rank: 'positionRank', label: 'QB#'},
+      RB: {rank: 'positionRank', label: 'RB#'},
+      WR: {rank: 'positionRank', label: 'WR#'},
+      TE: {rank: 'positionRank', label: 'TE#'},
+      FLEX: {rank: 'flexRank', label: 'FLEX#'}
+    };
+    let activeView = 'SUPERFLEX';
+    let activeColumn = 0;
+    let ascending = true;
+
+    function sortValue(row, column, numeric) {
+      const raw = row.children[column].dataset.sort;
+      if (numeric) return raw === '' ? null : Number(raw);
+      return raw;
+    }
+
+    function sortRows(column, nextAscending, announce) {
+      const button = sortButtons.find(
+        candidate => Number(candidate.dataset.column) === column
+      );
+      const numeric = button.dataset.kind === 'number';
+      activeColumn = column;
+      ascending = nextAscending;
+      rows.sort((leftRow, rightRow) => {
+        const left = sortValue(leftRow, column, numeric);
+        const right = sortValue(rightRow, column, numeric);
+        if (left === null && right !== null) return 1;
+        if (right === null && left !== null) return -1;
+        let order = 0;
+        if (left !== null && right !== null) {
+          order = numeric
+            ? left - right
+            : left.localeCompare(right);
+        }
+        const directed = ascending ? order : -order;
+        return directed || leftRow.dataset.player.localeCompare(
+          rightRow.dataset.player
+        );
+      }).forEach(row => body.appendChild(row));
+      sortButtons.forEach(candidate => {
+        candidate.closest('th').setAttribute('aria-sort', 'none');
+      });
+      button.closest('th').setAttribute(
+        'aria-sort', ascending ? 'ascending' : 'descending'
+      );
+      if (announce) {
+        sortStatus.textContent = button.textContent.trim() + ' sorted '
+          + (ascending ? 'ascending' : 'descending');
+      }
+    }
+
+    function applyFilters(resetRank) {
+      const view = views[activeView];
+      rankButton.textContent = view.label;
+      const query = search.value.trim().toLowerCase();
+      let visible = 0;
+      rows.forEach(row => {
+        const rank = row.dataset[view.rank];
+        row.children[0].textContent = rank;
+        row.children[0].dataset.sort = rank;
+        const positionMatch = activeView === 'SUPERFLEX'
+          || (activeView === 'FLEX' && row.dataset.position !== 'QB')
+          || row.dataset.position === activeView;
+        const playerMatch = !query || row.dataset.player.includes(query);
+        const teamMatch = !team.value || row.dataset.team === team.value;
+        row.hidden = !(positionMatch && playerMatch && teamMatch);
+        if (!row.hidden) visible += 1;
+      });
+      if (resetRank) sortRows(0, true, false);
+      count.textContent = visible + (visible === 1 ? ' player shown' : ' players shown');
+    }
+
+    viewButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        activeView = button.dataset.view;
+        viewButtons.forEach(candidate => {
+          candidate.setAttribute(
+            'aria-pressed', String(candidate === button)
+          );
+        });
+        applyFilters(true);
+      });
+    });
+    sortButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const column = Number(button.dataset.column);
+        const nextAscending = column === activeColumn ? !ascending : true;
+        sortRows(column, nextAscending, true);
+      });
+    });
+    search.addEventListener('input', () => applyFilters(false));
+    team.addEventListener('change', () => applyFilters(false));
+    columns.addEventListener('change', () => {
+      panel.classList.toggle('show-technical', columns.checked);
+    });
+    applyFilters(true);
   })();
 </script>
 """
@@ -501,6 +904,45 @@ def inject_comparison(base_html, panel_html):
         1,
     )
     output = output.replace("</body>", COMPARISON_SCRIPT + "\n</body>", 1)
+    return output
+
+
+def inject_fantasy_preview(existing_html, panel_html):
+    if (
+        'id="tab-fantasy"' in existing_html
+        or 'id="panel-fantasy"' in existing_html
+    ):
+        raise ValueError("Existing ratings page already has a fantasy preview")
+
+    comparison_panel = extract_comparison_panel(existing_html)
+    panel_class = '<section class="panel active" id="panel-comparison"'
+    panel_label = 'aria-labelledby="tab-comparison">'
+    markers = ("</style>", "</body>", COMPARISON_TAB, comparison_panel)
+    if (
+        any(existing_html.count(marker) != 1 for marker in markers)
+        or comparison_panel.count(panel_class) != 1
+        or comparison_panel.count(panel_label) != 1
+        or panel_html.count('id="panel-fantasy"') != 1
+    ):
+        raise ValueError("Fantasy preview page markers changed")
+
+    inactive_tab = (
+        COMPARISON_TAB
+        .replace('class="tab active"', 'class="tab"', 1)
+        .replace('aria-selected="true"', 'aria-selected="false"', 1)
+        .replace('tabindex="0"', 'tabindex="-1"', 1)
+    )
+    inactive_panel = (
+        comparison_panel
+        .replace(panel_class, '<section class="panel" id="panel-comparison"', 1)
+        .replace(panel_label, 'aria-labelledby="tab-comparison" hidden>', 1)
+    )
+    output = existing_html.replace("</style>", FANTASY_CSS + "\n</style>", 1)
+    output = output.replace(COMPARISON_TAB, inactive_tab + FANTASY_TAB, 1)
+    output = output.replace(
+        comparison_panel, inactive_panel + "\n" + panel_html, 1
+    )
+    output = output.replace("</body>", FANTASY_SCRIPT + "\n</body>", 1)
     return output
 
 
