@@ -305,6 +305,143 @@ class ComparisonTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertFalse(load.call_args.kwargs["require_immutable"])
 
+    def test_fantasy_cli_rejects_public_modes_before_loading(self):
+        for public_flag in ("--publish", "--refresh-mccabe"):
+            with (
+                self.subTest(public_flag=public_flag),
+                patch.object(
+                    pgo_comparison.fantasy_prospective,
+                    "load_week1_preview",
+                ) as load,
+                patch.object(
+                    pgo_comparison.generate_site,
+                    "load_config",
+                ) as load_config,
+                patch.object(pgo_comparison, "atomic_write_text") as write,
+            ):
+                errors = io.StringIO()
+                with redirect_stderr(errors):
+                    code = pgo_comparison.main([
+                        "--fantasy-preview",
+                        "frozen.json",
+                        public_flag,
+                    ])
+
+                self.assertEqual(code, 1)
+                self.assertIn("private-only", errors.getvalue())
+                load.assert_not_called()
+                load_config.assert_not_called()
+                write.assert_not_called()
+
+    def test_fantasy_cli_rejects_input_output_alias_before_loading(self):
+        same = Path("output") / "same.json"
+        with (
+            patch.object(
+                pgo_comparison.fantasy_prospective,
+                "load_week1_preview",
+            ) as load,
+            patch.object(
+                pgo_comparison.generate_site,
+                "load_config",
+            ) as load_config,
+            patch.object(pgo_comparison, "atomic_write_text") as write,
+        ):
+            errors = io.StringIO()
+            with redirect_stderr(errors):
+                code = pgo_comparison.main([
+                    "--fantasy-preview",
+                    str(same),
+                    "--output",
+                    str(same),
+                ])
+
+        self.assertEqual(code, 1)
+        self.assertIn("different files", errors.getvalue())
+        load.assert_not_called()
+        load_config.assert_not_called()
+        write.assert_not_called()
+
+    def test_fantasy_cli_validates_before_reading_site_shell(self):
+        with (
+            patch.object(
+                pgo_comparison.fantasy_prospective,
+                "load_week1_preview",
+                side_effect=ValueError("invalid frozen preview"),
+            ) as load,
+            patch.object(Path, "read_text") as read,
+            patch.object(
+                pgo_comparison.generate_site,
+                "load_config",
+            ) as load_config,
+            patch.object(pgo_comparison, "atomic_write_text") as write,
+        ):
+            errors = io.StringIO()
+            with redirect_stderr(errors):
+                code = pgo_comparison.main([
+                    "--fantasy-preview",
+                    "frozen.json",
+                    "--output",
+                    "output/fantasy/index.html",
+                ])
+
+        self.assertEqual(code, 1)
+        self.assertIn("invalid frozen preview", errors.getvalue())
+        load.assert_called_once()
+        read.assert_not_called()
+        load_config.assert_not_called()
+        write.assert_not_called()
+
+    def test_fantasy_cli_writes_only_private_output(self):
+        fantasy = self._fantasy_preview()
+        comparison = pgo_comparison.render_comparison_panel(
+            [], self._held_receipt()
+        )
+        existing = pgo_comparison.inject_comparison(
+            self._base_html(), comparison
+        )
+
+        with tempfile.TemporaryDirectory() as temp:
+            public = Path(temp) / "index.html"
+            public.write_text(existing, encoding="utf-8")
+            with (
+                patch.object(
+                    pgo_comparison.fantasy_prospective,
+                    "load_week1_preview",
+                    return_value=fantasy,
+                ) as load,
+                patch.object(pgo_comparison, "PUBLIC_OUTPUT", public),
+                patch.object(
+                    pgo_comparison.generate_site,
+                    "load_config",
+                ) as load_config,
+                patch.object(
+                    pgo_comparison,
+                    "load_comparison_rows",
+                ) as load_comparison,
+                patch.object(pgo_comparison, "atomic_write_text") as write,
+            ):
+                code = pgo_comparison.main([
+                    "--fantasy-preview",
+                    "frozen.json",
+                    "--output",
+                    "output/fantasy/index.html",
+                ])
+
+        self.assertEqual(code, 0)
+        load.assert_called_once_with(Path("frozen.json").resolve())
+        load_config.assert_not_called()
+        load_comparison.assert_not_called()
+        write.assert_called_once()
+        target, rendered = write.call_args.args
+        self.assertEqual(
+            target,
+            Path("output/fantasy/index.html").resolve(),
+        )
+        self.assertIn('id="tab-fantasy"', rendered)
+        self.assertIn('id="panel-fantasy"', rendered)
+        self.assertIn("Rookie &lt;script&gt;", rendered)
+        self.assertIn("McCabe Ratings</button>", rendered)
+
     def test_pgo_is_primary_and_rows_start_in_pgo_rank_order(self):
         rows = [
             {

@@ -14,6 +14,7 @@ from pathlib import Path
 
 import generate_site
 import pgo_challenger
+import pgo_fantasy_prospective as fantasy_prospective
 import pgo_model
 import snapshot
 from release_ratings import atomic_write_text, load_release_rows, rating_total
@@ -1128,48 +1129,85 @@ def parse_args(argv=None):
         action="store_true",
         help="update the McCabe board while preserving the approved PGO panel",
     )
+    parser.add_argument(
+        "--fantasy-preview",
+        type=Path,
+        help="add a validated Week 1 fantasy tab to private output only",
+    )
     return parser.parse_args(argv)
 
 
 def main(argv=None):
     args = parse_args(argv)
     try:
+        if args.fantasy_preview is not None and (
+            args.publish or args.refresh_mccabe
+        ):
+            raise ValueError(
+                "--fantasy-preview is private-only and cannot be combined "
+                "with --publish or --refresh-mccabe"
+            )
+
         output = (
             PUBLIC_OUTPUT if (args.publish or args.refresh_mccabe) else args.output
         ).resolve()
         preview_root = (HERE / "output").resolve()
         if not (args.publish or args.refresh_mccabe) and preview_root not in output.parents:
             raise ValueError("Comparison output must stay under output/")
-        config = generate_site.load_config()
-        site_rows = generate_site.load_teams(generate_site.load_prior())
-        team_ratings = {row["team"]: row["rating"] for row in site_rows}
-        generate_site.build_html.qb_data = generate_site.load_qbs(team_ratings)
-        base_html = generate_site.build_html(site_rows, config)
-        if args.refresh_mccabe:
-            preview = refresh_mccabe_page(
-                base_html, PUBLIC_OUTPUT.read_text(encoding="utf-8")
+
+        fantasy_preview = None
+        comparison_rows = receipt = None
+        if args.fantasy_preview is not None:
+            fantasy_path = args.fantasy_preview.resolve()
+            if fantasy_path == output:
+                raise ValueError(
+                    "Fantasy preview input and HTML output must be different files"
+                )
+            fantasy_preview = fantasy_prospective.load_week1_preview(
+                fantasy_path
             )
-            comparison_rows = receipt = None
+            preview = inject_fantasy_preview(
+                PUBLIC_OUTPUT.read_text(encoding="utf-8"),
+                render_fantasy_panel(fantasy_preview),
+            )
         else:
-            comparison_rows, receipt = load_comparison_rows(
-                MCCABE_PATH,
-                MODEL_PATH,
-                BACKTEST_PATH,
-                require_immutable=args.publish,
+            config = generate_site.load_config()
+            site_rows = generate_site.load_teams(generate_site.load_prior())
+            team_ratings = {row["team"]: row["rating"] for row in site_rows}
+            generate_site.build_html.qb_data = generate_site.load_qbs(
+                team_ratings
             )
-            preview = inject_comparison(
-                base_html,
-                render_comparison_panel(comparison_rows, receipt),
-            )
+            base_html = generate_site.build_html(site_rows, config)
+            if args.refresh_mccabe:
+                preview = refresh_mccabe_page(
+                    base_html, PUBLIC_OUTPUT.read_text(encoding="utf-8")
+                )
+            else:
+                comparison_rows, receipt = load_comparison_rows(
+                    MCCABE_PATH,
+                    MODEL_PATH,
+                    BACKTEST_PATH,
+                    require_immutable=args.publish,
+                )
+                preview = inject_comparison(
+                    base_html,
+                    render_comparison_panel(comparison_rows, receipt),
+                )
         atomic_write_text(output, preview)
     except (csv.Error, KeyError, OSError, TypeError, ValueError) as error:
         print(f"ERROR: {error}", file=sys.stderr)
         return 1
+
     print(f"Wrote {output}")
     if receipt:
         print(f"  {len(comparison_rows)} teams | {receipt['publication_status']}")
     else:
         print("  Preserved the existing approved PGO panel")
+    if fantasy_preview is not None:
+        eligible = sum(
+            row["ranking_eligible"] for row in fantasy_preview["rows"]
+        )
+        print(f"  {eligible} fantasy players | PREVIEW / HOLD")
     return 0
 
 
