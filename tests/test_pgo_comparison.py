@@ -627,6 +627,8 @@ class ComparisonTests(unittest.TestCase):
             "& $gitBash $playwrightCli --session pgo-fantasy-week1 eval",
             plan,
         )
+        self.assertNotIn(r'querySelector(\"', plan)
+        self.assertNotIn(r'querySelectorAll(\"', plan)
         self.assertIn("requests --static", plan)
         self.assertNotIn("pgo-fantasy-week1 network", plan)
 

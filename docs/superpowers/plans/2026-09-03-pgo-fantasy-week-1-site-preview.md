@@ -2028,7 +2028,7 @@ Expected read values: `1 player shown`, `14`, and `447 players shown`. Mutation 
 Exercise projection sorting, expanded columns, and top-level keyboard navigation:
 
 ~~~powershell
-$env:PGO_EVAL = 'document.querySelector(".fantasy-sort[data-column=\"5\"]").click()'
+$env:PGO_EVAL = 'document.querySelector(".fantasy-sort[data-column=5]").click()'
 & $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
 & $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
 $env:PGO_EVAL = 'document.querySelector(".fantasy-row:not([hidden])\u0020.fantasy-player").textContent.trim()'
