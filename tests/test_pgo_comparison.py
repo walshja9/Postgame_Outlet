@@ -814,6 +814,67 @@ class ComparisonTests(unittest.TestCase):
         self.assertIn("Historical Preseason 2026 snapshot locked", output)
         self.assertIn("2026-07-16T11:22:52-04:00", output)
 
+    def test_refresh_mccabe_preserves_published_fantasy_panel(self):
+        comparison_rows = [{
+            "team": "Los Angeles Rams", "mccabe_rank": 1, "mccabe_rating": 7.5,
+            "full_strength_rank": 2, "full_strength_rating": 6.653245,
+            "availability_adjustment": 0.0, "current_lineup_rank": 2,
+            "current_lineup_rating": 6.653245, "rank_disagreement": 1,
+            "rating_disagreement": -0.846755,
+        }]
+        current_rows = [{"team": "Los Angeles Rams", "abbr": "LAR", "rank": 3, "rating": 5.5}]
+        fantasy_panel = pgo_comparison.render_fantasy_panel(self._fantasy_preview())
+        published = pgo_comparison.inject_fantasy_preview(
+            pgo_comparison.inject_comparison(
+                self._base_html(),
+                pgo_comparison.render_comparison_panel(comparison_rows, self._held_receipt()),
+            ),
+            fantasy_panel,
+        )
+        with (
+            patch.object(pgo_comparison, "load_mccabe_rows", return_value=current_rows),
+            patch.object(pgo_comparison, "mccabe_source_timestamp", return_value="2026-09-04T12:00:00-04:00"),
+        ):
+            output = pgo_comparison.refresh_mccabe_page(self._base_html(), published)
+        self.assertIn(fantasy_panel, output)
+        self.assertEqual(output.count('id="tab-fantasy"'), 1)
+        self.assertEqual(output.count('id="panel-fantasy"'), 1)
+        self.assertEqual(output.count(pgo_comparison.FANTASY_CSS), 1)
+        self.assertEqual(output.count(pgo_comparison.FANTASY_SCRIPT), 1)
+        self.assertIn(pgo_comparison.FANTASY_TAB, output)
+        self.assertIn('<section class="panel active" id="panel-fantasy"', output)
+        self.assertNotIn('<section class="panel active" id="panel-comparison"', output)
+        self.assertIn('data-sort="3">3</td><td data-sort="5.5">+5.5', output)
+
+    def test_refresh_mccabe_rejects_invalid_fantasy_markers(self):
+        comparison_rows = [{
+            "team": "Los Angeles Rams", "mccabe_rank": 1, "mccabe_rating": 7.5,
+            "full_strength_rank": 2, "full_strength_rating": 6.653245,
+            "availability_adjustment": 0.0, "current_lineup_rank": 2,
+            "current_lineup_rating": 6.653245, "rank_disagreement": 1,
+            "rating_disagreement": -0.846755,
+        }]
+        current_rows = [{"team": "Los Angeles Rams", "abbr": "LAR", "rank": 3, "rating": 5.5}]
+        comparison = pgo_comparison.inject_comparison(
+            self._base_html(),
+            pgo_comparison.render_comparison_panel(comparison_rows, self._held_receipt()),
+        )
+        complete = pgo_comparison.inject_fantasy_preview(
+            comparison, pgo_comparison.render_fantasy_panel(self._fantasy_preview())
+        )
+        invalid_pages = (
+            comparison.replace(pgo_comparison.COMPARISON_TAB, pgo_comparison.COMPARISON_TAB + pgo_comparison.FANTASY_TAB, 1),
+            complete.replace(pgo_comparison.FANTASY_TAB, pgo_comparison.FANTASY_TAB + pgo_comparison.FANTASY_TAB, 1),
+        )
+        with (
+            patch.object(pgo_comparison, "load_mccabe_rows", return_value=current_rows),
+            patch.object(pgo_comparison, "mccabe_source_timestamp", return_value="2026-09-04T12:00:00-04:00"),
+        ):
+            for page in invalid_pages:
+                with self.subTest(page=page[:80]):
+                    with self.assertRaisesRegex(ValueError, "fantasy preview markers are incomplete or duplicated"):
+                        pgo_comparison.refresh_mccabe_page(self._base_html(), page)
+
     def test_comparison_team_labels_have_contrasting_backgrounds(self):
         self.assertIn(
             "#panel-comparison .comparison-table thead th:first-child {\n"

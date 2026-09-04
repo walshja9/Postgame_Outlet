@@ -953,16 +953,47 @@ def inject_fantasy_preview(existing_html, panel_html):
 
 
 def extract_comparison_panel(existing_html):
-    start_marker = '<section class="panel active" id="panel-comparison"'
-    start = existing_html.find(start_marker)
-    if start < 0:
+    identifier = 'id="panel-comparison"'
+    if existing_html.count(identifier) == 0:
         raise ValueError(
             "Existing public board has no PGO comparison panel; publish an approved PGO release first"
         )
+    start_markers = (
+        '<section class="panel active" id="panel-comparison"',
+        '<section class="panel" id="panel-comparison"',
+    )
+    matches = [marker for marker in start_markers if existing_html.count(marker) == 1]
+    if existing_html.count(identifier) != 1 or len(matches) != 1:
+        raise ValueError("Existing PGO comparison panel markers changed")
+    start = existing_html.find(matches[0])
     end_marker = "</section>"
     end = existing_html.find(end_marker, start)
     if end < 0:
         raise ValueError("Existing PGO comparison panel is incomplete")
+    return existing_html[start:end + len(end_marker)]
+
+
+def _extract_published_fantasy_panel(existing_html):
+    tab_count = existing_html.count('id="tab-fantasy"')
+    panel_count = existing_html.count('id="panel-fantasy"')
+    if tab_count == panel_count == 0:
+        return None
+    if (
+        tab_count != 1
+        or panel_count != 1
+        or existing_html.count(FANTASY_TAB) != 1
+        or existing_html.count(FANTASY_CSS) != 1
+        or existing_html.count(FANTASY_SCRIPT) != 1
+    ):
+        raise ValueError("Existing fantasy preview markers are incomplete or duplicated")
+    start_marker = '<section class="panel active" id="panel-fantasy"'
+    start = existing_html.find(start_marker)
+    end_marker = "</section>"
+    end = existing_html.find(end_marker, start)
+    if start < 0 or end < 0:
+        raise ValueError("Existing fantasy preview markers are incomplete or duplicated")
+    if start >= 2 and existing_html[start - 2:start] == "  ":
+        start -= 2
     return existing_html[start:end + len(end_marker)]
 
 
@@ -1110,12 +1141,29 @@ def _refresh_comparison_panel(panel_html, mccabe_rows, source_timestamp):
 
 def refresh_mccabe_page(base_html, existing_html, mccabe_path=MCCABE_PATH):
     mccabe_rows = load_mccabe_rows(mccabe_path)
+    fantasy_panel = _extract_published_fantasy_panel(existing_html)
+    comparison_panel = extract_comparison_panel(existing_html)
+    if fantasy_panel is not None:
+        inactive_start = '<section class="panel" id="panel-comparison"'
+        hidden_label = 'aria-labelledby="tab-comparison" hidden>'
+        if comparison_panel.count(inactive_start) != 1 or comparison_panel.count(hidden_label) != 1:
+            raise ValueError("Existing fantasy preview comparison state changed")
+        comparison_panel = (
+            comparison_panel.replace(
+                inactive_start,
+                '<section class="panel active" id="panel-comparison"',
+                1,
+            ).replace(hidden_label, 'aria-labelledby="tab-comparison">', 1)
+        )
     panel = _refresh_comparison_panel(
-        extract_comparison_panel(existing_html),
+        comparison_panel,
         mccabe_rows,
         mccabe_source_timestamp(mccabe_path),
     )
-    return inject_comparison(base_html, panel)
+    output = inject_comparison(base_html, panel)
+    if fantasy_panel is not None:
+        output = inject_fantasy_preview(output, fantasy_panel)
+    return output
 
 
 def parse_args(argv=None):
