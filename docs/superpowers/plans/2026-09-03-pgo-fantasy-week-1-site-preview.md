@@ -793,7 +793,7 @@ Add these tests to `ComparisonTests`:
 
         self.assertEqual(panel.count('class="fantasy-row"'), 4)
         self.assertNotIn("Buffalo Backup", panel)
-        self.assertEqual(panel.count('class="fantasy-view-button'), 6)
+        self.assertEqual(panel.count('class="fantasy-view-button"'), 6)
         self.assertIn(
             'data-view="SUPERFLEX" aria-pressed="true"',
             panel,
@@ -837,7 +837,7 @@ Add these tests to `ComparisonTests`:
         self.assertNotIn("<script>alert(1)</script>", panel)
 
     def test_fantasy_assets_cover_filters_sorting_columns_and_mobile(self):
-        self.assertIn("data-view", pgo_comparison.FANTASY_SCRIPT)
+        self.assertIn("dataset.view", pgo_comparison.FANTASY_SCRIPT)
         self.assertIn("fantasy-player-search", pgo_comparison.FANTASY_SCRIPT)
         self.assertIn("fantasy-team", pgo_comparison.FANTASY_SCRIPT)
         self.assertIn("fantasy-columns", pgo_comparison.FANTASY_SCRIPT)
@@ -1964,55 +1964,111 @@ Expected snapshot: `Fantasy Week 1` is the selected top-level tab; `PREVIEW / HO
 Use DOM-backed checks for exact counts and state:
 
 ~~~powershell
-& $gitBash $playwrightCli --session pgo-fantasy-week1 eval 'document.querySelector("#tab-fantasy").getAttribute("aria-selected")'
-& $gitBash $playwrightCli --session pgo-fantasy-week1 eval 'document.querySelector("#fantasy-result-count").textContent.trim()'
-& $gitBash $playwrightCli --session pgo-fantasy-week1 eval '(() => { document.querySelector("[data-view=\"QB\"]").click(); return document.querySelectorAll(".fantasy-row:not([hidden])").length; })()'
-& $gitBash $playwrightCli --session pgo-fantasy-week1 eval '(() => { document.querySelector("[data-view=\"RB\"]").click(); return document.querySelectorAll(".fantasy-row:not([hidden])").length; })()'
-& $gitBash $playwrightCli --session pgo-fantasy-week1 eval '(() => { document.querySelector("[data-view=\"WR\"]").click(); return document.querySelectorAll(".fantasy-row:not([hidden])").length; })()'
-& $gitBash $playwrightCli --session pgo-fantasy-week1 eval '(() => { document.querySelector("[data-view=\"TE\"]").click(); return document.querySelectorAll(".fantasy-row:not([hidden])").length; })()'
-& $gitBash $playwrightCli --session pgo-fantasy-week1 eval '(() => { document.querySelector("[data-view=\"FLEX\"]").click(); return document.querySelectorAll(".fantasy-row:not([hidden])").length; })()'
-& $gitBash $playwrightCli --session pgo-fantasy-week1 eval '(() => { document.querySelector("[data-view=\"SUPERFLEX\"]").click(); return document.querySelectorAll(".fantasy-row:not([hidden])").length; })()'
+$env:PGO_EVAL = 'document.querySelector("#tab-fantasy").getAttribute("aria-selected")'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'document.querySelector("#fantasy-result-count").textContent.trim()'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'document.querySelector("[data-view=QB]").click()'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'document.querySelectorAll(".fantasy-row:not([hidden])").length'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'document.querySelector("[data-view=RB]").click()'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'document.querySelectorAll(".fantasy-row:not([hidden])").length'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'document.querySelector("[data-view=WR]").click()'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'document.querySelectorAll(".fantasy-row:not([hidden])").length'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'document.querySelector("[data-view=TE]").click()'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'document.querySelectorAll(".fantasy-row:not([hidden])").length'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'document.querySelector("[data-view=FLEX]").click()'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'document.querySelectorAll(".fantasy-row:not([hidden])").length'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'document.querySelector("[data-view=SUPERFLEX]").click()'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'document.querySelectorAll(".fantasy-row:not([hidden])").length'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
 ~~~
 
-Expected values, in order: `true`, `447 players shown`, `32`, `113`, `182`, `120`, `415`, and `447`.
+Expected read values, in order: `true`, `447 players shown`, `32`, `113`, `182`, `120`, `415`, and `447`. Mutation calls may also print `undefined`.
 
 Exercise search and team filtering:
 
 ~~~powershell
-& $gitBash $playwrightCli --session pgo-fantasy-week1 eval '(() => { const input = document.querySelector("#fantasy-player-search"); input.value = "Trevor Lawrence"; input.dispatchEvent(new Event("input")); return document.querySelector("#fantasy-result-count").textContent.trim(); })()'
-& $gitBash $playwrightCli --session pgo-fantasy-week1 eval '(() => { const input = document.querySelector("#fantasy-player-search"); input.value = ""; input.dispatchEvent(new Event("input")); const select = document.querySelector("#fantasy-team"); select.value = "JAX"; select.dispatchEvent(new Event("change")); return document.querySelectorAll(".fantasy-row:not([hidden])").length; })()'
-& $gitBash $playwrightCli --session pgo-fantasy-week1 eval '(() => { const select = document.querySelector("#fantasy-team"); select.value = ""; select.dispatchEvent(new Event("change")); return document.querySelector("#fantasy-result-count").textContent.trim(); })()'
+$env:PGO_EVAL = 'document.querySelector("#fantasy-player-search").value="Trevor\u0020Lawrence"'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'document.querySelector("#fantasy-player-search").dispatchEvent(new/**/Event("input"))'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'document.querySelector("#fantasy-result-count").textContent.trim()'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'document.querySelector("#fantasy-player-search").value=""'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'document.querySelector("#fantasy-player-search").dispatchEvent(new/**/Event("input"))'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'document.querySelector("#fantasy-team").value="JAX"'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'document.querySelector("#fantasy-team").dispatchEvent(new/**/Event("change"))'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'document.querySelectorAll(".fantasy-row:not([hidden])").length'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'document.querySelector("#fantasy-team").value=""'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'document.querySelector("#fantasy-team").dispatchEvent(new/**/Event("change"))'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'document.querySelector("#fantasy-result-count").textContent.trim()'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
 ~~~
 
-Expected values: `1 player shown`, `14`, and `447 players shown`.
+Expected read values: `1 player shown`, `14`, and `447 players shown`. Mutation calls may also print their assigned value, `true`, or `undefined`.
 
 Exercise projection sorting, expanded columns, and top-level keyboard navigation:
 
 ~~~powershell
-& $gitBash $playwrightCli --session pgo-fantasy-week1 eval '(() => { const button = document.querySelector(".fantasy-sort[data-column=\"5\"]"); button.click(); button.click(); return document.querySelector(".fantasy-row:not([hidden]) .fantasy-player").textContent.trim(); })()'
-& $gitBash $playwrightCli --session pgo-fantasy-week1 eval '(() => { const box = document.querySelector("#fantasy-columns"); box.click(); return getComputedStyle(document.querySelector(".fantasy-technical")).display; })()'
-& $gitBash $playwrightCli --session pgo-fantasy-week1 eval 'document.querySelector("#tab-fantasy").focus()'
+$env:PGO_EVAL = 'document.querySelector(".fantasy-sort[data-column=\"5\"]").click()'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'document.querySelector(".fantasy-row:not([hidden])\u0020.fantasy-player").textContent.trim()'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'document.querySelector("#fantasy-columns").click()'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'getComputedStyle(document.querySelector(".fantasy-technical")).display'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'document.querySelector("#tab-fantasy").focus()'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
 & $gitBash $playwrightCli --session pgo-fantasy-week1 press ArrowRight
-& $gitBash $playwrightCli --session pgo-fantasy-week1 eval 'document.querySelector("#tab-ratings").getAttribute("aria-selected")'
+$env:PGO_EVAL = 'document.querySelector("#tab-ratings").getAttribute("aria-selected")'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
 & $gitBash $playwrightCli --session pgo-fantasy-week1 press ArrowLeft
-& $gitBash $playwrightCli --session pgo-fantasy-week1 eval 'document.querySelector("#tab-fantasy").getAttribute("aria-selected")'
+$env:PGO_EVAL = 'document.querySelector("#tab-fantasy").getAttribute("aria-selected")'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
 ~~~
 
-Expected values: `Trevor Lawrence`; a display value other than `none`; `true` for McCabe Ratings after ArrowRight; and `true` for Fantasy Week 1 after ArrowLeft. Visually confirm focus indicators remain visible.
+Expected read values: `Trevor Lawrence`; a display value other than `none`; `true` for McCabe Ratings after ArrowRight; and `true` for Fantasy Week 1 after ArrowLeft. Mutation calls may also print `undefined`. Visually confirm focus indicators remain visible.
 
 - [ ] **Step 8: Exercise mobile layout and close local processes**
 
 Run:
 
 ~~~powershell
-& $gitBash $playwrightCli --session pgo-fantasy-week1 eval 'document.querySelector("#fantasy-columns").click()'
+$env:PGO_EVAL = 'document.querySelector("#fantasy-columns").click()'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
 & $gitBash $playwrightCli --session pgo-fantasy-week1 resize 390 844
 & $gitBash $playwrightCli --session pgo-fantasy-week1 snapshot
-& $gitBash $playwrightCli --session pgo-fantasy-week1 eval 'document.documentElement.scrollWidth === document.documentElement.clientWidth'
-& $gitBash $playwrightCli --session pgo-fantasy-week1 eval 'document.querySelector("#panel-fantasy .fantasy-table").scrollWidth <= document.querySelector("#panel-fantasy .table-shell").clientWidth'
-& $gitBash $playwrightCli --session pgo-fantasy-week1 eval '(() => { document.querySelector("#fantasy-columns").click(); return document.documentElement.scrollWidth === document.documentElement.clientWidth; })()'
-& $gitBash $playwrightCli --session pgo-fantasy-week1 eval 'document.querySelector("#panel-fantasy .fantasy-table").scrollWidth > document.querySelector("#panel-fantasy .table-shell").clientWidth'
-& $gitBash $playwrightCli --session pgo-fantasy-week1 network
+$env:PGO_EVAL = 'document.documentElement.scrollWidth===document.documentElement.clientWidth'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'document.querySelector("#panel-fantasy\u0020.fantasy-table").scrollWidth<=document.querySelector("#panel-fantasy\u0020.table-shell").clientWidth'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'document.querySelector("#fantasy-columns").click()'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'document.documentElement.scrollWidth===document.documentElement.clientWidth'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+$env:PGO_EVAL = 'document.querySelector("#panel-fantasy\u0020.fantasy-table").scrollWidth>document.querySelector("#panel-fantasy\u0020.table-shell").clientWidth'
+& $gitBash -lc '"$1" --session pgo-fantasy-week1 eval "$PGO_EVAL"' _ $playwrightCli
+& $gitBash $playwrightCli --session pgo-fantasy-week1 requests --static
 & $gitBash $playwrightCli --session pgo-fantasy-week1 close
 Stop-Process -Id $server.Id
 ~~~

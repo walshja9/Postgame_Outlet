@@ -334,8 +334,13 @@ FANTASY_CSS = """
 }
 #panel-fantasy .fantasy-table th:nth-child(2),
 #panel-fantasy .fantasy-table td:nth-child(2) { text-align:left; }
-#panel-fantasy .fantasy-player {
+#panel-fantasy .fantasy-table tbody .fantasy-player {
+  background:transparent; border-bottom:0; color:inherit; font:inherit;
+  letter-spacing:normal; text-transform:none; user-select:text;
   text-align:left; white-space:normal; overflow-wrap:anywhere;
+}
+#panel-fantasy .fantasy-table tbody .fantasy-player:hover {
+  background:transparent; color:inherit;
 }
 #panel-fantasy .fantasy-technical { display:none; }
 #panel-fantasy.show-technical .fantasy-technical { display:table-cell; }

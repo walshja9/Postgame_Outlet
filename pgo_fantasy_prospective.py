@@ -942,6 +942,11 @@ def verify_week1_preview(preview):
         or preview["teams_missing"] != []
     ):
         raise ValueError("Fantasy Week 1 preview metadata is invalid")
+    if (
+        not isinstance(preview["generated_at"], str)
+        or preview["generated_at"] != preview["generated_at"].strip()
+    ):
+        raise ValueError("Fantasy Week 1 preview generated_at is invalid")
     parse_timestamp(preview["generated_at"], "fantasy preview generated_at")
 
     expected_coverage = {
@@ -1010,10 +1015,22 @@ def verify_week1_preview(preview):
             raise ValueError("Fantasy Week 1 preview row context is invalid")
 
         for field in ("null_prediction", "strong_prediction"):
-            if type(row[field]) not in (int, float) or not math.isfinite(row[field]):
+            try:
+                valid = (
+                    type(row[field]) in (int, float)
+                    and math.isfinite(float(row[field]))
+                )
+            except OverflowError as error:
+                raise ValueError(
+                    f"Fantasy Week 1 preview {field} is invalid"
+                ) from error
+            if not valid:
                 raise ValueError(
                     f"Fantasy Week 1 preview {field} is invalid"
                 )
+        delta = float(row["strong_prediction"]) - float(row["null_prediction"])
+        if not math.isfinite(delta):
+            raise ValueError("Fantasy Week 1 preview projection delta is invalid")
 
         if row["position"] == "QB":
             if (

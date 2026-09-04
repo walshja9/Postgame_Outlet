@@ -1196,6 +1196,12 @@ class ProspectiveWeek1PreviewLoadTests(
                 "timestamp",
                 lambda value: value.update(generated_at="2026-09-03"),
             ),
+            (
+                "padded-timestamp",
+                lambda value: value.update(
+                    generated_at=" 2026-09-03T13:52:56-04:00 "
+                ),
+            ),
             ("teams", lambda value: value["teams_processed"].pop()),
             (
                 "depth-coverage",
@@ -1240,6 +1246,61 @@ class ProspectiveWeek1PreviewLoadTests(
             )
             with self.assertRaisesRegex(ValueError, "metadata"):
                 prospective.load_week1_preview(corrupt_path)
+
+    def test_week1_preview_loader_rejects_oversized_integer_projection(self):
+        preview = self.week1_site_preview()
+        preview["rows"][0]["strong_prediction"] = 10**1000
+        self.rehash_preview(preview)
+        with tempfile.TemporaryDirectory() as directory:
+            path = self.write_json(
+                Path(directory) / "oversized.json",
+                preview,
+                canonical=True,
+            )
+            with self.assertRaisesRegex(
+                ValueError, "strong_prediction is invalid"
+            ):
+                prospective.load_week1_preview(path)
+
+    def test_week1_preview_loader_rejects_overflowing_projection_delta(self):
+        preview = self.week1_site_preview()
+        preview["rows"][0].update(
+            null_prediction=-1e308,
+            strong_prediction=1e308,
+        )
+        self.rehash_preview(preview)
+        with tempfile.TemporaryDirectory() as directory:
+            path = self.write_json(
+                Path(directory) / "overflowing-delta.json",
+                preview,
+                canonical=True,
+            )
+            with self.assertRaisesRegex(ValueError, "projection delta is invalid"):
+                prospective.load_week1_preview(path)
+
+    def test_week1_preview_loader_requires_one_eligible_qb_per_team(self):
+        preview = self.week1_site_preview()
+        missing_team = preview["teams_processed"][-1]
+        preview["rows"] = prospective.rank_rows([
+            row for row in preview["rows"]
+            if not (
+                row["team"] == missing_team
+                and row["position"] == "QB"
+                and row["ranking_eligible"]
+            )
+        ])
+        self.rehash_preview(preview)
+        with tempfile.TemporaryDirectory() as directory:
+            path = self.write_json(
+                Path(directory) / "missing-eligible-qb.json",
+                preview,
+                canonical=True,
+            )
+            with self.assertRaisesRegex(
+                ValueError,
+                "Fantasy Week 1 preview requires one eligible QB per team",
+            ):
+                prospective.load_week1_preview(path)
 
     def test_week1_preview_loader_rejects_row_and_rank_drift(self):
         def first_row(value, predicate):

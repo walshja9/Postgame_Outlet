@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 import pgo_challenger
 import pgo_comparison
+from tests.test_pgo_fantasy_prospective import ProspectiveFantasyFixture
 
 
 class ComparisonTests(unittest.TestCase):
@@ -562,15 +563,72 @@ class ComparisonTests(unittest.TestCase):
         self.assertNotIn("qb-buf", panel)
 
     def test_fantasy_panel_escapes_source_text(self):
-        panel = pgo_comparison.render_fantasy_panel(
-            self._fantasy_preview()
-        )
+        preview = self._fantasy_preview()
+        preview["rows"][0]["player_name"] = 'D\'Andre "Quoted" & Sons'
+        panel = pgo_comparison.render_fantasy_panel(preview)
 
         self.assertIn(
             "Rookie &lt;script&gt;alert(1)&lt;/script&gt;",
             panel,
         )
         self.assertNotIn("<script>alert(1)</script>", panel)
+        self.assertIn("D&#x27;Andre &quot;Quoted&quot; &amp; Sons", panel)
+        self.assertIn(
+            'data-player="d&#x27;andre &quot;quoted&quot; &amp; sons"',
+            panel,
+        )
+        self.assertNotIn('data-player="d\'andre "quoted" & sons"', panel)
+
+    def test_fantasy_player_row_header_resets_shell_header_presentation(self):
+        self.assertIn(
+            """#panel-fantasy .fantasy-table tbody .fantasy-player {
+  background:transparent; border-bottom:0; color:inherit; font:inherit;
+  letter-spacing:normal; text-transform:none; user-select:text;
+  text-align:left; white-space:normal; overflow-wrap:anywhere;
+}
+#panel-fantasy .fantasy-table tbody .fantasy-player:hover {
+  background:transparent; color:inherit;
+}""",
+            pgo_comparison.FANTASY_CSS,
+        )
+
+    def test_canonical_week1_preview_loads_into_real_renderer(self):
+        fixture = ProspectiveFantasyFixture()
+        preview = fixture.week1_site_preview()
+        with tempfile.TemporaryDirectory() as directory:
+            path = fixture.write_json(
+                Path(directory) / "preview.json",
+                preview,
+                canonical=True,
+            )
+            loaded = pgo_comparison.fantasy_prospective.load_week1_preview(path)
+
+        panel = pgo_comparison.render_fantasy_panel(loaded)
+        self.assertIn('id="panel-fantasy"', panel)
+        self.assertEqual(panel.count('class="fantasy-row"'), 35)
+        self.assertIn(preview["artifact_sha256"], panel)
+
+    def test_fantasy_plan_uses_replayable_playwright_commands(self):
+        plan = (
+            Path(__file__).parents[1]
+            / "docs"
+            / "superpowers"
+            / "plans"
+            / "2026-09-03-pgo-fantasy-week-1-site-preview.md"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn('panel.count(\'class="fantasy-view-button"\')', plan)
+        self.assertIn('self.assertIn("dataset.view", pgo_comparison.FANTASY_SCRIPT)', plan)
+        self.assertIn(
+            "& $gitBash -lc '\"$1\" --session pgo-fantasy-week1 eval \"$PGO_EVAL\"' _ $playwrightCli",
+            plan,
+        )
+        self.assertNotIn(
+            "& $gitBash $playwrightCli --session pgo-fantasy-week1 eval",
+            plan,
+        )
+        self.assertIn("requests --static", plan)
+        self.assertNotIn("pgo-fantasy-week1 network", plan)
 
     def test_fantasy_assets_cover_filters_sorting_columns_and_mobile(self):
         self.assertIn("dataset.view", pgo_comparison.FANTASY_SCRIPT)
