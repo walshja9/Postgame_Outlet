@@ -79,7 +79,7 @@ class ShopifyThemeTests(unittest.TestCase):
         )
         self.assertEqual("dynasty", template["sections"]["dynasty"]["settings"]["required_tag"])
         self.assertEqual("dfs", template["sections"]["dfs"]["settings"]["required_tag"])
-        self.assertEqual("/pages/accountability", template["sections"]["accountability"]["settings"]["button_link"])
+        self.assertEqual("https://walshja9.github.io/Postgame_Outlet/forecast-lab.html", template["sections"]["accountability"]["settings"]["button_link"])
         self.assertEqual(4, template["sections"]["merch"]["settings"]["products_to_show"])
 
     def test_featured_story_supports_reviewed_status_without_requiring_it(self):
@@ -126,7 +126,7 @@ class ShopifyThemeTests(unittest.TestCase):
 
     def test_featured_story_uses_a_high_contrast_focus_outline(self):
         css = text("assets/postgame-content.css")
-        self.assertRegex(css, r"\.postgame-featured-story :focus-visible\s*\{\s*outline: 0\.3rem solid var\(--postgame-navy\);")
+        self.assertRegex(css, r"\.postgame-featured-story :focus-visible\s*\{\s*outline: 0\.3rem solid var\(--postgame-highlight\);")
 
     def test_ratings_preview_counts_only_renderable_movers(self):
         section = text("sections/postgame-ratings-preview.liquid")
@@ -150,12 +150,12 @@ class ShopifyThemeTests(unittest.TestCase):
         self.assertEqual("/blogs/poweratings", settings["archive_link"])
         self.assertLess(section.index("<h1"), section.index("<iframe"))
         for value in (
-            "A Power Rating estimates",
-            "PGO v1",
-            "McCabe's human rating",
-            "never blended",
-            "hypothetical full-strength roster",
-            "current-lineup",
+            "Sean McCabe's human-set rating",
+            "quarterback, non-QB offense, and defense",
+            "neutral-field points",
+            "independent PGO model",
+            "point interpretation remains experimental",
+            "PGO vs McCabe compares their ranks",
             "section.settings.status_label",
             "data-postgame-ratings-frame",
         ):

@@ -13,8 +13,8 @@
     <p class="postgame-meta">Edition details will appear after editorial review.</p>
   {%- endif -%}
   </div>
-  <p>A Power Rating estimates how many points stronger or weaker a team is than a league-average team on a neutral field.</p>
-  <p>Sean McCabe's human rating leads the board, combining quarterback, offense, and defense values. PGO v1 statistical team ratings and Week 1 fantasy projections have their own tabs; these products are never blended. PGO v1 represents a hypothetical full-strength roster, while its current-lineup view applies documented availability adjustments.</p>
+  <p>Sean McCabe's human-set rating adds quarterback, non-QB offense, and defense values in neutral-field points. A +7.0 rating means he would favor that team by about a touchdown against a league-average opponent on a neutral field.</p>
+  <p>McCabe leads the board. The independent PGO model is trained on game margins, but its point interpretation remains experimental. PGO vs McCabe compares their ranks and explains the model's saved contributions; it does not treat a difference between their numbers as an established game price. Fantasy Week 1 has its own tab.</p>
   {%- if section.settings.methodology_link != blank or section.settings.accountability_link != blank or section.settings.archive_link != blank -%}
     <nav class="postgame-ratings__links" aria-label="Power Ratings links">
       {%- if section.settings.methodology_link != blank -%}<a href="{{ section.settings.methodology_link }}">Methodology</a>{%- endif -%}

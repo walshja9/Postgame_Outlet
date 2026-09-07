@@ -114,10 +114,10 @@
         "pending": {
           "type": "column",
           "settings": {
-            "title": "No published calls yet",
-            "text": "<p>Reviewed forecasts will appear here when available.</p>",
-            "link_label": "",
-            "link": ""
+            "title": "Forecast Lab - Experimental",
+            "text": "<p>All 272 forecasts are preserved in a dated record. Reviewed results will be added after games are final, alongside the baseline. McCabe ratings and editorial staff picks remain separate.</p>",
+            "link_label": "See the frozen 2026 forecasts",
+            "link": "https://walshja9.github.io/Postgame_Outlet/forecast-lab.html"
           }
         }
       },
@@ -125,15 +125,15 @@
         "pending"
       ],
       "settings": {
-        "title": "Recent accountable calls",
+        "title": "Can PGO predict football?",
         "heading_size": "h1",
         "image_width": "full",
         "image_ratio": "adapt",
         "columns_desktop": 3,
         "column_alignment": "left",
         "background_style": "primary",
-        "button_label": "Open the accountability ledger",
-        "button_link": "/pages/accountability",
+        "button_label": "Open the Forecast Lab",
+        "button_link": "https://walshja9.github.io/Postgame_Outlet/forecast-lab.html",
         "color_scheme": "scheme-1",
         "columns_mobile": "1",
         "swipe_on_mobile": false,
