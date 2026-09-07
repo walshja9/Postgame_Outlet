@@ -1,3 +1,4 @@
+import csv
 import hashlib
 import json
 import unittest
@@ -99,6 +100,19 @@ class ShopifyThemeTests(unittest.TestCase):
         ):
             self.assertIn(value, section)
 
+    def test_homepage_preview_matches_mccabes_current_top_five(self):
+        with (ROOT / "data/ratings.csv").open(encoding="utf-8", newline="") as handle:
+            rows = list(csv.DictReader(handle))
+        score = lambda row: round(sum(float(row[key] or 0) for key in ("qb_value", "off_value", "def_value")), 1)
+        expected = sorted(rows, key=lambda row: -score(row))[:5]
+        preview = data("templates/index.json")["sections"]["ratings_preview"]
+        self.assertEqual("Sean McCabe", preview["settings"]["author"])
+        actual = [preview["blocks"][key]["settings"] for key in preview["block_order"]]
+        self.assertEqual(
+            [(str(i), row["team"], f"{score(row):+.1f}") for i, row in enumerate(expected, 1)],
+            [(row["ordinal"], row["team"], row["rating"]) for row in actual],
+        )
+
     def test_preview_navigation_footer_and_email_are_isolated(self):
         header = data("sections/header-group.json")
         footer = data("sections/footer-group.json")
@@ -112,8 +126,7 @@ class ShopifyThemeTests(unittest.TestCase):
 
     def test_featured_story_uses_a_high_contrast_focus_outline(self):
         css = text("assets/postgame-content.css")
-        self.assertIn(".postgame-featured-story :focus-visible", css)
-        self.assertIn("outline: 0.3rem solid var(--postgame-orange)", css)
+        self.assertRegex(css, r"\.postgame-featured-story :focus-visible\s*\{\s*outline: 0\.3rem solid var\(--postgame-navy\);")
 
     def test_ratings_preview_counts_only_renderable_movers(self):
         section = text("sections/postgame-ratings-preview.liquid")

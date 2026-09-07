@@ -6,7 +6,7 @@
   {%- if section.settings.author != blank or section.settings.published_at != blank or section.settings.updated_at != blank -%}
     <p class="postgame-meta">
       {%- if section.settings.author != blank -%}By {{ section.settings.author | escape }}{%- endif -%}
-      {%- if section.settings.published_at != blank -%} · Published {{ section.settings.published_at | escape }}{%- endif -%}
+      {%- if section.settings.published_at != blank -%} · Data as of {{ section.settings.published_at | escape }}{%- endif -%}
       {%- if section.settings.updated_at != blank -%} · Updated {{ section.settings.updated_at | escape }}{%- endif -%}
     </p>
   {%- else -%}
@@ -14,7 +14,7 @@
   {%- endif -%}
   </div>
   <p>A Power Rating estimates how many points stronger or weaker a team is than a league-average team on a neutral field.</p>
-  <p>PGO v1 is Postgame Outlet's primary statistical team rating. McCabe's human rating remains available as a separate comparison; the two are never blended. The default board represents a hypothetical full-strength roster, while the current-lineup view applies documented availability adjustments.</p>
+  <p>Sean McCabe's human rating leads the board, combining quarterback, offense, and defense values. PGO v1 statistical team ratings and Week 1 fantasy projections have their own tabs; these products are never blended. PGO v1 represents a hypothetical full-strength roster, while its current-lineup view applies documented availability adjustments.</p>
   {%- if section.settings.methodology_link != blank or section.settings.accountability_link != blank or section.settings.archive_link != blank -%}
     <nav class="postgame-ratings__links" aria-label="Power Ratings links">
       {%- if section.settings.methodology_link != blank -%}<a href="{{ section.settings.methodology_link }}">Methodology</a>{%- endif -%}
@@ -42,7 +42,7 @@
   "settings": [
     { "type": "text", "id": "edition", "label": "Edition" },
     { "type": "text", "id": "author", "label": "Author" },
-    { "type": "text", "id": "published_at", "label": "Published time" },
+    { "type": "text", "id": "published_at", "label": "Data as of" },
     { "type": "text", "id": "updated_at", "label": "Updated time" },
     { "type": "text", "id": "status_label", "label": "Status label" },
     { "type": "richtext", "id": "summary", "label": "Current-edition summary" },

@@ -17,7 +17,7 @@
         "announcement_CWhqA3": {
           "type": "announcement",
           "settings": {
-            "text": "Week 1 fantasy board: official practice reports are in",
+            "text": "Sean McCabe's 2026 NFL Power Ratings",
             "link": "/pages/power-ratings"
           }
         },
@@ -34,7 +34,7 @@
         "announcement_48WwUb"
       ],
       "settings": {
-        "color_scheme": "scheme-2",
+        "color_scheme": "scheme-pgo-orange",
         "show_line_separator": true,
         "show_social": false,
         "auto_rotate": true,

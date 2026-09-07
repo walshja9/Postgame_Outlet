@@ -144,57 +144,55 @@
     },
     "content_for_index": [],
     "blocks": {
-      "6478312753674380289": {
-        "type": "shopify://apps/gempages-builder/blocks/embed-gp-script-head/20b379d4-1b20-474c-a6ca-665c331919f3",
-        "disabled": false,
-        "settings": {}
-      },
-      "855628211100114053": {
-        "type": "shopify://apps/klaviyo-email-marketing-sms/blocks/klaviyo-onsite-embed/2632fe16-c075-4321-a88b-50b567f42507",
-        "disabled": false,
-        "settings": {}
-      },
-      "16936614187718193802": {
-        "type": "shopify://apps/multifeeds/blocks/app_embed/f3e7ca1d-2d5a-45a7-97dd-2fd45843acef",
-        "disabled": false,
-        "settings": {}
-      },
       "15683396631634586217": {
-        "type": "shopify://apps/inbox/blocks/chat/841fc607-4181-4ad1-842d-e24d7f8bad6b",
         "disabled": false,
         "settings": {
+          "greeting_message": "",
           "button_color": "#000000",
-          "secondary_color": "#FFFFFF",
-          "ternary_color": "#6A6A6A",
           "button_icon": "chat_bubble",
           "button_text": "chat_with_us",
           "button_horizontal_position": "bottom_right",
-          "button_vertical_position": "lowest",
-          "greeting_message": ""
-        }
+          "button_vertical_position": "lowest"
+        },
+        "type": "shopify://apps/inbox/blocks/chat/841fc607-4181-4ad1-842d-e24d7f8bad6b"
+      },
+      "16936614187718193802": {
+        "disabled": false,
+        "settings": {},
+        "type": "shopify://apps/multifeeds/blocks/app_embed/f3e7ca1d-2d5a-45a7-97dd-2fd45843acef"
+      },
+      "6478312753674380289": {
+        "disabled": false,
+        "settings": {},
+        "type": "shopify://apps/gempages-builder/blocks/embed-gp-script-head/20b379d4-1b20-474c-a6ca-665c331919f3"
+      },
+      "855628211100114053": {
+        "disabled": false,
+        "settings": {},
+        "type": "shopify://apps/klaviyo-email-marketing-sms/blocks/klaviyo-onsite-embed/2632fe16-c075-4321-a88b-50b567f42507"
       }
     },
     "color_schemes": {
       "scheme-1": {
         "settings": {
-          "background": "#ffffff",
+          "background": "#fff9f0",
           "background_gradient": "",
-          "text": "#121212",
-          "button": "#fce477",
-          "button_label": "#121212",
-          "secondary_button_label": "#121212",
-          "shadow": "#121212"
+          "text": "#101f3c",
+          "button": "#ff7a1a",
+          "button_label": "#101f3c",
+          "secondary_button_label": "#101f3c",
+          "shadow": "#101f3c"
         }
       },
       "scheme-2": {
         "settings": {
-          "background": "#384f6f",
+          "background": "#101f3c",
           "background_gradient": "",
-          "text": "#fdfdfd",
-          "button": "#121212",
-          "button_label": "#f3f3f3",
-          "secondary_button_label": "#121212",
-          "shadow": "#121212"
+          "text": "#fff9f0",
+          "button": "#ff7a1a",
+          "button_label": "#101f3c",
+          "secondary_button_label": "#fff9f0",
+          "shadow": "#101f3c"
         }
       },
       "scheme-3": {
@@ -232,24 +230,35 @@
       },
       "scheme-d0e50468-479c-48b5-abd4-e091b2b42030": {
         "settings": {
-          "background": "#ffffff",
+          "background": "#fff9f0",
           "background_gradient": "",
-          "text": "#384f6f",
-          "button": "#fd962f",
-          "button_label": "#ffffff",
-          "secondary_button_label": "#121212",
-          "shadow": "#121212"
+          "text": "#101f3c",
+          "button": "#ff7a1a",
+          "button_label": "#101f3c",
+          "secondary_button_label": "#101f3c",
+          "shadow": "#101f3c"
         }
       },
       "scheme-79e55971-428f-4f46-a923-cbc81d901911": {
         "settings": {
-          "background": "#384f6f",
+          "background": "#101f3c",
           "background_gradient": "",
-          "text": "#fdfdfd",
-          "button": "#fd962f",
-          "button_label": "#fdfdfd",
-          "secondary_button_label": "#121212",
-          "shadow": "#121212"
+          "text": "#fff9f0",
+          "button": "#ff7a1a",
+          "button_label": "#101f3c",
+          "secondary_button_label": "#fff9f0",
+          "shadow": "#101f3c"
+        }
+      },
+      "scheme-pgo-orange": {
+        "settings": {
+          "background": "#ff7a1a",
+          "background_gradient": "",
+          "text": "#101f3c",
+          "button": "#101f3c",
+          "button_label": "#fff9f0",
+          "secondary_button_label": "#101f3c",
+          "shadow": "#101f3c"
         }
       }
     }

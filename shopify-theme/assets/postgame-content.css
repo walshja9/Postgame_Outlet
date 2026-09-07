@@ -1,8 +1,8 @@
 :root {
-  --postgame-navy: #263b58;
-  --postgame-slate: #384f6f;
-  --postgame-orange: #fd962f;
-  --postgame-soft: #f5f7fa;
+  --postgame-navy: #101f3c;
+  --postgame-slate: #334766;
+  --postgame-orange: #ff7a1a;
+  --postgame-soft: #fff4e4;
   --postgame-hold: #fff7ed;
 }
 
@@ -29,8 +29,10 @@
   gap: 2.4rem;
   align-items: center;
   padding: 2.4rem;
-  color: #fff;
-  background: linear-gradient(135deg, var(--postgame-navy), var(--postgame-slate));
+  color: var(--postgame-navy);
+  background: linear-gradient(115deg, transparent 73%, #ffffff30 73%, #ffffff30 80%, transparent 80%),
+    linear-gradient(110deg, var(--postgame-orange), #ffb350);
+  border-bottom: 0.6rem solid var(--postgame-navy);
 }
 
 .postgame-featured-story img {
@@ -40,10 +42,17 @@
 }
 
 .postgame-featured-story .postgame-kicker,
-.postgame-featured-story .postgame-meta { color: #fff; }
+.postgame-featured-story .postgame-meta { color: var(--postgame-navy); }
 
 .postgame-featured-story h1,
-.postgame-featured-story h1 a { color: #fff; }
+.postgame-featured-story h1 a { color: var(--postgame-navy); }
+
+.postgame-featured-story .postgame-kicker::before { color: var(--postgame-navy); }
+
+.postgame-featured-story .button {
+  --color-button: 16, 31, 60;
+  --color-button-text: 255, 249, 240;
+}
 
 .postgame-card,
 .postgame-takeaway {
@@ -51,12 +60,40 @@
   border-top: 0.4rem solid var(--postgame-orange);
   border-radius: 0.8rem;
   padding: 2rem;
+  background: #fff9f0;
+}
+
+.postgame-grid--5 .postgame-card {
+  background: var(--postgame-navy);
+  color: #fff9f0;
+  border-color: var(--postgame-navy);
+  border-top-color: var(--postgame-orange);
+}
+
+.postgame-grid--5 .postgame-card > strong {
+  font-family: var(--font-heading-family);
+  font-size: 2.2rem;
+}
+
+.postgame-grid--5 .postgame-card > span:first-of-type {
+  color: #ffac62;
+  font-size: 2.1rem;
+  font-weight: 700;
+}
+
+.postgame-grid--5 .postgame-card > span:last-of-type { font-size: 1.3rem; }
+
+.postgame-shell > h2 {
+  border-left: 0.5rem solid var(--postgame-orange);
+  padding-left: 1.2rem;
 }
 
 .postgame-model-status {
   margin: 1.6rem 0;
   padding: 1.2rem;
   border: 0.1rem solid var(--postgame-orange);
+  background: var(--postgame-navy);
+  color: #fff9f0;
 }
 
 .postgame-model-status__label {
@@ -64,7 +101,7 @@
   padding: 0.3rem 0.8rem;
   border: 0.1rem solid var(--postgame-orange);
   border-radius: 999px;
-  color: var(--postgame-orange);
+  color: #ffac62;
 }
 
 .postgame-model-status p { margin: 0.8rem 0 0; }
@@ -90,9 +127,11 @@
 
 .postgame-article-deck { margin: 1.2rem 0 0; }
 
+.postgame-kicker { font-weight: 700; }
+
 .postgame-meta a:focus-visible,
 .postgame-takeaway a:focus-visible {
-  outline: 0.3rem solid var(--postgame-orange);
+  outline: 0.3rem solid var(--postgame-navy);
   outline-offset: 0.3rem;
 }
 
@@ -115,7 +154,7 @@
   min-height: 160rem;
   border: 0;
   /* visible while the embedded app loads; its own background covers this */
-  background: #f4f6fa;
+  background: var(--postgame-soft);
   border-radius: 0.8rem;
 }
 
@@ -158,6 +197,10 @@
 }
 
 .postgame-featured-story :focus-visible {
+  outline: 0.3rem solid var(--postgame-navy);
+}
+
+.postgame-model-status :focus-visible {
   outline: 0.3rem solid var(--postgame-orange);
 }
 

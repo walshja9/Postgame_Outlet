@@ -21,21 +21,21 @@
     "ratings_preview": {
       "type": "postgame-ratings-preview",
       "blocks": {
-        "new_england": {
-          "type": "team",
-          "settings": {
-            "ordinal": "1",
-            "team": "New England",
-            "rating": "+7.0",
-            "movement": "Not available"
-          }
-        },
         "los_angeles_rams": {
           "type": "team",
           "settings": {
-            "ordinal": "2",
+            "ordinal": "1",
             "team": "Los Angeles Rams",
-            "rating": "+6.7",
+            "rating": "+7.3",
+            "movement": "Not available"
+          }
+        },
+        "buffalo": {
+          "type": "team",
+          "settings": {
+            "ordinal": "2",
+            "team": "Buffalo Bills",
+            "rating": "+7.0",
             "movement": "Not available"
           }
         },
@@ -43,41 +43,41 @@
           "type": "team",
           "settings": {
             "ordinal": "3",
-            "team": "Seattle",
-            "rating": "+6.4",
-            "movement": "Not available"
-          }
-        },
-        "jacksonville": {
-          "type": "team",
-          "settings": {
-            "ordinal": "4",
-            "team": "Jacksonville",
-            "rating": "+6.3",
+            "team": "Seattle Seahawks",
+            "rating": "+6.0",
             "movement": "Not available"
           }
         },
         "baltimore": {
           "type": "team",
           "settings": {
+            "ordinal": "4",
+            "team": "Baltimore Ravens",
+            "rating": "+5.5",
+            "movement": "Not available"
+          }
+        },
+        "cincinnati": {
+          "type": "team",
+          "settings": {
             "ordinal": "5",
-            "team": "Baltimore",
-            "rating": "+5.2",
+            "team": "Cincinnati Bengals",
+            "rating": "+5.0",
             "movement": "Not available"
           }
         }
       },
       "block_order": [
-        "new_england",
         "los_angeles_rams",
+        "buffalo",
         "seattle",
-        "jacksonville",
-        "baltimore"
+        "baltimore",
+        "cincinnati"
       ],
       "settings": {
-        "edition": "PGO v1 · 2026 preseason · Experimental model — HOLD",
-        "author": "Postgame Outlet Model",
-        "published_at": "July 21, 2026",
+        "edition": "2026 preseason · Human power ratings",
+        "author": "Sean McCabe",
+        "published_at": "August 18, 2026",
         "ratings_link": "/pages/power-ratings"
       }
     },
@@ -121,7 +121,9 @@
           }
         }
       },
-      "block_order": ["pending"],
+      "block_order": [
+        "pending"
+      ],
       "settings": {
         "title": "Recent accountable calls",
         "heading_size": "h1",
@@ -149,7 +151,9 @@
           }
         }
       },
-      "block_order": ["klaviyo_email_marketing_sms_form_embed_block_eRT8Yd"],
+      "block_order": [
+        "klaviyo_email_marketing_sms_form_embed_block_eRT8Yd"
+      ],
       "settings": {
         "include_margins": true
       }
