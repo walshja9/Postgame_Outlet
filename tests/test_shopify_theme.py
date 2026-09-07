@@ -132,7 +132,7 @@ class ShopifyThemeTests(unittest.TestCase):
             self.assertNotIn("default", setting, setting_id)
         settings = template["sections"]["main"]["settings"]
         self.assertEqual("https://walshja9.github.io/Postgame_Outlet/", settings["ratings_url"])
-        self.assertEqual("/pages/methodology-preview", settings["methodology_link"])
+        self.assertEqual("/pages/methodology", settings["methodology_link"])
         self.assertEqual("/pages/accountability", settings["accountability_link"])
         self.assertEqual("/blogs/poweratings", settings["archive_link"])
         self.assertLess(section.index("<h1"), section.index("<iframe"))

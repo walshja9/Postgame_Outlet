@@ -27,7 +27,7 @@
   <h2 id="ratings-preview-{{ section.id }}">NFL Power Ratings</h2>
   {%- if release_ready -%}
     <p class="postgame-kicker">{{ section.settings.edition | escape }}</p>
-    <p class="postgame-meta">By {{ section.settings.author | escape }} · Published {{ section.settings.published_at | escape }}</p>
+    <p class="postgame-meta">By {{ section.settings.author | escape }} · Data as of {{ section.settings.published_at | escape }}</p>
     <p>Rating points represent neutral-field strength versus a league-average team.</p>
     <ol class="postgame-grid postgame-grid--5">
       {%- for block in section.blocks -%}
@@ -71,7 +71,7 @@
   "settings": [
     { "type": "text", "id": "edition", "label": "Edition" },
     { "type": "text", "id": "author", "label": "Author" },
-    { "type": "text", "id": "published_at", "label": "Published time" },
+    { "type": "text", "id": "published_at", "label": "Data as of" },
     { "type": "url", "id": "ratings_link", "label": "Ratings page" }
   ],
   "blocks": [

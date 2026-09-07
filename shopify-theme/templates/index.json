@@ -12,19 +12,73 @@
     "featured_story": {
       "type": "postgame-featured-story",
       "settings": {
-        "article": "",
-        "status_label": "",
-        "status_body": "",
+        "article": "poweratings/week-1-fantasy-preview-official-practice-reports-are-in",
+        "status_label": "Experimental model — HOLD",
+        "status_body": "Official practice-report notes annotate frozen projections and do not establish game-day availability.",
         "color_scheme": "scheme-1"
       }
     },
     "ratings_preview": {
       "type": "postgame-ratings-preview",
+      "blocks": {
+        "new_england": {
+          "type": "team",
+          "settings": {
+            "ordinal": "1",
+            "team": "New England",
+            "rating": "+7.0",
+            "movement": "Not available"
+          }
+        },
+        "los_angeles_rams": {
+          "type": "team",
+          "settings": {
+            "ordinal": "2",
+            "team": "Los Angeles Rams",
+            "rating": "+6.7",
+            "movement": "Not available"
+          }
+        },
+        "seattle": {
+          "type": "team",
+          "settings": {
+            "ordinal": "3",
+            "team": "Seattle",
+            "rating": "+6.4",
+            "movement": "Not available"
+          }
+        },
+        "jacksonville": {
+          "type": "team",
+          "settings": {
+            "ordinal": "4",
+            "team": "Jacksonville",
+            "rating": "+6.3",
+            "movement": "Not available"
+          }
+        },
+        "baltimore": {
+          "type": "team",
+          "settings": {
+            "ordinal": "5",
+            "team": "Baltimore",
+            "rating": "+5.2",
+            "movement": "Not available"
+          }
+        }
+      },
+      "block_order": [
+        "new_england",
+        "los_angeles_rams",
+        "seattle",
+        "jacksonville",
+        "baltimore"
+      ],
       "settings": {
-        "edition": "",
-        "author": "",
-        "published_at": "",
-        "ratings_link": "/pages/power-ratings-preview"
+        "edition": "PGO v1 · 2026 preseason · Experimental model — HOLD",
+        "author": "Postgame Outlet Model",
+        "published_at": "July 21, 2026",
+        "ratings_link": "/pages/power-ratings"
       }
     },
     "latest_analysis": {

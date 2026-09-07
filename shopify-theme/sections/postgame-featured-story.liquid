@@ -9,7 +9,7 @@
 
 {%- if featured_article != blank -%}
   <section class="postgame-shell color-{{ section.settings.color_scheme }} gradient">
-    <article class="postgame-featured-story">
+    <article class="postgame-featured-story{% if featured_article.image %} postgame-featured-story--with-image{% endif %}">
       {%- if featured_article.image -%}
         <a href="{{ featured_article.url }}" aria-label="{{ featured_article.title | escape }}">
           {{ featured_article.image | image_url: width: 1600 | image_tag: loading: 'eager', widths: '375, 750, 1100, 1500, 1600', alt: featured_article.image.alt }}

@@ -3,16 +3,16 @@
     "main": {
       "type": "postgame-ratings",
       "settings": {
-        "edition": "",
-        "author": "",
-        "published_at": "",
+        "edition": "2026 preseason / Week 1 fantasy preview",
+        "author": "Postgame Outlet Model; Sean McCabe comparison",
+        "published_at": "September 6, 2026",
         "updated_at": "",
-        "summary": "",
+        "summary": "<p>The team-rating and fantasy models are separate. The Week 1 half-PPR board includes official practice-report notes captured September 6, 2026, at 8:14 p.m. EDT. Those annotations do not change frozen projections or certify game-day availability. Team ratings remain the PGO v1 full-strength scores with model inputs dated July 21, 2026. Open each evidence disclosure for model identity, capture time, and source coverage.</p>",
         "ratings_url": "https://walshja9.github.io/Postgame_Outlet/",
-        "methodology_link": "/pages/methodology-preview",
+        "methodology_link": "/pages/methodology",
         "accountability_link": "/pages/accountability",
         "archive_link": "/blogs/poweratings",
-        "status_label": ""
+        "status_label": "Experimental model — HOLD"
       }
     }
   },
