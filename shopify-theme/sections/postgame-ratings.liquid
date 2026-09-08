@@ -6,15 +6,15 @@
   {%- if section.settings.author != blank or section.settings.published_at != blank or section.settings.updated_at != blank -%}
     <p class="postgame-meta">
       {%- if section.settings.author != blank -%}By {{ section.settings.author | escape }}{%- endif -%}
-      {%- if section.settings.published_at != blank -%} · Data as of {{ section.settings.published_at | escape }}{%- endif -%}
-      {%- if section.settings.updated_at != blank -%} · Updated {{ section.settings.updated_at | escape }}{%- endif -%}
+      {%- if section.settings.published_at != blank -%} · McCabe ratings dated {{ section.settings.published_at | escape }}{%- endif -%}
+      {%- if section.settings.updated_at != blank -%} · Page updated {{ section.settings.updated_at | escape }}{%- endif -%}
     </p>
   {%- else -%}
     <p class="postgame-meta">Edition details will appear after editorial review.</p>
   {%- endif -%}
   </div>
   <p>Sean McCabe's human-set rating adds quarterback, non-QB offense, and defense values in neutral-field points. A +7.0 rating means he would favor that team by about a touchdown against a league-average opponent on a neutral field.</p>
-  <p>McCabe leads the board. The independent PGO model is trained on game margins, but its point interpretation remains experimental. PGO vs McCabe compares their ranks and explains the model's saved contributions; it does not treat a difference between their numbers as an established game price. Fantasy Week 1 has its own tab.</p>
+  <p>McCabe Ratings leads the board. Choose PGO Model for the model’s rankings and team explanations, or Fantasy Week 1 for player rankings and your league’s scoring. McCabe and PGO ranks can be compared, but their rating numbers should not be subtracted to make a betting line.</p>
   {%- if section.settings.methodology_link != blank or section.settings.accountability_link != blank or section.settings.archive_link != blank -%}
     <nav class="postgame-ratings__links" aria-label="Power Ratings links">
       {%- if section.settings.methodology_link != blank -%}<a href="{{ section.settings.methodology_link }}">Methodology</a>{%- endif -%}

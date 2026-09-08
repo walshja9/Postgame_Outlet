@@ -1,3 +1,12 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
 {
   "sections": {
     "main": {
@@ -6,8 +15,8 @@
         "edition": "2026 preseason · Sean McCabe",
         "author": "Sean McCabe",
         "published_at": "August 18, 2026",
-        "updated_at": "",
-        "summary": "<p>McCabe's current ratings lead the board below. Choose PGO Model for statistical team ratings or Fantasy Week 1 for league scoring and player rankings. Both model products remain experimental — HOLD. PGO v1 inputs are dated July 21, 2026; fantasy practice-report notes were captured September 6 at 8:14 p.m. EDT and do not certify game-day availability.</p>",
+        "updated_at": "September 8, 2026",
+        "summary": "<p>The current PGO edition and its team explanations are below; earlier editions stay in the archive. Accuracy is still being tested. Ratings assume the listed quarterback plays and exclude other injuries. Performance history ends with the 2025 regular season; the board shows when roster information was saved. Fantasy Week 1 is also experimental. Check the dated injury notes in that tab.</p>",
         "ratings_url": "https://walshja9.github.io/Postgame_Outlet/",
         "methodology_link": "/pages/methodology",
         "accountability_link": "/pages/accountability",

@@ -153,15 +153,24 @@ class ShopifyThemeTests(unittest.TestCase):
             "Sean McCabe's human-set rating",
             "quarterback, non-QB offense, and defense",
             "neutral-field points",
-            "independent PGO model",
-            "point interpretation remains experimental",
-            "PGO vs McCabe compares their ranks",
+            "Choose PGO Model for the model’s rankings and team explanations",
+            "McCabe and PGO ranks can be compared",
+            "their rating numbers should not be subtracted to make a betting line",
+            "McCabe ratings dated",
+            "Page updated",
             "section.settings.status_label",
             "data-postgame-ratings-frame",
         ):
             self.assertIn(value, native)
         self.assertNotIn("MAE", native)
         self.assertNotIn("backtest", native)
+        self.assertEqual("August 18, 2026", settings["published_at"])
+        self.assertEqual("September 8, 2026", settings["updated_at"])
+        self.assertIn("Accuracy is still being tested", settings["summary"])
+        self.assertIn("assume the listed quarterback plays and exclude other injuries", settings["summary"])
+        self.assertIn("the board shows when roster information was saved", settings["summary"])
+        self.assertNotIn("July 21", settings["summary"])
+        self.assertNotIn("September 6", settings["summary"])
 
     def test_fantasy_is_editorial_dynasty_and_dfs_without_a_tool(self):
         template = data("templates/page.fantasy.json")
