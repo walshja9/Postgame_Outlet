@@ -1,2 +1,4 @@
 research/pgo_stability_blend/*.json text eol=lf
 research/pgo_fantasy/*.json text eol=lf
+shopify-theme/** -text whitespace=cr-at-eol
+tests/test_shopify_theme.py text eol=lf

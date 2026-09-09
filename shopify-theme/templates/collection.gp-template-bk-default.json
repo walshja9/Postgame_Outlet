@@ -29,9 +29,9 @@
         "show_vendor": false,
         "show_rating": false,
         "quick_add": "none",
-        "enable_filtering": false,
-        "filter_type": "horizontal",
-        "enable_sorting": false,
+        "enable_filtering": true,
+        "filter_type": "vertical",
+        "enable_sorting": true,
         "columns_mobile": "2",
         "padding_top": 12,
         "padding_bottom": 36

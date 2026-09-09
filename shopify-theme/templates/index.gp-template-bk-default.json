@@ -8,107 +8,189 @@
  * ------------------------------------------------------------
  */
 {
-  "order": [
-    "featured_collection",
-    "featured_product_fUHQJA"
-  ],
   "sections": {
-    "featured_collection": {
+    "featured_story": {
+      "type": "postgame-featured-story",
       "settings": {
-        "collection": "all",
-        "color_scheme": "scheme-1",
-        "columns_desktop": 4,
-        "columns_mobile": "2",
-        "description": "",
-        "description_style": "body",
-        "enable_desktop_slider": false,
-        "full_width": false,
-        "heading_size": "h2",
-        "image_ratio": "square",
-        "image_shape": "default",
-        "padding_bottom": 36,
-        "padding_top": 0,
-        "products_to_show": 24,
-        "quick_add": "none",
-        "show_description": false,
-        "show_rating": false,
-        "show_secondary_image": true,
-        "show_vendor": false,
-        "show_view_all": true,
-        "swipe_on_mobile": false,
-        "title": "",
-        "view_all_style": "outline"
-      },
-      "type": "featured-collection"
+        "article": "poweratings/week-1-fantasy-preview-official-practice-reports-are-in",
+        "status_label": "Experimental model — HOLD",
+        "status_body": "Official practice-report notes annotate frozen projections and do not establish game-day availability.",
+        "color_scheme": "scheme-1"
+      }
     },
-    "featured_product_fUHQJA": {
-      "block_order": [
-        "text_ddX8XX",
-        "title_6WjBNc",
-        "price_mEzXVw",
-        "variant_picker_i4zFik",
-        "quantity_selector_zEwa9w",
-        "buy_buttons_eDTYAQ",
-        "share_fgCPXK"
-      ],
+    "ratings_preview": {
+      "type": "postgame-ratings-preview",
       "blocks": {
-        "buy_buttons_eDTYAQ": {
+        "new_england": {
+          "type": "team",
           "settings": {
-            "show_dynamic_checkout": true,
-            "show_gift_card_recipient": true
-          },
-          "type": "buy_buttons"
+            "ordinal": "1",
+            "team": "New England",
+            "rating": "+7.0",
+            "movement": "Not available"
+          }
         },
-        "price_mEzXVw": {
-          "settings": {},
-          "type": "price"
-        },
-        "quantity_selector_zEwa9w": {
-          "settings": {},
-          "type": "quantity_selector"
-        },
-        "share_fgCPXK": {
+        "los_angeles_rams": {
+          "type": "team",
           "settings": {
-            "share_label": "Share"
-          },
-          "type": "share"
+            "ordinal": "2",
+            "team": "Los Angeles Rams",
+            "rating": "+6.7",
+            "movement": "Not available"
+          }
         },
-        "text_ddX8XX": {
+        "seattle": {
+          "type": "team",
           "settings": {
-            "text": "{{ section.settings.product.vendor }}",
-            "text_style": "uppercase"
-          },
-          "type": "text"
+            "ordinal": "3",
+            "team": "Seattle",
+            "rating": "+6.4",
+            "movement": "Not available"
+          }
         },
-        "title_6WjBNc": {
+        "jacksonville": {
+          "type": "team",
           "settings": {
-            "heading_size": "h1"
-          },
-          "type": "title"
+            "ordinal": "4",
+            "team": "Jacksonville",
+            "rating": "+6.3",
+            "movement": "Not available"
+          }
         },
-        "variant_picker_i4zFik": {
+        "baltimore": {
+          "type": "team",
           "settings": {
-            "picker_type": "button",
-            "swatch_shape": "circle"
-          },
-          "type": "variant_picker"
+            "ordinal": "5",
+            "team": "Baltimore",
+            "rating": "+5.2",
+            "movement": "Not available"
+          }
         }
       },
+      "block_order": [
+        "new_england",
+        "los_angeles_rams",
+        "seattle",
+        "jacksonville",
+        "baltimore"
+      ],
       "settings": {
-        "color_scheme": "scheme-d0e50468-479c-48b5-abd4-e091b2b42030",
-        "constrain_to_viewport": true,
-        "enable_video_looping": false,
-        "hide_variants": false,
-        "image_zoom": "lightbox",
-        "media_fit": "contain",
-        "media_position": "left",
-        "media_size": "medium",
-        "padding_bottom": 36,
-        "padding_top": 36,
-        "product": "mahomes-kelse-2024",
-        "secondary_background": false
+        "edition": "PGO v1 · 2026 preseason · Experimental model — HOLD",
+        "author": "Postgame Outlet Model",
+        "published_at": "July 21, 2026",
+        "ratings_link": "/pages/power-ratings"
+      }
+    },
+    "latest_analysis": {
+      "type": "postgame-tagged-articles",
+      "settings": {
+        "heading": "Latest sports analysis",
+        "blog": "poweratings",
+        "required_tag": "",
+        "limit": 3
+      }
+    },
+    "dynasty": {
+      "type": "postgame-tagged-articles",
+      "settings": {
+        "heading": "Latest dynasty analysis",
+        "blog": "poweratings",
+        "required_tag": "dynasty",
+        "limit": 3
+      }
+    },
+    "dfs": {
+      "type": "postgame-tagged-articles",
+      "settings": {
+        "heading": "Latest DFS analysis",
+        "blog": "poweratings",
+        "required_tag": "dfs",
+        "limit": 3
+      }
+    },
+    "accountability": {
+      "type": "multicolumn",
+      "blocks": {
+        "pending": {
+          "type": "column",
+          "settings": {
+            "title": "No published calls yet",
+            "text": "<p>Reviewed forecasts will appear here when available.</p>",
+            "link_label": "",
+            "link": ""
+          }
+        }
       },
-      "type": "featured-product"
+      "block_order": ["pending"],
+      "settings": {
+        "title": "Recent accountable calls",
+        "heading_size": "h1",
+        "image_width": "full",
+        "image_ratio": "adapt",
+        "columns_desktop": 3,
+        "column_alignment": "left",
+        "background_style": "primary",
+        "button_label": "Open the accountability ledger",
+        "button_link": "/pages/accountability",
+        "color_scheme": "scheme-1",
+        "columns_mobile": "1",
+        "swipe_on_mobile": false,
+        "padding_top": 36,
+        "padding_bottom": 36
+      }
+    },
+    "email": {
+      "type": "apps",
+      "blocks": {
+        "klaviyo_email_marketing_sms_form_embed_block_eRT8Yd": {
+          "type": "shopify://apps/klaviyo-email-marketing-sms/blocks/form-embed-block/2632fe16-c075-4321-a88b-50b567f42507",
+          "settings": {
+            "formId": "klaviyo-form-WzBS2Z"
+          }
+        }
+      },
+      "block_order": ["klaviyo_email_marketing_sms_form_embed_block_eRT8Yd"],
+      "settings": {
+        "include_margins": true
+      }
+    },
+    "merch": {
+      "type": "featured-collection",
+      "settings": {
+        "title": "From the Outlet",
+        "heading_size": "h0",
+        "description": "<p>Check out these popular designs</p>",
+        "show_description": false,
+        "description_style": "subtitle",
+        "collection": "best-sellers",
+        "products_to_show": 4,
+        "columns_desktop": 4,
+        "full_width": false,
+        "show_view_all": true,
+        "view_all_style": "outline",
+        "enable_desktop_slider": false,
+        "color_scheme": "scheme-d0e50468-479c-48b5-abd4-e091b2b42030",
+        "image_ratio": "square",
+        "image_shape": "default",
+        "show_secondary_image": true,
+        "show_vendor": false,
+        "show_rating": false,
+        "quick_add": "none",
+        "columns_mobile": "2",
+        "swipe_on_mobile": false,
+        "padding_top": 0,
+        "padding_bottom": 36
+      }
     }
-  }
+  },
+  "order": [
+    "featured_story",
+    "ratings_preview",
+    "latest_analysis",
+    "dynasty",
+    "dfs",
+    "accountability",
+    "email",
+    "merch"
+  ]
 }

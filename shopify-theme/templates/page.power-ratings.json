@@ -12,16 +12,16 @@
     "main": {
       "type": "postgame-ratings",
       "settings": {
-        "edition": "2026 preseason · Sean McCabe",
+        "edition": "Week 1 2026 · Sean McCabe",
         "author": "Sean McCabe",
-        "published_at": "August 18, 2026",
-        "updated_at": "September 8, 2026",
+        "published_at": "September 9, 2026",
+        "updated_at": "September 9, 2026",
+        "status_label": "Human power ratings",
         "summary": "<p>The current PGO edition and its team explanations are below; earlier editions stay in the archive. Accuracy is still being tested. Ratings assume the listed quarterback plays and exclude other injuries. Performance history ends with the 2025 regular season; the board shows when roster information was saved. Fantasy Week 1 is also experimental. Check the dated injury notes in that tab.</p>",
-        "ratings_url": "https://walshja9.github.io/Postgame_Outlet/",
+        "ratings_url": "https://walshja9.github.io/Postgame_Outlet/index.html?release=9d314dc",
         "methodology_link": "/pages/methodology",
         "accountability_link": "/pages/accountability",
-        "archive_link": "/blogs/poweratings",
-        "status_label": "Human power ratings"
+        "archive_link": "/blogs/poweratings"
       }
     }
   },
