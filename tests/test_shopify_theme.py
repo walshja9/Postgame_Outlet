@@ -177,7 +177,7 @@ class ShopifyThemeTests(unittest.TestCase):
             setting = next(item for item in schema["settings"] if item["id"] == setting_id)
             self.assertNotIn("default", setting, setting_id)
         settings = template["sections"]["main"]["settings"]
-        self.assertEqual("https://walshja9.github.io/Postgame_Outlet/index.html?release=9a6cfd8", settings["ratings_url"])
+        self.assertEqual("https://walshja9.github.io/Postgame_Outlet/index.html?release=b0f357f", settings["ratings_url"])
         self.assertEqual("/pages/methodology", settings["methodology_link"])
         self.assertEqual("/pages/accountability", settings["accountability_link"])
         self.assertEqual("/blogs/poweratings", settings["archive_link"])
@@ -200,8 +200,11 @@ class ShopifyThemeTests(unittest.TestCase):
         self.assertEqual("September 9, 2026", settings["published_at"])
         self.assertEqual("September 9, 2026", settings["updated_at"])
         self.assertIn("Accuracy is still being tested", settings["summary"])
-        self.assertIn("assume the listed quarterback plays and exclude other injuries", settings["summary"])
-        self.assertIn("the board shows when roster information was saved", settings["summary"])
+        self.assertIn("September 8 PGO main model uses regular-season history through 2025", settings["summary"])
+        self.assertIn("September 9 postseason candidate adds playoff history", settings["summary"])
+        self.assertIn("non-QB injuries are not fitted into these forecasts", settings["summary"])
+        self.assertIn("dated final-inactive notes", settings["summary"])
+        self.assertIn("The board shows when inputs were saved", settings["summary"])
         self.assertNotIn("July 21", settings["summary"])
         self.assertNotIn("September 6", settings["summary"])
 
