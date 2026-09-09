@@ -177,7 +177,7 @@ class ShopifyThemeTests(unittest.TestCase):
             setting = next(item for item in schema["settings"] if item["id"] == setting_id)
             self.assertNotIn("default", setting, setting_id)
         settings = template["sections"]["main"]["settings"]
-        self.assertEqual("https://walshja9.github.io/Postgame_Outlet/index.html?release=b0f357f", settings["ratings_url"])
+        self.assertEqual("https://walshja9.github.io/Postgame_Outlet/index.html?release=dc9727e", settings["ratings_url"])
         self.assertEqual("/pages/methodology", settings["methodology_link"])
         self.assertEqual("/pages/accountability", settings["accountability_link"])
         self.assertEqual("/blogs/poweratings", settings["archive_link"])
