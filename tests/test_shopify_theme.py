@@ -1,4 +1,3 @@
-import csv
 import hashlib
 import json
 import unittest
@@ -100,18 +99,52 @@ class ShopifyThemeTests(unittest.TestCase):
         ):
             self.assertIn(value, section)
 
-    def test_homepage_preview_matches_mccabes_current_top_five(self):
-        with (ROOT / "data/ratings.csv").open(encoding="utf-8", newline="") as handle:
-            rows = list(csv.DictReader(handle))
-        score = lambda row: round(sum(float(row[key] or 0) for key in ("qb_value", "off_value", "def_value")), 1)
-        expected = sorted(rows, key=lambda row: -score(row))[:5]
+    def test_homepage_preview_matches_mccabes_september_9_published_top_five(self):
+        expected = [
+            ("1", "Los Angeles Rams", "+7.6"),
+            ("2", "Buffalo Bills", "+6.6"),
+            ("3", "Baltimore Ravens", "+6.0"),
+            ("4", "Seattle Seahawks", "+5.5"),
+            ("5", "Cincinnati Bengals", "+5.0"),
+        ]
         preview = data("templates/index.json")["sections"]["ratings_preview"]
         self.assertEqual("Sean McCabe", preview["settings"]["author"])
+        self.assertEqual("September 9, 2026", preview["settings"]["published_at"])
+        self.assertEqual("Week 1 2026 - Human power ratings", preview["settings"]["edition"])
         actual = [preview["blocks"][key]["settings"] for key in preview["block_order"]]
         self.assertEqual(
-            [(str(i), row["team"], f"{score(row):+.1f}") for i, row in enumerate(expected, 1)],
+            expected,
             [(row["ordinal"], row["team"], row["rating"]) for row in actual],
         )
+        lab = data("templates/index.json")["sections"]["accountability"]["blocks"]["pending"]["settings"]
+        self.assertIn("See this week's game forecasts", lab["text"])
+        self.assertEqual("See this week's forecasts", lab["link_label"])
+
+    def test_sitewide_palette_has_readable_native_controls(self):
+        def channels(value):
+            return [int(value[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+
+        def luminance(rgb):
+            linear = [v / 12.92 if v <= 0.04045 else ((v + 0.055) / 1.055) ** 2.4 for v in rgb]
+            return sum(v * weight for v, weight in zip(linear, (0.2126, 0.7152, 0.0722)))
+
+        def contrast(foreground, background, opacity=1):
+            bg = channels(background)
+            fg = [a * opacity + b * (1 - opacity) for a, b in zip(channels(foreground), bg)]
+            light, dark = sorted((luminance(fg), luminance(bg)), reverse=True)
+            return (light + 0.05) / (dark + 0.05)
+
+        schemes = data("config/settings_data.json")["current"]["color_schemes"]
+        for name, scheme in schemes.items():
+            settings = scheme["settings"]
+            with self.subTest(scheme=name):
+                self.assertIn(settings["background"], ("#0e1116", "#171c24"))
+                self.assertGreaterEqual(contrast(settings["text"], settings["background"], 0.75), 4.5)
+                self.assertGreaterEqual(contrast(settings["secondary_button_label"], settings["background"], 0.85), 4.5)
+                self.assertGreaterEqual(contrast(settings["button_label"], settings["button"]), 4.5)
+                self.assertGreaterEqual(contrast("#93a1b0", settings["background"]), 4.5)
+                self.assertGreaterEqual(contrast("#93c5fd", settings["background"]), 3)
+        self.assertIn("system-ui", text("assets/postgame-content.css"))
 
     def test_preview_navigation_footer_and_email_are_isolated(self):
         header = data("sections/header-group.json")
@@ -144,7 +177,7 @@ class ShopifyThemeTests(unittest.TestCase):
             setting = next(item for item in schema["settings"] if item["id"] == setting_id)
             self.assertNotIn("default", setting, setting_id)
         settings = template["sections"]["main"]["settings"]
-        self.assertEqual("https://walshja9.github.io/Postgame_Outlet/", settings["ratings_url"])
+        self.assertEqual("https://walshja9.github.io/Postgame_Outlet/index.html?release=9d314dc", settings["ratings_url"])
         self.assertEqual("/pages/methodology", settings["methodology_link"])
         self.assertEqual("/pages/accountability", settings["accountability_link"])
         self.assertEqual("/blogs/poweratings", settings["archive_link"])
@@ -164,8 +197,8 @@ class ShopifyThemeTests(unittest.TestCase):
             self.assertIn(value, native)
         self.assertNotIn("MAE", native)
         self.assertNotIn("backtest", native)
-        self.assertEqual("August 18, 2026", settings["published_at"])
-        self.assertEqual("September 8, 2026", settings["updated_at"])
+        self.assertEqual("September 9, 2026", settings["published_at"])
+        self.assertEqual("September 9, 2026", settings["updated_at"])
         self.assertIn("Accuracy is still being tested", settings["summary"])
         self.assertIn("assume the listed quarterback plays and exclude other injuries", settings["summary"])
         self.assertIn("the board shows when roster information was saved", settings["summary"])

@@ -26,7 +26,7 @@
           "settings": {
             "ordinal": "1",
             "team": "Los Angeles Rams",
-            "rating": "+7.3",
+            "rating": "+7.6",
             "movement": "Not available"
           }
         },
@@ -35,25 +35,25 @@
           "settings": {
             "ordinal": "2",
             "team": "Buffalo Bills",
-            "rating": "+7.0",
+            "rating": "+6.6",
             "movement": "Not available"
           }
         },
         "seattle": {
           "type": "team",
           "settings": {
-            "ordinal": "3",
+            "ordinal": "4",
             "team": "Seattle Seahawks",
-            "rating": "+6.0",
+            "rating": "+5.5",
             "movement": "Not available"
           }
         },
         "baltimore": {
           "type": "team",
           "settings": {
-            "ordinal": "4",
+            "ordinal": "3",
             "team": "Baltimore Ravens",
-            "rating": "+5.5",
+            "rating": "+6.0",
             "movement": "Not available"
           }
         },
@@ -70,14 +70,14 @@
       "block_order": [
         "los_angeles_rams",
         "buffalo",
-        "seattle",
         "baltimore",
+        "seattle",
         "cincinnati"
       ],
       "settings": {
-        "edition": "2026 preseason · Human power ratings",
+        "edition": "Week 1 2026 - Human power ratings",
         "author": "Sean McCabe",
-        "published_at": "August 18, 2026",
+        "published_at": "September 9, 2026",
         "ratings_link": "/pages/power-ratings"
       }
     },
@@ -115,8 +115,8 @@
           "type": "column",
           "settings": {
             "title": "Forecast Lab - Experimental",
-            "text": "<p>All 272 forecasts are preserved in a dated record. Reviewed results will be added after games are final, alongside the baseline. McCabe ratings and editorial staff picks remain separate.</p>",
-            "link_label": "See the frozen 2026 forecasts",
+            "text": "<p>See this week's game forecasts and the full-season record. Results are added after games finish. McCabe ratings and editorial staff picks remain separate.</p>",
+            "link_label": "See this week's forecasts",
             "link": "https://walshja9.github.io/Postgame_Outlet/forecast-lab.html"
           }
         }

@@ -1,21 +1,29 @@
 :root {
-  --postgame-navy: #142640;
-  --postgame-slate: #40516a;
-  --postgame-orange: #a42c50;
-  --postgame-soft: #f3ece6;
-  --postgame-hold: #f3ece6;
-  --postgame-highlight: #ffb1bd;
+  --postgame-navy: #0e1116;
+  --postgame-text: #e6edf3;
+  --postgame-slate: #93a1b0;
+  --postgame-orange: #3b82f6;
+  --postgame-soft: #171c24;
+  --postgame-hold: #171c24;
+  --postgame-highlight: #93c5fd;
+  --font-body-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-heading-family: var(--font-body-family);
+  --font-body-style: normal;
+  --font-heading-style: normal;
+  --font-body-weight: 400;
+  --font-body-weight-bold: 700;
+  --font-heading-weight: 700;
 }
 
 .postgame-shell {
   width: min(100% - 3rem, 120rem);
   margin: 0 auto;
-  padding: 3.6rem 0;
+  padding: 2.8rem 0;
 }
 
 .postgame-grid {
   display: grid;
-  gap: 2rem;
+  gap: 1.6rem;
 }
 
 .postgame-grid--5 {
@@ -29,10 +37,10 @@
   display: grid;
   gap: 2.4rem;
   align-items: center;
-  padding: 2.4rem;
-  color: #fff;
-  background: #76223e;
-  border-bottom: 0.6rem solid var(--postgame-highlight);
+  padding: 2rem;
+  color: var(--postgame-text);
+  background: var(--postgame-soft);
+  border-bottom: 0.2rem solid var(--postgame-orange);
 }
 
 .postgame-featured-story img {
@@ -42,30 +50,30 @@
 }
 
 .postgame-featured-story .postgame-kicker,
-.postgame-featured-story .postgame-meta { color: #fff; }
+.postgame-featured-story .postgame-meta { color: var(--postgame-text); }
 
 .postgame-featured-story h1,
-.postgame-featured-story h1 a { color: #fff; }
+.postgame-featured-story h1 a { color: var(--postgame-text); }
 
 .postgame-featured-story .postgame-kicker::before { color: var(--postgame-highlight); }
 
 .postgame-featured-story .button {
-  --color-button: 255, 177, 189;
-  --color-button-text: 20, 38, 64;
+  --color-button: 59, 130, 246;
+  --color-button-text: 14, 17, 22;
 }
 
 .postgame-card,
 .postgame-takeaway {
-  border: 0.1rem solid rgba(56, 79, 111, 0.25);
-  border-top: 0.4rem solid var(--postgame-orange);
+  border: 0.1rem solid #293241;
+  border-top: 0.2rem solid var(--postgame-orange);
   border-radius: 0.8rem;
-  padding: 2rem;
-  background: #faf7f2;
+  padding: 1.6rem;
+  background: var(--postgame-soft);
 }
 
 .postgame-grid--5 .postgame-card {
   background: var(--postgame-navy);
-  color: #fff;
+  color: var(--postgame-text);
   border-color: var(--postgame-navy);
   border-top-color: var(--postgame-orange);
 }
@@ -93,7 +101,7 @@
   padding: 1.2rem;
   border: 0.1rem solid var(--postgame-highlight);
   background: var(--postgame-navy);
-  color: #fff;
+  color: var(--postgame-text);
 }
 
 .postgame-model-status__label {
@@ -131,7 +139,7 @@
 
 .postgame-meta a:focus-visible,
 .postgame-takeaway a:focus-visible {
-  outline: 0.3rem solid var(--postgame-navy);
+  outline: 0.3rem solid var(--postgame-highlight);
   outline-offset: 0.3rem;
 }
 
@@ -140,7 +148,8 @@
   color: var(--postgame-orange);
 }
 
-.postgame-shell a {
+.postgame-shell a:not(.button) {
+  color: var(--postgame-highlight);
   text-underline-offset: 0.2em;
 }
 
@@ -159,8 +168,8 @@
 }
 
 .postgame-ratings {
-  border-top: 0.4rem solid var(--postgame-orange);
-  padding: 2.4rem;
+  border-top: 0.2rem solid var(--postgame-orange);
+  padding: 1.6rem;
   background: var(--postgame-soft);
 }
 
@@ -192,7 +201,7 @@
 [data-postgame-content-id="fantasy"] #MainContent > :first-child { grid-column: 1 / -1; }
 
 .postgame-shell :focus-visible {
-  outline: 0.3rem solid var(--postgame-slate);
+  outline: 0.3rem solid var(--postgame-highlight);
   outline-offset: 0.3rem;
 }
 
