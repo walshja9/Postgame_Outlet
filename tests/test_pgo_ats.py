@@ -56,6 +56,19 @@ class ATSTests(unittest.TestCase):
                 self.assertNotIn('cover_probability',row);self.assertNotIn('win_probability',row)
                 api.check_durable(dict(state,ats=out),None,'2026-09-10T20:00:01Z')
 
+    def test_provider_spelling_variant_keeps_the_same_fixed_identity(self):
+        api=self.api()
+        for name,provider_id,accepted in [('DraftKings','100',True),('Draft Kings','100',True),
+                                           ('Other Book','100',False),('Draft Kings','2',False)]:
+            with self.subTest(name=name,provider_id=provider_id),tempfile.TemporaryDirectory() as tmp:
+                state,payload=self.fixture();root=Path(tmp)
+                payload['events'][0]['competitions'][0]['odds'][0]['provider'].update(name=name,id=provider_id)
+                self.archive(root,state,payload)
+                out=api.refresh(state,None,root,state['checked_at'])
+                self.assertEqual(len(out['games']),int(accepted))
+                if accepted:
+                    self.assertEqual(out['games'][0]['provider'],{'id':'100','name':'DraftKings'})
+
     def test_loss_but_cover_win_but_not_cover_push_and_no_edge_are_distinct(self):
         api=self.api()
         cases=[(1,3.5,-2,'W','W'),(2,-7,3,'L','W'),(4,-3,3,'PUSH','PUSH'),(3,-3,7,'W','NOPICK'),(0,0,0,'NOPICK','NOPICK')]

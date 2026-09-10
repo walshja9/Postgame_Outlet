@@ -100,7 +100,7 @@ def _quote(event, game):
     books = [b for b in comp.get('odds', []) if str(b.get('provider', {}).get('id')) == PROVIDER['id']]
     require(len(books) == 1, 'DraftKings spread is missing or ambiguous')
     book = books[0]
-    require(book['provider'].get('name', '').casefold() == 'draftkings', 'Sportsbook provider name differs')
+    require(book['provider'].get('name', '').casefold() in ('draftkings','draft kings'), 'Sportsbook provider name differs')
     home = _line(book['spread']); away = _line(book['pointSpread']['away']['close']['line'])
     require(_line(book['pointSpread']['home']['close']['line']) == home and away == -home,
             'Conflicting home and away sportsbook lines')
