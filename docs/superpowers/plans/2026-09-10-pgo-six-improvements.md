@@ -31,7 +31,7 @@ Files: `pgo_season_view.py`, `docs/pgo-theme.css`, `tests/test_pgo_season_view.p
 
 - [x] Render today's Eastern-date games above rankings, with pick, saved win probability, kickoff, lock and important availability context; link to the existing detailed game row.
 - [x] Keep final, withheld and late-probability cases explicit. Empty days get a useful next-game message. Do not manufacture absence names.
-- [ ] Test matching the Eastern date, escaping, no duplicate keys, retained detailed controls and no mutation of state. Inspect the real mobile iframe.
+- [x] Test matching the Eastern date, escaping, no duplicate keys, retained detailed controls and no mutation of state. Inspect the real mobile iframe.
 
 ## 3. Season accuracy
 
@@ -69,9 +69,9 @@ Files: new dated research directory with charter, runner, small tests and immuta
 
 ## Integration and publication
 
-- [ ] Review worker diffs and run focused tests, the required full test suite and research checks once on final integrated source.
-- [ ] Render both public pages against the newest verified saved state; publish through the existing branch-based Pages flow.
-- [ ] Verify deployed bytes, mobile rendering, stable reading state and a scheduled refresh. Record exact commits, tests and known limits in a new handoff; do not overwrite earlier release receipts.
+- [x] Review worker diffs and run focused tests, the required full test suite and research checks once on final integrated source.
+- [x] Render both public pages against the newest verified saved state; publish through the existing branch-based Pages flow.
+- [x] Verify deployed bytes, mobile rendering, stable reading state and a scheduled refresh. Record exact commits, tests and known limits in a new handoff; do not overwrite earlier release receipts.
 
 ## User-requested ATS extension
 
@@ -82,4 +82,4 @@ The user approved both the original winner pick's coverage and a separate ATS su
 - [x] Refresh unlocked quote/selection records until T-60 and archive each revision in the existing season state. Freeze the last eligible pre-lock record; preserve prior records when sources fail, with stale status and original timestamps. Check the actual durable-write clock.
 - [x] Track three distinct comparisons: ATS suggestion against the sportsbook line; original winner pick against the sportsbook line; original winner pick against PGO's projected line. Keep original straight-up W/L and margin error separate. Pushes and unavailable records do not become wins or losses.
 - [x] A completed game without a saved pre-lock sportsbook quote remains unavailable for sportsbook ATS. Its original authentic pre-lock margin can still receive a PGO-line comparison. Grade using saved full precision, with rounded display clearly identified.
-- [ ] Add concise game-day links and a detailed line/grade section with stable controls, source attribution, clocks and records. Test signed away favorites, loss-but-cover, win-without-cover, exact push, no edge, missing/conflicting/future sources and durable cutoff crossings; independently review and publish.
+- [x] Add concise game-day links and a detailed line/grade section with stable controls, source attribution, clocks and records. Test signed away favorites, loss-but-cover, win-without-cover, exact push, no edge, missing/conflicting/future sources and durable cutoff crossings; independently review and publish.
