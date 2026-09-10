@@ -13,7 +13,7 @@ import snapshot
 
 ROOT = Path(__file__).resolve().parents[1]
 REFERENCE = ROOT / "research/pgo_opening_night_20260909/mccabe-dashboard-reference.html"
-EXPECTED_REFERENCE_SHA256 = "164f9b55a42064ef3107f4e089cb32cd99acec93ac8dd20342d9afd37ca8dae7"
+EXPECTED_REFERENCE_SHA256 = "0703d91894c1bc3c57dc7f19989e4ac231edc18162c41ca56425dbc699182da4"
 
 
 class McCabeOpeningNightTests(unittest.TestCase):
