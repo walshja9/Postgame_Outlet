@@ -17,10 +17,11 @@ FULL_CONFIDENCE_MANIFEST_SHA256 = 'ae8f685dd636052d428e0e2cc9b5e0d853bcaa6dfcb87
 
 STYLE = """<style>
 .pgo-model-updates{margin-top:28px;padding-top:24px;border-top:1px solid var(--border)}
-.pgo-model-updates .table-shell{overflow-x:auto;container-type:inline-size}
+:is(.pgo-model-updates,.pgo-current-board,.pgo-july-archive,.lab-wrap) .table-shell{overflow-x:auto;container-type:inline-size}
 .pgo-model-updates table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 .pgo-model-updates th,.pgo-model-updates td{padding:9px;border-bottom:1px solid var(--border);text-align:right;vertical-align:top;white-space:nowrap}
 .pgo-model-updates td.game-grade-checks{min-width:12rem;max-width:16rem;white-space:normal;text-align:left}
+@container(min-width:680px){:is(.pgo-model-updates,.pgo-current-board,.pgo-july-archive,.lab-wrap) table :is(th,td){padding:8px 6px;white-space:normal;overflow-wrap:anywhere}:is(.pgo-model-updates,.pgo-current-board,.pgo-july-archive,.lab-wrap) table th{overflow-wrap:normal}.pgo-availability table{min-width:0}}
 .pgo-model-updates tbody th{text-align:left;letter-spacing:normal;text-transform:none;background:var(--panel);color:var(--ink)}
 .pgo-model-updates summary{cursor:pointer;font-weight:700}
 .pgo-model-updates .forecast-week{margin:12px 0;padding:12px;border:1px solid var(--border);border-radius:10px}
