@@ -1,0 +1,41 @@
+{
+  "checked_at": "2026-09-10T21:06:47.982251+00:00",
+  "sources": [
+    {
+      "bytes": 365979,
+      "captured_at": "2026-09-10T21:06:47.672215+00:00",
+      "file": "raw/000.html.gz",
+      "final_url": "https://www.nfl.com/injuries/",
+      "kind": "official_report",
+      "sha256": "0ed18f83322934e15b4b626e0689a36a770d7fc4fc53ded88a7a311820caa186",
+      "started_at": "2026-09-10T21:06:47.603755+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/injuries/"
+    },
+    {
+      "bytes": 370657,
+      "captured_at": "2026-09-10T21:06:47.707868+00:00",
+      "file": "raw/001.html.gz",
+      "final_url": "https://www.therams.com/news/",
+      "kind": "team_news",
+      "sha256": "93040f61be5d7bd65052ec5180c9254316ee4e5da2b1ffab7c4daff0f7751f24",
+      "started_at": "2026-09-10T21:06:47.604142+00:00",
+      "status": 200,
+      "team": "LAR",
+      "url": "https://www.therams.com/news/"
+    },
+    {
+      "bytes": 477265,
+      "captured_at": "2026-09-10T21:06:47.894272+00:00",
+      "file": "raw/002.html.gz",
+      "final_url": "https://www.49ers.com/news/",
+      "kind": "team_news",
+      "sha256": "988e0146870f93502848723055021f094f93cf20da4f79d9e9e4efca2ba52f4a",
+      "started_at": "2026-09-10T21:06:47.604492+00:00",
+      "status": 200,
+      "team": "SF",
+      "url": "https://www.49ers.com/news/"
+    }
+  ]
+}
