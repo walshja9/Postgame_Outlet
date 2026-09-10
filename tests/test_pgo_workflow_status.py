@@ -14,6 +14,7 @@ class WorkflowStatusTests(unittest.TestCase):
                      penalty_shadow=dict(status=penalty_status, blocked_reason=penalty_reason),
                      totals_shadow=dict(status='READY', blocked_reason=None),
                      weights_shadow=dict(status='READY', blocked_reason=None),
+                     ats=dict(status='READY', blocked_reason=None),
                      replacement_depth=dict(status='DESCRIPTIVE / NOT IN MODEL', blocked_reason=None,
                                             historical_admission='BLOCKED FOR FITTING'))
         state.update(components)
@@ -54,7 +55,7 @@ class WorkflowStatusTests(unittest.TestCase):
 
     def test_new_component_failures_do_not_change_main_health(self):
         for key, prefix in [('totals_shadow','totals'), ('weights_shadow','weights'),
-                            ('replacement_depth','replacement_depth')]:
+                            ('replacement_depth','replacement_depth'), ('ats','ats')]:
             with self.subTest(component=key):
                 payload, output = self.report(**{key:dict(status='BLOCKED', blocked_reason='Source missing')})
                 self.assertEqual(payload['status'],'READY')

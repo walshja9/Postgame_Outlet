@@ -18,7 +18,8 @@ def report_health(state, summary_path=None):
                   checked_at=state.get('checked_at'))
     components = [('penalty_shadow', 'penalty', 'READY'), ('totals_shadow', 'totals', 'READY'),
                   ('weights_shadow', 'weights', 'READY'),
-                  ('replacement_depth', 'replacement_depth', 'DESCRIPTIVE / NOT IN MODEL')]
+                  ('replacement_depth', 'replacement_depth', 'DESCRIPTIVE / NOT IN MODEL'),
+                  ('ats','ats','READY')]
     for key, prefix, _ in components:
         component = state.get(key) or {}
         report[prefix + '_status'] = component.get('status', 'UNKNOWN')

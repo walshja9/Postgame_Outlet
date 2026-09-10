@@ -64,7 +64,7 @@ Files: new dated research directory and bounded availability capture integration
 Files: new dated research directory with charter, runner, small tests and immutable attempt output.
 
 - [x] Predeclare a bounded overlapping-block ablation and probability comparison using the existing pinned historical rows. All scaling, fitting and calibration use training history only.
-- [x] Compare fixed candidate definitions on common chronological games. Report margin MAE and probability log loss/Brier/reliability separately; calibration alone does not change favorite ordering.
+- [x] Compare fixed candidate definitions on common chronological games. Report margin MAE and probability log loss/Brier/reliability separately; distinguish probability curves with a fixed midpoint from learned-midpoint curves that can change the selected team.
 - [x] Preserve every attempt, publish diagnostic results and prepare prospective candidate capture where scientifically admissible. Existing penalty weights/review rules stay fixed.
 
 ## Integration and publication
@@ -72,3 +72,14 @@ Files: new dated research directory with charter, runner, small tests and immuta
 - [ ] Review worker diffs and run focused tests, the required full test suite and research checks once on final integrated source.
 - [ ] Render both public pages against the newest verified saved state; publish through the existing branch-based Pages flow.
 - [ ] Verify deployed bytes, mobile rendering, stable reading state and a scheduled refresh. Record exact commits, tests and known limits in a new handoff; do not overwrite earlier release receipts.
+
+## User-requested ATS extension
+
+The user approved both the original winner pick's coverage and a separate ATS suggestion, then requested comparison with PGO's own projected line as well. These are descriptive forecast checks using the existing model, not a new fitted model.
+
+- [ ] Read signed home and away handicaps from the already captured ESPN scoreboard, bind the named DraftKings provider and exact event/team/kickoff identity, and retain raw source hash and capture time. No extra feed dependency. Missing or conflicting lines remain unavailable.
+- [ ] Display PGO's projected line as the negative of its home-margin estimate. Choose the ATS side from model home margin plus sportsbook home handicap. Zero edge means no ATS selection. Do not create a cover probability or reuse the straight-up win probability.
+- [ ] Refresh unlocked quote/selection records until T-60 and archive each revision in the existing season state. Freeze the last eligible pre-lock record; preserve prior records when sources fail, with stale status and original timestamps. Check the actual durable-write clock.
+- [ ] Track three distinct comparisons: ATS suggestion against the sportsbook line; original winner pick against the sportsbook line; original winner pick against PGO's projected line. Keep original straight-up W/L and margin error separate. Pushes and unavailable records do not become wins or losses.
+- [ ] A completed game without a saved pre-lock sportsbook quote remains unavailable for sportsbook ATS. Its original authentic pre-lock margin can still receive a PGO-line comparison. Grade using saved full precision, with rounded display clearly identified.
+- [ ] Add concise game-day links and a detailed line/grade section with stable controls, source attribution, clocks and records. Test signed away favorites, loss-but-cover, win-without-cover, exact push, no edge, missing/conflicting/future sources and durable cutoff crossings; independently review and publish.

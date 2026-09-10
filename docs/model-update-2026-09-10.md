@@ -1,6 +1,6 @@
 # PGO model and site update — September 10, 2026
 
-The main PGO model remains experimental. Its current picks and W/L/T records predict the straight-up winner. Any victory by the selected team earns a W; the actual winning margin is evaluated separately as lead error. PGO does not currently publish against-the-spread picks or sportsbook lines.
+The main PGO model remains experimental. Its main W/L/T records predict the straight-up winner. Any victory by the selected team earns a W; the actual winning margin is evaluated separately as lead error. Separate spread comparisons show the PGO projected line, the saved sportsbook line and what covered each.
 
 The site separates ranking calculation and input dates from availability, results and automation checks. A compact game-day view shows saved picks, win chances, kickoff, lock and sourced absences. Older or missing checks stay visible. Long board tests now run outside the season publisher's shared lock; the publisher verifies that newer commits contain only admitted season updates before rendering.
 
@@ -15,3 +15,13 @@ The new Model tests section reports all predeclared alternatives, preserves orig
 - **Injuries and defensive replacement depth:** the admitted historical inventory lacks dated historical depth and source-capture clocks, so fitting a numerical injury effect is blocked. The updater now captures current identities, provider positions, official report coverage, prior defensive usage and unknown replacement history. Usage is experience, not a talent grade; rookies are not assigned zero quality. Non-QB injuries remain sourced context, with no invented score penalty. [Admission and capture evidence](https://github.com/walshja9/Postgame_Outlet/blob/main/research/pgo_replacement_depth_20260910/README.md).
 
 The existing penalty experiment continues under its original fixed definitions. Weekly rankings regenerate after every game in the week has a verified final and the required statistics are available. Scores can arrive before those statistics; in that case the site retains the last verified rankings and explains the delay. Earlier weeks and source captures remain archived. See [season operations](pgo-season-operations.md).
+
+## PGO lines and sportsbook ATS
+
+A PGO line of LAR -4.3 means the model expects the Rams to win by about 4.3 points. If the saved sportsbook line is LAR -3.5, the model favors LAR against that line by about 0.8 points. A six-point Rams win clears both; a four-point win clears the sportsbook line but falls below the PGO projection. Calculations use the original unrounded projection.
+
+Three records stay separate: whether the original winner pick exceeded PGO's projected margin; whether that winner pick covered the sportsbook line; and whether the model's ATS suggestion covered the sportsbook line. An ATS suggestion can differ from the winner pick. For example, predicting a favorite to win by three while the sportsbook requires seven points favors the underdog against the spread. No cover probability or betting-profit estimate is created.
+
+DraftKings quotes are taken from ESPN scoreboard responses already saved by the updater. Each record retains the source bytes, provider, capture clock, model edition, selection time and cutoff. Quotes and selections may change before the one-hour lock; every revision remains archived. After lock, the saved line and selection stay fixed. Missing or conflicting quotes do not become zero-point lines; stale quotes retain their actual observation time. The feed's field named `close` is treated as an observed quote, not proof of a final closing line.
+
+The completed opener has no saved pre-lock sportsbook quote and is excluded from sportsbook ATS records. Its original pre-lock PGO margin remains eligible for the PGO-line check. Exceeding a projected margin is not necessarily more accurate: a large overshoot can still have a large margin error. These are distinct forecast checks, not interchangeable success claims.

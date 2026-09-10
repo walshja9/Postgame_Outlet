@@ -28,7 +28,7 @@ class SeasonExperimentIntegrationTests(unittest.TestCase):
 
     def test_each_experiment_runs_and_failures_preserve_prior_pairs_without_main_mutation(self):
         self.assertTrue(hasattr(season,'refresh_experiments'),'Season experiment integration is missing')
-        import pgo_penalty_monitor,pgo_totals_monitor,pgo_weights_monitor
+        import pgo_penalty_monitor,pgo_totals_monitor,pgo_weights_monitor,pgo_ats
         from research.pgo_replacement_depth_20260910 import capture
         state=self.fixture();before=copy.deepcopy(state)
         previous=dict(state,totals_shadow={'games':[{'game_id':'original'}],'status':'READY'})
@@ -38,7 +38,8 @@ class SeasonExperimentIntegrationTests(unittest.TestCase):
         with patch.object(pgo_penalty_monitor,'refresh_shadow',return_value={'games':[],'status':'READY'}) as penalty, \
              patch.object(pgo_totals_monitor,'refresh_shadow',side_effect=failed_totals) as totals, \
              patch.object(pgo_weights_monitor,'refresh_shadow',return_value={'games':[],'status':'READY'}) as weights, \
-             patch.object(capture,'capture',return_value=self.depth(state)) as replacement:
+             patch.object(capture,'capture',return_value=self.depth(state)) as replacement, \
+             patch.object(pgo_ats,'refresh',return_value={'games':[],'status':'READY'}) as ats:
             season.refresh_experiments(state,previous,Path('fixture-root'))
         self.assertEqual(state['weeks'],before['weeks'])
         self.assertEqual(state['totals_shadow']['games'],previous['totals_shadow']['games'])
@@ -46,9 +47,30 @@ class SeasonExperimentIntegrationTests(unittest.TestCase):
         self.assertIn('Totals source',state['totals_shadow']['blocked_reason'])
         self.assertEqual(state['weights_shadow']['status'],'READY')
         self.assertEqual(state['replacement_depth']['generated_at'],before['checked_at'])
-        for mocked in (penalty,totals,weights,replacement):self.assertEqual(mocked.call_count,1)
+        for mocked in (penalty,totals,weights,replacement,ats):self.assertEqual(mocked.call_count,1)
         self.assertEqual(totals.call_args.args[2],state['checked_at'])
         self.assertEqual(replacement.call_args.args[1],Path('fixture-root'))
+        self.assertEqual(ats.call_args.args[2:],(Path('fixture-root'),state['checked_at']))
+
+    def test_ats_guard_runs_before_pointer_and_retained_quote_sources_are_reverified(self):
+        import pgo_ats
+        state=self.fixture();state['ats']={'games':[]}
+        with tempfile.TemporaryDirectory() as tmp, \
+             patch.object(pgo_ats,'check_durable',side_effect=ValueError('ATS lock crossed')):
+            with self.assertRaisesRegex(ValueError,'ATS lock crossed'):season.save_state(state,Path(tmp))
+            self.assertFalse((Path(tmp)/'current.json').exists())
+        # Isolate the archive reader: this source exists only in the retained ATS
+        # quote, after the current source-capture inventory has rotated away.
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp); (root/'source-archive').mkdir()
+            raw=b'{"saved_quote":"test"}'; digest=season.sha(raw)
+            path='source-archive/'+digest+'.json'; (root/path).write_bytes(raw)
+            state['ats']['games']=[{'source':dict(path=path,sha256=digest,bytes=len(raw),captured_at='2026-09-10T19:00:00Z')}]
+            with patch.object(pgo_ats,'check_durable'),patch.object(season,'now',return_value='2026-09-10T20:00:01Z'):
+                season.save_state(state,root)
+            self.assertEqual(season.load_current(root),state)
+            (root/path).write_bytes(b'tampered')
+            with self.assertRaisesRegex(ValueError,'Captured source hash'):season.load_current(root)
 
     def test_save_invokes_both_monitor_guards_before_publishing_pointer(self):
         import pgo_totals_monitor,pgo_weights_monitor

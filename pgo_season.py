@@ -217,6 +217,9 @@ def save_state(state, root=DEFAULT_ROOT):
         check_durable_shadow(state, prior, durable)
     if 'replacement_depth' in state:
         check_replacement_depth(state, prior, durable)
+    if 'ats' in state or 'ats' in (prior or {}):
+        from pgo_ats import check_durable
+        check_durable(state, prior, durable)
     manifest = dict(schema_version=1, created_at=durable, files={'state.json.gz': {'sha256':sha(payload),'bytes':len(payload)}},
                     code_sha256=sha(Path(__file__).read_bytes()))
     previous = root/'current.json'
@@ -251,6 +254,7 @@ def load_current(root=DEFAULT_ROOT):
     references = [*state.get('source_captures', []), *(r['source'] for r in state.get('results',[]) if 'source' in r)]
     references += state.get('rankings',{}).get('source_captures',[])
     references += [ref for refs in state.get('edition_sources',{}).values() for ref in refs]
+    references += [g['source'] for g in (state.get('ats') or {}).get('games',[]) if g.get('source')]
     verified = {}
     for ref in references:
         key = ref['path']
@@ -575,7 +579,8 @@ def refresh_experiments(state, previous, root):
     operations=(('penalty_shadow','pgo_penalty_monitor','refresh_shadow',True),
                 ('totals_shadow','pgo_totals_monitor','refresh_shadow',False),
                 ('weights_shadow','pgo_weights_monitor','refresh_shadow',False),
-                ('replacement_depth','research.pgo_replacement_depth_20260910.capture','capture',True))
+                ('replacement_depth','research.pgo_replacement_depth_20260910.capture','capture',True),
+                ('ats','pgo_ats','refresh',True))
     for key,module_name,method,needs_root in operations:
         old=(previous or {}).get(key,{})
         try:

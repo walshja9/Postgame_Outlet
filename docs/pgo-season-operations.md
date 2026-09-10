@@ -39,3 +39,17 @@ The publisher renders from that checked-out state and pushes without rebasing an
 After attempting publication, the season workflow reports the saved state and penalty status in its Actions summary and emits a warning for a blocked update. Next-week waiting, source conflicts and availability failures have distinct labels and retain the exact reason and check time. Reporting does not stop a truthful blocked state from being published.
 
 Run `python -m unittest tests.test_pgo_publication_guard tests.test_pgo_workflow_status tests.test_public_board_workflow` to check allowed mutable updates, rejected source/frozen-file drift, rename handling, tested ancestry, health reporting and workflow ordering.
+
+### Accuracy and continuing model comparisons
+
+The accuracy view derives its measures from saved forecasts and verified finals. Each metric states its own eligible count. Historical models are compared only on identical eligible games, and absent original probabilities or totals are not reconstructed. After-lock confidence entries remain visible in pool accounting but do not enter pregame probability scores. Expected pool points and NFL scoreboard points use different units.
+
+Totals and weight/probability comparisons are fixed, separately issued forecasts. The updater grades existing pairs and captures eligible future pairs without refitting or changing the main forecast. All earlier pairs remain immutable. The new defensive depth capture is descriptive; fitting an injury effect remains blocked by absent historical role timing. The existing penalty experiment retains its original definitions. Each component has independent runtime status in the public view and Actions summary. See [the September 10 update](model-update-2026-09-10.md) for methods and findings.
+
+### Spread records
+
+The primary W/L/T record is straight-up. The separate spread view reports PGO's model line, the saved sportsbook line, winner-pick coverage and ATS-choice coverage. Its PGO-line check measures exceeding, falling below or matching the original projected margin; it is distinct from market ATS and from margin accuracy.
+
+`pgo_ats.py` reads the archived ESPN scoreboard used by the season updater, validates the DraftKings provider, signed home/away handicaps and exact event/team/kickoff identities, and saves source evidence with the selection. A source observation at most 60 minutes old may supply a newly issued line. This is a capture-age limit, not a claim that ESPN supplies a bookmaker publication timestamp. Unlocked quotes may refresh; after T-60 the last saved line and choice cannot change. A failed refresh retains an earlier valid quote with its original clock and stale reason. The durable writer rechecks the actual cutoff, and later readers verify archived quote hashes even after current source captures rotate.
+
+A missing pre-lock sportsbook quote excludes that game from sportsbook records. It does not erase an authentic original PGO forecast or its independent model-line check. Pushes, no-edge selections, pending games and unavailable lines remain separate. ATS does not reallocate confidence points or reuse straight-up win probability as a cover probability. No paid feed, new model fit or betting-profit calculation is introduced.

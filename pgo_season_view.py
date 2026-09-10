@@ -101,22 +101,35 @@ def _game_day(state):
     games = sorted((g for w in state['weeks'] for g in w['games']),key=lambda g:(utc(g['kickoff']),g['game_id']))
     today = [g for g in games if utc(g['kickoff']).astimezone(eastern).date() == day]
     cards = []
+    ats_games = {g['game_id']:g for g in (state.get('ats') or {}).get('games',[])}
     for game in today:
         key = _text(game['game_id']); confidence = game.get('confidence') or {}
         pick = ('Pick withheld' if game.get('blocked_reason') or game['forecast_status']=='BLOCKED' else
-                f'PGO pick: {_text(game["pick"])}' if game.get('pick') else 'No model edge')
+                f'PGO winner pick: {_text(game["pick"])}' if game.get('pick') else 'No model edge')
         probability = confidence.get('win_probability')
         chance = ''
         if game.get('pick') and not game.get('blocked_reason') and game['forecast_status']!='BLOCKED' and probability is not None:
             if not 0 <= _number(probability) <= 1: raise ValueError('Invalid saved win probability')
             chance = ('<p>Probability added after lock; excluded from pregame accuracy.</p>' if confidence.get('added_after_lock') else
                       f'<p class="game-day-chance">{probability:.1%} win chance</p>')
+        lines = ''
+        if state.get('ats'):
+            quote = ats_games.get(game['game_id'])
+            if quote:
+                handicap = _number(quote['home_handicap'])
+                label = f'{_text(game["home"])} {handicap:+g}'
+                lines = f'<p>Saved sportsbook line: <strong>{label}</strong> (via ESPN). '
+                if quote.get('status')=='STALE' or quote.get('stale_reason'):
+                    lines += 'Comparison needs a fresh check. '
+            else:
+                lines = '<p>Sportsbook line unavailable. '
+            lines += f'<a href="#season-ats" data-view-key="game-day-ats-{key}">PGO projected line and coverage checks</a></p>'
         result = game.get('result')
         status = ('Final: ' + f'{_text(game["away"])} {_integer(result["away_score"])}, {_text(game["home"])} {_integer(result["home_score"])}'
                   if result else '<span data-weekly-cutoff="' + _text(game['lock_at']) + '">' + ('Locked' if utc(state['checked_at'])>=utc(game['lock_at']) else 'Draft') + '</span>'
                   if game['forecast_status']!='BLOCKED' and not game.get('blocked_reason') else 'Withheld')
         cards.append(f'<article class="game-day-card"><div><h4>{_text(game["away"])} @ {_text(game["home"])}</h4>'
-                     f'<p class="game-day-pick">{pick}</p>{chance}<p>{status}</p>'
+                     f'<p class="game-day-pick">{pick}</p>{chance}{lines}<p>{status}</p>'
                      f'<dl class="game-day-times"><div><dt>Kickoff</dt><dd>{_time(game["kickoff"],clock_only=True)}</dd></div>'
                      f'<div><dt>Prediction lock</dt><dd>{_time(game["lock_at"],clock_only=True)}</dd></div></dl></div><div>{_absences(game,True)}'
                      f'<details data-view-key="game-day-availability-{key}"><summary>Absences and availability</summary>{_absences(game)}'
@@ -613,6 +626,10 @@ def render_season(state, *, accuracy=None):
     if accuracy is None:
         from pgo_season_accuracy import summarize
         accuracy = summarize(state)
+    ats_view = ''
+    if state.get('ats'):
+        from pgo_ats_view import render
+        ats_view = render(state['ats'])
     weeks = state['weeks']
     if len({w['week'] for w in weeks}) != len(weeks): raise ValueError('Duplicate season week')
     games = [game for week in weeks for game in week['games']]
@@ -630,6 +647,7 @@ def render_season(state, *, accuracy=None):
     links.append(('season-records','Model records'))
     links.append(('season-accuracy','Accuracy'))
     if state.get('rankings'): links.append(('season-rankings','Rankings'))
+    if state.get('ats'): links.append(('season-ats','Spreads & ATS'))
     if state.get('penalty_shadow'): links.append(('pgo-penalty-test','Penalty test'))
     if any(state.get(k) for k in ('totals_shadow','weights_shadow','replacement_depth')):
         links.append(('season-model-tests','Model tests'))
@@ -652,7 +670,7 @@ def render_season(state, *, accuracy=None):
             '<p>Rounded score estimates can look equal even when one team has a small edge. '
             'About 25 points each is not a prediction of a tied game. Open Model averages for decimal estimates.</p></details>'
             f'<p>Automation status: {state["status"]}. Last automation check: {_time(state["checked_at"])}. {_text(state.get("freshness", ""))}</p>{block}'
-            '<p><strong>Picks and W/L/T records are straight-up: which team wins, not against the spread (ATS).</strong> '
+            '<p><strong>The main W/L/T records grade straight-up winners. Spread comparisons have separate records below.</strong> '
             'Any victory by the selected team earns a W, regardless of the winning margin. '
             'Lead error separately measures how close the predicted margin was. The predicted lead is a model estimate, not a sportsbook line. '
             'Grades use saved picks and verified final scores. Missing results remain pending. '
@@ -673,6 +691,7 @@ def render_season(state, *, accuracy=None):
             + (current_weeks or '<p>No saved slate is available for this week.</p>') +
             ('<details class="model-update-evidence" data-view-key="week-archives"><summary>Previous weekly grades and forecasts</summary>' + archives + '</details>' if archives else '') +
             _penalty_shadow(state.get('penalty_shadow')) +
+            ats_view +
             _experiments(state) +
             '<details class="model-update-evidence" data-view-key="season-sources"><summary>Sources and limitations</summary>'
             + _sources(state.get('sources', [])) + '<ul>' + ''.join(f'<li>{_text(item)}</li>' for item in state.get('limitations', [])) + '</ul></details></div>')
