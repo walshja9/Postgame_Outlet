@@ -38,6 +38,43 @@ def state():
 
 
 class SeasonViewTests(unittest.TestCase):
+    def test_inline_grades_keep_winner_and_saved_spread_outcomes_separate(self):
+        from tests.test_pgo_ats_view import fixture
+        data=state(); game=data['weeks'][0]['games'][0]
+        game.update(margin=3.3,total=45,home_points=24.15,away_points=20.85,
+                    result={'home_score':13,'away_score':10},source_edition='old',
+                    issued_at='2026-09-09T21:00:00Z')
+        data['ats']=fixture(); comparison=data['ats']['games'][0]
+        comparison.update(game_id='old',home='SEA',away='NE',su_pick='SEA',ats_pick='NE',
+                          pgo_margin=3.3,model_home_handicap=-3.3,home_handicap=-7,away_handicap=7,
+                          home_edge=-3.7,source_edition='old',pgo_issued_at=game['issued_at'],
+                          grade=dict(model_line='L',straight_up_ats='L',ats='W'))
+        before=copy.deepcopy(data); page=view.render_season(data)
+        row=page.split('id="season-game-old"')[1].split('</tr>')[0]
+        for text in ('Predicted: NE 21, SEA 24','Final: NE 10, SEA 13','Winner:</strong> W',
+                     'PGO line (SEA -3.3): Below projection',
+                     'Winner vs sportsbook (SEA -7): Not covered',
+                     'ATS pick (NE +7): Covered','data-grade="W"'):
+            self.assertIn(text,row)
+        self.assertNotIn('Earlier saved comparison',row)
+        self.assertEqual(data,before)
+        comparison.update(source_edition='older',pgo_margin=-1,model_home_handicap=1,
+                          su_pick='NE',grade=dict(model_line='PUSH',straight_up_ats='PUSH',ats='NOPICK'),
+                          ats_pick=None,home_edge=0)
+        row=view.render_season(data).split('id="season-game-old"')[1].split('</tr>')[0]
+        for text in ('Earlier saved comparison','NE','Matched projection','Push','No edge','Winner:</strong> W'):
+            self.assertIn(text,row)
+        data['ats']['games']=[]; data['ats']['unavailable']=[dict(comparison,reason='No pre-lock quote',
+                                                               grade=dict(model_line='L'))]
+        row=view.render_season(data).split('id="season-game-old"')[1].split('</tr>')[0]
+        self.assertIn('Below projection',row)
+        self.assertIn('Winner vs sportsbook: Unavailable',row)
+        self.assertIn('ATS pick: Unavailable',row)
+        data.pop('ats')
+        row=view.render_season(data).split('id="season-game-old"')[1].split('</tr>')[0]
+        self.assertNotIn('Below projection',row)
+        self.assertIn('Winner:</strong> W',row)
+
     def test_game_day_and_freshness_use_saved_eastern_clocks(self):
         data=state(); data['checked_at']='2026-09-17T00:30:00Z'
         data['source_captures']=[{'url':'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?week=2',
@@ -168,14 +205,14 @@ class SeasonViewTests(unittest.TestCase):
         game.update(grade='T',result={'home_score':20,'away_score':20},forecast_status='FINAL')
         game['confidence']['earned_points']=0
         page=view.render_season(data)
-        self.assertIn('data-grade="T">T',page)
+        self.assertIn('data-grade="T"><strong>Winner:</strong> T',page)
         self.assertIn('SEA 20',page)
         self.assertIn('Earned pool points: 0',page)
         self.assertIn('Expected pool points: 0.51',page)
         game.update(pick=None,grade='NO_PICK',blocked_reason='No eligible pick')
         page=view.render_season(data)
         self.assertIn('No pick',page)
-        self.assertNotIn('data-grade="W">W',page.split('data-season-game-id="current"')[1].split('</tr>')[0])
+        self.assertNotIn('data-grade="W"',page.split('data-season-game-id="current"')[1].split('</tr>')[0])
 
     def test_optional_matchup_chain_reconciles_and_units_stay_distinct(self):
         data=state(); game=data['weeks'][1]['games'][0]

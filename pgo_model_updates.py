@@ -20,6 +20,7 @@ STYLE = """<style>
 .pgo-model-updates .table-shell{overflow-x:auto;container-type:inline-size}
 .pgo-model-updates table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 .pgo-model-updates th,.pgo-model-updates td{padding:9px;border-bottom:1px solid var(--border);text-align:right;vertical-align:top;white-space:nowrap}
+.pgo-model-updates td.game-grade-checks{min-width:12rem;max-width:16rem;white-space:normal;text-align:left}
 .pgo-model-updates tbody th{text-align:left;letter-spacing:normal;text-transform:none;background:var(--panel);color:var(--ink)}
 .pgo-model-updates summary{cursor:pointer;font-weight:700}
 .pgo-model-updates .forecast-week{margin:12px 0;padding:12px;border:1px solid var(--border);border-radius:10px}

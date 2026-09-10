@@ -235,7 +235,7 @@ def _rankings(snapshot):
             + ''.join(explanations) + '</details>')
 
 
-def _game(game, week):
+def _game(game, week, comparison=None):
     from pgo_forecast_lab import _spread, _projected_score
     if game['grade'] not in GRADES or game['forecast_status'] not in FORECAST_STATES:
         raise ValueError('Unknown season forecast or grade status')
@@ -255,8 +255,8 @@ def _game(game, week):
             raise ValueError('Season saved scores do not reconcile')
         whole = [Decimal(str(value)).quantize(Decimal('1'),rounding=ROUND_HALF_UP) for value in (ap,hp)]
         summary = f'About {whole[0]} points each' if whole[0] == whole[1] else f'{away} {whole[0]}, {home} {whole[1]}'
-        scores = f'{summary}<details data-view-key="score-{game_id}"><summary>Model averages</summary><p>{away} {_projected_score(ap)}, {home} {_projected_score(hp)}</p></details>'
-        favorite += f'<br><small>{_spread(game)}</small>'
+        scores = f'Predicted: {summary}<details data-view-key="score-{game_id}"><summary>Model averages</summary><p>{away} {_projected_score(ap)}, {home} {_projected_score(hp)}</p></details>'
+        favorite += f'<br><small>Projected margin:<br>{_spread(game)}</small>'
         explanation = game.get('explanation')
         components = ''
         if explanation is not None:
@@ -278,7 +278,33 @@ def _game(game, week):
             scores = '<strong>Saved conditional estimate</strong><br>' + scores
             calculation = 'This estimate is withheld as a pick until the blocking issue is resolved. ' + calculation
     result = game.get('result')
-    actual = 'Pending' if result is None else f'{away} {_integer(result["away_score"])}, {home} {_integer(result["home_score"])}'
+    actual = 'Pending' if result is None else f'Final: {away} {_integer(result["away_score"])}, {home} {_integer(result["home_score"])}'
+    outcomes = f'<strong>Winner:</strong> {GRADES[game["grade"]]}'
+    if comparison is not None:
+        from pgo_ats_view import grade_label
+        if any(comparison.get(key) != game[key] for key in ('home','away')):
+            raise ValueError('Saved comparison teams differ from the matchup')
+        if any(comparison.get(key) != game.get(source) for key,source in
+               (('pgo_margin','margin'),('pgo_issued_at','issued_at'),('source_edition','source_edition'),('su_pick','pick'))):
+            outcomes += '<br><strong>Earlier saved comparison</strong>'
+        for key,label,team in (('model_line','PGO line',comparison.get('su_pick')),
+                               ('straight_up_ats','Winner vs sportsbook',comparison.get('su_pick')),
+                               ('ats','ATS pick',comparison.get('ats_pick'))):
+            value = comparison.get('grade',{}).get(key,'UNAVAILABLE')
+            line = ''
+            if team and value != 'UNAVAILABLE':
+                if team not in (game['home'],game['away']):
+                    raise ValueError('Saved comparison pick is outside the matchup')
+                handicap = (-_number(comparison['pgo_margin']) if key == 'model_line' else
+                            _number(comparison['home_handicap']))
+                handicap = handicap if team == game['home'] else -handicap
+                shown = f'{handicap:+.1f}' if key == 'model_line' else f'{handicap:+g}'
+                line = f' ({_text(team)} {shown})'
+            result_label = grade_label(value,ats_choice=key=='ats',model_line=key=='model_line')
+            outcomes += f'<br><small>{label}{line}: {result_label}</small>'
+        if comparison.get('stale_reason'):
+            outcomes += '<br><small>Stale comparison; see saved details.</small>'
+        outcomes += f'<br><a href="#season-ats-game-{game_id}" data-view-key="game-grades-{game_id}">Saved lines and grading details</a>'
     confidence = game.get('confidence')
     pool = 'Confidence unavailable'
     if confidence is not None:
@@ -313,7 +339,7 @@ def _game(game, week):
     if status in ('DRAFT','LOCKED'):
         status = f'<span class="weekly-status" data-weekly-cutoff="{_text(game["lock_at"])}">{status.title()}</span>'
     return (f'<tr id="season-game-{game_id}" data-season-game-id="{game_id}"><th scope="row">{away} @ {home}</th>'
-            f'<td>{favorite}</td><td>{scores}</td><td data-grade="{game["grade"]}">{GRADES[game["grade"]]}</td>'
+            f'<td>{favorite}</td><td>{scores}</td><td class="game-grade-checks" data-grade="{game["grade"]}">{outcomes}</td>'
             f'<td>{actual}</td><td>{pool}</td><td>{status}<br>Deadline {_time(game.get("lock_at"))}'
             f'<br>Kickoff {_time(game["kickoff"])}</td></tr>'
             f'<tr class="forecast-reason-row"><td colspan="7"><details class="forecast-reason" data-view-key="reason-{game_id}">'
@@ -325,7 +351,7 @@ def _game(game, week):
             '<p>Non-QB injury news is context, not a fitted injury adjustment.</p></div></div></details></td></tr>')
 
 
-def _week(week, current):
+def _week(week, current, comparisons=None):
     if week['status'] not in WEEK_STATES: raise ValueError('Unknown week status')
     games = week['games']
     _integer(week['week'])
@@ -336,7 +362,7 @@ def _week(week, current):
     if len(ids) != len(set(ids)) or len(points) != len(set(points)):
         raise ValueError('Duplicate game or confidence allocation in week')
     counts = Counter(game['grade'] for game in games)
-    rows = ''.join(_game(game,week) for game in games)
+    rows = ''.join(_game(game,week,(comparisons or {}).get(game['game_id'])) for game in games)
     allocations = [game['confidence'] for game in games if game.get('confidence') is not None]
     pool_summary = ''
     if allocations:
@@ -347,10 +373,10 @@ def _week(week, current):
                         f'Expected pool points from the saved chances: {expected}. Late entries remain marked below.</p>')
     return (f'<details class="forecast-week" id="season-week-{week["week"]}" data-view-key="week-{week["week"]}"{" open" if current else ""}>'
             f'<summary>Week {week["week"]}: {_text(week["status"].replace("_"," "))}</summary>'
-            f'<p>{counts["W"]} W / {counts["L"]} L / {counts["T"]} T; {counts["NO_PICK"]} no pick; {counts["PENDING"]} pending.</p>'
-            f'<p>Saved {_time(week["generated_at"])}; inputs through {_time(week["inputs_as_of"])}.</p>{pool_summary}'
-            f'<div class="table-shell" data-view-key="week-table-{week["week"]}"><table><thead><tr><th>Matchup</th><th>PGO pick</th><th>Estimated score</th>'
-            '<th>Grade</th><th>Final score</th><th>Confidence allocation</th><th>Forecast status and times</th>'
+            f'<p>Straight-up record: {counts["W"]} W / {counts["L"]} L / {counts["T"]} T; {counts["NO_PICK"]} no pick; {counts["PENDING"]} pending.</p>'
+            f'<p>Original forecast saved {_time(week["generated_at"])}; inputs through {_time(week["inputs_as_of"])}.</p>{pool_summary}'
+            f'<div class="table-shell" data-view-key="week-table-{week["week"]}"><table><thead><tr><th>Matchup</th><th>Winner pick</th><th>Predicted score</th>'
+            '<th>Winner and spread checks</th><th>Final score</th><th>Confidence allocation</th><th>Forecast status and times</th>'
             f'</tr></thead><tbody>{rows}</tbody></table></div></details>')
 
 
@@ -627,9 +653,11 @@ def render_season(state, *, accuracy=None):
         from pgo_season_accuracy import summarize
         accuracy = summarize(state)
     ats_view = ''
+    comparisons = {}
     if state.get('ats'):
         from pgo_ats_view import render
         ats_view = render(state['ats'])
+        comparisons = {g['game_id']:g for key in ('games','unavailable') for g in state['ats'].get(key,[])}
     weeks = state['weeks']
     if len({w['week'] for w in weeks}) != len(weeks): raise ValueError('Duplicate season week')
     games = [game for week in weeks for game in week['games']]
@@ -640,8 +668,8 @@ def render_season(state, *, accuracy=None):
         counts = ''.join(f'<td>{_integer(row[key])}</td>' for key in ('wins','losses','ties','no_pick','pending'))
         records.append(f'<tr><th scope="row">{_text(row["name"])}<br><small>{_text(row["edition"])}</small></th>{counts}</tr>')
     block = f'<p><strong>Update blocked:</strong> {_text(state["blocked_reason"])}</p>' if state.get('blocked_reason') else ''
-    current_weeks = ''.join(_week(w,True) for w in weeks if w['week'] == current)
-    archives = ''.join(_week(w,False) for w in sorted(weeks,key=lambda w:w['week'],reverse=True) if w['week'] != current)
+    current_weeks = ''.join(_week(w,True,comparisons) for w in weeks if w['week'] == current)
+    archives = ''.join(_week(w,False,comparisons) for w in sorted(weeks,key=lambda w:w['week'],reverse=True) if w['week'] != current)
     links = [('season-game-day','Game day')]
     if current_weeks: links.append((f'season-week-{current}',f'Week {current} picks'))
     links.append(('season-records','Model records'))
@@ -683,6 +711,8 @@ def render_season(state, *, accuracy=None):
             'the preseason baselines cover all 272 regular-season games, so their pending counts can be larger.</p>'
             + _accuracy(accuracy) +
             f'<h3>Week {current} picks and grades</h3>'
+            '<p>Winner grades count who won. Each game also shows how its saved picks compared with the PGO projection '
+            'and sportsbook line. A correct winner can fall below the projected margin or fail to cover the spread.</p>'
             '<p><strong>Fixed confidence points:</strong> the weekly allocation is saved once. '
             'Before a game locks, an expected-QB update may change its win chance without reallocating its confidence points. '
             'Expected pool points = fixed points times win chance; these are not NFL scoreboard points. '

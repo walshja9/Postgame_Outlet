@@ -1,6 +1,17 @@
 """Pure rendering of saved PGO lines and separate against-the-spread records."""
 
 
+def grade_label(value, *, ats_choice=False, model_line=False):
+    labels = {'W': 'Covered', 'L': 'Not covered', 'PUSH': 'Push', 'PENDING': 'Pending',
+              'NOPICK': 'No edge' if ats_choice else 'No winner pick', 'NOEDGE': 'No edge',
+              'UNAVAILABLE': 'Unavailable'}
+    if model_line:
+        labels.update(W='Exceeded projection', L='Below projection', PUSH='Matched projection')
+    if value not in labels:
+        raise ValueError('Unknown saved ATS grade')
+    return labels[value]
+
+
 def render(ats):
     from pgo_season_view import _text, _time, _number, _integer, _test_table, _sources
 
@@ -14,16 +25,6 @@ def render(ats):
 
     def line(team, handicap):
         return 'Unavailable' if handicap is None else _text(team) + ' ' + signed(handicap)
-
-    def grade(value, *, ats_choice=False, model_line=False):
-        labels = {'W': 'Covered', 'L': 'Not covered', 'PUSH': 'Push', 'PENDING': 'Pending',
-                  'NOPICK': 'No edge' if ats_choice else 'No winner pick', 'NOEDGE': 'No edge',
-                  'UNAVAILABLE': 'Unavailable'}
-        if model_line:
-            labels.update(W='Exceeded projection', L='Below projection', PUSH='Matched projection')
-        if value not in labels:
-            raise ValueError('Unknown saved ATS grade')
-        return labels[value]
 
     unavailable = ats.get('unavailable', [])
     metrics = ats.get('metrics', {})
@@ -55,7 +56,7 @@ def render(ats):
             projected = -_number(game['pgo_margin'])
         pgo_line = 'Unavailable' if projected is None else _text(home) + f' {_number(projected):+.1f}'
         grades = game.get('grade', {})
-        model_grade = grade(grades.get('model_line', 'UNAVAILABLE'), model_line=True)
+        model_grade = grade_label(grades.get('model_line', 'UNAVAILABLE'), model_line=True)
         provider = (game.get('provider') or ats.get('provider') or {}).get('name', 'Provider unavailable')
         if available:
             market = line(home, game['home_handicap']) + ' / ' + line(away, game['away_handicap'])
@@ -75,8 +76,8 @@ def render(ats):
                 edge = home_edge if pick == home else -home_edge
                 choice = line(pick, game['home_handicap'] if pick == home else game['away_handicap'])
                 choice += '; edge ' + signed(edge) + ' NFL points'
-            su_grade = grade(grades.get('straight_up_ats', 'PENDING'))
-            ats_grade = grade(grades.get('ats', 'PENDING'), ats_choice=True)
+            su_grade = grade_label(grades.get('straight_up_ats', 'PENDING'))
+            ats_grade = grade_label(grades.get('ats', 'PENDING'), ats_choice=True)
             note = '<p>' + status_label + '. ' + _text(game.get('stale_reason') or '') + '</p>'
             clocks = [('Quote captured', game.get('quote_captured_at')), ('ATS selection issued', game.get('issued_at')),
                       ('Prediction lock', game.get('lock_at')), ('Kickoff', game.get('kickoff'))]
