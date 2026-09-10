@@ -38,6 +38,50 @@ def state():
 
 
 class SeasonViewTests(unittest.TestCase):
+    def test_game_day_and_freshness_use_saved_eastern_clocks(self):
+        data=state(); data['checked_at']='2026-09-17T00:30:00Z'
+        data['source_captures']=[{'url':'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?week=2',
+                                  'captured_at':'2026-09-17T00:20:00Z'}]
+        game=data['weeks'][1]['games'][0]
+        game.update(kickoff='2026-09-17T01:00:00Z', lock_at='2026-09-17T00:00:00Z')
+        game['availability']['teams']={'NE':{'final_inactives_status':'UNKNOWN','observations':[
+            {'name':'Player <name>','position':'LB','status':'OUT','gsis_id':'00-0000001'}]}}
+        for team in data['rankings']['teams']: team.pop('prior_rank')
+        before=copy.deepcopy(data); page=view.render_season(data)
+        self.assertEqual(data,before)
+        self.assertIn('Game day &middot; September 16',page)
+        self.assertLess(page.index('id="season-game-day"'),page.index('id="season-rankings"'))
+        self.assertIn('51.0% win chance',page)
+        self.assertIn('Player &lt;name&gt; (LB): Out',page)
+        self.assertIn('Final inactive lists are not fully verified',page)
+        self.assertIn('Ranking inputs captured',page)
+        self.assertIn('First saved ranking edition',page)
+        self.assertNotIn('Performance history through',page)
+        self.assertIn('Results checked',page)
+        self.assertIn('2026-09-17T00:20:00Z',page)
+        self.assertIn('data-freshness-minutes="45"',page)
+        game['confidence']['added_after_lock']=True
+        game['blocked_reason']='Awaiting QB'; game['pick']=None
+        card=view.render_season(data).split('class="game-day-card"')[-1].split('</article>')[0]
+        self.assertNotIn('51.0% win chance',card)
+        self.assertIn('Pick withheld',card)
+        data['checked_at']='2026-09-15T20:00:00Z'
+        self.assertIn('No games on this date',view.render_season(data))
+
+    def test_availability_freshness_uses_the_actual_refresh_window(self):
+        data=state();data['checked_at']='2026-09-16T21:30:00Z'
+        game=data['weeks'][1]['games'][0];game['availability']['checked_at']='2026-09-16T21:25:00Z'
+        later=copy.deepcopy(game);later.update(game_id='later',kickoff='2026-09-20T17:00:00Z',lock_at='2026-09-20T16:00:00Z')
+        later['availability']['checked_at']='2026-09-09T21:00:00Z'
+        data['weeks'][1]['games'].append(later)
+        data['weeks']=data['weeks'][1:]
+        freshness=view._freshness(data)
+        self.assertIn('2026-09-16T21:25:00Z',freshness)
+        self.assertNotIn('2026-09-09T21:00:00Z',freshness)
+        self.assertNotIn('Update overdue',freshness)
+        data['checked_at']='2026-09-17T12:00:00Z'
+        self.assertIn('No unlocked games within the next 24 hours',view._freshness(data))
+
     def test_reading_keys_and_navigation_survive_rank_and_week_changes(self):
         class Tags(HTMLParser):
             def __init__(self, text):
@@ -80,6 +124,7 @@ class SeasonViewTests(unittest.TestCase):
         self.assertEqual(page.count('data-season-game-id='),2)
         self.assertLess(page.index('data-season-game-id="current"'),page.index('data-season-game-id="old"'))
         self.assertIn('Week 2',page)
+        self.assertIn('Any victory by the selected team earns a W, regardless of the winning margin.',page)
         self.assertIn('Week 1',page)
         self.assertIn('Model records',page)
         self.assertIn('data-season-checked-at="2026-09-16T22:30:00Z"',page)
@@ -125,8 +170,9 @@ class SeasonViewTests(unittest.TestCase):
         page=view.render_season(data)
         self.assertIn('data-grade="T">T',page)
         self.assertIn('SEA 20',page)
-        self.assertIn('Earned: 0',page)
-        game.update(pick=None,grade='NO_PICK')
+        self.assertIn('Earned pool points: 0',page)
+        self.assertIn('Expected pool points: 0.51',page)
+        game.update(pick=None,grade='NO_PICK',blocked_reason='No eligible pick')
         page=view.render_season(data)
         self.assertIn('No pick',page)
         self.assertNotIn('data-grade="W">W',page.split('data-season-game-id="current"')[1].split('</tr>')[0])

@@ -1,0 +1,1976 @@
+{
+  "metrics": {
+    "postseason": {
+      "large_predicted_margin_abs_ge_7": {
+        "bias_predicted_minus_actual": -0.6614418462227871,
+        "count": 518,
+        "mae": 10.558329131086444,
+        "rmse": 13.115876623483137,
+        "winner": {
+          "accuracy": 0.7818532818532818,
+          "actual_ties": 0,
+          "correct": 405,
+          "denominator": 518,
+          "predicted_ties": 0
+        }
+      },
+      "neutral_site": {
+        "bias_predicted_minus_actual": 0.1351335643182609,
+        "count": 37,
+        "mae": 8.374465436711404,
+        "rmse": 11.595516913766957,
+        "winner": {
+          "accuracy": 0.7027027027027027,
+          "actual_ties": 0,
+          "correct": 26,
+          "denominator": 37,
+          "predicted_ties": 0
+        }
+      },
+      "overall": {
+        "bias_predicted_minus_actual": 0.15019686441190438,
+        "count": 2127,
+        "mae": 10.102101956753824,
+        "rmse": 13.04464307381374,
+        "winner": {
+          "accuracy": 0.6526663520528552,
+          "actual_ties": 8,
+          "correct": 1383,
+          "denominator": 2119,
+          "predicted_ties": 0
+        }
+      },
+      "seasons": [
+        {
+          "bias_predicted_minus_actual": -0.18932617964191106,
+          "count": 256,
+          "mae": 10.097263851588052,
+          "rmse": 13.172727333856688,
+          "season": 2018,
+          "winner": {
+            "accuracy": 0.6614173228346457,
+            "actual_ties": 2,
+            "correct": 168,
+            "denominator": 254,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 2.171322402170327,
+          "count": 256,
+          "mae": 10.460045086235624,
+          "rmse": 13.448868933867505,
+          "season": 2019,
+          "winner": {
+            "accuracy": 0.615686274509804,
+            "actual_ties": 1,
+            "correct": 157,
+            "denominator": 255,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 1.749891894019477,
+          "count": 256,
+          "mae": 10.202434545817686,
+          "rmse": 13.047298983143108,
+          "season": 2020,
+          "winner": {
+            "accuracy": 0.6470588235294118,
+            "actual_ties": 1,
+            "correct": 165,
+            "denominator": 255,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.09611445815381463,
+          "count": 272,
+          "mae": 11.045653202648001,
+          "rmse": 14.044822398252725,
+          "season": 2021,
+          "winner": {
+            "accuracy": 0.6383763837638377,
+            "actual_ties": 1,
+            "correct": 173,
+            "denominator": 271,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.5487476077603695,
+          "count": 271,
+          "mae": 8.825179775658146,
+          "rmse": 11.588480096841772,
+          "season": 2022,
+          "winner": {
+            "accuracy": 0.6468401486988847,
+            "actual_ties": 2,
+            "correct": 174,
+            "denominator": 269,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -1.0508178582123142,
+          "count": 272,
+          "mae": 10.325922442693333,
+          "rmse": 13.458870955140219,
+          "season": 2023,
+          "winner": {
+            "accuracy": 0.6507352941176471,
+            "actual_ties": 0,
+            "correct": 177,
+            "denominator": 272,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.1705800162147818,
+          "count": 272,
+          "mae": 9.732724853900393,
+          "rmse": 12.73657506923258,
+          "season": 2024,
+          "winner": {
+            "accuracy": 0.7205882352941176,
+            "actual_ties": 0,
+            "correct": 196,
+            "denominator": 272,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.47360540833482395,
+          "count": 272,
+          "mae": 10.149570129434153,
+          "rmse": 12.74618014701928,
+          "season": 2025,
+          "winner": {
+            "accuracy": 0.6383763837638377,
+            "actual_ties": 1,
+            "correct": 173,
+            "denominator": 271,
+            "predicted_ties": 0
+          }
+        }
+      ],
+      "teams": [
+        {
+          "bias_predicted_minus_actual": 1.9210589953277282,
+          "count": 133,
+          "mae": 10.243031330066316,
+          "rmse": 13.2162842486974,
+          "team": "ARI",
+          "winner": {
+            "accuracy": 0.6363636363636364,
+            "actual_ties": 1,
+            "correct": 84,
+            "denominator": 132,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 2.31640029728947,
+          "count": 133,
+          "mae": 10.027387182649253,
+          "rmse": 13.243457623282504,
+          "team": "ATL",
+          "winner": {
+            "accuracy": 0.556390977443609,
+            "actual_ties": 0,
+            "correct": 74,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -3.8449979867320447,
+          "count": 133,
+          "mae": 10.854145925407662,
+          "rmse": 14.431902388367357,
+          "team": "BAL",
+          "winner": {
+            "accuracy": 0.6240601503759399,
+            "actual_ties": 0,
+            "correct": 83,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -2.152719848052246,
+          "count": 132,
+          "mae": 11.15936733992612,
+          "rmse": 14.32446233070408,
+          "team": "BUF",
+          "winner": {
+            "accuracy": 0.6893939393939394,
+            "actual_ties": 0,
+            "correct": 91,
+            "denominator": 132,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 1.8881206935022274,
+          "count": 133,
+          "mae": 11.318644826740437,
+          "rmse": 13.894898243937803,
+          "team": "CAR",
+          "winner": {
+            "accuracy": 0.6090225563909775,
+            "actual_ties": 0,
+            "correct": 81,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.5504049423193341,
+          "count": 133,
+          "mae": 8.540395122482092,
+          "rmse": 11.346942733052167,
+          "team": "CHI",
+          "winner": {
+            "accuracy": 0.7293233082706767,
+            "actual_ties": 0,
+            "correct": 97,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 1.112444341075515,
+          "count": 132,
+          "mae": 10.238678783233837,
+          "rmse": 13.47607823097513,
+          "team": "CIN",
+          "winner": {
+            "accuracy": 0.6412213740458015,
+            "actual_ties": 1,
+            "correct": 84,
+            "denominator": 131,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 0.39091626555139564,
+          "count": 133,
+          "mae": 9.875590117966672,
+          "rmse": 12.533636506833636,
+          "team": "CLE",
+          "winner": {
+            "accuracy": 0.6515151515151515,
+            "actual_ties": 1,
+            "correct": 86,
+            "denominator": 132,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.9146955243883629,
+          "count": 133,
+          "mae": 12.094310486508668,
+          "rmse": 15.336282384288854,
+          "team": "DAL",
+          "winner": {
+            "accuracy": 0.6666666666666666,
+            "actual_ties": 1,
+            "correct": 88,
+            "denominator": 132,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.8516912021925189,
+          "count": 133,
+          "mae": 10.071913185667093,
+          "rmse": 13.255683657637267,
+          "team": "DEN",
+          "winner": {
+            "accuracy": 0.6165413533834586,
+            "actual_ties": 0,
+            "correct": 82,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 0.14033228018590366,
+          "count": 133,
+          "mae": 10.362086373189348,
+          "rmse": 13.608691203416903,
+          "team": "DET",
+          "winner": {
+            "accuracy": 0.6717557251908397,
+            "actual_ties": 2,
+            "correct": 88,
+            "denominator": 131,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.32010618462014545,
+          "count": 133,
+          "mae": 9.119791337955254,
+          "rmse": 11.645647378333777,
+          "team": "GB",
+          "winner": {
+            "accuracy": 0.6564885496183206,
+            "actual_ties": 2,
+            "correct": 86,
+            "denominator": 131,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 0.2884276821382907,
+          "count": 133,
+          "mae": 9.301105335895103,
+          "rmse": 12.112721215381116,
+          "team": "HOU",
+          "winner": {
+            "accuracy": 0.6666666666666666,
+            "actual_ties": 1,
+            "correct": 88,
+            "denominator": 132,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.03158883228217218,
+          "count": 133,
+          "mae": 9.587021953970941,
+          "rmse": 12.373380777859175,
+          "team": "IND",
+          "winner": {
+            "accuracy": 0.6363636363636364,
+            "actual_ties": 1,
+            "correct": 84,
+            "denominator": 132,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 0.9319063316649278,
+          "count": 133,
+          "mae": 10.965590897963258,
+          "rmse": 13.800235243587503,
+          "team": "JAX",
+          "winner": {
+            "accuracy": 0.6992481203007519,
+            "actual_ties": 0,
+            "correct": 93,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.32453567584218823,
+          "count": 133,
+          "mae": 8.561931655795792,
+          "rmse": 11.147924603811003,
+          "team": "KC",
+          "winner": {
+            "accuracy": 0.7368421052631579,
+            "actual_ties": 0,
+            "correct": 98,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 0.8078441576502181,
+          "count": 133,
+          "mae": 9.397644242808031,
+          "rmse": 12.61527694065239,
+          "team": "LAC",
+          "winner": {
+            "accuracy": 0.6015037593984962,
+            "actual_ties": 0,
+            "correct": 80,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.6500432561986914,
+          "count": 133,
+          "mae": 9.786325706991805,
+          "rmse": 12.548112646980002,
+          "team": "LAR",
+          "winner": {
+            "accuracy": 0.706766917293233,
+            "actual_ties": 0,
+            "correct": 94,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 2.510944554294054,
+          "count": 133,
+          "mae": 10.414246297099158,
+          "rmse": 13.211430293175491,
+          "team": "LV",
+          "winner": {
+            "accuracy": 0.6466165413533834,
+            "actual_ties": 0,
+            "correct": 86,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 0.8470685764931337,
+          "count": 133,
+          "mae": 10.98199002064034,
+          "rmse": 14.505209090332437,
+          "team": "MIA",
+          "winner": {
+            "accuracy": 0.7218045112781954,
+            "actual_ties": 0,
+            "correct": 96,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -1.1689054448150866,
+          "count": 133,
+          "mae": 8.890658608995905,
+          "rmse": 11.919038213354582,
+          "team": "MIN",
+          "winner": {
+            "accuracy": 0.6742424242424242,
+            "actual_ties": 1,
+            "correct": 89,
+            "denominator": 132,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -1.5224721873726512,
+          "count": 133,
+          "mae": 11.169812167396236,
+          "rmse": 14.67013239625161,
+          "team": "NE",
+          "winner": {
+            "accuracy": 0.6541353383458647,
+            "actual_ties": 0,
+            "correct": 87,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -1.6198779427364725,
+          "count": 133,
+          "mae": 11.080206870350013,
+          "rmse": 13.966821146285561,
+          "team": "NO",
+          "winner": {
+            "accuracy": 0.6541353383458647,
+            "actual_ties": 0,
+            "correct": 87,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 1.3580339347632204,
+          "count": 133,
+          "mae": 9.792204347518846,
+          "rmse": 12.183442020770162,
+          "team": "NYG",
+          "winner": {
+            "accuracy": 0.696969696969697,
+            "actual_ties": 1,
+            "correct": 92,
+            "denominator": 132,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 2.055960487571673,
+          "count": 133,
+          "mae": 10.61517937757537,
+          "rmse": 13.446557087205818,
+          "team": "NYJ",
+          "winner": {
+            "accuracy": 0.6917293233082706,
+            "actual_ties": 0,
+            "correct": 92,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.3945025598479443,
+          "count": 133,
+          "mae": 9.695023623216237,
+          "rmse": 12.471179094394037,
+          "team": "PHI",
+          "winner": {
+            "accuracy": 0.6439393939393939,
+            "actual_ties": 1,
+            "correct": 85,
+            "denominator": 132,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.4060519141417616,
+          "count": 133,
+          "mae": 9.083038667399432,
+          "rmse": 11.37579927150473,
+          "team": "PIT",
+          "winner": {
+            "accuracy": 0.5038167938931297,
+            "actual_ties": 2,
+            "correct": 66,
+            "denominator": 131,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -1.2845046445074868,
+          "count": 133,
+          "mae": 8.651588946283608,
+          "rmse": 10.761396386178037,
+          "team": "SEA",
+          "winner": {
+            "accuracy": 0.6090225563909775,
+            "actual_ties": 0,
+            "correct": 81,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -2.4186415634497953,
+          "count": 133,
+          "mae": 10.92219155982029,
+          "rmse": 13.546754100683517,
+          "team": "SF",
+          "winner": {
+            "accuracy": 0.6466165413533834,
+            "actual_ties": 0,
+            "correct": 86,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.33630609425097097,
+          "count": 133,
+          "mae": 9.787738878220475,
+          "rmse": 12.744656710224787,
+          "team": "TB",
+          "winner": {
+            "accuracy": 0.6691729323308271,
+            "actual_ties": 0,
+            "correct": 89,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 0.48383116552261723,
+          "count": 133,
+          "mae": 10.633377581227743,
+          "rmse": 13.249512893850762,
+          "team": "TEN",
+          "winner": {
+            "accuracy": 0.631578947368421,
+            "actual_ties": 0,
+            "correct": 84,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 1.7309344203662902,
+          "count": 133,
+          "mae": 10.054020122376482,
+          "rmse": 13.033043554300345,
+          "team": "WAS",
+          "winner": {
+            "accuracy": 0.6439393939393939,
+            "actual_ties": 1,
+            "correct": 85,
+            "denominator": 132,
+            "predicted_ties": 0
+          }
+        }
+      ],
+      "week_1": {
+        "bias_predicted_minus_actual": 1.3728795029227034,
+        "count": 128,
+        "mae": 9.898632381158432,
+        "rmse": 13.718152264584582,
+        "winner": {
+          "accuracy": 0.632,
+          "actual_ties": 3,
+          "correct": 79,
+          "denominator": 125,
+          "predicted_ties": 0
+        }
+      },
+      "weeks_1_4": {
+        "bias_predicted_minus_actual": 0.44158359363785915,
+        "count": 509,
+        "mae": 9.796440130407982,
+        "rmse": 12.969216719125324,
+        "winner": {
+          "accuracy": 0.6322067594433399,
+          "actual_ties": 6,
+          "correct": 318,
+          "denominator": 503,
+          "predicted_ties": 0
+        }
+      },
+      "weeks_5_18": {
+        "bias_predicted_minus_actual": 0.05853070546504979,
+        "count": 1618,
+        "mae": 10.198258860097479,
+        "rmse": 13.068281125134412,
+        "winner": {
+          "accuracy": 0.6590346534653465,
+          "actual_ties": 2,
+          "correct": 1065,
+          "denominator": 1616,
+          "predicted_ties": 0
+        }
+      }
+    },
+    "without_qb_passing": {
+      "large_predicted_margin_abs_ge_7": {
+        "bias_predicted_minus_actual": -1.2441213023092461,
+        "count": 493,
+        "mae": 10.759782343034665,
+        "rmse": 13.430537367075958,
+        "winner": {
+          "accuracy": 0.7780040733197556,
+          "actual_ties": 2,
+          "correct": 382,
+          "denominator": 491,
+          "predicted_ties": 0
+        }
+      },
+      "neutral_site": {
+        "bias_predicted_minus_actual": 0.38166439293182425,
+        "count": 37,
+        "mae": 8.551824676751693,
+        "rmse": 11.614629874415606,
+        "winner": {
+          "accuracy": 0.7027027027027027,
+          "actual_ties": 0,
+          "correct": 26,
+          "denominator": 37,
+          "predicted_ties": 0
+        }
+      },
+      "overall": {
+        "bias_predicted_minus_actual": 0.16627242621256103,
+        "count": 2127,
+        "mae": 10.151334068064834,
+        "rmse": 13.103080673551307,
+        "winner": {
+          "accuracy": 0.6512505899008967,
+          "actual_ties": 8,
+          "correct": 1380,
+          "denominator": 2119,
+          "predicted_ties": 0
+        }
+      },
+      "seasons": [
+        {
+          "bias_predicted_minus_actual": -0.1895660515013271,
+          "count": 256,
+          "mae": 10.132994962545236,
+          "rmse": 13.295603248606819,
+          "season": 2018,
+          "winner": {
+            "accuracy": 0.65748031496063,
+            "actual_ties": 2,
+            "correct": 167,
+            "denominator": 254,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 2.2581846959574228,
+          "count": 256,
+          "mae": 10.567038414243097,
+          "rmse": 13.519637375773359,
+          "season": 2019,
+          "winner": {
+            "accuracy": 0.6313725490196078,
+            "actual_ties": 1,
+            "correct": 161,
+            "denominator": 255,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 1.7430021155668431,
+          "count": 256,
+          "mae": 10.188538034549182,
+          "rmse": 13.047632592498603,
+          "season": 2020,
+          "winner": {
+            "accuracy": 0.6588235294117647,
+            "actual_ties": 1,
+            "correct": 168,
+            "denominator": 255,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.11421200156919058,
+          "count": 272,
+          "mae": 11.15513460358372,
+          "rmse": 14.145928200123436,
+          "season": 2021,
+          "winner": {
+            "accuracy": 0.6273062730627307,
+            "actual_ties": 1,
+            "correct": 170,
+            "denominator": 271,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.4783334760255919,
+          "count": 271,
+          "mae": 8.83717639740941,
+          "rmse": 11.532031310187381,
+          "season": 2022,
+          "winner": {
+            "accuracy": 0.654275092936803,
+            "actual_ties": 2,
+            "correct": 176,
+            "denominator": 269,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -1.0458791142700676,
+          "count": 272,
+          "mae": 10.42644367008542,
+          "rmse": 13.553884645997373,
+          "season": 2023,
+          "winner": {
+            "accuracy": 0.6286764705882353,
+            "actual_ties": 0,
+            "correct": 171,
+            "denominator": 272,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.24173655812593045,
+          "count": 272,
+          "mae": 9.787766357719674,
+          "rmse": 12.834570020102486,
+          "season": 2024,
+          "winner": {
+            "accuracy": 0.7058823529411765,
+            "actual_ties": 0,
+            "correct": 192,
+            "denominator": 272,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.4087792819495886,
+          "count": 272,
+          "mae": 10.136311536896295,
+          "rmse": 12.764251751545382,
+          "season": 2025,
+          "winner": {
+            "accuracy": 0.6457564575645757,
+            "actual_ties": 1,
+            "correct": 175,
+            "denominator": 271,
+            "predicted_ties": 0
+          }
+        }
+      ],
+      "teams": [
+        {
+          "bias_predicted_minus_actual": 1.9013554068013474,
+          "count": 133,
+          "mae": 10.360056870295699,
+          "rmse": 13.366424794148683,
+          "team": "ARI",
+          "winner": {
+            "accuracy": 0.6439393939393939,
+            "actual_ties": 1,
+            "correct": 85,
+            "denominator": 132,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 1.882061649813968,
+          "count": 133,
+          "mae": 9.92489274838499,
+          "rmse": 13.096493821704357,
+          "team": "ATL",
+          "winner": {
+            "accuracy": 0.5488721804511278,
+            "actual_ties": 0,
+            "correct": 73,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -3.6566001327626414,
+          "count": 133,
+          "mae": 10.936052256520103,
+          "rmse": 14.531759211356645,
+          "team": "BAL",
+          "winner": {
+            "accuracy": 0.5939849624060151,
+            "actual_ties": 0,
+            "correct": 79,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -1.8921652634212294,
+          "count": 132,
+          "mae": 11.272806038575203,
+          "rmse": 14.435189936619407,
+          "team": "BUF",
+          "winner": {
+            "accuracy": 0.7045454545454546,
+            "actual_ties": 0,
+            "correct": 93,
+            "denominator": 132,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 2.240306562511283,
+          "count": 133,
+          "mae": 11.257263230814749,
+          "rmse": 13.91682370216768,
+          "team": "CAR",
+          "winner": {
+            "accuracy": 0.5939849624060151,
+            "actual_ties": 0,
+            "correct": 79,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.18596876010096763,
+          "count": 133,
+          "mae": 8.666008189239179,
+          "rmse": 11.442707405018675,
+          "team": "CHI",
+          "winner": {
+            "accuracy": 0.7368421052631579,
+            "actual_ties": 0,
+            "correct": 98,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 0.9217597858789989,
+          "count": 132,
+          "mae": 10.437156065880457,
+          "rmse": 13.70275561606575,
+          "team": "CIN",
+          "winner": {
+            "accuracy": 0.6412213740458015,
+            "actual_ties": 1,
+            "correct": 84,
+            "denominator": 131,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 0.49079254750971923,
+          "count": 133,
+          "mae": 9.911378943537365,
+          "rmse": 12.616147211794837,
+          "team": "CLE",
+          "winner": {
+            "accuracy": 0.6590909090909091,
+            "actual_ties": 1,
+            "correct": 87,
+            "denominator": 132,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.8221584953150465,
+          "count": 133,
+          "mae": 12.240156151744127,
+          "rmse": 15.446569993249835,
+          "team": "DAL",
+          "winner": {
+            "accuracy": 0.6287878787878788,
+            "actual_ties": 1,
+            "correct": 83,
+            "denominator": 132,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.6768556571160511,
+          "count": 133,
+          "mae": 10.0988932726952,
+          "rmse": 13.20109476594025,
+          "team": "DEN",
+          "winner": {
+            "accuracy": 0.6090225563909775,
+            "actual_ties": 0,
+            "correct": 81,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 0.12196997332639567,
+          "count": 133,
+          "mae": 10.426210306246185,
+          "rmse": 13.710489748820658,
+          "team": "DET",
+          "winner": {
+            "accuracy": 0.6793893129770993,
+            "actual_ties": 2,
+            "correct": 89,
+            "denominator": 131,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.6029095096187227,
+          "count": 133,
+          "mae": 9.282188671794914,
+          "rmse": 11.795029429072578,
+          "team": "GB",
+          "winner": {
+            "accuracy": 0.6335877862595419,
+            "actual_ties": 2,
+            "correct": 83,
+            "denominator": 131,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.2574451863471291,
+          "count": 133,
+          "mae": 9.40047532117964,
+          "rmse": 12.249094449797003,
+          "team": "HOU",
+          "winner": {
+            "accuracy": 0.6666666666666666,
+            "actual_ties": 1,
+            "correct": 88,
+            "denominator": 132,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 0.07891453077841136,
+          "count": 133,
+          "mae": 9.552903616522602,
+          "rmse": 12.364267303428461,
+          "team": "IND",
+          "winner": {
+            "accuracy": 0.6439393939393939,
+            "actual_ties": 1,
+            "correct": 85,
+            "denominator": 132,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 1.4742213355018774,
+          "count": 133,
+          "mae": 10.980086931087472,
+          "rmse": 13.853265603661827,
+          "team": "JAX",
+          "winner": {
+            "accuracy": 0.6992481203007519,
+            "actual_ties": 0,
+            "correct": 93,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.9409060228682272,
+          "count": 133,
+          "mae": 8.664851199027593,
+          "rmse": 11.39531167063772,
+          "team": "KC",
+          "winner": {
+            "accuracy": 0.7443609022556391,
+            "actual_ties": 0,
+            "correct": 99,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 0.5105431126914393,
+          "count": 133,
+          "mae": 9.48827612725549,
+          "rmse": 12.666670231844835,
+          "team": "LAC",
+          "winner": {
+            "accuracy": 0.5864661654135338,
+            "actual_ties": 0,
+            "correct": 78,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.8330533072312905,
+          "count": 133,
+          "mae": 9.808366934375927,
+          "rmse": 12.56494420658657,
+          "team": "LAR",
+          "winner": {
+            "accuracy": 0.7142857142857143,
+            "actual_ties": 0,
+            "correct": 95,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 2.455753199483523,
+          "count": 133,
+          "mae": 10.517525978976309,
+          "rmse": 13.359018439529176,
+          "team": "LV",
+          "winner": {
+            "accuracy": 0.6240601503759399,
+            "actual_ties": 0,
+            "correct": 83,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 0.6392731989525717,
+          "count": 133,
+          "mae": 11.105954871677318,
+          "rmse": 14.608474696104691,
+          "team": "MIA",
+          "winner": {
+            "accuracy": 0.7142857142857143,
+            "actual_ties": 0,
+            "correct": 95,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.8642682822394661,
+          "count": 133,
+          "mae": 8.952277844096805,
+          "rmse": 11.871264272838662,
+          "team": "MIN",
+          "winner": {
+            "accuracy": 0.696969696969697,
+            "actual_ties": 1,
+            "correct": 92,
+            "denominator": 132,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -1.455148812765331,
+          "count": 133,
+          "mae": 11.241315393746001,
+          "rmse": 14.671516331836282,
+          "team": "NE",
+          "winner": {
+            "accuracy": 0.6766917293233082,
+            "actual_ties": 0,
+            "correct": 90,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -1.4011932703408587,
+          "count": 133,
+          "mae": 11.166984927698216,
+          "rmse": 14.038545369229055,
+          "team": "NO",
+          "winner": {
+            "accuracy": 0.6466165413533834,
+            "actual_ties": 0,
+            "correct": 86,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 1.4712245292631314,
+          "count": 133,
+          "mae": 9.846919311567076,
+          "rmse": 12.273772474500786,
+          "team": "NYG",
+          "winner": {
+            "accuracy": 0.696969696969697,
+            "actual_ties": 1,
+            "correct": 92,
+            "denominator": 132,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 2.1302897252541064,
+          "count": 133,
+          "mae": 10.643575689227733,
+          "rmse": 13.501157776535242,
+          "team": "NYJ",
+          "winner": {
+            "accuracy": 0.6992481203007519,
+            "actual_ties": 0,
+            "correct": 93,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.46573413396275565,
+          "count": 133,
+          "mae": 9.634911598247756,
+          "rmse": 12.363612703287707,
+          "team": "PHI",
+          "winner": {
+            "accuracy": 0.6439393939393939,
+            "actual_ties": 1,
+            "correct": 85,
+            "denominator": 132,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.32576196415216535,
+          "count": 133,
+          "mae": 9.045874968411523,
+          "rmse": 11.465509308700682,
+          "team": "PIT",
+          "winner": {
+            "accuracy": 0.5190839694656488,
+            "actual_ties": 2,
+            "correct": 68,
+            "denominator": 131,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -1.6036609001177167,
+          "count": 133,
+          "mae": 8.624083648474754,
+          "rmse": 10.750782286915317,
+          "team": "SEA",
+          "winner": {
+            "accuracy": 0.631578947368421,
+            "actual_ties": 0,
+            "correct": 84,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -2.3831586721226854,
+          "count": 133,
+          "mae": 10.941672904106829,
+          "rmse": 13.677376081524908,
+          "team": "SF",
+          "winner": {
+            "accuracy": 0.6541353383458647,
+            "actual_ties": 0,
+            "correct": 87,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.2528642390190972,
+          "count": 133,
+          "mae": 9.74391915117256,
+          "rmse": 12.677408225103708,
+          "team": "TB",
+          "winner": {
+            "accuracy": 0.6466165413533834,
+            "actual_ties": 0,
+            "correct": 86,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 0.7235025911364152,
+          "count": 133,
+          "mae": 10.601974197329678,
+          "rmse": 13.176900386360654,
+          "team": "TEN",
+          "winner": {
+            "accuracy": 0.6165413533834586,
+            "actual_ties": 0,
+            "correct": 82,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 1.57058817881216,
+          "count": 133,
+          "mae": 10.07825797582185,
+          "rmse": 13.072298786977784,
+          "team": "WAS",
+          "winner": {
+            "accuracy": 0.6439393939393939,
+            "actual_ties": 1,
+            "correct": 85,
+            "denominator": 132,
+            "predicted_ties": 0
+          }
+        }
+      ],
+      "week_1": {
+        "bias_predicted_minus_actual": 1.4627591140198404,
+        "count": 128,
+        "mae": 10.039415389414518,
+        "rmse": 13.854683275721111,
+        "winner": {
+          "accuracy": 0.624,
+          "actual_ties": 3,
+          "correct": 78,
+          "denominator": 125,
+          "predicted_ties": 0
+        }
+      },
+      "weeks_1_4": {
+        "bias_predicted_minus_actual": 0.4488369359858974,
+        "count": 509,
+        "mae": 9.908217047742124,
+        "rmse": 13.063320126035547,
+        "winner": {
+          "accuracy": 0.6361829025844931,
+          "actual_ties": 6,
+          "correct": 320,
+          "denominator": 503,
+          "predicted_ties": 0
+        }
+      },
+      "weeks_5_18": {
+        "bias_predicted_minus_actual": 0.0773816131874511,
+        "count": 1618,
+        "mae": 10.227815256781932,
+        "rmse": 13.115563857639541,
+        "winner": {
+          "accuracy": 0.655940594059406,
+          "actual_ties": 2,
+          "correct": 1060,
+          "denominator": 1616,
+          "predicted_ties": 0
+        }
+      }
+    },
+    "without_team_passing": {
+      "large_predicted_margin_abs_ge_7": {
+        "bias_predicted_minus_actual": -0.419283900374987,
+        "count": 526,
+        "mae": 10.732965624971948,
+        "rmse": 13.396122631367655,
+        "winner": {
+          "accuracy": 0.779467680608365,
+          "actual_ties": 0,
+          "correct": 410,
+          "denominator": 526,
+          "predicted_ties": 0
+        }
+      },
+      "neutral_site": {
+        "bias_predicted_minus_actual": 0.03647584224627721,
+        "count": 37,
+        "mae": 8.510538647467488,
+        "rmse": 11.732775085901935,
+        "winner": {
+          "accuracy": 0.7027027027027027,
+          "actual_ties": 0,
+          "correct": 26,
+          "denominator": 37,
+          "predicted_ties": 0
+        }
+      },
+      "overall": {
+        "bias_predicted_minus_actual": 0.15024454858263706,
+        "count": 2127,
+        "mae": 10.117879377674722,
+        "rmse": 13.057027616540704,
+        "winner": {
+          "accuracy": 0.6503067484662577,
+          "actual_ties": 8,
+          "correct": 1378,
+          "denominator": 2119,
+          "predicted_ties": 0
+        }
+      },
+      "seasons": [
+        {
+          "bias_predicted_minus_actual": -0.21176455820849927,
+          "count": 256,
+          "mae": 10.15478334802797,
+          "rmse": 13.214223622747856,
+          "season": 2018,
+          "winner": {
+            "accuracy": 0.6732283464566929,
+            "actual_ties": 2,
+            "correct": 171,
+            "denominator": 254,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 2.16801107643105,
+          "count": 256,
+          "mae": 10.498040305049956,
+          "rmse": 13.554713790181198,
+          "season": 2019,
+          "winner": {
+            "accuracy": 0.6235294117647059,
+            "actual_ties": 1,
+            "correct": 159,
+            "denominator": 255,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 1.7436300543435195,
+          "count": 256,
+          "mae": 10.128676119390818,
+          "rmse": 12.983410551864456,
+          "season": 2020,
+          "winner": {
+            "accuracy": 0.6431372549019608,
+            "actual_ties": 1,
+            "correct": 164,
+            "denominator": 255,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.10006127137922055,
+          "count": 272,
+          "mae": 11.038462661521715,
+          "rmse": 14.024656982704347,
+          "season": 2021,
+          "winner": {
+            "accuracy": 0.6346863468634686,
+            "actual_ties": 1,
+            "correct": 172,
+            "denominator": 271,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.5198274192971166,
+          "count": 271,
+          "mae": 8.898940851229378,
+          "rmse": 11.65644279187987,
+          "season": 2022,
+          "winner": {
+            "accuracy": 0.6394052044609665,
+            "actual_ties": 2,
+            "correct": 172,
+            "denominator": 269,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -1.0092931287023337,
+          "count": 272,
+          "mae": 10.28698574737771,
+          "rmse": 13.430111094871451,
+          "season": 2023,
+          "winner": {
+            "accuracy": 0.6580882352941176,
+            "actual_ties": 0,
+            "correct": 179,
+            "denominator": 272,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.18204428071337064,
+          "count": 272,
+          "mae": 9.758808649068628,
+          "rmse": 12.68139032662541,
+          "season": 2024,
+          "winner": {
+            "accuracy": 0.7095588235294118,
+            "actual_ties": 0,
+            "correct": 193,
+            "denominator": 272,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.4980315291761274,
+          "count": 272,
+          "mae": 10.199024279822302,
+          "rmse": 12.806467679369142,
+          "season": 2025,
+          "winner": {
+            "accuracy": 0.6199261992619927,
+            "actual_ties": 1,
+            "correct": 168,
+            "denominator": 271,
+            "predicted_ties": 0
+          }
+        }
+      ],
+      "teams": [
+        {
+          "bias_predicted_minus_actual": 1.9437008751903364,
+          "count": 133,
+          "mae": 10.170421636464855,
+          "rmse": 13.217978141335857,
+          "team": "ARI",
+          "winner": {
+            "accuracy": 0.6287878787878788,
+            "actual_ties": 1,
+            "correct": 83,
+            "denominator": 132,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 2.1992743614032055,
+          "count": 133,
+          "mae": 10.030560967598294,
+          "rmse": 13.181191945492763,
+          "team": "ATL",
+          "winner": {
+            "accuracy": 0.5488721804511278,
+            "actual_ties": 0,
+            "correct": 73,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -3.8101344234259313,
+          "count": 133,
+          "mae": 10.902383325722187,
+          "rmse": 14.583638488120782,
+          "team": "BAL",
+          "winner": {
+            "accuracy": 0.6240601503759399,
+            "actual_ties": 0,
+            "correct": 83,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -2.1510618186919683,
+          "count": 132,
+          "mae": 11.254904309492218,
+          "rmse": 14.420867704253585,
+          "team": "BUF",
+          "winner": {
+            "accuracy": 0.696969696969697,
+            "actual_ties": 0,
+            "correct": 92,
+            "denominator": 132,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 1.8080177810391496,
+          "count": 133,
+          "mae": 11.308063699562966,
+          "rmse": 13.87727762131671,
+          "team": "CAR",
+          "winner": {
+            "accuracy": 0.5939849624060151,
+            "actual_ties": 0,
+            "correct": 79,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.6297620511047358,
+          "count": 133,
+          "mae": 8.638189073381762,
+          "rmse": 11.465778415383747,
+          "team": "CHI",
+          "winner": {
+            "accuracy": 0.706766917293233,
+            "actual_ties": 0,
+            "correct": 94,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 1.0680475979272115,
+          "count": 132,
+          "mae": 10.242484373199163,
+          "rmse": 13.452089765089104,
+          "team": "CIN",
+          "winner": {
+            "accuracy": 0.6412213740458015,
+            "actual_ties": 1,
+            "correct": 84,
+            "denominator": 131,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 0.47411686893951893,
+          "count": 133,
+          "mae": 9.876123061272608,
+          "rmse": 12.53229772767387,
+          "team": "CLE",
+          "winner": {
+            "accuracy": 0.6363636363636364,
+            "actual_ties": 1,
+            "correct": 84,
+            "denominator": 132,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -1.008756222638202,
+          "count": 133,
+          "mae": 12.05562110876548,
+          "rmse": 15.254572923093365,
+          "team": "DAL",
+          "winner": {
+            "accuracy": 0.6666666666666666,
+            "actual_ties": 1,
+            "correct": 88,
+            "denominator": 132,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.6879971711198768,
+          "count": 133,
+          "mae": 9.973013961074896,
+          "rmse": 13.181937762802775,
+          "team": "DEN",
+          "winner": {
+            "accuracy": 0.6240601503759399,
+            "actual_ties": 0,
+            "correct": 83,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 0.25917111490492717,
+          "count": 133,
+          "mae": 10.385595504042966,
+          "rmse": 13.599140832757952,
+          "team": "DET",
+          "winner": {
+            "accuracy": 0.6564885496183206,
+            "actual_ties": 2,
+            "correct": 86,
+            "denominator": 131,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.4543470309960574,
+          "count": 133,
+          "mae": 9.086872228108401,
+          "rmse": 11.625010533210652,
+          "team": "GB",
+          "winner": {
+            "accuracy": 0.6564885496183206,
+            "actual_ties": 2,
+            "correct": 86,
+            "denominator": 131,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 0.239872105069622,
+          "count": 133,
+          "mae": 9.425518387704548,
+          "rmse": 12.224084868816426,
+          "team": "HOU",
+          "winner": {
+            "accuracy": 0.6666666666666666,
+            "actual_ties": 1,
+            "correct": 88,
+            "denominator": 132,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.3194687982802728,
+          "count": 133,
+          "mae": 9.641476174759065,
+          "rmse": 12.500149898107741,
+          "team": "IND",
+          "winner": {
+            "accuracy": 0.6439393939393939,
+            "actual_ties": 1,
+            "correct": 85,
+            "denominator": 132,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 0.8921616867456632,
+          "count": 133,
+          "mae": 11.007609523611588,
+          "rmse": 13.812420832393071,
+          "team": "JAX",
+          "winner": {
+            "accuracy": 0.6842105263157895,
+            "actual_ties": 0,
+            "correct": 91,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.16556536218846413,
+          "count": 133,
+          "mae": 8.65875695442571,
+          "rmse": 11.180809387022917,
+          "team": "KC",
+          "winner": {
+            "accuracy": 0.7293233082706767,
+            "actual_ties": 0,
+            "correct": 97,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 0.854491469365624,
+          "count": 133,
+          "mae": 9.427206047394728,
+          "rmse": 12.64564687610072,
+          "team": "LAC",
+          "winner": {
+            "accuracy": 0.5939849624060151,
+            "actual_ties": 0,
+            "correct": 79,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.6218803266431077,
+          "count": 133,
+          "mae": 9.81833499188174,
+          "rmse": 12.575178616345251,
+          "team": "LAR",
+          "winner": {
+            "accuracy": 0.706766917293233,
+            "actual_ties": 0,
+            "correct": 94,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 2.391786096604539,
+          "count": 133,
+          "mae": 10.450507630478757,
+          "rmse": 13.175888157180463,
+          "team": "LV",
+          "winner": {
+            "accuracy": 0.6165413533834586,
+            "actual_ties": 0,
+            "correct": 82,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 0.9747472666320581,
+          "count": 133,
+          "mae": 11.126362178466668,
+          "rmse": 14.702151488280865,
+          "team": "MIA",
+          "winner": {
+            "accuracy": 0.706766917293233,
+            "actual_ties": 0,
+            "correct": 94,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -1.0949269494773926,
+          "count": 133,
+          "mae": 8.903802844488519,
+          "rmse": 11.910433008668667,
+          "team": "MIN",
+          "winner": {
+            "accuracy": 0.6742424242424242,
+            "actual_ties": 1,
+            "correct": 89,
+            "denominator": 132,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -1.46952290796834,
+          "count": 133,
+          "mae": 11.16394533679286,
+          "rmse": 14.646972965151825,
+          "team": "NE",
+          "winner": {
+            "accuracy": 0.6842105263157895,
+            "actual_ties": 0,
+            "correct": 91,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -1.6977980577283975,
+          "count": 133,
+          "mae": 11.1241241693608,
+          "rmse": 13.988575178759385,
+          "team": "NO",
+          "winner": {
+            "accuracy": 0.6691729323308271,
+            "actual_ties": 0,
+            "correct": 89,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 1.327273779794849,
+          "count": 133,
+          "mae": 9.752560462557332,
+          "rmse": 12.15217355279436,
+          "team": "NYG",
+          "winner": {
+            "accuracy": 0.6818181818181818,
+            "actual_ties": 1,
+            "correct": 90,
+            "denominator": 132,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 2.011713072039718,
+          "count": 133,
+          "mae": 10.599029383537083,
+          "rmse": 13.442962234621207,
+          "team": "NYJ",
+          "winner": {
+            "accuracy": 0.7142857142857143,
+            "actual_ties": 0,
+            "correct": 95,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.2319356380413737,
+          "count": 133,
+          "mae": 9.645772954872779,
+          "rmse": 12.422900049710044,
+          "team": "PHI",
+          "winner": {
+            "accuracy": 0.6742424242424242,
+            "actual_ties": 1,
+            "correct": 89,
+            "denominator": 132,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.554392594633885,
+          "count": 133,
+          "mae": 9.086157349984544,
+          "rmse": 11.399326383654655,
+          "team": "PIT",
+          "winner": {
+            "accuracy": 0.5114503816793893,
+            "actual_ties": 2,
+            "correct": 67,
+            "denominator": 131,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -1.2176598685507671,
+          "count": 133,
+          "mae": 8.632725953490436,
+          "rmse": 10.732261237764556,
+          "team": "SEA",
+          "winner": {
+            "accuracy": 0.6015037593984962,
+            "actual_ties": 0,
+            "correct": 80,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -2.483595469050817,
+          "count": 133,
+          "mae": 10.925533744423449,
+          "rmse": 13.547206113747016,
+          "team": "SF",
+          "winner": {
+            "accuracy": 0.6390977443609023,
+            "actual_ties": 0,
+            "correct": 85,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": -0.3969421224617256,
+          "count": 133,
+          "mae": 9.757430713383474,
+          "rmse": 12.692230048560543,
+          "team": "TB",
+          "winner": {
+            "accuracy": 0.6842105263157895,
+            "actual_ties": 0,
+            "correct": 91,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 0.7542982226966076,
+          "count": 133,
+          "mae": 10.648896350259681,
+          "rmse": 13.217070350075762,
+          "team": "TEN",
+          "winner": {
+            "accuracy": 0.6240601503759399,
+            "actual_ties": 0,
+            "correct": 83,
+            "denominator": 133,
+            "predicted_ties": 0
+          }
+        },
+        {
+          "bias_predicted_minus_actual": 1.7889315505823866,
+          "count": 133,
+          "mae": 10.06164162433489,
+          "rmse": 13.026876748951718,
+          "team": "WAS",
+          "winner": {
+            "accuracy": 0.6212121212121212,
+            "actual_ties": 1,
+            "correct": 82,
+            "denominator": 132,
+            "predicted_ties": 0
+          }
+        }
+      ],
+      "week_1": {
+        "bias_predicted_minus_actual": 1.441723012197572,
+        "count": 128,
+        "mae": 9.980113458993275,
+        "rmse": 13.80615522342095,
+        "winner": {
+          "accuracy": 0.624,
+          "actual_ties": 3,
+          "correct": 78,
+          "denominator": 125,
+          "predicted_ties": 0
+        }
+      },
+      "weeks_1_4": {
+        "bias_predicted_minus_actual": 0.45914977851800004,
+        "count": 509,
+        "mae": 9.883148220074434,
+        "rmse": 13.042433206864573,
+        "winner": {
+          "accuracy": 0.6222664015904572,
+          "actual_ties": 6,
+          "correct": 313,
+          "denominator": 503,
+          "predicted_ties": 0
+        }
+      },
+      "weeks_5_18": {
+        "bias_predicted_minus_actual": 0.05306731617404626,
+        "count": 1618,
+        "mae": 10.191722492148484,
+        "rmse": 13.061615440270657,
+        "winner": {
+          "accuracy": 0.6590346534653465,
+          "actual_ties": 2,
+          "correct": 1065,
+          "denominator": 1616,
+          "predicted_ties": 0
+        }
+      }
+    }
+  },
+  "paired_intervals": {
+    "without_qb_passing": {
+      "blocks": 8,
+      "lower": -0.08349034325586488,
+      "mean": -0.04923211131101024,
+      "samples": 10000,
+      "seed": 20260910,
+      "upper": -0.01575479417958969
+    },
+    "without_team_passing": {
+      "blocks": 8,
+      "lower": -0.04597636649026378,
+      "mean": -0.015777420920898,
+      "samples": 10000,
+      "seed": 20260910,
+      "upper": 0.018478906753500064
+    }
+  },
+  "screens": {
+    "without_qb_passing": {
+      "checks": {
+        "five_season_wins": false,
+        "mae_improvement_at_least_005": false,
+        "positive_lower_bound": false
+      },
+      "promotion": "HOLD",
+      "result": "FAIL",
+      "season_wins": 2
+    },
+    "without_team_passing": {
+      "checks": {
+        "five_season_wins": false,
+        "mae_improvement_at_least_005": false,
+        "positive_lower_bound": false
+      },
+      "promotion": "HOLD",
+      "result": "FAIL",
+      "season_wins": 3
+    }
+  }
+}

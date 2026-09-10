@@ -1,0 +1,5190 @@
+{
+  "metrics": {
+    "constant": {
+      "overall": {
+        "brier": 0.5015911720961947,
+        "count": 1615,
+        "favorite_disagreements": 0,
+        "log_loss": 0.71128728662337,
+        "no_probability_favorite": 0,
+        "reliability_bins": [
+          {
+            "count": 0,
+            "lower": 0.0,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.1
+          },
+          {
+            "count": 0,
+            "lower": 0.1,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.2
+          },
+          {
+            "count": 0,
+            "lower": 0.2,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.3
+          },
+          {
+            "count": 0,
+            "lower": 0.3,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.4
+          },
+          {
+            "count": 0,
+            "lower": 0.4,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.5
+          },
+          {
+            "count": 1615,
+            "lower": 0.5,
+            "mean_probability": 0.5388912215565537,
+            "observed_win_rate": 0.5325077399380805,
+            "upper": 0.6
+          },
+          {
+            "count": 0,
+            "lower": 0.6,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.7
+          },
+          {
+            "count": 0,
+            "lower": 0.7,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.8
+          },
+          {
+            "count": 0,
+            "lower": 0.8,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.9
+          },
+          {
+            "count": 0,
+            "lower": 0.9,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 1.0
+          }
+        ],
+        "ties": 5
+      },
+      "seasons": {
+        "2020": {
+          "brier": 0.5113832005844094,
+          "count": 256,
+          "favorite_disagreements": 0,
+          "log_loss": 0.7247992998144904,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 0,
+              "lower": 0.4,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.5
+            },
+            {
+              "count": 256,
+              "lower": 0.5,
+              "mean_probability": 0.5553398058252427,
+              "observed_win_rate": 0.49609375,
+              "upper": 0.6
+            },
+            {
+              "count": 0,
+              "lower": 0.6,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.7
+            },
+            {
+              "count": 0,
+              "lower": 0.7,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.8
+            },
+            {
+              "count": 0,
+              "lower": 0.8,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.9
+            },
+            {
+              "count": 0,
+              "lower": 0.9,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 1.0
+            }
+          ],
+          "ties": 1
+        },
+        "2021": {
+          "brier": 0.5041211233846292,
+          "count": 272,
+          "favorite_disagreements": 0,
+          "log_loss": 0.716072872147004,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 0,
+              "lower": 0.4,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.5
+            },
+            {
+              "count": 272,
+              "lower": 0.5,
+              "mean_probability": 0.5356679636835279,
+              "observed_win_rate": 0.5147058823529411,
+              "upper": 0.6
+            },
+            {
+              "count": 0,
+              "lower": 0.6,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.7
+            },
+            {
+              "count": 0,
+              "lower": 0.7,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.8
+            },
+            {
+              "count": 0,
+              "lower": 0.8,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.9
+            },
+            {
+              "count": 0,
+              "lower": 0.9,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 1.0
+            }
+          ],
+          "ties": 1
+        },
+        "2022": {
+          "brier": 0.5014347976359143,
+          "count": 271,
+          "favorite_disagreements": 0,
+          "log_loss": 0.7259132957354912,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 0,
+              "lower": 0.4,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.5
+            },
+            {
+              "count": 271,
+              "lower": 0.5,
+              "mean_probability": 0.5302013422818792,
+              "observed_win_rate": 0.5571955719557196,
+              "upper": 0.6
+            },
+            {
+              "count": 0,
+              "lower": 0.6,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.7
+            },
+            {
+              "count": 0,
+              "lower": 0.7,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.8
+            },
+            {
+              "count": 0,
+              "lower": 0.8,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.9
+            },
+            {
+              "count": 0,
+              "lower": 0.9,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 1.0
+            }
+          ],
+          "ties": 2
+        },
+        "2023": {
+          "brier": 0.49450682151470293,
+          "count": 272,
+          "favorite_disagreements": 0,
+          "log_loss": 0.6936816304334097,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 0,
+              "lower": 0.4,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.5
+            },
+            {
+              "count": 272,
+              "lower": 0.5,
+              "mean_probability": 0.5357686453576864,
+              "observed_win_rate": 0.5551470588235294,
+              "upper": 0.6
+            },
+            {
+              "count": 0,
+              "lower": 0.6,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.7
+            },
+            {
+              "count": 0,
+              "lower": 0.7,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.8
+            },
+            {
+              "count": 0,
+              "lower": 0.8,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.9
+            },
+            {
+              "count": 0,
+              "lower": 0.9,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 1.0
+            }
+          ],
+          "ties": 0
+        },
+        "2024": {
+          "brier": 0.49799388387729476,
+          "count": 272,
+          "favorite_disagreements": 0,
+          "log_loss": 0.6961664161286414,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 0,
+              "lower": 0.4,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.5
+            },
+            {
+              "count": 272,
+              "lower": 0.5,
+              "mean_probability": 0.5390920554854981,
+              "observed_win_rate": 0.5330882352941176,
+              "upper": 0.6
+            },
+            {
+              "count": 0,
+              "lower": 0.6,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.7
+            },
+            {
+              "count": 0,
+              "lower": 0.7,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.8
+            },
+            {
+              "count": 0,
+              "lower": 0.8,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.9
+            },
+            {
+              "count": 0,
+              "lower": 0.9,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 1.0
+            }
+          ],
+          "ties": 0
+        },
+        "2025": {
+          "brier": 0.5006826323498911,
+          "count": 272,
+          "favorite_disagreements": 0,
+          "log_loss": 0.711938801878868,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 0,
+              "lower": 0.4,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.5
+            },
+            {
+              "count": 272,
+              "lower": 0.5,
+              "mean_probability": 0.5382131324004306,
+              "observed_win_rate": 0.5367647058823529,
+              "upper": 0.6
+            },
+            {
+              "count": 0,
+              "lower": 0.6,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.7
+            },
+            {
+              "count": 0,
+              "lower": 0.7,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.8
+            },
+            {
+              "count": 0,
+              "lower": 0.8,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.9
+            },
+            {
+              "count": 0,
+              "lower": 0.9,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 1.0
+            }
+          ],
+          "ties": 1
+        }
+      },
+      "week1": {
+        "brier": 0.5123701453341395,
+        "count": 96,
+        "favorite_disagreements": 0,
+        "log_loss": 0.7476324441555265,
+        "no_probability_favorite": 0,
+        "reliability_bins": [
+          {
+            "count": 0,
+            "lower": 0.0,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.1
+          },
+          {
+            "count": 0,
+            "lower": 0.1,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.2
+          },
+          {
+            "count": 0,
+            "lower": 0.2,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.3
+          },
+          {
+            "count": 0,
+            "lower": 0.3,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.4
+          },
+          {
+            "count": 0,
+            "lower": 0.4,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.5
+          },
+          {
+            "count": 96,
+            "lower": 0.5,
+            "mean_probability": 0.5390471575057109,
+            "observed_win_rate": 0.5,
+            "upper": 0.6
+          },
+          {
+            "count": 0,
+            "lower": 0.6,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.7
+          },
+          {
+            "count": 0,
+            "lower": 0.7,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.8
+          },
+          {
+            "count": 0,
+            "lower": 0.8,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.9
+          },
+          {
+            "count": 0,
+            "lower": 0.9,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 1.0
+          }
+        ],
+        "ties": 1
+      },
+      "weeks1_4": {
+        "brier": 0.5085020604926309,
+        "count": 383,
+        "favorite_disagreements": 0,
+        "log_loss": 0.7347330604335439,
+        "no_probability_favorite": 0,
+        "reliability_bins": [
+          {
+            "count": 0,
+            "lower": 0.0,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.1
+          },
+          {
+            "count": 0,
+            "lower": 0.1,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.2
+          },
+          {
+            "count": 0,
+            "lower": 0.2,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.3
+          },
+          {
+            "count": 0,
+            "lower": 0.3,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.4
+          },
+          {
+            "count": 0,
+            "lower": 0.4,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.5
+          },
+          {
+            "count": 383,
+            "lower": 0.5,
+            "mean_probability": 0.5390046179539627,
+            "observed_win_rate": 0.5143603133159269,
+            "upper": 0.6
+          },
+          {
+            "count": 0,
+            "lower": 0.6,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.7
+          },
+          {
+            "count": 0,
+            "lower": 0.7,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.8
+          },
+          {
+            "count": 0,
+            "lower": 0.8,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.9
+          },
+          {
+            "count": 0,
+            "lower": 0.9,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 1.0
+          }
+        ],
+        "ties": 3
+      }
+    },
+    "postseason_intercept": {
+      "overall": {
+        "brier": 0.4399951877414322,
+        "count": 1615,
+        "favorite_disagreements": 60,
+        "log_loss": 0.6473670097663591,
+        "no_probability_favorite": 0,
+        "reliability_bins": [
+          {
+            "count": 0,
+            "lower": 0.0,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.1
+          },
+          {
+            "count": 0,
+            "lower": 0.1,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.2
+          },
+          {
+            "count": 0,
+            "lower": 0.2,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.3
+          },
+          {
+            "count": 0,
+            "lower": 0.3,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.4
+          },
+          {
+            "count": 10,
+            "lower": 0.4,
+            "mean_probability": 0.49872557746339014,
+            "observed_win_rate": 0.6,
+            "upper": 0.5
+          },
+          {
+            "count": 621,
+            "lower": 0.5,
+            "mean_probability": 0.548512797280236,
+            "observed_win_rate": 0.5619967793880838,
+            "upper": 0.6
+          },
+          {
+            "count": 500,
+            "lower": 0.6,
+            "mean_probability": 0.6469070968194748,
+            "observed_win_rate": 0.668,
+            "upper": 0.7
+          },
+          {
+            "count": 324,
+            "lower": 0.7,
+            "mean_probability": 0.745192528107593,
+            "observed_win_rate": 0.7592592592592593,
+            "upper": 0.8
+          },
+          {
+            "count": 146,
+            "lower": 0.8,
+            "mean_probability": 0.838693494180041,
+            "observed_win_rate": 0.773972602739726,
+            "upper": 0.9
+          },
+          {
+            "count": 14,
+            "lower": 0.9,
+            "mean_probability": 0.9146766248963992,
+            "observed_win_rate": 0.7857142857142857,
+            "upper": 1.0
+          }
+        ],
+        "ties": 5
+      },
+      "seasons": {
+        "2020": {
+          "brier": 0.4286227802847443,
+          "count": 256,
+          "favorite_disagreements": 2,
+          "log_loss": 0.6383089137199309,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 2,
+              "lower": 0.4,
+              "mean_probability": 0.49776201819031357,
+              "observed_win_rate": 0.5,
+              "upper": 0.5
+            },
+            {
+              "count": 105,
+              "lower": 0.5,
+              "mean_probability": 0.5529651034099896,
+              "observed_win_rate": 0.49523809523809526,
+              "upper": 0.6
+            },
+            {
+              "count": 70,
+              "lower": 0.6,
+              "mean_probability": 0.6555605559759246,
+              "observed_win_rate": 0.7,
+              "upper": 0.7
+            },
+            {
+              "count": 62,
+              "lower": 0.7,
+              "mean_probability": 0.7470888189952797,
+              "observed_win_rate": 0.7903225806451613,
+              "upper": 0.8
+            },
+            {
+              "count": 14,
+              "lower": 0.8,
+              "mean_probability": 0.8427511864457654,
+              "observed_win_rate": 0.8571428571428571,
+              "upper": 0.9
+            },
+            {
+              "count": 3,
+              "lower": 0.9,
+              "mean_probability": 0.9243611742941834,
+              "observed_win_rate": 0.6666666666666666,
+              "upper": 1.0
+            }
+          ],
+          "ties": 1
+        },
+        "2021": {
+          "brier": 0.4489472711170482,
+          "count": 272,
+          "favorite_disagreements": 9,
+          "log_loss": 0.6620073898804807,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 2,
+              "lower": 0.4,
+              "mean_probability": 0.4994787590018965,
+              "observed_win_rate": 1.0,
+              "upper": 0.5
+            },
+            {
+              "count": 104,
+              "lower": 0.5,
+              "mean_probability": 0.5529724433630997,
+              "observed_win_rate": 0.6057692307692307,
+              "upper": 0.6
+            },
+            {
+              "count": 73,
+              "lower": 0.6,
+              "mean_probability": 0.6461066583605619,
+              "observed_win_rate": 0.6027397260273972,
+              "upper": 0.7
+            },
+            {
+              "count": 56,
+              "lower": 0.7,
+              "mean_probability": 0.7452375285980047,
+              "observed_win_rate": 0.8035714285714286,
+              "upper": 0.8
+            },
+            {
+              "count": 32,
+              "lower": 0.8,
+              "mean_probability": 0.8416275224677728,
+              "observed_win_rate": 0.71875,
+              "upper": 0.9
+            },
+            {
+              "count": 5,
+              "lower": 0.9,
+              "mean_probability": 0.9114840330510565,
+              "observed_win_rate": 0.6,
+              "upper": 1.0
+            }
+          ],
+          "ties": 1
+        },
+        "2022": {
+          "brier": 0.44400446365659746,
+          "count": 271,
+          "favorite_disagreements": 27,
+          "log_loss": 0.6645267367648169,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 3,
+              "lower": 0.4,
+              "mean_probability": 0.4987570419369282,
+              "observed_win_rate": 0.6666666666666666,
+              "upper": 0.5
+            },
+            {
+              "count": 105,
+              "lower": 0.5,
+              "mean_probability": 0.5419901150014368,
+              "observed_win_rate": 0.5238095238095238,
+              "upper": 0.6
+            },
+            {
+              "count": 92,
+              "lower": 0.6,
+              "mean_probability": 0.6471638759527212,
+              "observed_win_rate": 0.6847826086956522,
+              "upper": 0.7
+            },
+            {
+              "count": 52,
+              "lower": 0.7,
+              "mean_probability": 0.7472519446435973,
+              "observed_win_rate": 0.75,
+              "upper": 0.8
+            },
+            {
+              "count": 18,
+              "lower": 0.8,
+              "mean_probability": 0.8305470464538405,
+              "observed_win_rate": 0.7777777777777778,
+              "upper": 0.9
+            },
+            {
+              "count": 1,
+              "lower": 0.9,
+              "mean_probability": 0.9149987525884735,
+              "observed_win_rate": 1.0,
+              "upper": 1.0
+            }
+          ],
+          "ties": 2
+        },
+        "2023": {
+          "brier": 0.4576370367682389,
+          "count": 272,
+          "favorite_disagreements": 12,
+          "log_loss": 0.6554944388132948,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 0,
+              "lower": 0.4,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.5
+            },
+            {
+              "count": 116,
+              "lower": 0.5,
+              "mean_probability": 0.5473133042655819,
+              "observed_win_rate": 0.6206896551724138,
+              "upper": 0.6
+            },
+            {
+              "count": 78,
+              "lower": 0.6,
+              "mean_probability": 0.646107642366409,
+              "observed_win_rate": 0.6025641025641025,
+              "upper": 0.7
+            },
+            {
+              "count": 52,
+              "lower": 0.7,
+              "mean_probability": 0.7475849343605093,
+              "observed_win_rate": 0.6730769230769231,
+              "upper": 0.8
+            },
+            {
+              "count": 24,
+              "lower": 0.8,
+              "mean_probability": 0.8367519667191137,
+              "observed_win_rate": 0.7916666666666666,
+              "upper": 0.9
+            },
+            {
+              "count": 2,
+              "lower": 0.9,
+              "mean_probability": 0.9071211214636654,
+              "observed_win_rate": 1.0,
+              "upper": 1.0
+            }
+          ],
+          "ties": 0
+        },
+        "2024": {
+          "brier": 0.4120220381279647,
+          "count": 272,
+          "favorite_disagreements": 3,
+          "log_loss": 0.6061394999231648,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 1,
+              "lower": 0.4,
+              "mean_probability": 0.4999013799900839,
+              "observed_win_rate": 1.0,
+              "upper": 0.5
+            },
+            {
+              "count": 92,
+              "lower": 0.5,
+              "mean_probability": 0.5489333768227616,
+              "observed_win_rate": 0.6086956521739131,
+              "upper": 0.6
+            },
+            {
+              "count": 108,
+              "lower": 0.6,
+              "mean_probability": 0.6431340257714541,
+              "observed_win_rate": 0.7777777777777778,
+              "upper": 0.7
+            },
+            {
+              "count": 49,
+              "lower": 0.7,
+              "mean_probability": 0.7411161435004451,
+              "observed_win_rate": 0.7142857142857143,
+              "upper": 0.8
+            },
+            {
+              "count": 20,
+              "lower": 0.8,
+              "mean_probability": 0.8334677229453904,
+              "observed_win_rate": 0.85,
+              "upper": 0.9
+            },
+            {
+              "count": 2,
+              "lower": 0.9,
+              "mean_probability": 0.9213322822624292,
+              "observed_win_rate": 1.0,
+              "upper": 1.0
+            }
+          ],
+          "ties": 0
+        },
+        "2025": {
+          "brier": 0.4480833113344709,
+          "count": 272,
+          "favorite_disagreements": 7,
+          "log_loss": 0.6572553375488768,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 2,
+              "lower": 0.4,
+              "mean_probability": 0.49830085722430645,
+              "observed_win_rate": 0.0,
+              "upper": 0.5
+            },
+            {
+              "count": 99,
+              "lower": 0.5,
+              "mean_probability": 0.5470383950056856,
+              "observed_win_rate": 0.5151515151515151,
+              "upper": 0.6
+            },
+            {
+              "count": 79,
+              "lower": 0.6,
+              "mean_probability": 0.6456275437411942,
+              "observed_win_rate": 0.5949367088607594,
+              "upper": 0.7
+            },
+            {
+              "count": 53,
+              "lower": 0.7,
+              "mean_probability": 0.7423275846779083,
+              "observed_win_rate": 0.8113207547169812,
+              "upper": 0.8
+            },
+            {
+              "count": 38,
+              "lower": 0.8,
+              "mean_probability": 0.8425632717037076,
+              "observed_win_rate": 0.7368421052631579,
+              "upper": 0.9
+            },
+            {
+              "count": 1,
+              "lower": 0.9,
+              "mean_probability": 0.9030635003710925,
+              "observed_win_rate": 1.0,
+              "upper": 1.0
+            }
+          ],
+          "ties": 1
+        }
+      },
+      "week1": {
+        "brier": 0.4587313906365027,
+        "count": 96,
+        "favorite_disagreements": 4,
+        "log_loss": 0.6892055308485062,
+        "no_probability_favorite": 0,
+        "reliability_bins": [
+          {
+            "count": 0,
+            "lower": 0.0,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.1
+          },
+          {
+            "count": 0,
+            "lower": 0.1,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.2
+          },
+          {
+            "count": 0,
+            "lower": 0.2,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.3
+          },
+          {
+            "count": 0,
+            "lower": 0.3,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.4
+          },
+          {
+            "count": 1,
+            "lower": 0.4,
+            "mean_probability": 0.49855647071952625,
+            "observed_win_rate": 0.0,
+            "upper": 0.5
+          },
+          {
+            "count": 45,
+            "lower": 0.5,
+            "mean_probability": 0.5443879457068712,
+            "observed_win_rate": 0.5777777777777777,
+            "upper": 0.6
+          },
+          {
+            "count": 32,
+            "lower": 0.6,
+            "mean_probability": 0.6452541533332513,
+            "observed_win_rate": 0.59375,
+            "upper": 0.7
+          },
+          {
+            "count": 17,
+            "lower": 0.7,
+            "mean_probability": 0.7453637212135705,
+            "observed_win_rate": 0.8235294117647058,
+            "upper": 0.8
+          },
+          {
+            "count": 1,
+            "lower": 0.8,
+            "mean_probability": 0.804609984669539,
+            "observed_win_rate": 1.0,
+            "upper": 0.9
+          },
+          {
+            "count": 0,
+            "lower": 0.9,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 1.0
+          }
+        ],
+        "ties": 1
+      },
+      "weeks1_4": {
+        "brier": 0.45415327249048487,
+        "count": 383,
+        "favorite_disagreements": 20,
+        "log_loss": 0.6767943675639064,
+        "no_probability_favorite": 0,
+        "reliability_bins": [
+          {
+            "count": 0,
+            "lower": 0.0,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.1
+          },
+          {
+            "count": 0,
+            "lower": 0.1,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.2
+          },
+          {
+            "count": 0,
+            "lower": 0.2,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.3
+          },
+          {
+            "count": 0,
+            "lower": 0.3,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.4
+          },
+          {
+            "count": 2,
+            "lower": 0.4,
+            "mean_probability": 0.49843708948197707,
+            "observed_win_rate": 0.5,
+            "upper": 0.5
+          },
+          {
+            "count": 168,
+            "lower": 0.5,
+            "mean_probability": 0.547093052913866,
+            "observed_win_rate": 0.5416666666666666,
+            "upper": 0.6
+          },
+          {
+            "count": 134,
+            "lower": 0.6,
+            "mean_probability": 0.646097292774391,
+            "observed_win_rate": 0.6791044776119403,
+            "upper": 0.7
+          },
+          {
+            "count": 64,
+            "lower": 0.7,
+            "mean_probability": 0.7425059470443056,
+            "observed_win_rate": 0.734375,
+            "upper": 0.8
+          },
+          {
+            "count": 14,
+            "lower": 0.8,
+            "mean_probability": 0.838544684265024,
+            "observed_win_rate": 0.8571428571428571,
+            "upper": 0.9
+          },
+          {
+            "count": 1,
+            "lower": 0.9,
+            "mean_probability": 0.9059774794284126,
+            "observed_win_rate": 1.0,
+            "upper": 1.0
+          }
+        ],
+        "ties": 3
+      }
+    },
+    "postseason_scalar": {
+      "overall": {
+        "brier": 0.44035077915261445,
+        "count": 1615,
+        "favorite_disagreements": 0,
+        "log_loss": 0.647142497115932,
+        "no_probability_favorite": 0,
+        "reliability_bins": [
+          {
+            "count": 0,
+            "lower": 0.0,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.1
+          },
+          {
+            "count": 0,
+            "lower": 0.1,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.2
+          },
+          {
+            "count": 0,
+            "lower": 0.2,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.3
+          },
+          {
+            "count": 0,
+            "lower": 0.3,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.4
+          },
+          {
+            "count": 12,
+            "lower": 0.4,
+            "mean_probability": 0.49859898545891257,
+            "observed_win_rate": 0.25,
+            "upper": 0.5
+          },
+          {
+            "count": 620,
+            "lower": 0.5,
+            "mean_probability": 0.5478709306732804,
+            "observed_win_rate": 0.5806451612903226,
+            "upper": 0.6
+          },
+          {
+            "count": 507,
+            "lower": 0.6,
+            "mean_probability": 0.6465208268643532,
+            "observed_win_rate": 0.6568047337278107,
+            "upper": 0.7
+          },
+          {
+            "count": 328,
+            "lower": 0.7,
+            "mean_probability": 0.7461099339845401,
+            "observed_win_rate": 0.7378048780487805,
+            "upper": 0.8
+          },
+          {
+            "count": 137,
+            "lower": 0.8,
+            "mean_probability": 0.8406951506746567,
+            "observed_win_rate": 0.8029197080291971,
+            "upper": 0.9
+          },
+          {
+            "count": 11,
+            "lower": 0.9,
+            "mean_probability": 0.916645526630679,
+            "observed_win_rate": 0.9090909090909091,
+            "upper": 1.0
+          }
+        ],
+        "ties": 5
+      },
+      "seasons": {
+        "2020": {
+          "brier": 0.4298233680017036,
+          "count": 256,
+          "favorite_disagreements": 0,
+          "log_loss": 0.6395925334643208,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 1,
+              "lower": 0.4,
+              "mean_probability": 0.4993185286708986,
+              "observed_win_rate": 1.0,
+              "upper": 0.5
+            },
+            {
+              "count": 102,
+              "lower": 0.5,
+              "mean_probability": 0.5506803585818482,
+              "observed_win_rate": 0.49019607843137253,
+              "upper": 0.6
+            },
+            {
+              "count": 73,
+              "lower": 0.6,
+              "mean_probability": 0.6511155716312225,
+              "observed_win_rate": 0.6986301369863014,
+              "upper": 0.7
+            },
+            {
+              "count": 63,
+              "lower": 0.7,
+              "mean_probability": 0.7461780252768768,
+              "observed_win_rate": 0.7777777777777778,
+              "upper": 0.8
+            },
+            {
+              "count": 14,
+              "lower": 0.8,
+              "mean_probability": 0.8421911948204108,
+              "observed_win_rate": 0.8571428571428571,
+              "upper": 0.9
+            },
+            {
+              "count": 3,
+              "lower": 0.9,
+              "mean_probability": 0.9242170371018122,
+              "observed_win_rate": 0.6666666666666666,
+              "upper": 1.0
+            }
+          ],
+          "ties": 1
+        },
+        "2021": {
+          "brier": 0.4519196267313301,
+          "count": 272,
+          "favorite_disagreements": 0,
+          "log_loss": 0.6632498859162276,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 6,
+              "lower": 0.4,
+              "mean_probability": 0.4986378993480764,
+              "observed_win_rate": 0.3333333333333333,
+              "upper": 0.5
+            },
+            {
+              "count": 90,
+              "lower": 0.5,
+              "mean_probability": 0.5499113799696396,
+              "observed_win_rate": 0.5888888888888889,
+              "upper": 0.6
+            },
+            {
+              "count": 91,
+              "lower": 0.6,
+              "mean_probability": 0.6463482234118308,
+              "observed_win_rate": 0.6153846153846154,
+              "upper": 0.7
+            },
+            {
+              "count": 50,
+              "lower": 0.7,
+              "mean_probability": 0.7471696753091525,
+              "observed_win_rate": 0.68,
+              "upper": 0.8
+            },
+            {
+              "count": 33,
+              "lower": 0.8,
+              "mean_probability": 0.8455053930230577,
+              "observed_win_rate": 0.7878787878787878,
+              "upper": 0.9
+            },
+            {
+              "count": 2,
+              "lower": 0.9,
+              "mean_probability": 0.9167954867173451,
+              "observed_win_rate": 1.0,
+              "upper": 1.0
+            }
+          ],
+          "ties": 1
+        },
+        "2022": {
+          "brier": 0.4420222992610242,
+          "count": 271,
+          "favorite_disagreements": 0,
+          "log_loss": 0.6616994926485489,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 4,
+              "lower": 0.4,
+              "mean_probability": 0.49824608992757,
+              "observed_win_rate": 0.0,
+              "upper": 0.5
+            },
+            {
+              "count": 104,
+              "lower": 0.5,
+              "mean_probability": 0.5423627292865139,
+              "observed_win_rate": 0.5576923076923077,
+              "upper": 0.6
+            },
+            {
+              "count": 95,
+              "lower": 0.6,
+              "mean_probability": 0.6452364879227124,
+              "observed_win_rate": 0.6631578947368421,
+              "upper": 0.7
+            },
+            {
+              "count": 53,
+              "lower": 0.7,
+              "mean_probability": 0.7516203345122766,
+              "observed_win_rate": 0.7547169811320755,
+              "upper": 0.8
+            },
+            {
+              "count": 14,
+              "lower": 0.8,
+              "mean_probability": 0.8306256576268686,
+              "observed_win_rate": 0.8571428571428571,
+              "upper": 0.9
+            },
+            {
+              "count": 1,
+              "lower": 0.9,
+              "mean_probability": 0.9149959099500519,
+              "observed_win_rate": 1.0,
+              "upper": 1.0
+            }
+          ],
+          "ties": 2
+        },
+        "2023": {
+          "brier": 0.45650050511483,
+          "count": 272,
+          "favorite_disagreements": 0,
+          "log_loss": 0.6538278702669669,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 0,
+              "lower": 0.4,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.5
+            },
+            {
+              "count": 116,
+              "lower": 0.5,
+              "mean_probability": 0.5465478302723592,
+              "observed_win_rate": 0.6379310344827587,
+              "upper": 0.6
+            },
+            {
+              "count": 76,
+              "lower": 0.6,
+              "mean_probability": 0.6441605201269405,
+              "observed_win_rate": 0.5921052631578947,
+              "upper": 0.7
+            },
+            {
+              "count": 58,
+              "lower": 0.7,
+              "mean_probability": 0.7490181806276862,
+              "observed_win_rate": 0.6896551724137931,
+              "upper": 0.8
+            },
+            {
+              "count": 20,
+              "lower": 0.8,
+              "mean_probability": 0.8391091778793731,
+              "observed_win_rate": 0.8,
+              "upper": 0.9
+            },
+            {
+              "count": 2,
+              "lower": 0.9,
+              "mean_probability": 0.9076484668186584,
+              "observed_win_rate": 1.0,
+              "upper": 1.0
+            }
+          ],
+          "ties": 0
+        },
+        "2024": {
+          "brier": 0.4132253366891489,
+          "count": 272,
+          "favorite_disagreements": 0,
+          "log_loss": 0.6072438663260304,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 0,
+              "lower": 0.4,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.5
+            },
+            {
+              "count": 98,
+              "lower": 0.5,
+              "mean_probability": 0.5493929048708897,
+              "observed_win_rate": 0.6428571428571429,
+              "upper": 0.6
+            },
+            {
+              "count": 104,
+              "lower": 0.6,
+              "mean_probability": 0.6443863189426648,
+              "observed_win_rate": 0.7692307692307693,
+              "upper": 0.7
+            },
+            {
+              "count": 50,
+              "lower": 0.7,
+              "mean_probability": 0.7440639597145227,
+              "observed_win_rate": 0.72,
+              "upper": 0.8
+            },
+            {
+              "count": 18,
+              "lower": 0.8,
+              "mean_probability": 0.8373036272655863,
+              "observed_win_rate": 0.8333333333333334,
+              "upper": 0.9
+            },
+            {
+              "count": 2,
+              "lower": 0.9,
+              "mean_probability": 0.9213764306266446,
+              "observed_win_rate": 1.0,
+              "upper": 1.0
+            }
+          ],
+          "ties": 0
+        },
+        "2025": {
+          "brier": 0.44800042493270054,
+          "count": 272,
+          "favorite_disagreements": 0,
+          "log_loss": 0.6568507369305076,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 1,
+              "lower": 0.4,
+              "mean_probability": 0.49905754103731387,
+              "observed_win_rate": 0.0,
+              "upper": 0.5
+            },
+            {
+              "count": 110,
+              "lower": 0.5,
+              "mean_probability": 0.5488434491825409,
+              "observed_win_rate": 0.5636363636363636,
+              "upper": 0.6
+            },
+            {
+              "count": 68,
+              "lower": 0.6,
+              "mean_probability": 0.6495160457107199,
+              "observed_win_rate": 0.5588235294117647,
+              "upper": 0.7
+            },
+            {
+              "count": 54,
+              "lower": 0.7,
+              "mean_probability": 0.7384116444026979,
+              "observed_win_rate": 0.7962962962962963,
+              "upper": 0.8
+            },
+            {
+              "count": 38,
+              "lower": 0.8,
+              "mean_probability": 0.8421177076325561,
+              "observed_win_rate": 0.7631578947368421,
+              "upper": 0.9
+            },
+            {
+              "count": 1,
+              "lower": 0.9,
+              "mean_probability": 0.9038130033566831,
+              "observed_win_rate": 1.0,
+              "upper": 1.0
+            }
+          ],
+          "ties": 1
+        }
+      },
+      "week1": {
+        "brier": 0.4616876618388251,
+        "count": 96,
+        "favorite_disagreements": 0,
+        "log_loss": 0.6924110860047029,
+        "no_probability_favorite": 0,
+        "reliability_bins": [
+          {
+            "count": 0,
+            "lower": 0.0,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.1
+          },
+          {
+            "count": 0,
+            "lower": 0.1,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.2
+          },
+          {
+            "count": 0,
+            "lower": 0.2,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.3
+          },
+          {
+            "count": 0,
+            "lower": 0.3,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.4
+          },
+          {
+            "count": 1,
+            "lower": 0.4,
+            "mean_probability": 0.4998144590700438,
+            "observed_win_rate": 0.0,
+            "upper": 0.5
+          },
+          {
+            "count": 44,
+            "lower": 0.5,
+            "mean_probability": 0.543061233343293,
+            "observed_win_rate": 0.6136363636363636,
+            "upper": 0.6
+          },
+          {
+            "count": 34,
+            "lower": 0.6,
+            "mean_probability": 0.6410997698225209,
+            "observed_win_rate": 0.5588235294117647,
+            "upper": 0.7
+          },
+          {
+            "count": 16,
+            "lower": 0.7,
+            "mean_probability": 0.7507295161311569,
+            "observed_win_rate": 0.8125,
+            "upper": 0.8
+          },
+          {
+            "count": 1,
+            "lower": 0.8,
+            "mean_probability": 0.8089885671339825,
+            "observed_win_rate": 1.0,
+            "upper": 0.9
+          },
+          {
+            "count": 0,
+            "lower": 0.9,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 1.0
+          }
+        ],
+        "ties": 1
+      },
+      "weeks1_4": {
+        "brier": 0.4562286867386759,
+        "count": 383,
+        "favorite_disagreements": 0,
+        "log_loss": 0.67864552904675,
+        "no_probability_favorite": 0,
+        "reliability_bins": [
+          {
+            "count": 0,
+            "lower": 0.0,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.1
+          },
+          {
+            "count": 0,
+            "lower": 0.1,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.2
+          },
+          {
+            "count": 0,
+            "lower": 0.2,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.3
+          },
+          {
+            "count": 0,
+            "lower": 0.3,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.4
+          },
+          {
+            "count": 1,
+            "lower": 0.4,
+            "mean_probability": 0.4998144590700438,
+            "observed_win_rate": 0.0,
+            "upper": 0.5
+          },
+          {
+            "count": 173,
+            "lower": 0.5,
+            "mean_probability": 0.5478189145873115,
+            "observed_win_rate": 0.5838150289017341,
+            "upper": 0.6
+          },
+          {
+            "count": 130,
+            "lower": 0.6,
+            "mean_probability": 0.6457786757670585,
+            "observed_win_rate": 0.6461538461538462,
+            "upper": 0.7
+          },
+          {
+            "count": 64,
+            "lower": 0.7,
+            "mean_probability": 0.7442256605101151,
+            "observed_win_rate": 0.6875,
+            "upper": 0.8
+          },
+          {
+            "count": 14,
+            "lower": 0.8,
+            "mean_probability": 0.8377630586812439,
+            "observed_win_rate": 0.9285714285714286,
+            "upper": 0.9
+          },
+          {
+            "count": 1,
+            "lower": 0.9,
+            "mean_probability": 0.9065442893057682,
+            "observed_win_rate": 1.0,
+            "upper": 1.0
+          }
+        ],
+        "ties": 3
+      }
+    },
+    "without_qb_passing_intercept": {
+      "overall": {
+        "brier": 0.44198976379749905,
+        "count": 1615,
+        "favorite_disagreements": 55,
+        "log_loss": 0.6495350770776692,
+        "no_probability_favorite": 0,
+        "reliability_bins": [
+          {
+            "count": 0,
+            "lower": 0.0,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.1
+          },
+          {
+            "count": 0,
+            "lower": 0.1,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.2
+          },
+          {
+            "count": 0,
+            "lower": 0.2,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.3
+          },
+          {
+            "count": 0,
+            "lower": 0.3,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.4
+          },
+          {
+            "count": 18,
+            "lower": 0.4,
+            "mean_probability": 0.49849816579382256,
+            "observed_win_rate": 0.3888888888888889,
+            "upper": 0.5
+          },
+          {
+            "count": 671,
+            "lower": 0.5,
+            "mean_probability": 0.5506018637059311,
+            "observed_win_rate": 0.5722801788375559,
+            "upper": 0.6
+          },
+          {
+            "count": 479,
+            "lower": 0.6,
+            "mean_probability": 0.6487721052746068,
+            "observed_win_rate": 0.6555323590814196,
+            "upper": 0.7
+          },
+          {
+            "count": 311,
+            "lower": 0.7,
+            "mean_probability": 0.7466442016715432,
+            "observed_win_rate": 0.7684887459807074,
+            "upper": 0.8
+          },
+          {
+            "count": 126,
+            "lower": 0.8,
+            "mean_probability": 0.8398206737445847,
+            "observed_win_rate": 0.7777777777777778,
+            "upper": 0.9
+          },
+          {
+            "count": 10,
+            "lower": 0.9,
+            "mean_probability": 0.9143592590677546,
+            "observed_win_rate": 0.7,
+            "upper": 1.0
+          }
+        ],
+        "ties": 5
+      },
+      "seasons": {
+        "2020": {
+          "brier": 0.42882447167357857,
+          "count": 256,
+          "favorite_disagreements": 3,
+          "log_loss": 0.6383278893157108,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 5,
+              "lower": 0.4,
+              "mean_probability": 0.498168896808436,
+              "observed_win_rate": 0.2,
+              "upper": 0.5
+            },
+            {
+              "count": 100,
+              "lower": 0.5,
+              "mean_probability": 0.5471290988591102,
+              "observed_win_rate": 0.51,
+              "upper": 0.6
+            },
+            {
+              "count": 80,
+              "lower": 0.6,
+              "mean_probability": 0.6554659774089375,
+              "observed_win_rate": 0.725,
+              "upper": 0.7
+            },
+            {
+              "count": 59,
+              "lower": 0.7,
+              "mean_probability": 0.744719623777353,
+              "observed_win_rate": 0.7627118644067796,
+              "upper": 0.8
+            },
+            {
+              "count": 10,
+              "lower": 0.8,
+              "mean_probability": 0.8461544208967633,
+              "observed_win_rate": 0.8,
+              "upper": 0.9
+            },
+            {
+              "count": 2,
+              "lower": 0.9,
+              "mean_probability": 0.9160142486844067,
+              "observed_win_rate": 1.0,
+              "upper": 1.0
+            }
+          ],
+          "ties": 1
+        },
+        "2021": {
+          "brier": 0.45440925713605024,
+          "count": 272,
+          "favorite_disagreements": 13,
+          "log_loss": 0.6684975175150404,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 3,
+              "lower": 0.4,
+              "mean_probability": 0.4981371796414357,
+              "observed_win_rate": 0.3333333333333333,
+              "upper": 0.5
+            },
+            {
+              "count": 113,
+              "lower": 0.5,
+              "mean_probability": 0.5565393217375025,
+              "observed_win_rate": 0.5663716814159292,
+              "upper": 0.6
+            },
+            {
+              "count": 71,
+              "lower": 0.6,
+              "mean_probability": 0.6483943095149846,
+              "observed_win_rate": 0.6056338028169014,
+              "upper": 0.7
+            },
+            {
+              "count": 51,
+              "lower": 0.7,
+              "mean_probability": 0.7432536088658441,
+              "observed_win_rate": 0.803921568627451,
+              "upper": 0.8
+            },
+            {
+              "count": 31,
+              "lower": 0.8,
+              "mean_probability": 0.8460253563365258,
+              "observed_win_rate": 0.7419354838709677,
+              "upper": 0.9
+            },
+            {
+              "count": 3,
+              "lower": 0.9,
+              "mean_probability": 0.9088471592096026,
+              "observed_win_rate": 0.3333333333333333,
+              "upper": 1.0
+            }
+          ],
+          "ties": 1
+        },
+        "2022": {
+          "brier": 0.44476263250016385,
+          "count": 271,
+          "favorite_disagreements": 16,
+          "log_loss": 0.6655198314889916,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 2,
+              "lower": 0.4,
+              "mean_probability": 0.49845320660804643,
+              "observed_win_rate": 0.0,
+              "upper": 0.5
+            },
+            {
+              "count": 124,
+              "lower": 0.5,
+              "mean_probability": 0.5460445023595181,
+              "observed_win_rate": 0.6129032258064516,
+              "upper": 0.6
+            },
+            {
+              "count": 84,
+              "lower": 0.6,
+              "mean_probability": 0.6488903732224831,
+              "observed_win_rate": 0.6190476190476191,
+              "upper": 0.7
+            },
+            {
+              "count": 46,
+              "lower": 0.7,
+              "mean_probability": 0.7502735995151835,
+              "observed_win_rate": 0.7608695652173914,
+              "upper": 0.8
+            },
+            {
+              "count": 14,
+              "lower": 0.8,
+              "mean_probability": 0.8340107814571984,
+              "observed_win_rate": 0.8571428571428571,
+              "upper": 0.9
+            },
+            {
+              "count": 1,
+              "lower": 0.9,
+              "mean_probability": 0.9150946938421124,
+              "observed_win_rate": 1.0,
+              "upper": 1.0
+            }
+          ],
+          "ties": 2
+        },
+        "2023": {
+          "brier": 0.463960405489814,
+          "count": 272,
+          "favorite_disagreements": 9,
+          "log_loss": 0.6623426127977717,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 3,
+              "lower": 0.4,
+              "mean_probability": 0.4994248390137647,
+              "observed_win_rate": 0.3333333333333333,
+              "upper": 0.5
+            },
+            {
+              "count": 112,
+              "lower": 0.5,
+              "mean_probability": 0.5518405725111882,
+              "observed_win_rate": 0.6160714285714286,
+              "upper": 0.6
+            },
+            {
+              "count": 81,
+              "lower": 0.6,
+              "mean_probability": 0.64429100304424,
+              "observed_win_rate": 0.5555555555555556,
+              "upper": 0.7
+            },
+            {
+              "count": 55,
+              "lower": 0.7,
+              "mean_probability": 0.7473843236452624,
+              "observed_win_rate": 0.7636363636363637,
+              "upper": 0.8
+            },
+            {
+              "count": 20,
+              "lower": 0.8,
+              "mean_probability": 0.8350519258742141,
+              "observed_win_rate": 0.7,
+              "upper": 0.9
+            },
+            {
+              "count": 1,
+              "lower": 0.9,
+              "mean_probability": 0.9035585008728297,
+              "observed_win_rate": 1.0,
+              "upper": 1.0
+            }
+          ],
+          "ties": 0
+        },
+        "2024": {
+          "brier": 0.415382911876018,
+          "count": 272,
+          "favorite_disagreements": 2,
+          "log_loss": 0.6102729439190985,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 2,
+              "lower": 0.4,
+              "mean_probability": 0.498705305155193,
+              "observed_win_rate": 0.5,
+              "upper": 0.5
+            },
+            {
+              "count": 108,
+              "lower": 0.5,
+              "mean_probability": 0.5536009807505309,
+              "observed_win_rate": 0.6388888888888888,
+              "upper": 0.6
+            },
+            {
+              "count": 94,
+              "lower": 0.6,
+              "mean_probability": 0.6509300277431069,
+              "observed_win_rate": 0.7446808510638298,
+              "upper": 0.7
+            },
+            {
+              "count": 48,
+              "lower": 0.7,
+              "mean_probability": 0.7448830542144876,
+              "observed_win_rate": 0.7291666666666666,
+              "upper": 0.8
+            },
+            {
+              "count": 17,
+              "lower": 0.8,
+              "mean_probability": 0.8338665397312657,
+              "observed_win_rate": 0.8823529411764706,
+              "upper": 0.9
+            },
+            {
+              "count": 3,
+              "lower": 0.9,
+              "mean_probability": 0.9221231403216607,
+              "observed_win_rate": 0.6666666666666666,
+              "upper": 1.0
+            }
+          ],
+          "ties": 0
+        },
+        "2025": {
+          "brier": 0.4438346695311344,
+          "count": 272,
+          "favorite_disagreements": 12,
+          "log_loss": 0.6516491885699173,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 3,
+              "lower": 0.4,
+              "mean_probability": 0.4983731402515155,
+              "observed_win_rate": 1.0,
+              "upper": 0.5
+            },
+            {
+              "count": 114,
+              "lower": 0.5,
+              "mean_probability": 0.5486616576275462,
+              "observed_win_rate": 0.4824561403508772,
+              "upper": 0.6
+            },
+            {
+              "count": 69,
+              "lower": 0.6,
+              "mean_probability": 0.6435765080164305,
+              "observed_win_rate": 0.6666666666666666,
+              "upper": 0.7
+            },
+            {
+              "count": 52,
+              "lower": 0.7,
+              "mean_probability": 0.7497854785450919,
+              "observed_win_rate": 0.7884615384615384,
+              "upper": 0.8
+            },
+            {
+              "count": 34,
+              "lower": 0.8,
+              "mean_probability": 0.8404751177382694,
+              "observed_win_rate": 0.7647058823529411,
+              "upper": 0.9
+            },
+            {
+              "count": 0,
+              "lower": 0.9,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 1.0
+            }
+          ],
+          "ties": 1
+        }
+      },
+      "week1": {
+        "brier": 0.46257232853681646,
+        "count": 96,
+        "favorite_disagreements": 5,
+        "log_loss": 0.693246886849365,
+        "no_probability_favorite": 0,
+        "reliability_bins": [
+          {
+            "count": 0,
+            "lower": 0.0,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.1
+          },
+          {
+            "count": 0,
+            "lower": 0.1,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.2
+          },
+          {
+            "count": 0,
+            "lower": 0.2,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.3
+          },
+          {
+            "count": 0,
+            "lower": 0.3,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.4
+          },
+          {
+            "count": 2,
+            "lower": 0.4,
+            "mean_probability": 0.4995629777353767,
+            "observed_win_rate": 1.0,
+            "upper": 0.5
+          },
+          {
+            "count": 43,
+            "lower": 0.5,
+            "mean_probability": 0.5538144679259865,
+            "observed_win_rate": 0.6046511627906976,
+            "upper": 0.6
+          },
+          {
+            "count": 34,
+            "lower": 0.6,
+            "mean_probability": 0.6425087218119493,
+            "observed_win_rate": 0.47058823529411764,
+            "upper": 0.7
+          },
+          {
+            "count": 16,
+            "lower": 0.7,
+            "mean_probability": 0.755334705675712,
+            "observed_win_rate": 0.9375,
+            "upper": 0.8
+          },
+          {
+            "count": 1,
+            "lower": 0.8,
+            "mean_probability": 0.8368801969509363,
+            "observed_win_rate": 1.0,
+            "upper": 0.9
+          },
+          {
+            "count": 0,
+            "lower": 0.9,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 1.0
+          }
+        ],
+        "ties": 1
+      },
+      "weeks1_4": {
+        "brier": 0.4599401060648962,
+        "count": 383,
+        "favorite_disagreements": 15,
+        "log_loss": 0.683552490820904,
+        "no_probability_favorite": 0,
+        "reliability_bins": [
+          {
+            "count": 0,
+            "lower": 0.0,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.1
+          },
+          {
+            "count": 0,
+            "lower": 0.1,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.2
+          },
+          {
+            "count": 0,
+            "lower": 0.2,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.3
+          },
+          {
+            "count": 0,
+            "lower": 0.3,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.4
+          },
+          {
+            "count": 4,
+            "lower": 0.4,
+            "mean_probability": 0.49857760455766664,
+            "observed_win_rate": 0.75,
+            "upper": 0.5
+          },
+          {
+            "count": 175,
+            "lower": 0.5,
+            "mean_probability": 0.5505881036118301,
+            "observed_win_rate": 0.56,
+            "upper": 0.6
+          },
+          {
+            "count": 133,
+            "lower": 0.6,
+            "mean_probability": 0.6465328095428947,
+            "observed_win_rate": 0.6466165413533834,
+            "upper": 0.7
+          },
+          {
+            "count": 59,
+            "lower": 0.7,
+            "mean_probability": 0.7465773851481935,
+            "observed_win_rate": 0.7288135593220338,
+            "upper": 0.8
+          },
+          {
+            "count": 12,
+            "lower": 0.8,
+            "mean_probability": 0.8353255882572661,
+            "observed_win_rate": 0.9166666666666666,
+            "upper": 0.9
+          },
+          {
+            "count": 0,
+            "lower": 0.9,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 1.0
+          }
+        ],
+        "ties": 3
+      }
+    },
+    "without_qb_passing_scalar": {
+      "overall": {
+        "brier": 0.44236077140230445,
+        "count": 1615,
+        "favorite_disagreements": 0,
+        "log_loss": 0.6493379251124097,
+        "no_probability_favorite": 0,
+        "reliability_bins": [
+          {
+            "count": 0,
+            "lower": 0.0,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.1
+          },
+          {
+            "count": 0,
+            "lower": 0.1,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.2
+          },
+          {
+            "count": 0,
+            "lower": 0.2,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.3
+          },
+          {
+            "count": 0,
+            "lower": 0.3,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.4
+          },
+          {
+            "count": 25,
+            "lower": 0.4,
+            "mean_probability": 0.49850938818265755,
+            "observed_win_rate": 0.48,
+            "upper": 0.5
+          },
+          {
+            "count": 669,
+            "lower": 0.5,
+            "mean_probability": 0.5507011857949661,
+            "observed_win_rate": 0.57847533632287,
+            "upper": 0.6
+          },
+          {
+            "count": 476,
+            "lower": 0.6,
+            "mean_probability": 0.6479877933628093,
+            "observed_win_rate": 0.6659663865546218,
+            "upper": 0.7
+          },
+          {
+            "count": 322,
+            "lower": 0.7,
+            "mean_probability": 0.7467385915207101,
+            "observed_win_rate": 0.7236024844720497,
+            "upper": 0.8
+          },
+          {
+            "count": 115,
+            "lower": 0.8,
+            "mean_probability": 0.8424669910287781,
+            "observed_win_rate": 0.8347826086956521,
+            "upper": 0.9
+          },
+          {
+            "count": 8,
+            "lower": 0.9,
+            "mean_probability": 0.9154296190615365,
+            "observed_win_rate": 0.875,
+            "upper": 1.0
+          }
+        ],
+        "ties": 5
+      },
+      "seasons": {
+        "2020": {
+          "brier": 0.4300478069021346,
+          "count": 256,
+          "favorite_disagreements": 0,
+          "log_loss": 0.6396281946495346,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 3,
+              "lower": 0.4,
+              "mean_probability": 0.4979633113628658,
+              "observed_win_rate": 0.6666666666666666,
+              "upper": 0.5
+            },
+            {
+              "count": 103,
+              "lower": 0.5,
+              "mean_probability": 0.5461822555727467,
+              "observed_win_rate": 0.5145631067961165,
+              "upper": 0.6
+            },
+            {
+              "count": 77,
+              "lower": 0.6,
+              "mean_probability": 0.6546670291103825,
+              "observed_win_rate": 0.7402597402597403,
+              "upper": 0.7
+            },
+            {
+              "count": 62,
+              "lower": 0.7,
+              "mean_probability": 0.7438204151819123,
+              "observed_win_rate": 0.7580645161290323,
+              "upper": 0.8
+            },
+            {
+              "count": 9,
+              "lower": 0.8,
+              "mean_probability": 0.8515048125983726,
+              "observed_win_rate": 0.7777777777777778,
+              "upper": 0.9
+            },
+            {
+              "count": 2,
+              "lower": 0.9,
+              "mean_probability": 0.9157393212705696,
+              "observed_win_rate": 1.0,
+              "upper": 1.0
+            }
+          ],
+          "ties": 1
+        },
+        "2021": {
+          "brier": 0.45710590492991454,
+          "count": 272,
+          "favorite_disagreements": 0,
+          "log_loss": 0.6694310109720042,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 3,
+              "lower": 0.4,
+              "mean_probability": 0.49912930017501905,
+              "observed_win_rate": 0.0,
+              "upper": 0.5
+            },
+            {
+              "count": 100,
+              "lower": 0.5,
+              "mean_probability": 0.5508900359495764,
+              "observed_win_rate": 0.57,
+              "upper": 0.6
+            },
+            {
+              "count": 89,
+              "lower": 0.6,
+              "mean_probability": 0.6428445330971512,
+              "observed_win_rate": 0.6179775280898876,
+              "upper": 0.7
+            },
+            {
+              "count": 51,
+              "lower": 0.7,
+              "mean_probability": 0.7477739501995837,
+              "observed_win_rate": 0.7058823529411765,
+              "upper": 0.8
+            },
+            {
+              "count": 28,
+              "lower": 0.8,
+              "mean_probability": 0.8523852484583317,
+              "observed_win_rate": 0.75,
+              "upper": 0.9
+            },
+            {
+              "count": 1,
+              "lower": 0.9,
+              "mean_probability": 0.9155029537535362,
+              "observed_win_rate": 1.0,
+              "upper": 1.0
+            }
+          ],
+          "ties": 1
+        },
+        "2022": {
+          "brier": 0.44312586687017036,
+          "count": 271,
+          "favorite_disagreements": 0,
+          "log_loss": 0.6631806110429659,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 4,
+              "lower": 0.4,
+              "mean_probability": 0.49823585536772796,
+              "observed_win_rate": 0.25,
+              "upper": 0.5
+            },
+            {
+              "count": 124,
+              "lower": 0.5,
+              "mean_probability": 0.5501461308057776,
+              "observed_win_rate": 0.5806451612903226,
+              "upper": 0.6
+            },
+            {
+              "count": 80,
+              "lower": 0.6,
+              "mean_probability": 0.6454107691691389,
+              "observed_win_rate": 0.6625,
+              "upper": 0.7
+            },
+            {
+              "count": 49,
+              "lower": 0.7,
+              "mean_probability": 0.7464815189021747,
+              "observed_win_rate": 0.7755102040816326,
+              "upper": 0.8
+            },
+            {
+              "count": 13,
+              "lower": 0.8,
+              "mean_probability": 0.828958675441317,
+              "observed_win_rate": 0.8461538461538461,
+              "upper": 0.9
+            },
+            {
+              "count": 1,
+              "lower": 0.9,
+              "mean_probability": 0.9144827694991317,
+              "observed_win_rate": 1.0,
+              "upper": 1.0
+            }
+          ],
+          "ties": 2
+        },
+        "2023": {
+          "brier": 0.4624535344754644,
+          "count": 272,
+          "favorite_disagreements": 0,
+          "log_loss": 0.6603952811733768,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 8,
+              "lower": 0.4,
+              "mean_probability": 0.4983537667293284,
+              "observed_win_rate": 0.5,
+              "upper": 0.5
+            },
+            {
+              "count": 122,
+              "lower": 0.5,
+              "mean_probability": 0.5570621317746771,
+              "observed_win_rate": 0.6147540983606558,
+              "upper": 0.6
+            },
+            {
+              "count": 63,
+              "lower": 0.6,
+              "mean_probability": 0.6502306006111294,
+              "observed_win_rate": 0.5555555555555556,
+              "upper": 0.7
+            },
+            {
+              "count": 59,
+              "lower": 0.7,
+              "mean_probability": 0.7447802694480234,
+              "observed_win_rate": 0.6779661016949152,
+              "upper": 0.8
+            },
+            {
+              "count": 19,
+              "lower": 0.8,
+              "mean_probability": 0.833178703062767,
+              "observed_win_rate": 0.8421052631578947,
+              "upper": 0.9
+            },
+            {
+              "count": 1,
+              "lower": 0.9,
+              "mean_probability": 0.9037558223148622,
+              "observed_win_rate": 1.0,
+              "upper": 1.0
+            }
+          ],
+          "ties": 0
+        },
+        "2024": {
+          "brier": 0.41659098457514426,
+          "count": 272,
+          "favorite_disagreements": 0,
+          "log_loss": 0.6112225032737755,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 0,
+              "lower": 0.4,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.5
+            },
+            {
+              "count": 110,
+              "lower": 0.5,
+              "mean_probability": 0.5514958766756822,
+              "observed_win_rate": 0.6363636363636364,
+              "upper": 0.6
+            },
+            {
+              "count": 94,
+              "lower": 0.6,
+              "mean_probability": 0.6490365928090683,
+              "observed_win_rate": 0.7446808510638298,
+              "upper": 0.7
+            },
+            {
+              "count": 48,
+              "lower": 0.7,
+              "mean_probability": 0.7437649969260559,
+              "observed_win_rate": 0.7083333333333334,
+              "upper": 0.8
+            },
+            {
+              "count": 17,
+              "lower": 0.8,
+              "mean_probability": 0.8335932291924133,
+              "observed_win_rate": 0.9411764705882353,
+              "upper": 0.9
+            },
+            {
+              "count": 3,
+              "lower": 0.9,
+              "mean_probability": 0.9194055881278742,
+              "observed_win_rate": 0.6666666666666666,
+              "upper": 1.0
+            }
+          ],
+          "ties": 0
+        },
+        "2025": {
+          "brier": 0.4441190514825617,
+          "count": 272,
+          "favorite_disagreements": 0,
+          "log_loss": 0.6516496811750239,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 7,
+              "lower": 0.4,
+              "mean_probability": 0.4988119020924636,
+              "observed_win_rate": 0.7142857142857143,
+              "upper": 0.5
+            },
+            {
+              "count": 110,
+              "lower": 0.5,
+              "mean_probability": 0.5475370058829967,
+              "observed_win_rate": 0.5454545454545454,
+              "upper": 0.6
+            },
+            {
+              "count": 73,
+              "lower": 0.6,
+              "mean_probability": 0.6467511761296801,
+              "observed_win_rate": 0.6438356164383562,
+              "upper": 0.7
+            },
+            {
+              "count": 53,
+              "lower": 0.7,
+              "mean_probability": 0.7542667753230319,
+              "observed_win_rate": 0.7169811320754716,
+              "upper": 0.8
+            },
+            {
+              "count": 29,
+              "lower": 0.8,
+              "mean_probability": 0.847428643547935,
+              "observed_win_rate": 0.8620689655172413,
+              "upper": 0.9
+            },
+            {
+              "count": 0,
+              "lower": 0.9,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 1.0
+            }
+          ],
+          "ties": 1
+        }
+      },
+      "week1": {
+        "brier": 0.4655128753103916,
+        "count": 96,
+        "favorite_disagreements": 0,
+        "log_loss": 0.6965682828961066,
+        "no_probability_favorite": 0,
+        "reliability_bins": [
+          {
+            "count": 0,
+            "lower": 0.0,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.1
+          },
+          {
+            "count": 0,
+            "lower": 0.1,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.2
+          },
+          {
+            "count": 0,
+            "lower": 0.2,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.3
+          },
+          {
+            "count": 0,
+            "lower": 0.3,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.4
+          },
+          {
+            "count": 2,
+            "lower": 0.4,
+            "mean_probability": 0.4992244723511176,
+            "observed_win_rate": 1.0,
+            "upper": 0.5
+          },
+          {
+            "count": 44,
+            "lower": 0.5,
+            "mean_probability": 0.5533992528817765,
+            "observed_win_rate": 0.5681818181818182,
+            "upper": 0.6
+          },
+          {
+            "count": 31,
+            "lower": 0.6,
+            "mean_probability": 0.6361381231970549,
+            "observed_win_rate": 0.5161290322580645,
+            "upper": 0.7
+          },
+          {
+            "count": 17,
+            "lower": 0.7,
+            "mean_probability": 0.7488573182888082,
+            "observed_win_rate": 0.8235294117647058,
+            "upper": 0.8
+          },
+          {
+            "count": 2,
+            "lower": 0.8,
+            "mean_probability": 0.8209200408298725,
+            "observed_win_rate": 1.0,
+            "upper": 0.9
+          },
+          {
+            "count": 0,
+            "lower": 0.9,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 1.0
+          }
+        ],
+        "ties": 1
+      },
+      "weeks1_4": {
+        "brier": 0.46189102548182454,
+        "count": 383,
+        "favorite_disagreements": 0,
+        "log_loss": 0.685359989440144,
+        "no_probability_favorite": 0,
+        "reliability_bins": [
+          {
+            "count": 0,
+            "lower": 0.0,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.1
+          },
+          {
+            "count": 0,
+            "lower": 0.1,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.2
+          },
+          {
+            "count": 0,
+            "lower": 0.2,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.3
+          },
+          {
+            "count": 0,
+            "lower": 0.3,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.4
+          },
+          {
+            "count": 7,
+            "lower": 0.4,
+            "mean_probability": 0.49892093624800404,
+            "observed_win_rate": 0.5714285714285714,
+            "upper": 0.5
+          },
+          {
+            "count": 180,
+            "lower": 0.5,
+            "mean_probability": 0.5535545470744818,
+            "observed_win_rate": 0.5833333333333334,
+            "upper": 0.6
+          },
+          {
+            "count": 123,
+            "lower": 0.6,
+            "mean_probability": 0.6464960098751947,
+            "observed_win_rate": 0.6504065040650406,
+            "upper": 0.7
+          },
+          {
+            "count": 61,
+            "lower": 0.7,
+            "mean_probability": 0.7462286035020808,
+            "observed_win_rate": 0.6721311475409836,
+            "upper": 0.8
+          },
+          {
+            "count": 12,
+            "lower": 0.8,
+            "mean_probability": 0.8372403842991688,
+            "observed_win_rate": 1.0,
+            "upper": 0.9
+          },
+          {
+            "count": 0,
+            "lower": 0.9,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 1.0
+          }
+        ],
+        "ties": 3
+      }
+    },
+    "without_team_passing_intercept": {
+      "overall": {
+        "brier": 0.44013602883348973,
+        "count": 1615,
+        "favorite_disagreements": 59,
+        "log_loss": 0.6472757035921571,
+        "no_probability_favorite": 0,
+        "reliability_bins": [
+          {
+            "count": 0,
+            "lower": 0.0,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.1
+          },
+          {
+            "count": 0,
+            "lower": 0.1,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.2
+          },
+          {
+            "count": 0,
+            "lower": 0.2,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.3
+          },
+          {
+            "count": 0,
+            "lower": 0.3,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.4
+          },
+          {
+            "count": 13,
+            "lower": 0.4,
+            "mean_probability": 0.4986117866879333,
+            "observed_win_rate": 0.6923076923076923,
+            "upper": 0.5
+          },
+          {
+            "count": 630,
+            "lower": 0.5,
+            "mean_probability": 0.5492370275261182,
+            "observed_win_rate": 0.5666666666666667,
+            "upper": 0.6
+          },
+          {
+            "count": 481,
+            "lower": 0.6,
+            "mean_probability": 0.6468520621254574,
+            "observed_win_rate": 0.6673596673596673,
+            "upper": 0.7
+          },
+          {
+            "count": 326,
+            "lower": 0.7,
+            "mean_probability": 0.7423606959422056,
+            "observed_win_rate": 0.745398773006135,
+            "upper": 0.8
+          },
+          {
+            "count": 153,
+            "lower": 0.8,
+            "mean_probability": 0.8397146460322885,
+            "observed_win_rate": 0.7908496732026143,
+            "upper": 0.9
+          },
+          {
+            "count": 12,
+            "lower": 0.9,
+            "mean_probability": 0.918103233821841,
+            "observed_win_rate": 0.75,
+            "upper": 1.0
+          }
+        ],
+        "ties": 5
+      },
+      "seasons": {
+        "2020": {
+          "brier": 0.4272122022649379,
+          "count": 256,
+          "favorite_disagreements": 2,
+          "log_loss": 0.6369376139705061,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 3,
+              "lower": 0.4,
+              "mean_probability": 0.4977330209571516,
+              "observed_win_rate": 0.6666666666666666,
+              "upper": 0.5
+            },
+            {
+              "count": 101,
+              "lower": 0.5,
+              "mean_probability": 0.5475097771528242,
+              "observed_win_rate": 0.49504950495049505,
+              "upper": 0.6
+            },
+            {
+              "count": 68,
+              "lower": 0.6,
+              "mean_probability": 0.6491351023286145,
+              "observed_win_rate": 0.7058823529411765,
+              "upper": 0.7
+            },
+            {
+              "count": 66,
+              "lower": 0.7,
+              "mean_probability": 0.738858651430931,
+              "observed_win_rate": 0.7727272727272727,
+              "upper": 0.8
+            },
+            {
+              "count": 15,
+              "lower": 0.8,
+              "mean_probability": 0.8440745701136627,
+              "observed_win_rate": 0.8666666666666667,
+              "upper": 0.9
+            },
+            {
+              "count": 3,
+              "lower": 0.9,
+              "mean_probability": 0.926273462294255,
+              "observed_win_rate": 0.6666666666666666,
+              "upper": 1.0
+            }
+          ],
+          "ties": 1
+        },
+        "2021": {
+          "brier": 0.4489683489164701,
+          "count": 272,
+          "favorite_disagreements": 15,
+          "log_loss": 0.6619875665089896,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 2,
+              "lower": 0.4,
+              "mean_probability": 0.49800938528186284,
+              "observed_win_rate": 0.0,
+              "upper": 0.5
+            },
+            {
+              "count": 99,
+              "lower": 0.5,
+              "mean_probability": 0.5496433783956891,
+              "observed_win_rate": 0.5959595959595959,
+              "upper": 0.6
+            },
+            {
+              "count": 78,
+              "lower": 0.6,
+              "mean_probability": 0.6460157593042264,
+              "observed_win_rate": 0.6410256410256411,
+              "upper": 0.7
+            },
+            {
+              "count": 51,
+              "lower": 0.7,
+              "mean_probability": 0.7424839989512486,
+              "observed_win_rate": 0.7647058823529411,
+              "upper": 0.8
+            },
+            {
+              "count": 38,
+              "lower": 0.8,
+              "mean_probability": 0.8408382911932931,
+              "observed_win_rate": 0.7631578947368421,
+              "upper": 0.9
+            },
+            {
+              "count": 4,
+              "lower": 0.9,
+              "mean_probability": 0.9176249869986027,
+              "observed_win_rate": 0.5,
+              "upper": 1.0
+            }
+          ],
+          "ties": 1
+        },
+        "2022": {
+          "brier": 0.4468819070997601,
+          "count": 271,
+          "favorite_disagreements": 23,
+          "log_loss": 0.6676327011665188,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 6,
+              "lower": 0.4,
+              "mean_probability": 0.4993077223926443,
+              "observed_win_rate": 1.0,
+              "upper": 0.5
+            },
+            {
+              "count": 104,
+              "lower": 0.5,
+              "mean_probability": 0.544299171968299,
+              "observed_win_rate": 0.5480769230769231,
+              "upper": 0.6
+            },
+            {
+              "count": 90,
+              "lower": 0.6,
+              "mean_probability": 0.6471127444700993,
+              "observed_win_rate": 0.6555555555555556,
+              "upper": 0.7
+            },
+            {
+              "count": 51,
+              "lower": 0.7,
+              "mean_probability": 0.7447785896997727,
+              "observed_win_rate": 0.7450980392156863,
+              "upper": 0.8
+            },
+            {
+              "count": 18,
+              "lower": 0.8,
+              "mean_probability": 0.827067005670542,
+              "observed_win_rate": 0.7777777777777778,
+              "upper": 0.9
+            },
+            {
+              "count": 2,
+              "lower": 0.9,
+              "mean_probability": 0.9076222052483787,
+              "observed_win_rate": 1.0,
+              "upper": 1.0
+            }
+          ],
+          "ties": 2
+        },
+        "2023": {
+          "brier": 0.4550908952833921,
+          "count": 272,
+          "favorite_disagreements": 8,
+          "log_loss": 0.6518072226789581,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 1,
+              "lower": 0.4,
+              "mean_probability": 0.4980357698573462,
+              "observed_win_rate": 0.0,
+              "upper": 0.5
+            },
+            {
+              "count": 127,
+              "lower": 0.5,
+              "mean_probability": 0.5504076755375013,
+              "observed_win_rate": 0.6535433070866141,
+              "upper": 0.6
+            },
+            {
+              "count": 68,
+              "lower": 0.6,
+              "mean_probability": 0.6500733934212723,
+              "observed_win_rate": 0.5735294117647058,
+              "upper": 0.7
+            },
+            {
+              "count": 48,
+              "lower": 0.7,
+              "mean_probability": 0.740963101896503,
+              "observed_win_rate": 0.6666666666666666,
+              "upper": 0.8
+            },
+            {
+              "count": 28,
+              "lower": 0.8,
+              "mean_probability": 0.8376465768988621,
+              "observed_win_rate": 0.8214285714285714,
+              "upper": 0.9
+            },
+            {
+              "count": 0,
+              "lower": 0.9,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 1.0
+            }
+          ],
+          "ties": 0
+        },
+        "2024": {
+          "brier": 0.41131471642954526,
+          "count": 272,
+          "favorite_disagreements": 6,
+          "log_loss": 0.6044711855651119,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 1,
+              "lower": 0.4,
+              "mean_probability": 0.4988532892947412,
+              "observed_win_rate": 1.0,
+              "upper": 0.5
+            },
+            {
+              "count": 101,
+              "lower": 0.5,
+              "mean_probability": 0.5531359162988747,
+              "observed_win_rate": 0.5841584158415841,
+              "upper": 0.6
+            },
+            {
+              "count": 95,
+              "lower": 0.6,
+              "mean_probability": 0.6431032945837447,
+              "observed_win_rate": 0.7894736842105263,
+              "upper": 0.7
+            },
+            {
+              "count": 54,
+              "lower": 0.7,
+              "mean_probability": 0.737556656973807,
+              "observed_win_rate": 0.7222222222222222,
+              "upper": 0.8
+            },
+            {
+              "count": 19,
+              "lower": 0.8,
+              "mean_probability": 0.8388853901633744,
+              "observed_win_rate": 0.8947368421052632,
+              "upper": 0.9
+            },
+            {
+              "count": 2,
+              "lower": 0.9,
+              "mean_probability": 0.922235075008337,
+              "observed_win_rate": 1.0,
+              "upper": 1.0
+            }
+          ],
+          "ties": 0
+        },
+        "2025": {
+          "brier": 0.4506126789376028,
+          "count": 272,
+          "favorite_disagreements": 5,
+          "log_loss": 0.6602846506467849,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 0,
+              "lower": 0.4,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.5
+            },
+            {
+              "count": 98,
+              "lower": 0.5,
+              "mean_probability": 0.5503115220785095,
+              "observed_win_rate": 0.5,
+              "upper": 0.6
+            },
+            {
+              "count": 82,
+              "lower": 0.6,
+              "mean_probability": 0.6471399385104676,
+              "observed_win_rate": 0.6097560975609756,
+              "upper": 0.7
+            },
+            {
+              "count": 56,
+              "lower": 0.7,
+              "mean_probability": 0.7500042052481738,
+              "observed_win_rate": 0.7857142857142857,
+              "upper": 0.8
+            },
+            {
+              "count": 35,
+              "lower": 0.8,
+              "mean_probability": 0.8452352730728014,
+              "observed_win_rate": 0.7142857142857143,
+              "upper": 0.9
+            },
+            {
+              "count": 1,
+              "lower": 0.9,
+              "mean_probability": 0.9082039104714859,
+              "observed_win_rate": 1.0,
+              "upper": 1.0
+            }
+          ],
+          "ties": 1
+        }
+      },
+      "week1": {
+        "brier": 0.4634949197613365,
+        "count": 96,
+        "favorite_disagreements": 3,
+        "log_loss": 0.6945085268596983,
+        "no_probability_favorite": 0,
+        "reliability_bins": [
+          {
+            "count": 0,
+            "lower": 0.0,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.1
+          },
+          {
+            "count": 0,
+            "lower": 0.1,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.2
+          },
+          {
+            "count": 0,
+            "lower": 0.2,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.3
+          },
+          {
+            "count": 0,
+            "lower": 0.3,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.4
+          },
+          {
+            "count": 1,
+            "lower": 0.4,
+            "mean_probability": 0.4980357698573462,
+            "observed_win_rate": 0.0,
+            "upper": 0.5
+          },
+          {
+            "count": 47,
+            "lower": 0.5,
+            "mean_probability": 0.5497446352157975,
+            "observed_win_rate": 0.6170212765957447,
+            "upper": 0.6
+          },
+          {
+            "count": 28,
+            "lower": 0.6,
+            "mean_probability": 0.6443938055098097,
+            "observed_win_rate": 0.6071428571428571,
+            "upper": 0.7
+          },
+          {
+            "count": 20,
+            "lower": 0.7,
+            "mean_probability": 0.7393152622025317,
+            "observed_win_rate": 0.75,
+            "upper": 0.8
+          },
+          {
+            "count": 0,
+            "lower": 0.8,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.9
+          },
+          {
+            "count": 0,
+            "lower": 0.9,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 1.0
+          }
+        ],
+        "ties": 1
+      },
+      "weeks1_4": {
+        "brier": 0.45701960795921936,
+        "count": 383,
+        "favorite_disagreements": 19,
+        "log_loss": 0.6796177332732143,
+        "no_probability_favorite": 0,
+        "reliability_bins": [
+          {
+            "count": 0,
+            "lower": 0.0,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.1
+          },
+          {
+            "count": 0,
+            "lower": 0.1,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.2
+          },
+          {
+            "count": 0,
+            "lower": 0.2,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.3
+          },
+          {
+            "count": 0,
+            "lower": 0.3,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.4
+          },
+          {
+            "count": 8,
+            "lower": 0.4,
+            "mean_probability": 0.49853864004797355,
+            "observed_win_rate": 0.75,
+            "upper": 0.5
+          },
+          {
+            "count": 173,
+            "lower": 0.5,
+            "mean_probability": 0.5509061135814135,
+            "observed_win_rate": 0.5664739884393064,
+            "upper": 0.6
+          },
+          {
+            "count": 126,
+            "lower": 0.6,
+            "mean_probability": 0.6507625189311742,
+            "observed_win_rate": 0.6587301587301587,
+            "upper": 0.7
+          },
+          {
+            "count": 61,
+            "lower": 0.7,
+            "mean_probability": 0.743300724520594,
+            "observed_win_rate": 0.7213114754098361,
+            "upper": 0.8
+          },
+          {
+            "count": 15,
+            "lower": 0.8,
+            "mean_probability": 0.8395447898171895,
+            "observed_win_rate": 0.8666666666666667,
+            "upper": 0.9
+          },
+          {
+            "count": 0,
+            "lower": 0.9,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 1.0
+          }
+        ],
+        "ties": 3
+      }
+    },
+    "without_team_passing_scalar": {
+      "overall": {
+        "brier": 0.4404466507878579,
+        "count": 1615,
+        "favorite_disagreements": 0,
+        "log_loss": 0.6470362903898466,
+        "no_probability_favorite": 0,
+        "reliability_bins": [
+          {
+            "count": 0,
+            "lower": 0.0,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.1
+          },
+          {
+            "count": 0,
+            "lower": 0.1,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.2
+          },
+          {
+            "count": 0,
+            "lower": 0.2,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.3
+          },
+          {
+            "count": 0,
+            "lower": 0.3,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.4
+          },
+          {
+            "count": 25,
+            "lower": 0.4,
+            "mean_probability": 0.4987723222849473,
+            "observed_win_rate": 0.44,
+            "upper": 0.5
+          },
+          {
+            "count": 616,
+            "lower": 0.5,
+            "mean_probability": 0.5485501535267393,
+            "observed_win_rate": 0.5616883116883117,
+            "upper": 0.6
+          },
+          {
+            "count": 490,
+            "lower": 0.6,
+            "mean_probability": 0.6459202871683987,
+            "observed_win_rate": 0.6551020408163265,
+            "upper": 0.7
+          },
+          {
+            "count": 329,
+            "lower": 0.7,
+            "mean_probability": 0.7433771522915017,
+            "observed_win_rate": 0.7416413373860182,
+            "upper": 0.8
+          },
+          {
+            "count": 146,
+            "lower": 0.8,
+            "mean_probability": 0.8405365675457864,
+            "observed_win_rate": 0.8082191780821918,
+            "upper": 0.9
+          },
+          {
+            "count": 9,
+            "lower": 0.9,
+            "mean_probability": 0.9212556342341477,
+            "observed_win_rate": 0.8888888888888888,
+            "upper": 1.0
+          }
+        ],
+        "ties": 5
+      },
+      "seasons": {
+        "2020": {
+          "brier": 0.42821610941588145,
+          "count": 256,
+          "favorite_disagreements": 0,
+          "log_loss": 0.6380011321061702,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 5,
+              "lower": 0.4,
+              "mean_probability": 0.4990977056411966,
+              "observed_win_rate": 0.2,
+              "upper": 0.5
+            },
+            {
+              "count": 100,
+              "lower": 0.5,
+              "mean_probability": 0.5489401683103388,
+              "observed_win_rate": 0.51,
+              "upper": 0.6
+            },
+            {
+              "count": 67,
+              "lower": 0.6,
+              "mean_probability": 0.6492406197205302,
+              "observed_win_rate": 0.6716417910447762,
+              "upper": 0.7
+            },
+            {
+              "count": 66,
+              "lower": 0.7,
+              "mean_probability": 0.7386686348389674,
+              "observed_win_rate": 0.7878787878787878,
+              "upper": 0.8
+            },
+            {
+              "count": 15,
+              "lower": 0.8,
+              "mean_probability": 0.8436451715004343,
+              "observed_win_rate": 0.8666666666666667,
+              "upper": 0.9
+            },
+            {
+              "count": 3,
+              "lower": 0.9,
+              "mean_probability": 0.9260953987440779,
+              "observed_win_rate": 0.6666666666666666,
+              "upper": 1.0
+            }
+          ],
+          "ties": 1
+        },
+        "2021": {
+          "brier": 0.45179340674496116,
+          "count": 272,
+          "favorite_disagreements": 0,
+          "log_loss": 0.6630849238579826,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 5,
+              "lower": 0.4,
+              "mean_probability": 0.4984315219240198,
+              "observed_win_rate": 0.2,
+              "upper": 0.5
+            },
+            {
+              "count": 91,
+              "lower": 0.5,
+              "mean_probability": 0.5477108217593277,
+              "observed_win_rate": 0.5604395604395604,
+              "upper": 0.6
+            },
+            {
+              "count": 88,
+              "lower": 0.6,
+              "mean_probability": 0.6464060513972485,
+              "observed_win_rate": 0.6136363636363636,
+              "upper": 0.7
+            },
+            {
+              "count": 52,
+              "lower": 0.7,
+              "mean_probability": 0.7471150833756675,
+              "observed_win_rate": 0.7307692307692307,
+              "upper": 0.8
+            },
+            {
+              "count": 34,
+              "lower": 0.8,
+              "mean_probability": 0.8463099201863531,
+              "observed_win_rate": 0.7647058823529411,
+              "upper": 0.9
+            },
+            {
+              "count": 2,
+              "lower": 0.9,
+              "mean_probability": 0.9233424363488328,
+              "observed_win_rate": 1.0,
+              "upper": 1.0
+            }
+          ],
+          "ties": 1
+        },
+        "2022": {
+          "brier": 0.4449372338385786,
+          "count": 271,
+          "favorite_disagreements": 0,
+          "log_loss": 0.6648751321997641,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 4,
+              "lower": 0.4,
+              "mean_probability": 0.4981548915113856,
+              "observed_win_rate": 0.5,
+              "upper": 0.5
+            },
+            {
+              "count": 108,
+              "lower": 0.5,
+              "mean_probability": 0.543522361457397,
+              "observed_win_rate": 0.5277777777777778,
+              "upper": 0.6
+            },
+            {
+              "count": 92,
+              "lower": 0.6,
+              "mean_probability": 0.6464939001128841,
+              "observed_win_rate": 0.6630434782608695,
+              "upper": 0.7
+            },
+            {
+              "count": 52,
+              "lower": 0.7,
+              "mean_probability": 0.7525605167733775,
+              "observed_win_rate": 0.75,
+              "upper": 0.8
+            },
+            {
+              "count": 14,
+              "lower": 0.8,
+              "mean_probability": 0.8334346322077898,
+              "observed_win_rate": 0.8571428571428571,
+              "upper": 0.9
+            },
+            {
+              "count": 1,
+              "lower": 0.9,
+              "mean_probability": 0.9132106427147709,
+              "observed_win_rate": 1.0,
+              "upper": 1.0
+            }
+          ],
+          "ties": 2
+        },
+        "2023": {
+          "brier": 0.45410145839047406,
+          "count": 272,
+          "favorite_disagreements": 0,
+          "log_loss": 0.6504726989435932,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 6,
+              "lower": 0.4,
+              "mean_probability": 0.4989515115942318,
+              "observed_win_rate": 0.6666666666666666,
+              "upper": 0.5
+            },
+            {
+              "count": 116,
+              "lower": 0.5,
+              "mean_probability": 0.5479391859656804,
+              "observed_win_rate": 0.6724137931034483,
+              "upper": 0.6
+            },
+            {
+              "count": 73,
+              "lower": 0.6,
+              "mean_probability": 0.6453508470361558,
+              "observed_win_rate": 0.547945205479452,
+              "upper": 0.7
+            },
+            {
+              "count": 51,
+              "lower": 0.7,
+              "mean_probability": 0.7431370801618331,
+              "observed_win_rate": 0.6862745098039216,
+              "upper": 0.8
+            },
+            {
+              "count": 26,
+              "lower": 0.8,
+              "mean_probability": 0.8367386836549677,
+              "observed_win_rate": 0.8461538461538461,
+              "upper": 0.9
+            },
+            {
+              "count": 0,
+              "lower": 0.9,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 1.0
+            }
+          ],
+          "ties": 0
+        },
+        "2024": {
+          "brier": 0.4125249159542734,
+          "count": 272,
+          "favorite_disagreements": 0,
+          "log_loss": 0.6056093126737839,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 3,
+              "lower": 0.4,
+              "mean_probability": 0.4997842590861696,
+              "observed_win_rate": 0.6666666666666666,
+              "upper": 0.5
+            },
+            {
+              "count": 100,
+              "lower": 0.5,
+              "mean_probability": 0.5533138157851136,
+              "observed_win_rate": 0.63,
+              "upper": 0.6
+            },
+            {
+              "count": 98,
+              "lower": 0.6,
+              "mean_probability": 0.6443971707563645,
+              "observed_win_rate": 0.7448979591836735,
+              "upper": 0.7
+            },
+            {
+              "count": 49,
+              "lower": 0.7,
+              "mean_probability": 0.7389009507894898,
+              "observed_win_rate": 0.7346938775510204,
+              "upper": 0.8
+            },
+            {
+              "count": 20,
+              "lower": 0.8,
+              "mean_probability": 0.8369407493798159,
+              "observed_win_rate": 0.85,
+              "upper": 0.9
+            },
+            {
+              "count": 2,
+              "lower": 0.9,
+              "mean_probability": 0.9221918168105376,
+              "observed_win_rate": 1.0,
+              "upper": 1.0
+            }
+          ],
+          "ties": 0
+        },
+        "2025": {
+          "brier": 0.4504038462693722,
+          "count": 272,
+          "favorite_disagreements": 0,
+          "log_loss": 0.6597086466359877,
+          "no_probability_favorite": 0,
+          "reliability_bins": [
+            {
+              "count": 0,
+              "lower": 0.0,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.1
+            },
+            {
+              "count": 0,
+              "lower": 0.1,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.2
+            },
+            {
+              "count": 0,
+              "lower": 0.2,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.3
+            },
+            {
+              "count": 0,
+              "lower": 0.3,
+              "mean_probability": null,
+              "observed_win_rate": null,
+              "upper": 0.4
+            },
+            {
+              "count": 2,
+              "lower": 0.4,
+              "mean_probability": 0.49799025321407864,
+              "observed_win_rate": 0.5,
+              "upper": 0.5
+            },
+            {
+              "count": 101,
+              "lower": 0.5,
+              "mean_probability": 0.5502816908258371,
+              "observed_win_rate": 0.45544554455445546,
+              "upper": 0.6
+            },
+            {
+              "count": 72,
+              "lower": 0.6,
+              "mean_probability": 0.6441543512518543,
+              "observed_win_rate": 0.6666666666666666,
+              "upper": 0.7
+            },
+            {
+              "count": 59,
+              "lower": 0.7,
+              "mean_probability": 0.7411810901668366,
+              "observed_win_rate": 0.7457627118644068,
+              "upper": 0.8
+            },
+            {
+              "count": 37,
+              "lower": 0.8,
+              "mean_probability": 0.8412707672785882,
+              "observed_win_rate": 0.7567567567567568,
+              "upper": 0.9
+            },
+            {
+              "count": 1,
+              "lower": 0.9,
+              "mean_probability": 0.9087353628415842,
+              "observed_win_rate": 1.0,
+              "upper": 1.0
+            }
+          ],
+          "ties": 1
+        }
+      },
+      "week1": {
+        "brier": 0.46644421740988656,
+        "count": 96,
+        "favorite_disagreements": 0,
+        "log_loss": 0.697626408505238,
+        "no_probability_favorite": 0,
+        "reliability_bins": [
+          {
+            "count": 0,
+            "lower": 0.0,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.1
+          },
+          {
+            "count": 0,
+            "lower": 0.1,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.2
+          },
+          {
+            "count": 0,
+            "lower": 0.2,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.3
+          },
+          {
+            "count": 0,
+            "lower": 0.3,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.4
+          },
+          {
+            "count": 1,
+            "lower": 0.4,
+            "mean_probability": 0.49796928337170315,
+            "observed_win_rate": 1.0,
+            "upper": 0.5
+          },
+          {
+            "count": 45,
+            "lower": 0.5,
+            "mean_probability": 0.5461862532476126,
+            "observed_win_rate": 0.6,
+            "upper": 0.6
+          },
+          {
+            "count": 31,
+            "lower": 0.6,
+            "mean_probability": 0.637377570612345,
+            "observed_win_rate": 0.5483870967741935,
+            "upper": 0.7
+          },
+          {
+            "count": 18,
+            "lower": 0.7,
+            "mean_probability": 0.7417599191082966,
+            "observed_win_rate": 0.7777777777777778,
+            "upper": 0.8
+          },
+          {
+            "count": 1,
+            "lower": 0.8,
+            "mean_probability": 0.800007607095903,
+            "observed_win_rate": 1.0,
+            "upper": 0.9
+          },
+          {
+            "count": 0,
+            "lower": 0.9,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 1.0
+          }
+        ],
+        "ties": 1
+      },
+      "weeks1_4": {
+        "brier": 0.458969150901652,
+        "count": 383,
+        "favorite_disagreements": 0,
+        "log_loss": 0.6813405208334647,
+        "no_probability_favorite": 0,
+        "reliability_bins": [
+          {
+            "count": 0,
+            "lower": 0.0,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.1
+          },
+          {
+            "count": 0,
+            "lower": 0.1,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.2
+          },
+          {
+            "count": 0,
+            "lower": 0.2,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.3
+          },
+          {
+            "count": 0,
+            "lower": 0.3,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 0.4
+          },
+          {
+            "count": 8,
+            "lower": 0.4,
+            "mean_probability": 0.49874689463568933,
+            "observed_win_rate": 0.5,
+            "upper": 0.5
+          },
+          {
+            "count": 164,
+            "lower": 0.5,
+            "mean_probability": 0.5462607874526757,
+            "observed_win_rate": 0.5548780487804879,
+            "upper": 0.6
+          },
+          {
+            "count": 130,
+            "lower": 0.6,
+            "mean_probability": 0.6436485274455443,
+            "observed_win_rate": 0.6230769230769231,
+            "upper": 0.7
+          },
+          {
+            "count": 66,
+            "lower": 0.7,
+            "mean_probability": 0.7418230091336014,
+            "observed_win_rate": 0.696969696969697,
+            "upper": 0.8
+          },
+          {
+            "count": 15,
+            "lower": 0.8,
+            "mean_probability": 0.8389878965755724,
+            "observed_win_rate": 1.0,
+            "upper": 0.9
+          },
+          {
+            "count": 0,
+            "lower": 0.9,
+            "mean_probability": null,
+            "observed_win_rate": null,
+            "upper": 1.0
+          }
+        ],
+        "ties": 3
+      }
+    }
+  },
+  "paired_intervals": {
+    "postseason_intercept_vs_own_scalar": {
+      "blocks": 6,
+      "lower": -0.0015705522782142381,
+      "mean": -0.00022451265042711292,
+      "samples": 10000,
+      "seed": 20260910,
+      "upper": 0.0009521671537230769
+    },
+    "postseason_intercept_vs_postseason_scalar": {
+      "blocks": 6,
+      "lower": -0.0015705522782142381,
+      "mean": -0.00022451265042711292,
+      "samples": 10000,
+      "seed": 20260910,
+      "upper": 0.0009521671537230769
+    },
+    "without_qb_passing_intercept_vs_own_scalar": {
+      "blocks": 6,
+      "lower": -0.0013366582047705249,
+      "mean": -0.00019715196525955898,
+      "samples": 10000,
+      "seed": 20260910,
+      "upper": 0.0009004567205770364
+    },
+    "without_qb_passing_intercept_vs_postseason_scalar": {
+      "blocks": 6,
+      "lower": -0.005684175560240328,
+      "mean": -0.002392579961737313,
+      "samples": 10000,
+      "seed": 20260910,
+      "upper": 0.0013037428753243131
+    },
+    "without_qb_passing_scalar_vs_postseason_scalar": {
+      "blocks": 6,
+      "lower": -0.005161726485654895,
+      "mean": -0.0021954279964777543,
+      "samples": 10000,
+      "seed": 20260910,
+      "upper": 0.001267624384909888
+    },
+    "without_team_passing_intercept_vs_own_scalar": {
+      "blocks": 6,
+      "lower": -0.001500287170165057,
+      "mean": -0.00023941320231068484,
+      "samples": 10000,
+      "seed": 20260910,
+      "upper": 0.0008240662727493281
+    },
+    "without_team_passing_intercept_vs_postseason_scalar": {
+      "blocks": 6,
+      "lower": -0.0029395349403685696,
+      "mean": -0.000133206476225226,
+      "samples": 10000,
+      "seed": 20260910,
+      "upper": 0.002350390085924964
+    },
+    "without_team_passing_scalar_vs_postseason_scalar": {
+      "blocks": 6,
+      "lower": -0.0018021562104769617,
+      "mean": 0.00010620672608545869,
+      "samples": 10000,
+      "seed": 20260910,
+      "upper": 0.001959578474174898
+    }
+  },
+  "screens": {
+    "postseason_intercept": {
+      "checks": {
+        "four_season_wins": false,
+        "logloss_improvement_at_least_0005": false,
+        "positive_lower_bound": false
+      },
+      "promotion": "HOLD",
+      "result": "FAIL",
+      "season_wins": 3
+    },
+    "without_qb_passing_intercept": {
+      "checks": {
+        "four_season_wins": false,
+        "logloss_improvement_at_least_0005": false,
+        "positive_lower_bound": false
+      },
+      "promotion": "HOLD",
+      "result": "FAIL",
+      "season_wins": 2
+    },
+    "without_qb_passing_scalar": {
+      "checks": {
+        "four_season_wins": false,
+        "logloss_improvement_at_least_0005": false,
+        "positive_lower_bound": false
+      },
+      "promotion": "HOLD",
+      "result": "FAIL",
+      "season_wins": 1
+    },
+    "without_team_passing_intercept": {
+      "checks": {
+        "four_season_wins": true,
+        "logloss_improvement_at_least_0005": false,
+        "positive_lower_bound": false
+      },
+      "promotion": "HOLD",
+      "result": "FAIL",
+      "season_wins": 4
+    },
+    "without_team_passing_scalar": {
+      "checks": {
+        "four_season_wins": true,
+        "logloss_improvement_at_least_0005": false,
+        "positive_lower_bound": false
+      },
+      "promotion": "HOLD",
+      "result": "FAIL",
+      "season_wins": 4
+    }
+  }
+}

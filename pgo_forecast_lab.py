@@ -37,7 +37,16 @@ function updateWeeklyLocks() {
     node.textContent = now >= cutoff ? 'Locked' : 'Draft';
     if (cutoff > now) next = Math.min(next, cutoff);
   });
-  if (document.querySelector('[data-weekly-cutoff]')) weeklyLockTimer = setTimeout(updateWeeklyLocks, Math.max(1, next - now));
+  document.querySelectorAll('[data-freshness-at]').forEach(node => {
+    const checked = Date.parse(node.dataset.freshnessAt);
+    const minutes = Number(node.dataset.freshnessMinutes);
+    const locked = now >= Date.parse(node.dataset.freshnessUntil);
+    const valid = Number.isFinite(checked) && minutes > 0;
+    const overdue = valid && !locked && now - checked > minutes * 60000;
+    node.textContent = !valid ? 'Check time unavailable' : checked > now ? 'Check time ahead of this clock' : locked ? 'Updates closed at lock' : overdue ? 'Update overdue' : 'Recently checked';
+    node.dataset.overdue = String(overdue);
+  });
+  if (document.querySelector('[data-weekly-cutoff],[data-freshness-at]')) weeklyLockTimer = setTimeout(updateWeeklyLocks, Math.max(1, next - now));
 }
 updateWeeklyLocks();
 function openFragment(hash) {
@@ -1511,7 +1520,7 @@ def render_lab(lock, results, provenance, *, snapshot=None, sensitivity=None, st
 .forecast-week tbody th{{text-transform:none;letter-spacing:normal}}
 .corrected-team thead th{{font-size:11px;letter-spacing:normal;text-transform:none}}
 .corrected-team td{{white-space:nowrap;overflow-wrap:normal;font-size:12px}}
-</style><link rel="stylesheet" href="pgo-theme.css?v=20260909-injuries"></head><body><main class="lab-wrap">
+</style><link rel="stylesheet" href="pgo-theme.css?v=20260910-six"></head><body><main class="lab-wrap">
 {lead}{archive_open}{archive_heading}
 <section><h2>Record so far</h2>{_metric_cards(metrics)}
 <p>The theoretical 50% winner benchmark is a reference only.</p></section>

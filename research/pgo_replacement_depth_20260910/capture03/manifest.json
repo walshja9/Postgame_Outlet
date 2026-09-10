@@ -1,0 +1,17 @@
+{
+  "files": {
+    "admission.json": {
+      "bytes": 6564,
+      "sha256": "05ca684ab1841cffa24cc86c636f1124eb735c35e7ae9d28b389bfcf7c257243"
+    },
+    "receipt.json": {
+      "bytes": 715,
+      "sha256": "43fcec531318a1d974436e0368f5db4a383da50de5a55251bc69d1570bb72945"
+    },
+    "snapshot.json": {
+      "bytes": 237163,
+      "sha256": "f1fef74efe0e137cd55d41fdcce29445c788e2c89589045b7c6634097705556e"
+    }
+  },
+  "identity": "pgo-replacement-depth-2026-09-10"
+}

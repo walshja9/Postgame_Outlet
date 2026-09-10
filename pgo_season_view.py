@@ -4,8 +4,10 @@ from decimal import Decimal, ROUND_HALF_UP
 import html
 import math
 from urllib.parse import unquote, urlsplit
+from zoneinfo import ZoneInfo
 
 import pgo_current_board as board
+from pgo_season import utc
 
 GRADES = {'W': 'W', 'L': 'L', 'T': 'T', 'PENDING': 'Pending', 'NO_PICK': 'No pick'}
 FORECAST_STATES = {'DRAFT', 'LOCKED', 'BLOCKED', 'FINAL'}
@@ -28,8 +30,104 @@ def _integer(value):
     return value
 
 
-def _time(value):
-    return board._time(value) if value else 'Unavailable'
+def _time(value, *, clock_only=False):
+    if not value: return 'Unavailable'
+    if clock_only:
+        label = utc(value).astimezone(ZoneInfo('America/New_York')).strftime('%I:%M %p %Z').lstrip('0')
+        return f'<time datetime="{_text(value)}">{label}</time>'
+    return board._time(value)
+
+
+def _check_time(value, reference, minutes=45, until=None):
+    if not value:
+        return 'No verified check saved'
+    expired = until and utc(reference) >= utc(until)
+    status = ('Check time ahead of this clock' if utc(value)>utc(reference) else 'Updates closed at lock' if expired else
+              'Update overdue' if (utc(reference)-utc(value)).total_seconds() > minutes*60 else 'Recently checked')
+    end = f' data-freshness-until="{_text(until)}"' if until else ''
+    return (_time(value) + f'<span class="freshness-status" data-freshness-at="{_text(value)}" '
+            f'data-freshness-minutes="{minutes}" data-overdue="{str(status == "Update overdue").lower()}"{end}>{status}</span>')
+
+
+def _freshness(state):
+    checked = state['checked_at']
+    rankings = state.get('rankings') or {}
+    score_checks = [r['captured_at'] for r in state.get('source_captures', [])
+                    if '/scoreboard?' in r.get('url','') and r.get('captured_at')]
+    upcoming = [g for w in state['weeks'] for g in w['games']
+                if 3600 < (utc(g['kickoff'])-utc(checked)).total_seconds() <= 86400]
+    available = [g.get('availability',{}).get('checked_at') for g in upcoming]
+    availability = ('No unlocked games within the next 24 hours. Checks begin in that window.' if not upcoming else
+                    _check_time(min(available,key=utc),checked,30,max((g['lock_at'] for g in upcoming),key=utc))
+                    if all(available) else 'Some games in the check window have no verified check saved')
+    rows = [('Rankings calculated', _time(rankings.get('generated_at'))),
+            ('Game-day availability checked', availability),
+            ('Results checked', _check_time(min(score_checks,key=utc) if score_checks else None,checked)),
+            ('Automation checked', _check_time(checked,checked))]
+    return ('<dl class="season-freshness">' + ''.join(f'<div><dt>{title}</dt><dd>{value}</dd></div>' for title,value in rows)
+            + '</dl><p class="season-caption">Rankings update after a complete week and verified statistics; '
+            'an expected-quarterback change can also revise unlocked picks. Availability refreshes during the 24 hours before kickoff until lock; a check does not mean every player is healthy. '
+            'Overdue means more than 30 minutes for availability or 45 minutes for results and automation.</p>')
+
+
+def _absences(game, compact=False):
+    availability = game.get('availability') or {}
+    teams = availability.get('teams', {})
+    rows, seen = [], set()
+    labels = {'OUT':'Out', 'INACTIVE':'Inactive', 'EMERGENCY_QB':'Emergency third QB',
+              'DOUBTFUL':'Doubtful', 'QUESTIONABLE':'Questionable'}
+    for team in (game['away'],game['home']):
+        for item in teams.get(team,{}).get('observations',[]):
+            status = labels.get(item.get('status'))
+            key = (team,item.get('gsis_id') or item.get('name'),status)
+            if not status or key in seen: continue
+            seen.add(key)
+            identity = ' (identity unconfirmed)' if item.get('identity_status') not in (None,'RESOLVED') else ''
+            rows.append(f'<li>{_text(team)} &middot; {_text(item["name"])} ({_text(item.get("position","Unknown role"))}): {status}{identity}</li>')
+    if compact:
+        return ('<p><strong>Out or uncertain:</strong></p><ul class="game-day-absences">' + ''.join(rows[:3]) + '</ul>'
+                + (f'<p>{len(rows)-3} more in availability details.</p>' if len(rows)>3 else '')) if rows else ''
+    notes = '<ul class="game-day-absences">' + ''.join(rows) + '</ul>' if rows else '<p>No named out or uncertain players in this saved report; this is not a clean bill of health.</p>'
+    if any(teams.get(t,{}).get('final_inactives_status') != 'VERIFIED_LIST' for t in (game['away'],game['home'])):
+        notes += '<p>Final inactive lists are not fully verified.</p>'
+    sources = sorted({item['source_url'] for team in teams.values() for item in team.get('observations',[]) if item.get('source_url')})
+    notes += _sources([{'href':url,'label':'Official availability source'} for url in sources])
+    return notes
+
+
+def _game_day(state):
+    eastern = ZoneInfo('America/New_York')
+    day = utc(state['checked_at']).astimezone(eastern).date()
+    games = sorted((g for w in state['weeks'] for g in w['games']),key=lambda g:(utc(g['kickoff']),g['game_id']))
+    today = [g for g in games if utc(g['kickoff']).astimezone(eastern).date() == day]
+    cards = []
+    for game in today:
+        key = _text(game['game_id']); confidence = game.get('confidence') or {}
+        pick = ('Pick withheld' if game.get('blocked_reason') or game['forecast_status']=='BLOCKED' else
+                f'PGO pick: {_text(game["pick"])}' if game.get('pick') else 'No model edge')
+        probability = confidence.get('win_probability')
+        chance = ''
+        if game.get('pick') and not game.get('blocked_reason') and game['forecast_status']!='BLOCKED' and probability is not None:
+            if not 0 <= _number(probability) <= 1: raise ValueError('Invalid saved win probability')
+            chance = ('<p>Probability added after lock; excluded from pregame accuracy.</p>' if confidence.get('added_after_lock') else
+                      f'<p class="game-day-chance">{probability:.1%} win chance</p>')
+        result = game.get('result')
+        status = ('Final: ' + f'{_text(game["away"])} {_integer(result["away_score"])}, {_text(game["home"])} {_integer(result["home_score"])}'
+                  if result else '<span data-weekly-cutoff="' + _text(game['lock_at']) + '">' + ('Locked' if utc(state['checked_at'])>=utc(game['lock_at']) else 'Draft') + '</span>'
+                  if game['forecast_status']!='BLOCKED' and not game.get('blocked_reason') else 'Withheld')
+        cards.append(f'<article class="game-day-card"><div><h4>{_text(game["away"])} @ {_text(game["home"])}</h4>'
+                     f'<p class="game-day-pick">{pick}</p>{chance}<p>{status}</p>'
+                     f'<dl class="game-day-times"><div><dt>Kickoff</dt><dd>{_time(game["kickoff"],clock_only=True)}</dd></div>'
+                     f'<div><dt>Prediction lock</dt><dd>{_time(game["lock_at"],clock_only=True)}</dd></div></dl></div><div>{_absences(game,True)}'
+                     f'<details data-view-key="game-day-availability-{key}"><summary>Absences and availability</summary>{_absences(game)}'
+                     f'<p>{_check_time((game.get("availability") or {}).get("checked_at"),state["checked_at"],30,game["lock_at"])}</p>'
+                     '<p>Non-QB absences are context; their impact is not fitted into this pick.</p></details>'
+                     f'<a class="game-day-link" href="#season-game-{key}" data-view-key="game-day-link-{key}">Score estimate and explanation</a></div></article>')
+    empty = '<p>No games on this date.'
+    next_game = next((g for g in games if utc(g['kickoff']).astimezone(eastern).date()>day),None)
+    if next_game: empty += f' Next saved game: {_text(next_game["away"])} @ {_text(next_game["home"])} &middot; {_time(next_game["kickoff"])}.'
+    return (f'<h3 id="season-game-day">Game day &middot; {day.strftime("%B %d").replace(" 0"," ")} (Eastern)</h3>'
+            + ('<div class="game-day-grid">' + ''.join(cards) + '</div>' if cards else empty+'</p>'))
 
 
 def _sources(sources):
@@ -109,9 +207,12 @@ def _rankings(snapshot):
             f'<p>Edition: {_text(snapshot["edition"])}. Generated {_time(snapshot["generated_at"])}.</p></details></details>')
     if teams != sorted(teams, key=lambda row: (-row['rating'], row['team'])):
         raise ValueError('Season team ranks differ from saved rating order')
-    return (f'<h3 id="season-rankings">Current power rankings</h3><p>Inputs saved through {_time(snapshot["inputs_as_of"])}. '
-            f'Performance history through {_time(snapshot["history_through"])}. '
-            'Rank change compares this edition with the previous saved board.</p>'
+    history = utc(snapshot['history_through']).astimezone(ZoneInfo('America/New_York')).strftime('%B %d, %Y').replace(' 0',' ')
+    movement_note = ('Rank change compares this edition with the previous saved ranking edition.' if any(t.get('prior_rank') is not None for t in teams)
+                     else 'First saved ranking edition; rank movement starts with the next edition.')
+    return (f'<h3 id="season-rankings">Current power rankings</h3><p>Ranking inputs captured {_time(snapshot["inputs_as_of"])}. '
+            f'Includes completed games through {history}. This is the date of the latest included game, not a data-capture deadline. '
+            f'{movement_note}</p>'
             '<label class="model-update-columns"><input type="checkbox" data-view-key="rating-columns"> Show rating scale and expected QB</label>'
             '<div class="table-shell" data-view-key="rankings-table"><table class="postseason-team-table"><thead><tr>'
             '<th>Rank</th><th>Team</th><th>PGO strength</th><th>Rank change</th>'
@@ -179,7 +280,8 @@ def _game(game, week):
         if ((expected is not None and (probability is None or not math.isclose(expected,points*probability,rel_tol=0,abs_tol=1e-8)))
                 or (earned is not None and earned > points)):
             raise ValueError('Season confidence points do not reconcile')
-        pool = f'{points} points; win chance {shown}<br>Expected: {expected_text}<br>Earned: {earned_text}'
+        pool = (f'{points} allocated pool points; win chance {shown}<br>'
+                f'Expected pool points: {expected_text}<br>Earned pool points: {earned_text}')
         if confidence.get('added_after_lock'):
             pool += '<br><strong>Added after lock</strong>'
     availability = game.get('availability') or {}
@@ -206,6 +308,7 @@ def _game(game, week):
             f'<div class="forecast-reason-block"><h3>Saved calculation</h3><p>{calculation}</p>'
             f'<p>Edition: {_text(game.get("source_edition",week["source_edition"]))}.</p>{provenance}</div>'
             f'<div class="forecast-reason-block"><h3>Availability context</h3><p>{note}</p>'
+            + (_absences(game) if availability.get('teams') else '') +
             '<p>Non-QB injury news is context, not a fitted injury adjustment.</p></div></div></details></td></tr>')
 
 
@@ -305,11 +408,211 @@ def _penalty_shadow(shadow):
              'label':'Penalty test methods, findings and review rules'}]) + '</details>')
 
 
-def render_season(state):
+def _accuracy(summary):
+    def number(value, digits=3):
+        return 'Awaiting eligible finals' if value is None else f'{_number(value):.{digits}f}'
+    def count(metric):
+        return f'{_integer(metric["n"])} eligible; {_integer(metric["excluded"])} not counted'
+    primary = summary['primary']
+    probability, confidence = primary['probabilities'], primary['confidence']
+    cards = []
+    for key, title in (('margin_mae','Average lead error'),('total_mae','Average combined-score error')):
+        metric = primary[key]
+        value = number(metric['value'],2) + (' points' if metric['value'] is not None else '')
+        cards.append(f'<div><dt>{title}</dt><dd><strong>{value}</strong><br>{count(metric)}</dd></div>')
+    cards.append(f'<div><dt>Probability accuracy</dt><dd>Brier: {number(probability["brier"])}<br>'
+                 f'Log loss: {number(probability["log_loss"])}<br>{count(probability)}</dd></div>')
+    earned = confidence['earned_points']
+    cards.append(f'<div><dt>Pool points on completed picks</dt><dd><strong>{"Awaiting finals" if earned is None else _integer(earned)} earned</strong>'
+                 f'<br>{number(confidence["expected_points"],2)} expected<br>{count(confidence)}'
+                 f'<br>{_integer(confidence["late_count"])} late entries; {_integer(confidence["unknown_timing_count"])} with unknown timing</dd></div>')
+    comparisons = []
+    for model in summary['comparisons']:
+        lead,total = model['margin_mae'],model['total_mae']
+        comparisons.append(f'<tr><th scope="row">{_text(model["model_name"])}</th>'
+                           f'<td>{number(lead["primary"])} / {number(lead["model"])}</td><td>{_integer(lead["n"])}</td>'
+                           f'<td>{number(total["primary"])} / {number(total["model"])}</td><td>{_integer(total["n"])}</td></tr>')
+    comparison_table = ('<div class="table-shell" data-view-key="accuracy-comparison-table"><table><thead><tr>'
+                       '<th>Saved comparison model</th><th>Lead error: weekly / comparison</th><th>Same games</th>'
+                       '<th>Total error: weekly / comparison</th><th>Same games</th></tr></thead><tbody>'
+                       + ''.join(comparisons) + '</tbody></table></div>') if comparisons else '<p>No separately verified model series supplied for comparison.</p>'
+    bins = []
+    for row in primary['reliability_bins']:
+        chance = 'Unavailable' if row['mean_probability'] is None else f'{_number(row["mean_probability"]):.1%}'
+        won = 'Awaiting finals' if row['observed_win_rate'] is None else f'{_number(row["observed_win_rate"]):.1%}'
+        bins.append(f'<tr><th scope="row">{_number(row["lower"]):.0%} to {_number(row["upper"]):.0%}</th>'
+                    f'<td>{_integer(row["count"])}</td><td>{chance}</td><td>{won}</td></tr>')
+    reasons = {'no_verified_final':'No verified final yet','blocked_forecast':'Forecast withheld','unknown_forecast_time':'Forecast time not recorded',
+               'late_forecast':'Forecast saved after lock','missing_margin':'No saved lead','missing_total':'No saved total',
+               'no_pick':'No selected team','late_confidence':'Probability added after lock','unknown_confidence_time':'Probability timing unknown',
+               'incomplete_probabilities':'Full win and tie probabilities not saved','missing_confidence':'Confidence allocation incomplete'}
+    exclusions = []
+    for key,title in (('margin_mae','Lead error'),('total_mae','Total error'),('probabilities','Probability accuracy'),('confidence','Confidence points')):
+        rows = '; '.join(f'{_text(reasons.get(k,k))}: {_integer(v)}' for k,v in primary[key]['reasons'].items()) or 'None'
+        exclusions.append(f'<li>{title}: {rows}.</li>')
+    return ('<h3 id="season-accuracy">Season accuracy</h3><p>Original saved picks, verified finals. '
+            'A correct winner can still come with a poor score estimate. Each measure below tests a different part of the forecast; lower error is better.</p>'
+            '<dl class="season-freshness">' + ''.join(cards) + '</dl>'
+            '<p class="season-caption">These are early results, not proof of accuracy. Confidence accounting includes marked late entries; '
+            'pregame probability accuracy excludes them. Expected points shown here cover the same completed picks as earned points.</p>'
+            '<details class="model-update-evidence" data-view-key="accuracy-comparisons"><summary>Compare models on the same games</summary>'
+            '<p>Each pair uses exactly the same eligible game IDs for that measure. Errors are in NFL points. '
+            'Different model schedules and missing estimates cannot give a model easier games here. '
+            'Older score forecasts have no originally saved full probabilities, so they have no pregame probability comparison.</p>'
+            + comparison_table + '</details>'
+            '<details class="model-update-evidence" data-view-key="accuracy-reliability"><summary>Do the win chances match the results?</summary>'
+            '<p>Over many games, picks given about a 60% chance should win about 60% of the time. '
+            'The table groups saved chances into fixed ranges and compares them with actual wins. A few results cannot establish reliability; ties count as no selected-team win.</p>'
+            '<div class="table-shell" data-view-key="accuracy-reliability-table"><table><thead><tr><th>Saved chance range</th>'
+            '<th>Games</th><th>Average saved chance</th><th>Actually won</th></tr></thead><tbody>' + ''.join(bins) + '</tbody></table></div>'
+            '<p>Ranges include their lower bound and exclude their upper bound, except the last range includes 100%. '
+            'Brier measures squared error across home win, away win and tie, on a 0-to-2 scale. '
+            'Log loss penalizes confident misses more strongly. Both improve as they get smaller.</p></details>'
+            '<details class="model-update-evidence" data-view-key="accuracy-exclusions"><summary>What is not counted?</summary><ul>'
+            + ''.join(exclusions) + '</ul><p>These counts refer to the weekly model\'s saved schedule. '
+            'The source archives retain every original forecast and its timing.</p></details>')
+
+
+def _test_table(key, headings, rows):
+    return (f'<div class="table-shell" data-view-key="{key}"><table class="model-test-table"><thead><tr>'
+            + ''.join(f'<th scope="col">{_text(h)}</th>' for h in headings) + '</tr></thead><tbody>'
+            + ''.join('<tr>' + ''.join(f'<td>{cell}</td>' for cell in row) + '</tr>' for row in rows)
+            + '</tbody></table></div>')
+
+
+def _test_value(value, digits=2):
+    return 'Awaiting eligible finals' if value is None else f'{_number(value):.{digits}f}'
+
+
+def _experiments(state):
+    totals, weights, depth = (state.get(k) or {} for k in ('totals_shadow','weights_shadow','replacement_depth'))
+    if not any((totals, weights, depth)): return ''
+    base = 'https://github.com/walshja9/Postgame_Outlet/blob/main/research/'
+    panels = []
+    if totals:
+        names = {'league_prior':'Last season: league average', 'pfpa_prior':'Last season: these teams',
+                 'shrink_4':'Update with this season: 4-game starting weight',
+                 'shrink_8':'Update with this season: 8-game starting weight'}
+        historical, live = totals.get('historical',{}).get('metrics',{}), totals.get('metrics',{})
+        rows = [[label, _test_value(historical.get(key,{}).get('mae')),
+                 _test_value(live.get(key,{}).get('mae'))] for key,label in names.items()]
+        predictions = [[f'{_text(g["away"])} @ {_text(g["home"])}', _time(g['issued_at'])]
+                       + [_test_value(g['totals'][key],1) for key in names] for g in totals.get('games',[])]
+        panels.append('<details class="model-update-evidence" data-view-key="totals-experiment"><summary>Score totals: can current-season results help?</summary>'
+            '<p>Two fixed formulas gradually mix this season\'s scoring with last season\'s. A 4-game starting weight means '
+            'last season counts like four games; the 8-game version changes more slowly. Only verified results from earlier game days can enter.</p>'
+            f'<p>Monitor: {_text(totals["status"])}. {_text(totals.get("blocked_reason") or "")}</p>'
+            '<p><strong>Both updating formulas passed the historical further-study screen.</strong> The 4-game version reduced '
+            'average total error from 11.04 to 10.74 points across the same 2,127 games. This is a reason to keep testing, '
+            'not proof of live improvement. The current main score estimates remain unchanged.</p>'
+            + _test_table('totals-results', ['Scoring rule','Historical total error (points)','New-game total error (points)'], rows)
+            + f'<p>New comparison: {_integer(len(totals.get("games",[])))} saved matchups; '
+            f'{_integer(live.get("paired_games",0))} verified finals on identical games for all four rules. '
+            'Formal review requires at least 150 paired games across 12 weeks. No automatic model change.</p>'
+            '<details data-view-key="totals-issued"><summary>Original test estimates for upcoming and completed games</summary>'
+            + _test_table('totals-picks', ['Matchup','Saved (Eastern)','League prior','Team prior','4-game weight','8-game weight'], predictions)
+            + '</details><p>Lower average absolute error is better. Historical seasons have been reused, and original source timing still needs review. '
+            f'<a href="{base}pgo_totals_candidate_20260910/README.md">Methods, season checks and saved evidence</a>.</p></details>')
+    if weights:
+        from pgo_forecast_lab import _spread
+        arms = {'postseason':'Current input blocks', 'without_qb_passing':'Without QB passing block',
+                'without_team_passing':'Without team passing block'}
+        curves = {'scalar':'same neutral midpoint','intercept':'learned midpoint'}
+        historical, live = weights.get('historical',{}), weights.get('metrics',{})
+        rows = [[label, _test_value(historical.get('margin_arms',{}).get(key,{}).get('mae')),
+                 _test_value(live.get('margin_arms',{}).get(key,{}).get('mae'))] for key,label in arms.items()]
+        probability_rows = []
+        for arm,label in arms.items():
+            for curve,description in curves.items():
+                key = f'{arm}_{curve}'; past = historical.get('probability_curves',{}).get(key,{})
+                future = live.get('probability_curves',{}).get(key,{})
+                probability_rows.append([f'{label}; {description}', _test_value(past.get('log_loss'),4),
+                                         _test_value(past.get('brier'),4), _test_value(future.get('log_loss'),4)])
+        issued = []
+        for game in weights.get('games',[]):
+            items = []
+            for arm,label in arms.items():
+                margin = _number(game['margins'][arm])
+                lead = _spread(dict(home=game['home'],away=game['away'],margin=margin))
+                chances = []
+                for curve,description in curves.items():
+                    value = game['probabilities'][f'{arm}_{curve}']
+                    chance = (f'{_text(value["selected_team"])} {_number(value["selected_probability"]):.1%}'
+                              if value.get('selected_team') else 'No selected team')
+                    chances.append(f'{description}: {chance}')
+                items.append(f'<li>{label}: {lead}. Win chances &mdash; {"; ".join(chances)}.</li>')
+            issued.append(f'<details data-view-key="weights-game-{_text(game["game_id"])}"><summary>{_text(game["away"])} @ {_text(game["home"])}</summary>'
+                          f'<p>Saved {_time(game["issued_at"])}. Lead estimates are NFL points; percentages are straight-up win chances.</p><ul>'
+                          + ''.join(items) + '</ul></details>')
+        panels.append('<details class="model-update-evidence" data-view-key="weights-experiment"><summary>Inputs and win chances: test overlap without guessing new weights</summary>'
+            '<p>Recent results, team passing and quarterback passing can describe the same games. We tested removing one passing block at a time '
+            'and refitted each fixed variant using earlier seasons only. We also tested two ways to convert each lead into a win chance.</p>'
+            f'<p>Monitor: {_text(weights["status"])}. {_text(weights.get("blocked_reason") or "")}</p>'
+            '<p><strong>No alternative cleared the improvement screen.</strong> Removing either block made average lead error slightly worse. '
+            'None of the probability alternatives met the required improvement and uncertainty checks. The main model stays unchanged.</p>'
+            + _test_table('weights-results',['Input choice','Historical lead error (points)','New-game lead error (points)'],rows)
+            + '<p>All lead tests use the same 2,127 historical games. Probability tests use the same 1,615 later games, '
+            'after allowing earlier seasons to train the probability method. Lower error, log loss and Brier are better.</p>'
+            + _test_table('probability-results',['Probability method','Historical log loss','Historical Brier (0–2)','New-game log loss'],probability_rows)
+            + '<p>A learned midpoint lets the probability method move its 50/50 boundary; it can change the selected team even when the lead estimate stays fixed. '
+            'That is why these test picks are tracked separately. Fixed confidence points are not reassigned.</p>'
+            f'<p>New comparison: {_integer(len(weights.get("games",[])))} saved matchups; {_integer(live.get("paired_games",0))} paired finals. '
+            'Historical results are diagnostic and source timing still needs review.</p>'
+            '<details data-view-key="weights-issued"><summary>Original test picks and probabilities</summary>' + ''.join(issued) + '</details>'
+            f'<p><a href="{base}pgo_weights_candidate_20260910/README.md">Every variant, review rules and saved evidence</a>.</p></details>')
+    if depth:
+        teams = []
+        for team in depth.get('teams',[]):
+            rows = [[_text(role['position'])] + [str(_integer(role[key])) for key in
+                     ('listed_first','confirmed_unavailable_first','remaining_experienced_backups_not_confirmed_out',
+                      'remaining_unknown_history_backups_not_confirmed_out','uncertain_backups')] for role in team.get('roles',[])]
+            unavailable = []
+            for player in team.get('unavailable_players',[]):
+                prior = ('Prior usage unknown' if player.get('prior_role_share') is None else
+                         f'2025 observed playing-time share: {_number(player["prior_role_share"]):.1%}')
+                status = 'Confirmed unavailable' if player.get('confirmed_unavailable') else 'Uncertain availability'
+                unavailable.append(f'<li>{_text(player["name"])} ({_text(player["position"])}): {status}; '
+                                   f'roster {_text(player["roster_status"])}. {prior}.</li>')
+            code = _text(team['team'])
+            unresolved = sorted(set(team.get('unresolved_official_names',[]) + [r['name'] for r in team.get('unresolved_roster',[])]))
+            teams.append(f'<details data-view-key="replacement-team-{code}"><summary>{code} &middot; defensive depth observations</summary>'
+                f'<p>Provider depth list: {_time(team.get("depth_snapshot_at"))}. Official report: {_text(team["report_status"])}; '
+                f'final inactives: {_text(team["final_inactives_status"])}. Report checked: {_time(team.get("availability_checked_at"))}.</p>'
+                + _test_table(f'replacement-roles-{code}', ['Provider position','Listed first','First-listed unavailable',
+                    'Backups with prior usage; not confirmed out','Backups with unknown history; not confirmed out','Uncertain backups'], rows)
+                + f'<p>Unresolved depth names: {_integer(team["depth_identity_conflicts"])}. '
+                f'Active defenders missing from depth list: {_integer(team["unlisted_active_defenders"])}. '
+                f'Unavailable defenders with unknown prior role: {_integer(team["unavailable_unknown_prior_role"])}.</p>'
+                + ('<p>Names awaiting identity resolution: ' + ', '.join(_text(name) for name in unresolved) + '.</p>' if unresolved else '')
+                + ('<ul>' + ''.join(unavailable) + '</ul>' if unavailable else '<p>No unavailable players resolved in these saved sources; this does not establish full health.</p>')
+                + '</details>')
+        panels.append('<details class="model-update-evidence" data-view-key="replacement-experiment"><summary>Injuries and defensive backups: what we can verify</summary>'
+            f'<p>Capture: {_text(depth["status"])}. {_text(depth.get("blocked_reason") or "")} '
+            f'Saved {_time(depth.get("generated_at"))}; newest source {_time(depth.get("source_as_of"))}.</p>'
+            '<p><strong>No numerical injury adjustment yet.</strong> We now save dated player identities, provider depth positions, '
+            'known absences and prior defensive usage for future evaluation. The historical audit found no dated historical depth sources '
+            'or source-capture clocks in the admitted inventory, so it cannot support a fitted injury or replacement-quality effect.</p>'
+            '<p>Prior playing time describes experience, not talent. Unknown history stays unknown, including rookies. Active roster status '
+            'does not prove health; a backup not confirmed out is not confirmed available. Provider position labels are kept as supplied. '
+            'Multiple defensive packages can list more than eleven players first. These latest observations do not revise locked forecasts.</p>'
+            f'<p>{_integer(len(depth.get("teams",[])))} team summaries; {_integer(len(depth.get("games",[])))} unlocked matchups captured. '
+            'Official report coverage is stated separately for each team.</p>' + ''.join(teams)
+            + '<details data-view-key="replacement-sources"><summary>Captured roster and depth sources</summary>'
+            + _sources(depth.get('sources',[])) + '</details>'
+            f'<p><a href="{base}pgo_replacement_depth_20260910/README.md">Admission audit, missing information and capture history</a>.</p></details>')
+    return ('<h3 id="season-model-tests">Model tests</h3><p>These fixed comparisons are separate from the main picks. '
+            'Original test forecasts are saved before lock and graded when verified finals arrive. The completed opener is excluded '
+            'from tests first created afterward. No experiment automatically replaces the main model.</p>' + ''.join(panels))
+
+
+def render_season(state, *, accuracy=None):
     """Render validated saved state using the existing shared PGO styles once per page."""
     if state['schema_version'] != 1 or state['status'] not in ('READY','BLOCKED'):
         raise ValueError('Unknown season view state')
     season, current = _integer(state['season']), _integer(state['current_week'])
+    if accuracy is None:
+        from pgo_season_accuracy import summarize
+        accuracy = summarize(state)
     weeks = state['weeks']
     if len({w['week'] for w in weeks}) != len(weeks): raise ValueError('Duplicate season week')
     games = [game for week in weeks for game in week['games']]
@@ -322,10 +625,14 @@ def render_season(state):
     block = f'<p><strong>Update blocked:</strong> {_text(state["blocked_reason"])}</p>' if state.get('blocked_reason') else ''
     current_weeks = ''.join(_week(w,True) for w in weeks if w['week'] == current)
     archives = ''.join(_week(w,False) for w in sorted(weeks,key=lambda w:w['week'],reverse=True) if w['week'] != current)
-    links = [(f'season-week-{current}',f'Week {current} picks')] if current_weeks else []
+    links = [('season-game-day','Game day')]
+    if current_weeks: links.append((f'season-week-{current}',f'Week {current} picks'))
     links.append(('season-records','Model records'))
+    links.append(('season-accuracy','Accuracy'))
     if state.get('rankings'): links.append(('season-rankings','Rankings'))
     if state.get('penalty_shadow'): links.append(('pgo-penalty-test','Penalty test'))
+    if any(state.get(k) for k in ('totals_shadow','weights_shadow','replacement_depth')):
+        links.append(('season-model-tests','Model tests'))
     navigation = '<nav class="season-nav" aria-label="PGO sections">' + ''.join(
         f'<a href="#{target}" data-view-key="nav-{target}">{label}</a>' for target,label in links) + '</nav>'
     return (f'<div class="pgo-model-updates" id="pgo-season" data-season-checked-at="{_text(state["checked_at"])}"><h2>PGO Power Rankings &mdash; Experimental</h2>'
@@ -345,14 +652,18 @@ def render_season(state):
             '<p>Rounded score estimates can look equal even when one team has a small edge. '
             'About 25 points each is not a prediction of a tied game. Open Model averages for decimal estimates.</p></details>'
             f'<p>Automation status: {state["status"]}. Last automation check: {_time(state["checked_at"])}. {_text(state.get("freshness", ""))}</p>{block}'
-            '<p>W/L/T grades use each saved model pick and verified final scores. Missing results remain pending. '
+            '<p><strong>Picks and W/L/T records are straight-up: which team wins, not against the spread (ATS).</strong> '
+            'Any victory by the selected team earns a W, regardless of the winning margin. '
+            'Lead error separately measures how close the predicted margin was. The predicted lead is a model estimate, not a sportsbook line. '
+            'Grades use saved picks and verified final scores. Missing results remain pending. '
             'Injury news is shown as context; current non-QB injuries and backup quality are not separately rated.</p>'
-            + _rankings(state.get('rankings')) +
+            + _freshness(state) + _game_day(state) + _rankings(state.get('rankings')) +
             '<h3 id="season-records">Model records</h3><div class="table-shell" data-view-key="model-records-table"><table><thead><tr><th>Saved model series</th>'
             '<th>W</th><th>L</th><th>T</th><th>No pick</th><th>Pending</th></tr></thead>'
             f'<tbody>{"".join(records)}</tbody></table></div>'
             '<p>Each record covers its own saved schedule. Weekly editions cover published weeks; '
             'the preseason baselines cover all 272 regular-season games, so their pending counts can be larger.</p>'
+            + _accuracy(accuracy) +
             f'<h3>Week {current} picks and grades</h3>'
             '<p><strong>Fixed confidence points:</strong> the weekly allocation is saved once. '
             'Before a game locks, an expected-QB update may change its win chance without reallocating its confidence points. '
@@ -362,5 +673,6 @@ def render_season(state):
             + (current_weeks or '<p>No saved slate is available for this week.</p>') +
             ('<details class="model-update-evidence" data-view-key="week-archives"><summary>Previous weekly grades and forecasts</summary>' + archives + '</details>' if archives else '') +
             _penalty_shadow(state.get('penalty_shadow')) +
+            _experiments(state) +
             '<details class="model-update-evidence" data-view-key="season-sources"><summary>Sources and limitations</summary>'
             + _sources(state.get('sources', [])) + '<ul>' + ''.join(f'<li>{_text(item)}</li>' for item in state.get('limitations', [])) + '</ul></details></div>')

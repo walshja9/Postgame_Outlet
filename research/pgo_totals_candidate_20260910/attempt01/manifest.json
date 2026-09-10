@@ -1,0 +1,26 @@
+{
+  "files": {
+    "metrics.json": {
+      "bytes": 12603,
+      "sha256": "6f14852b17c54f380abca29568e5aec86eaf95bf4d71d1231324a43198f03a81"
+    },
+    "predictions.csv": {
+      "bytes": 473141,
+      "sha256": "f96c85bf348a7df7c88dc6288bc2d470c4270134505d5bb95ce84c2fc534fce8"
+    },
+    "public-summary.json": {
+      "bytes": 5407,
+      "sha256": "bde9db5ef0086bfba6c39f8179db24abf85a0fe3f88299418a128df3d9d4b82d"
+    },
+    "run-receipt.json": {
+      "bytes": 36714,
+      "sha256": "1c68a9caeda82f20e24cc4974b26a4cbb3706d1ffb77b5cbf26b0e619e05aabf"
+    },
+    "run-start.json": {
+      "bytes": 36561,
+      "sha256": "3b53201c72a3ab292559a0d2053da36a95bd6b1b25d21b17c383d089d46f59c9"
+    }
+  },
+  "identity": "pgo-totals-candidate-2026-09-10",
+  "status": "EXPERIMENTAL / HOLD"
+}

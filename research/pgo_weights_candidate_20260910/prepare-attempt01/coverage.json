@@ -1,0 +1,66 @@
+{
+  "without_qb_passing": {
+    "dropped": [
+      "qb_ball_security",
+      "qb_cpoe",
+      "qb_current_minus_full",
+      "qb_epa_per_dropback",
+      "qb_sack_avoidance"
+    ],
+    "remaining_features": [
+      "defense_availability",
+      "explosive_play_prevention_rate",
+      "explosive_play_rate_for",
+      "giveaway_avoidance_rate",
+      "home_field",
+      "offense_availability",
+      "passing_epa_per_play_against",
+      "passing_epa_per_play_for",
+      "pgo_v0",
+      "qb_draft_prior",
+      "qb_experience_prior",
+      "qb_log_dropbacks",
+      "qb_rushing_epa_per_carry",
+      "rest_difference",
+      "rushing_epa_per_play_against",
+      "rushing_epa_per_play_for",
+      "sack_avoidance_rate",
+      "sack_creation_rate",
+      "takeaway_rate"
+    ],
+    "rows": 3407,
+    "surviving_values_and_missingness": "EXACT"
+  },
+  "without_team_passing": {
+    "dropped": [
+      "passing_epa_per_play_for",
+      "sack_avoidance_rate"
+    ],
+    "remaining_features": [
+      "defense_availability",
+      "explosive_play_prevention_rate",
+      "explosive_play_rate_for",
+      "giveaway_avoidance_rate",
+      "home_field",
+      "offense_availability",
+      "passing_epa_per_play_against",
+      "pgo_v0",
+      "qb_ball_security",
+      "qb_cpoe",
+      "qb_current_minus_full",
+      "qb_draft_prior",
+      "qb_epa_per_dropback",
+      "qb_experience_prior",
+      "qb_log_dropbacks",
+      "qb_rushing_epa_per_carry",
+      "qb_sack_avoidance",
+      "rest_difference",
+      "rushing_epa_per_play_against",
+      "rushing_epa_per_play_for",
+      "sack_creation_rate",
+      "takeaway_rate"
+    ],
+    "rows": 3407,
+    "surviving_values_and_missingness": "EXACT"
+  }
+}

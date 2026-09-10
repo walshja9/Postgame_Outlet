@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 import gzip
 import hashlib
+import importlib
 import io
 import json
 import math
@@ -208,6 +209,14 @@ def save_state(state, root=DEFAULT_ROOT):
     if 'penalty_shadow' in state:
         from pgo_penalty_monitor import check_durable_shadow
         check_durable_shadow(state, prior, durable)
+    if 'totals_shadow' in state or 'totals_shadow' in (prior or {}):
+        from pgo_totals_monitor import check_durable_shadow
+        check_durable_shadow(state, prior, durable)
+    if 'weights_shadow' in state or 'weights_shadow' in (prior or {}):
+        from pgo_weights_monitor import check_durable_shadow
+        check_durable_shadow(state, prior, durable)
+    if 'replacement_depth' in state:
+        check_replacement_depth(state, prior, durable)
     manifest = dict(schema_version=1, created_at=durable, files={'state.json.gz': {'sha256':sha(payload),'bytes':len(payload)}},
                     code_sha256=sha(Path(__file__).read_bytes()))
     previous = root/'current.json'
@@ -343,9 +352,10 @@ def legacy_models():
                                      ('PGO corrected - September 8', corrected, corrected.DEFAULT_OUTPUT),
                                      ('PGO - September 7 preseason', september, ROOT/'docs/evidence/forecast-lab-2026/september-07')]:
         snapshot = initial_snapshot() if module is None else module.load_snapshot(directory)
-        models.append(dict(name=name, edition=snapshot['edition'], games=snapshot['games']))
+        models.append(dict(name=name, edition=snapshot['edition'], issued_at=snapshot['generated_at'], games=snapshot['games']))
     initial = models[-1]['games']
-    models.append(dict(name='PGO v0 - saved preseason baseline', edition='pgo-v0-preseason', games=[dict(g, margin=g['pgo_v0_margin']) for g in initial]))
+    models.append(dict(name='PGO v0 - saved preseason baseline', edition='pgo-v0-preseason', issued_at=models[-1]['issued_at'],
+                       games=[dict(g, margin=g['pgo_v0_margin'], total=None, home_points=None, away_points=None) for g in initial]))
     return models
 
 
@@ -527,6 +537,65 @@ def decorate(state, results):
     state['freshness']='Checked every 15 minutes when the scheduled runner is available. Final-result grades update first; weekly rankings wait for complete game statistics.'
 
 
+def check_replacement_depth(state, previous, durable):
+    """A new descriptive observation must be durably saved before its game locks."""
+    current=state.get('replacement_depth',{})
+    before=(previous or {}).get('replacement_depth',{})
+    # Retaining the same dated observation on a failed refresh is permitted after
+    # lock. Status/check messages cannot turn a changed observation into an old one.
+    messages={'status','blocked_reason','checked_at'}
+    if before and {k:v for k,v in current.items() if k not in messages}=={k:v for k,v in before.items() if k not in messages}:
+        return
+    generated=utc(current['generated_at']); durable=utc(durable)
+    require(generated<=utc(state['checked_at'])<=durable, 'Replacement capture clock follows its saved state')
+    if current.get('completed_at') is not None:
+        require(generated<=utc(current['completed_at'])<=durable, 'Replacement completion clock differs')
+    source_time=utc(current['source_as_of']) if current.get('source_as_of') is not None else generated
+    require(source_time<=generated, 'Replacement source is from the future')
+    for ref in current.get('sources',[]):
+        if ref.get('captured_at') is not None:
+            require(utc(ref['captured_at'])<=source_time, 'Replacement source capture follows its source clock')
+    primary={g['game_id']:g for w in state['weeks'] for g in w['games']}
+    finals={r['game_id'] for r in state['results']}
+    games=current.get('games',[]); seen=set()
+    for game in games:
+        key=game['game_id']
+        require(key not in seen and key in primary and key not in finals, 'Replacement game is duplicate, missing or already final')
+        seen.add(key); source=primary[key]
+        require(all(game[k]==source[k] for k in ('home','away'))
+                and utc(game['kickoff'])==utc(source['kickoff']), 'Replacement game identity differs')
+        cutoff=utc(game['kickoff'])-timedelta(minutes=60)
+        require(utc(game['lock_at'])==utc(source['lock_at'])==cutoff, 'Replacement game cutoff differs')
+        require(utc(game['captured_at'])==generated, 'Replacement game capture clock differs')
+        require(generated<=durable<cutoff, 'Replacement durable-write deadline crossed')
+
+
+def refresh_experiments(state, previous, root):
+    """Run each optional comparison independently over detached verified inputs."""
+    operations=(('penalty_shadow','pgo_penalty_monitor','refresh_shadow',True),
+                ('totals_shadow','pgo_totals_monitor','refresh_shadow',False),
+                ('weights_shadow','pgo_weights_monitor','refresh_shadow',False),
+                ('replacement_depth','research.pgo_replacement_depth_20260910.capture','capture',True))
+    for key,module_name,method,needs_root in operations:
+        old=(previous or {}).get(key,{})
+        try:
+            operation=getattr(importlib.import_module(module_name),method)
+            arguments=[copy.deepcopy(state)]
+            if key!='replacement_depth':arguments.append(copy.deepcopy(previous))
+            if needs_root:arguments.append(root)
+            arguments.append(state['checked_at'])
+            result=operation(*arguments)
+            require(isinstance(result,dict), 'Experiment returned no saved payload')
+            if key=='replacement_depth' and result.get('status')=='BLOCKED' and old:
+                result=dict(copy.deepcopy(old),status='BLOCKED',blocked_reason=result.get('blocked_reason'),checked_at=state['checked_at'])
+            state[key]=result
+        except Exception as error:
+            # An optional study must not suppress primary grades or another study.
+            state[key]=dict(copy.deepcopy(old),status='BLOCKED',blocked_reason=str(error),checked_at=state['checked_at'])
+            if key=='replacement_depth' and not old:
+                state[key].update(generated_at=state['checked_at'],games=[],teams=[],sources=[],forecast_adjustment=None)
+
+
 def refresh(root=DEFAULT_ROOT):
     root=Path(root);previous=load_current(root)
     if previous and previous.get('season_complete'):return previous
@@ -571,8 +640,7 @@ def refresh(root=DEFAULT_ROOT):
     state['source_captures']=[r for r in state['sources'] if 'path' in r]
     state['sources']=[r if 'href' in r else {'label':'Source captured '+r['captured_at'], 'href':archive_href(r['path'])} for r in state['sources']]
     state['sources'].append({'label':'Saved refreshes and verification record','href':'evidence/season-2026/current.json'})
-    from pgo_penalty_monitor import refresh_shadow
-    state['penalty_shadow'] = refresh_shadow(state, previous, root, state['checked_at'])
+    refresh_experiments(state, previous, root)
     save_state(state,root)
     return state
 

@@ -1,0 +1,47 @@
+{
+  "files": {
+    "baseline-replay.json": {
+      "bytes": 177,
+      "sha256": "8154e34d701e4130735f80c714496e6340ae7a8146a0e65fe23faa94803aeaa7"
+    },
+    "coverage.json": {
+      "bytes": 1701,
+      "sha256": "e9c0a06a9eb47b05f70dfe6fdc99182ae88f5d2f81729d8f4ca075fe5f05458d"
+    },
+    "historical-features.json": {
+      "bytes": 5036960,
+      "sha256": "5b0aa4ac3d06ff37314c71984003651434f0df1cb2f17c6a74e7b26c44f20365"
+    },
+    "run-receipt.json": {
+      "bytes": 129383,
+      "sha256": "ac8e9f4d4950393491fc3ac38427caefbab7e651a575962d6d6b9fe1eb0dcdca"
+    },
+    "run-start.json": {
+      "bytes": 129100,
+      "sha256": "2512e95a8e1533665bb90ae3dbd8b6371ab3e1e8f0fcdb532885ea5e1aaceb80"
+    }
+  },
+  "identity": "pgo-weights-probabilities-2026-09-10",
+  "pins": {
+    "baseline_manifest_sha256": "a58aeff835471182a555e4b926beafd0db01c7c5e3fe19827ddf56bd03f2514a",
+    "charter_sha256": "ef1ef4e69db2edb48463b6a0c490ac1e32962bdc28fd27f9ef933f39021d86d5",
+    "code": {
+      "pgo_challenger.py": "0369a31a13703f2030bd930c37cd3e4087488151706968bff79f1223d9b340d8",
+      "pgo_current_strength.py": "10372fa6afe5a81e1b2db7cb7c78d46726f24ca4c40c3daacde119bd214c3bbd",
+      "pgo_forecast_snapshot.py": "c0cbfb431de960a83793abc1dc7f19f1fc7d3d7e009d88fa48ef857d4942f38b",
+      "pgo_model.py": "8bd752c6817fcac8edde360ae7561fcc101103c74e51cc076c2e9c305fbac1d5",
+      "pgo_opponent_evaluation.py": "318072774cc25140c1f36aeae8f6f4edfa87091fc04964f1301a9f7ad773fe62",
+      "pgo_prospective.py": "0483b0d6bbba81c5c628b93643dcb31e279ba4593c1d9ef76d7590bc85bacd46",
+      "pgo_sources.py": "fb04f738fe11c922f62f34ec77a5f16d793e4ccb4a488e141b04e728769ad598",
+      "pgo_strength_evaluation.py": "243b347883e295b00d7db08ddcad4292f86a0ff100e65b7a3cc196eef4132666",
+      "research/pgo_input_audit/audit_model.py": "fd98006d688497a1460be37375b77ed755c3e2a6a6e07cc18aa43ba1ba6fb40f",
+      "research/pgo_penalty_candidate/candidate.py": "8620710473bb967248756b45819bbdbd5288a0a8ca16d7fe15c8f78bf1a12be4",
+      "research/pgo_week1_corrected/train.py": "4691328c63049031147419f0960f3a51ea48c4bd0f381ea27988f0092e511074",
+      "research/pgo_weights_candidate_20260910/candidate.py": "1fe233262d09ffc4340ab2eee8f75f34153111520664c52a1bf261b6ba965a01",
+      "research/pgo_weights_candidate_20260910/charter.md": "ef1ef4e69db2edb48463b6a0c490ac1e32962bdc28fd27f9ef933f39021d86d5",
+      "tests/test_pgo_weights_candidate.py": "9d6545fdddeee2819d0c455f9076bbcb68a6864a5982db22564400a1be7ef837"
+    },
+    "numpy_version": "2.4.2"
+  },
+  "status": "COMPLETE / EXPERIMENTAL / HOLD"
+}

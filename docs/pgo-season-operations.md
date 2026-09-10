@@ -29,3 +29,13 @@ Future raw sources and compressed audit packages live in the public Git reposito
 Run `python -m unittest discover -s tests -p "test_pgo_season*.py"` for the season checks. They exercise full-week rollover, incomplete weeks, missing statistics, byes, end-of-season ratings, source hashes, game/provider identity, final-status conflicts, fixed confidence points, pregame QB changes, timestamp boundaries and immutable prior forecasts. A 16-game simulated completion produced 32 updated rankings and all 16 actual Week 2 fixtures; synthetic outcomes are test data and are not published as real results.
 
 Operational checks do not prove the model predicts accurately. PGO remains EXPERIMENTAL / HOLD while its prospective record accumulates.
+
+### Board publication and queued season updates
+
+The board workflow tests its exact triggering commit without holding the shared `board-update` publishing lock. After those tests pass, its publisher takes the same lock used by the season updater and checks out the latest `main`. The tested commit's `pgo_publication_guard.py` requires that commit to be an ancestor. It permits additions to the existing season archive folders and updates to `current.json`, `docs/index.html` and `docs/forecast-lab.html`. Existing archives cannot be rewritten or deleted; the season model seed is excluded. Source, workflow, dependency, styling and frozen-evidence changes require their own passing run.
+
+The publisher renders from that checked-out state and pushes without rebasing an older render. A conflicting push fails instead of overwriting newer work. Canonical pushes explicitly request a Pages build; the testing mirror keeps its artifact upload and deployment flow. This removes the long full test suite from the season updater's lock, but GitHub scheduling and the shorter publishing jobs can still delay checks.
+
+After attempting publication, the season workflow reports the saved state and penalty status in its Actions summary and emits a warning for a blocked update. Next-week waiting, source conflicts and availability failures have distinct labels and retain the exact reason and check time. Reporting does not stop a truthful blocked state from being published.
+
+Run `python -m unittest tests.test_pgo_publication_guard tests.test_pgo_workflow_status tests.test_public_board_workflow` to check allowed mutable updates, rejected source/frozen-file drift, rename handling, tested ancestry, health reporting and workflow ordering.

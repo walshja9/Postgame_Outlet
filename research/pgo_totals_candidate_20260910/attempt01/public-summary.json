@@ -1,0 +1,189 @@
+{
+  "further_study_screen": {
+    "shrink_4": {
+      "checks": {
+        "league_prior": {
+          "at_least_five_seasons": true,
+          "improvement_at_least_0_10": true,
+          "positive_adjusted_interval": true
+        },
+        "pfpa_prior": {
+          "at_least_five_seasons": true,
+          "improvement_at_least_0_10": true,
+          "positive_adjusted_interval": true
+        }
+      },
+      "season_wins": {
+        "league_prior": 8,
+        "pfpa_prior": 8
+      },
+      "status": "PASS"
+    },
+    "shrink_8": {
+      "checks": {
+        "league_prior": {
+          "at_least_five_seasons": true,
+          "improvement_at_least_0_10": true,
+          "positive_adjusted_interval": true
+        },
+        "pfpa_prior": {
+          "at_least_five_seasons": true,
+          "improvement_at_least_0_10": true,
+          "positive_adjusted_interval": true
+        }
+      },
+      "season_wins": {
+        "league_prior": 8,
+        "pfpa_prior": 8
+      },
+      "status": "PASS"
+    }
+  },
+  "games": 2127,
+  "identity": "pgo-totals-candidate-2026-09-10",
+  "limitations": [
+    "Reused 2018-2025 seasons are diagnostic, not a fresh holdout.",
+    "Historical publication timing remains REVIEW REQUIRED.",
+    "No live totals, margins, probabilities or rankings changed."
+  ],
+  "metrics": {
+    "league_prior": {
+      "bias": -0.1749846792109787,
+      "games": 2127,
+      "mae": 11.074172514135048,
+      "rmse": 13.987295128476294
+    },
+    "pfpa_prior": {
+      "bias": -0.24833356564526346,
+      "games": 2127,
+      "mae": 11.035388822591617,
+      "rmse": 13.916995921899671
+    },
+    "shrink_4": {
+      "bias": -0.050558072317469734,
+      "games": 2127,
+      "mae": 10.742025799854765,
+      "rmse": 13.573597529108929
+    },
+    "shrink_8": {
+      "bias": -0.0998788654648731,
+      "games": 2127,
+      "mae": 10.760222391635816,
+      "rmse": 13.595871739319653
+    }
+  },
+  "paired": {
+    "shrink_4": {
+      "vs_league_prior": {
+        "season": {
+          "cluster": "season",
+          "clusters": 8,
+          "improvement": 0.332146714280284,
+          "lower": 0.2454243113169769,
+          "lower_97_5": 0.23395323970173038,
+          "samples": 10000,
+          "seed": 20260910,
+          "upper": 0.42554203527499207,
+          "upper_97_5": 0.4398924711223673
+        },
+        "season_week": {
+          "cluster": "season_week",
+          "clusters": 141,
+          "improvement": 0.332146714280284,
+          "lower": 0.20674666611120746,
+          "lower_97_5": 0.18973687660589286,
+          "samples": 10000,
+          "seed": 20260910,
+          "upper": 0.45763644454779057,
+          "upper_97_5": 0.4745803816918962
+        }
+      },
+      "vs_pfpa_prior": {
+        "season": {
+          "cluster": "season",
+          "clusters": 8,
+          "improvement": 0.29336302273685166,
+          "lower": 0.15653307494664304,
+          "lower_97_5": 0.13814849436320878,
+          "samples": 10000,
+          "seed": 20260910,
+          "upper": 0.45367153083550715,
+          "upper_97_5": 0.47965763651096377
+        },
+        "season_week": {
+          "cluster": "season_week",
+          "clusters": 141,
+          "improvement": 0.29336302273685166,
+          "lower": 0.17155182839904967,
+          "lower_97_5": 0.15537991262755174,
+          "samples": 10000,
+          "seed": 20260910,
+          "upper": 0.4188939546117673,
+          "upper_97_5": 0.4355728009084479
+        }
+      }
+    },
+    "shrink_8": {
+      "vs_league_prior": {
+        "season": {
+          "cluster": "season",
+          "clusters": 8,
+          "improvement": 0.31395012249923265,
+          "lower": 0.2486793851443511,
+          "lower_97_5": 0.24091009624394494,
+          "samples": 10000,
+          "seed": 20260910,
+          "upper": 0.3783656316053389,
+          "upper_97_5": 0.3867129612021408
+        },
+        "season_week": {
+          "cluster": "season_week",
+          "clusters": 141,
+          "improvement": 0.31395012249923265,
+          "lower": 0.20359032674906133,
+          "lower_97_5": 0.18696294651044487,
+          "samples": 10000,
+          "seed": 20260910,
+          "upper": 0.42449987251260934,
+          "upper_97_5": 0.4381992510450487
+        }
+      },
+      "vs_pfpa_prior": {
+        "season": {
+          "cluster": "season",
+          "clusters": 8,
+          "improvement": 0.27516643095580035,
+          "lower": 0.1647474326076894,
+          "lower_97_5": 0.14963862056435184,
+          "samples": 10000,
+          "seed": 20260910,
+          "upper": 0.4044356880109823,
+          "upper_97_5": 0.42311366838096004
+        },
+        "season_week": {
+          "cluster": "season_week",
+          "clusters": 141,
+          "improvement": 0.27516643095580035,
+          "lower": 0.18150876074520436,
+          "lower_97_5": 0.1688437048960047,
+          "samples": 10000,
+          "seed": 20260910,
+          "upper": 0.37194290842656264,
+          "upper_97_5": 0.3874432109383846
+        }
+      }
+    }
+  },
+  "prospective_recipe": {
+    "decision": "Durably saved before T-60",
+    "formal_review": "After 2026 REG; at least 150 common pairs across 12 weeks",
+    "history": "Verified prior-day finals only",
+    "promotion": "None; separate approval and evidence required",
+    "pseudo_games": [
+      4,
+      8
+    ]
+  },
+  "status": "EXPERIMENTAL / HOLD",
+  "target": "NFL game total points"
+}

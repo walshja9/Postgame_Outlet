@@ -38,6 +38,11 @@ class ForecastLabTests(unittest.TestCase):
 const assert = require('node:assert/strict');
 const vm = require('node:vm');
 const events = {};
+const freshness = [
+  {dataset:{freshnessAt:new Date(Date.now()-46*60000).toISOString(),freshnessMinutes:'45'},textContent:''},
+  {dataset:{freshnessAt:new Date().toISOString(),freshnessMinutes:'30'},textContent:''},
+  {dataset:{freshnessAt:'2020-01-01T00:00:00Z',freshnessMinutes:'30',freshnessUntil:'2020-01-02T00:00:00Z'},textContent:''}
+];
 const panel = {hidden:true, getAttribute(name) {return name === 'aria-labelledby' ? 'tab-comparison' : null;}};
 const detail = {tagName:'DETAILS', open:false, parentElement:null};
 let scrolls = 0, handlerReady = false, clicks = 0, seasonPoll;
@@ -48,7 +53,7 @@ const target = {tagName:'DIV', parentElement:detail,
 const document = {
   readyState:'loading',
   getElementById(id) {return {'reason':target, 'tab-comparison':tab}[id] || null;},
-  querySelectorAll() {return [];}, querySelector() {return null;},
+  querySelectorAll(selector) {return selector==='[data-freshness-at]' ? freshness : [];}, querySelector() {return null;},
   addEventListener(name, callback) {events[name] = callback;}
 };
 const location = {hash:'#reason', href:'https://example.test/index.html?release=test#reason', origin:'https://example.test'};
@@ -61,6 +66,10 @@ const context = {document, window, location, Date, URL,
   setInterval(callback, delay) {assert.equal(delay,60000); seasonPoll=callback;}};
 vm.createContext(context);
 vm.runInContext(SCRIPT, context);
+assert.equal(freshness[0].textContent,'Update overdue');
+assert.equal(freshness[0].dataset.overdue,'true');
+assert.equal(freshness[1].textContent,'Recently checked');
+assert.equal(freshness[2].textContent,'Updates closed at lock');
 // The script runs inside the PGO panel, before the page binds tab handlers.
 handlerReady = true;
 if (events.DOMContentLoaded) events.DOMContentLoaded();
@@ -798,7 +807,7 @@ location.hash = '#missing'; events.hashchange();
             html,
         )
         self.assertIn(
-            '</style><link rel="stylesheet" href="pgo-theme.css?v=20260909-injuries">', html
+            '</style><link rel="stylesheet" href="pgo-theme.css?v=20260910-six">', html
         )
 
         escaped = pgo_forecast_lab.render_lab(

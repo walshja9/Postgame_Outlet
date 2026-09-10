@@ -1,0 +1,12 @@
+{
+  "charter_sha256": "fed929d1e8006fbcb5b9ebbb96243845968a82ce8beacd2f0308e51c78abe444",
+  "code_sha256": "82db7c892495f53001c475abe5ee11a80c17a485820bfe7fedda24ac78dcf3b0",
+  "completed_at": "2026-09-10T20:28:58.968778+00:00",
+  "history_manifest_sha256": "f2859781dd2aaebe542c754ced1c89b518115087f9f4d7e3ce45db27d1b09aed",
+  "identity": "pgo-replacement-depth-2026-09-10",
+  "prepared_manifest_sha256": "38ca1a5c74f3f5489ee4727ce92cdec21c47dde515ab98ccd0d33d196bccde72",
+  "season_checked_at": "2026-09-10T19:54:36.382307+00:00",
+  "season_pointer_sha256": "559e02fdae1e0cb8fbd2d5aa1be9474894900a5c999339da3c2bedeaebda4329",
+  "source_state_unchanged": true,
+  "started_at": "2026-09-10T20:28:57.057899+00:00"
+}

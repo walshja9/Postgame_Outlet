@@ -449,7 +449,9 @@ def render_current_updates():
     if season is None:
         return earlier
     from pgo_season_view import render_season
-    return (STYLE + render_season(season)
+    from pgo_season_accuracy import load_models, summarize
+    accuracy = summarize(dict(season, accuracy_models=load_models()))
+    return (STYLE + render_season(season, accuracy=accuracy)
             + '<p><a href="#latest-inactive-notes">Opening-night final inactive lists saved September 9</a>.</p>'
             + '<details class="model-update-evidence" id="opening-week-editions">'
             '<summary>Original Week 1 editions and confidence allocations</summary>'

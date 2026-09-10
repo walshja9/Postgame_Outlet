@@ -4,6 +4,14 @@ on:
   push:
     branches: [main]
     paths:
+      - ".gitattributes"
+      - "pgo_*.py"
+      - ".github/workflows/update-board.yml"
+      - ".github/workflows/update-season.yml"
+      - "pgo_publication_guard.py"
+      - "pgo_workflow_status.py"
+      - "requirements-pgo.txt"
+      - "tests/**"
       - "data/**"
       - "generate_site.py"
       - "pgo_comparison.py"
@@ -21,7 +29,12 @@ on:
       - "pgo_confidence_full_slate.py"
       - "pgo_season*.py"
       - "pgo_penalty_monitor.py"
+      - "pgo_totals_monitor.py"
+      - "pgo_weights_monitor.py"
       - "research/pgo_penalty_candidate/**"
+      - "research/pgo_totals_candidate_20260910/**"
+      - "research/pgo_weights_candidate_20260910/**"
+      - "research/pgo_replacement_depth_20260910/**"
       - "docs/evidence/penalty-model-2026/**"
       - "docs/evidence/confidence-pool-2026/**"
       - "research/pgo_postseason_candidate/**"
@@ -40,15 +53,43 @@ permissions:
   pages: write
   id-token: write
 
-concurrency:
-  group: board-update
-  cancel-in-progress: false
-
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      tested_sha: ${{ steps.tested.outputs.sha }}
     env:
       TZ: America/New_York
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Record the exact tested commit
+        id: tested
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install PGO test dependency
+        run: python -m pip install -r requirements-pgo.txt
+      - name: Run tests (includes the editorial gate)
+        run: |
+          python -m unittest discover -s tests --durations 20
+          python -m unittest research.pgo_corrected_roster_candidate.test_candidate research.pgo_corrected_roster_candidate.test_temporal
+          python -m unittest research.pgo_defensive_depth_candidate.test_candidate research.pgo_defensive_depth_candidate.test_evidence
+
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    concurrency:
+      group: board-update
+      cancel-in-progress: false
+    env:
+      TZ: America/New_York
+      TESTED_SHA: ${{ needs.test.outputs.tested_sha }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -57,13 +98,12 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - name: Install PGO test dependency
-        run: python -m pip install -r requirements-pgo.txt
-      - name: Run tests (includes the editorial gate)
+      - name: Admit only tested source with newer mutable season data
         run: |
-          python -m unittest discover -s tests
-          python -m unittest research.pgo_corrected_roster_candidate.test_candidate research.pgo_corrected_roster_candidate.test_temporal
-          python -m unittest research.pgo_defensive_depth_candidate.test_candidate research.pgo_defensive_depth_candidate.test_evidence
+          git show "$TESTED_SHA:pgo_publication_guard.py" > "$RUNNER_TEMP/pgo_publication_guard.py"
+          python "$RUNNER_TEMP/pgo_publication_guard.py" "$TESTED_SHA"
+      - name: Install PGO rendering dependency
+        run: python -m pip install -r requirements-pgo.txt
       - name: Refresh public board without replacing approved PGO panel
         run: python pgo_comparison.py --refresh-mccabe
       - name: Render verified Forecast Lab archive
@@ -74,6 +114,8 @@ jobs:
       # back to main is what refreshes postgameoutlet.com. Unchanged behavior.
       - name: "Commit and push if changed (walshja9 only)"
         if: github.repository == 'walshja9/Postgame_Outlet'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -82,8 +124,8 @@ jobs:
             echo "Board unchanged - nothing to commit."
           else
             git commit -m "Auto-regenerate board from data change"
-            git pull --rebase origin main
-            git push origin main
+            git push origin HEAD:main
+            gh api --method POST repos/${{ github.repository }}/pages/builds
           fi
 
       # --- mccabe206-ops (testing mirror): publish via Pages ARTIFACT, no commit-back ---
@@ -97,7 +139,7 @@ jobs:
 
   deploy:
     # mccabe206-ops only: deploy the uploaded artifact to its GitHub Pages testing site.
-    needs: build
+    needs: publish
     if: github.repository == 'mccabe206-ops/Postgame_Outlet'
     runs-on: ubuntu-latest
     environment:

@@ -80,6 +80,30 @@ td[data-v],.brk-v { font-variant-numeric:tabular-nums; }
 .season-nav { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0; }
 .season-nav a { display:inline-flex; align-items:center; min-height:44px; padding:0 14px; border:1px solid var(--border2); border-radius:6px; color:var(--ink); text-decoration:none; font-weight:700; background:var(--panel2); }
 .season-nav a:hover { border-color:var(--accent); color:var(--highlight); }
+.season-freshness,.game-day-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); gap:12px; margin:16px 0; }
+.season-freshness > div,.game-day-card { min-width:0; padding:18px; border:1px solid var(--border); border-radius:8px; background:var(--panel2); }
+.season-freshness dt,.game-day-card dt { color:var(--mut); font-size:12px; font-weight:700; }
+.season-freshness dd,.game-day-card dd { margin:5px 0 12px; font-variant-numeric:tabular-nums; }
+.season-freshness dd { margin-bottom:0; font-size:13px; }
+.freshness-status { display:block; color:var(--highlight); margin-top:5px; }
+.freshness-status[data-overdue="true"] { color:var(--notice-ink); font-weight:700; }
+.season-caption { color:var(--mut); font-size:12px; }
+.game-day-card h4 { margin:0 0 14px; font-size:20px; color:var(--ink); }
+.game-day-times { display:flex; gap:24px; flex-wrap:wrap; }
+.game-day-card .game-day-pick { font-size:22px; font-weight:800; margin-bottom:4px; }
+.game-day-card .game-day-chance { color:var(--highlight); font-size:18px; margin-top:0; }
+.game-day-card details { padding-top:12px; border-top:1px solid var(--border); }
+.game-day-card summary { min-height:44px; cursor:pointer; font-weight:700; }
+.game-day-absences { padding-left:20px; }
+.game-day-absences li { margin:8px 0; }
+.game-day-link { display:inline-flex; align-items:center; min-height:44px; margin-top:8px; }
+@media(min-width:700px) {
+  .game-day-grid:has(> :only-child) .game-day-card { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+}
+@media(max-width:480px) {
+  .season-freshness { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .season-freshness > div { padding:12px; }
+}
 #panel-comparison .comparison-table td { font-variant-numeric:tabular-nums; }
 .tab { min-height:44px; border-radius:7px; }
 .tab.active,
@@ -120,3 +144,4 @@ input,select,textarea { accent-color:var(--accent); }
   .pgo-team-chip { min-width:30px; margin-right:6px; padding:2px 4px; }
   .pgo-team-name { line-height:1.2; }
 }
+.pgo-model-updates .model-test-table td:first-child{min-width:11rem;max-width:20rem;white-space:normal;text-align:left}

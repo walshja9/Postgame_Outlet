@@ -1,0 +1,322 @@
+"""Dated defensive role observations; no network access, fitting or forecast edits."""
+import argparse
+from collections import Counter, defaultdict
+from datetime import datetime, timedelta, timezone
+import gzip
+import hashlib
+import io
+import csv
+import json
+import math
+from pathlib import Path
+import re
+
+from pgo_sources import CURRENT_TEAMS, normalize_team
+from research.pgo_defensive_depth_candidate import evidence, validation
+
+ROOT = Path(__file__).resolve().parents[2]
+DIRECTORY = Path(__file__).resolve().parent
+PREPARED = ROOT/'research/pgo_defensive_depth_candidate/prepared-20260909-attempt01'
+PREPARED_SHA256 = '38ca1a5c74f3f5489ee4727ce92cdec21c47dde515ab98ccd0d33d196bccde72'
+ROSTER_URL = 'https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv.gz'
+DEPTH_URL = 'https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv.gz'
+IDENTITY = 'pgo-replacement-depth-2026-09-10'
+
+
+def _require(ok, message):
+    if not ok:
+        raise ValueError(message)
+
+
+def _utc(value):
+    stamp = datetime.fromisoformat(str(value).replace('Z', '+00:00'))
+    _require(stamp.tzinfo is not None, 'Role observation timestamps require a timezone')
+    return stamp.astimezone(timezone.utc)
+
+
+def _sha(raw):
+    return hashlib.sha256(raw).hexdigest()
+
+
+def _json(value):
+    return (json.dumps(value, indent=2, sort_keys=True, allow_nan=False)+'\n').encode()
+
+
+def _history():
+    package = validation.load_verified()
+    histories = json.loads((evidence.DEFAULT/'history-witness.json').read_bytes())
+    for pid, row in histories.items():
+        _require(re.fullmatch(r'00-\d{7}', pid) is not None, 'Historical role lacks stable GSIS identity')
+        _require(all(o['season'] == 2025 for o in row['observations']), 'Prior role includes a different season')
+        _require(type(row['prior_role_share']) in (int,float) and math.isfinite(row['prior_role_share'])
+                 and 0 < row['prior_role_share'] <= 1, 'Historical role share is invalid')
+    return histories, package
+
+
+def admission():
+    """Inspect existing admitted inventory; absence of historical depth blocks fitting."""
+    raw = (PREPARED/'manifest.json').read_bytes()
+    _require(_sha(raw) == PREPARED_SHA256, 'Prepared defensive evidence pin differs')
+    for name, member in json.loads(raw)['files'].items():
+        _require(Path(name).name == name, 'Unsafe defensive prepared member')
+        value = (PREPARED/name).read_bytes()
+        _require(_sha(value) == member['sha256'] and len(value) == member['bytes'], 'Prepared defensive member differs')
+    source_inventory = json.loads((PREPARED/'run-start.json').read_bytes())['source_inventory']
+    coverage = json.loads((PREPARED/'coverage.json').read_bytes())
+    histories, package = _history()
+    dated = [name for name, meta in source_inventory.items() if meta.get('captured_at') or meta.get('published_at')]
+    depths = [name for name in source_inventory if 'depth' in name.casefold()]
+    return dict(identity=IDENTITY, status='BLOCKED FOR FITTING', forecast_adjustment=None,
+                prepared_manifest_sha256=PREPARED_SHA256, history_manifest_sha256=validation.EXPECTED_MANIFEST_SHA256,
+                historical_sources=len(source_inventory), sources_with_publication_or_capture_clock=len(dated),
+                historical_depth_sources=depths, historical_pregame_role_admitted=False,
+                historical_team_games=len(coverage['historical_team_games']), stable_2025_player_histories=len(histories),
+                prior_season_identity={season: {key:value for key,value in row.items() if not isinstance(value,list)}
+                                       for season,row in coverage['prior_season_identity'].items()},
+                current_history_coverage={key:value for key,value in package['history_coverage'].items() if not isinstance(value,list)},
+                reasons=['The admitted historical inventory has no dated pregame defensive depth/role snapshots.',
+                         'Historical source publication timing is REVIEW REQUIRED; postgame snaps cannot prove pregame expected roles.',
+                         'Prior usage and matched production do not establish replacement quality; no numerical injury weights are fitted.'])
+
+
+def read_source(root, ref, checked_at):
+    root = Path(root)
+    _require(isinstance(ref.get('path'),str) and re.fullmatch(r'(?:sources|source-archive)/[0-9a-f]{64}\.csv\.gz',ref['path']), 'Invalid role source path')
+    path = root/ref['path']
+    _require(path.resolve().is_relative_to(root.resolve()) and not path.is_symlink() and not path.parent.is_symlink()
+             and not root.is_symlink(), 'Role source path escapes archive')
+    _require(ref.get('url') in (ROSTER_URL, DEPTH_URL), 'Unexpected role source URL')
+    _require(_utc(ref['captured_at']) <= _utc(checked_at), 'Role source captured in the future')
+    raw = path.read_bytes()
+    _require(_sha(raw) == ref['sha256'] and len(raw) == ref['bytes'], 'Role source hash or size differs')
+    return raw
+
+
+def _csv(raw):
+    with gzip.GzipFile(fileobj=io.BytesIO(raw)) as stream:
+        yield from csv.DictReader(io.TextIOWrapper(stream, encoding='utf-8-sig', newline=''))
+
+
+def eligible_games(state, checked_at):
+    now = _utc(checked_at)
+    games = []
+    seen = set()
+    for week in state.get('weeks', []):
+        for game in week['games']:
+            _require(game['game_id'] not in seen, 'Duplicate replacement-depth game')
+            seen.add(game['game_id'])
+            _require(_utc(game['lock_at']) == _utc(game['kickoff']) - timedelta(minutes=60), 'Replacement-depth cutoff differs')
+            if now < _utc(game['lock_at']):
+                games.append(game)
+    return games
+
+
+def build_teams(roster, depth, histories, observations, *, checked_at, depth_captured_at, teams=CURRENT_TEAMS):
+    """Pure descriptive aggregation. All field names preserve unknown availability."""
+    now, cutoff = _utc(checked_at), _utc(depth_captured_at)
+    _require(cutoff <= now, 'Depth capture is in the future')
+    roster_by_team = defaultdict(list); identities = set(); unresolved_roster = defaultdict(list)
+    for raw in roster:
+        team = normalize_team(raw.get('team',''))
+        if raw.get('position','').upper() not in evidence.DEFENSE or raw.get('status') not in {'ACT','RES','DEV','EXE'}:
+            continue
+        if team not in teams:
+            continue
+        pid = raw.get('gsis_id','')
+        _require(str(raw.get('season')) == '2026' and raw.get('full_name'), 'Missing current defensive season/name')
+        if not re.fullmatch(r'00-\d{7}',pid):
+            unresolved_roster[team].append(dict(name=raw['full_name'], roster_status=raw['status'],
+                                                position=raw['position'], reason='Missing stable GSIS identity'))
+            continue
+        _require(pid not in identities, 'Conflicting current defensive identity')
+        identities.add(pid); roster_by_team[team].append(dict(raw, team=team))
+    latest, selected = {}, defaultdict(list)
+    for row in depth:
+        team = normalize_team(row.get('team',''))
+        if team not in teams or str(row.get('pos_grp','')).casefold() not in evidence.DEPTH_GROUPS:
+            continue
+        stamp = _utc(row['dt'])
+        if stamp > cutoff:
+            continue
+        if team not in latest or stamp > latest[team]:
+            latest[team] = stamp; selected[team] = []
+        if stamp == latest[team]: selected[team].append(row)
+    result = []
+    for team in sorted(teams):
+        source = observations.get(team,{})
+        indexed_obs = defaultdict(list); unresolved = []
+        roster_ids = {r['gsis_id'] for r in roster_by_team[team]}
+        for item in source.get('observations',[]):
+            _require(_utc(item['captured_at']) <= now, 'Official observation is in the future')
+            if item.get('identity_status') != 'RESOLVED' or not item.get('gsis_id'):
+                if item.get('position','').upper() in evidence.DEFENSE: unresolved.append(item.get('name','Unknown player'))
+                continue
+            if item['gsis_id'] not in roster_ids:
+                if item.get('position','').upper() in evidence.DEFENSE: unresolved.append(item.get('name','Unknown player'))
+                continue
+            indexed_obs[item['gsis_id']].append(item)
+        stamp = latest.get(team)
+        depth_status = 'UNKNOWN' if stamp is None else 'STALE' if now-stamp > timedelta(days=7) else 'DATED_PROVIDER_LIST'
+        depth_by_id = defaultdict(list)
+        if depth_status == 'DATED_PROVIDER_LIST':
+            for row in selected[team]: depth_by_id[row.get('gsis_id','')].append(row)
+        players = []
+        conflicts = 0
+        for row in roster_by_team[team]:
+            pid = row['gsis_id']; entries = depth_by_id[pid]; aliases = evidence.aliases(row)
+            valid = all(evidence.ch._normalize_player_name(r.get('player_name','')) in aliases for r in entries)
+            conflicts += bool(entries and not valid)
+            slots = set()
+            if valid:
+                for entry in entries:
+                    rank = evidence.number(entry.get('pos_rank'))
+                    _require(rank is not None and rank >= 1 and rank.is_integer() and entry.get('pos_abb'), 'Invalid provider depth rank/position')
+                    slots.add((entry['pos_abb'],int(rank)))
+            official = []
+            for item in indexed_obs[pid]:
+                if evidence.ch._normalize_player_name(item.get('name','')) not in aliases:
+                    unresolved.append(item.get('name','Unknown player')); continue
+                official.append(item)
+            statuses = {o['status'] for o in official}
+            unavailable = row['status'] == 'RES' or bool(statuses & {'OUT','INACTIVE'})
+            profile = histories.get(pid,{})
+            role = profile.get('prior_role_share')
+            if role is not None:
+                _require(type(role) in (int,float) and math.isfinite(role) and 0 < role <= 1, 'Invalid prior role share')
+            players.append(dict(gsis_id=pid, name=row['full_name'], position=row['position'], roster_status=row['status'],
+                                depth_status='NAME_MISMATCH' if entries and not valid else 'LISTED' if slots else 'UNLISTED',
+                                depth_rows=[dict(position=p,rank=r) for p,r in sorted(slots)],
+                                prior_role_share=role, prior_defensive_snaps=profile.get('defensive_snaps'),
+                                prior_observed_games=profile.get('observed_games',0),
+                                confirmed_unavailable=unavailable, uncertain=bool(statuses & {'QUESTIONABLE','DOUBTFUL'}),
+                                availability_statuses=sorted(statuses) or ['UNKNOWN'], observations=official))
+        active = [p for p in players if p['roster_status']=='ACT']
+        lost = [p for p in players if p['confirmed_unavailable']]
+        slots = sorted({r['position'] for p in players for r in p['depth_rows']})
+        roles = []
+        for slot in slots:
+            first = [p for p in active if any(r['position']==slot and r['rank']==1 for r in p['depth_rows'])]
+            backups = [p for p in active if any(r['position']==slot and r['rank']>1 for r in p['depth_rows'])
+                       and not any(r['position']==slot and r['rank']==1 for r in p['depth_rows'])]
+            remaining = [p for p in backups if not p['confirmed_unavailable']]
+            roles.append(dict(position=slot, listed_first=len(first), listed_backups=len(backups),
+                              confirmed_unavailable_first=sum(p['confirmed_unavailable'] for p in first),
+                              remaining_experienced_backups_not_confirmed_out=sum(p['prior_role_share'] is not None for p in remaining),
+                              remaining_unknown_history_backups_not_confirmed_out=sum(p['prior_role_share'] is None for p in remaining),
+                              uncertain_backups=sum(p['uncertain'] for p in remaining)))
+        result.append(dict(team=team, depth_status=depth_status, depth_snapshot_at=stamp.isoformat() if stamp else None,
+                           active_defenders=len(active), reserve_defenders=sum(p['roster_status']=='RES' for p in players),
+                           other_roster_defenders=sum(p['roster_status'] in {'DEV','EXE'} for p in players),
+                           listed_first=sum(any(r['rank']==1 for r in p['depth_rows']) for p in active),
+                           depth_identity_conflicts=conflicts, unlisted_active_defenders=sum(not p['depth_rows'] for p in active),
+                           unresolved_roster=unresolved_roster[team],
+                           report_status=source.get('report_status','UNKNOWN'), final_inactives_status=source.get('final_inactives_status','UNKNOWN'),
+                           availability_checked_at=source.get('checked_at'), unresolved_official_names=sorted(set(unresolved)),
+                           unavailable_prior_usage_subtotal=math.fsum(p['prior_role_share'] for p in lost if p['prior_role_share'] is not None),
+                           unavailable_unknown_prior_role=sum(p['prior_role_share'] is None for p in lost),
+                           expected_unavailable_exposure=None, unavailable_players=lost, roles=roles))
+    return result
+
+
+def capture(state, root, checked_at):
+    """Return an observation for the existing state writer; never mutate its input."""
+    root = Path(root); now = _utc(checked_at)
+    base = dict(identity=IDENTITY, status='BLOCKED', generated_at=now.isoformat(), forecast_adjustment=None,
+                historical_admission='BLOCKED FOR FITTING', teams=[], games=[], sources=[])
+    refs = [*state.get('source_captures',[]), *state.get('sources',[]), *state.get('rankings',{}).get('source_captures',[])]
+    refs += [r for values in state.get('edition_sources',{}).values() for r in values]
+    chosen = {}
+    for url in (ROSTER_URL, DEPTH_URL):
+        matches = [r for r in refs if r.get('url') == url and 'path' in r]
+        if not matches:
+            return dict(base, blocked_reason='No captured current roster/depth reference; no replacement values inferred.')
+        _require(all(_utc(r['captured_at']) <= now for r in matches), 'Future roster/depth reference')
+        ref = max(matches, key=lambda r:_utc(r['captured_at']))
+        if now-_utc(ref['captured_at']) > timedelta(hours=24):
+            return dict(base, blocked_reason='Roster/depth source capture is older than 24 hours.')
+        chosen[url] = ref
+    roster_raw = read_source(root, chosen[ROSTER_URL], checked_at)
+    depth_raw = read_source(root, chosen[DEPTH_URL], checked_at)
+    histories, _ = _history()
+    games = eligible_games(state, checked_at)
+    observations, packages = {}, {}
+    from pgo_season_availability import load_availability
+    for game in games:
+        ref = game.get('availability',{}).get('source_archive')
+        if not ref:
+            continue
+        _require(re.fullmatch(r'availability(?:-v2)?/\d{8}T\d{12}Z',ref) is not None, 'Invalid role availability archive path')
+        directory = root/ref
+        _require(directory.resolve().is_relative_to(root.resolve()) and not directory.is_symlink() and not directory.parent.is_symlink(), 'Availability path escapes archive')
+        if ref not in packages:
+            packages[ref] = load_availability(directory)
+        saved = packages[ref]['games'].get(game['game_id'])
+        _require(saved is not None and all(saved[k]==game[k] for k in ('game_id','season','week','home','away','kickoff','lock_at')), 'Role availability game identity differs')
+        _require(_utc(saved['checked_at']) <= now < _utc(saved['lock_at']), 'Role availability clock differs')
+        _require({k:v for k,v in game['availability'].items() if k!='source_archive'} == saved, 'Role availability does not match saved game observations')
+        for team, info in saved['teams'].items():
+            _require(team not in observations, 'Multiple eligible role observations for one team')
+            observations[team] = dict(info, checked_at=saved['checked_at'])
+    teams = build_teams(_csv(roster_raw), _csv(depth_raw), histories, observations,
+                        checked_at=checked_at, depth_captured_at=chosen[DEPTH_URL]['captured_at'])
+    source_refs = [dict(ref) for ref in chosen.values()]
+    for ref in packages:
+        raw = (root/ref/'manifest.json').read_bytes()
+        source_refs.append(dict(path=ref+'/manifest.json', sha256=_sha(raw), bytes=len(raw),
+                                captured_at=packages[ref]['checked_at'], kind='verified_official_availability'))
+    source_refs.append(dict(path='docs/evidence/defensive-depth-2026/september-09/manifest.json',
+                            sha256=validation.EXPECTED_MANIFEST_SHA256, kind='pinned_2025_history'))
+    for ref in source_refs:
+        prefix = '' if ref['path'].startswith('docs/') else 'docs/evidence/season-2026/'
+        ref['href'] = 'https://raw.githubusercontent.com/walshja9/Postgame_Outlet/main/' + prefix + ref['path']
+    return dict(base, status='DESCRIPTIVE / NOT IN MODEL', blocked_reason=None,
+                source_as_of=max(_utc(r['captured_at']) for r in source_refs if 'captured_at' in r).isoformat(), sources=source_refs,
+                teams=teams, games=[dict(game_id=g['game_id'],home=g['home'],away=g['away'],kickoff=g['kickoff'],lock_at=g['lock_at'],
+                                        captured_at=now.isoformat(), teams_with_saved_observations=[t for t in (g['home'],g['away']) if t in observations]) for g in games],
+                limitations=['Prior usage is not expected lost playing time or replacement quality.',
+                             'ACT and not confirmed OUT do not establish that a player will play.',
+                             'Provider LB/OLB/DE labels are preserved and are not automatically EDGE.',
+                             'Unknown roles, rookies, missing reports and reserve context remain visible.',
+                             'Historical role/publication admission failed; no injury weights or forecast changes.'])
+
+
+def record(root, output):
+    """Record one real before-cutoff observation without changing season state."""
+    from pgo_season import load_current
+    output = Path(output).resolve()
+    _require(output.parent == DIRECTORY and not output.exists(), 'Use a new exclusive replacement-depth capture directory')
+    report = admission()
+    state = load_current(root)
+    _require(state is not None, 'No verified season state')
+    pointer_raw = (Path(root)/'current.json').read_bytes()
+    started = datetime.now(timezone.utc).isoformat()
+    result = capture(state, root, started)
+    for ref in result['sources']:
+        if ref.get('url') in (ROSTER_URL, DEPTH_URL): read_source(root, ref, started)
+    _require(admission() == report, 'Historical admission evidence changed during capture')
+    completed = datetime.now(timezone.utc).isoformat()
+    # The writer records the real completion clock, never a backdated prelock claim.
+    result['games'] = [g for g in result['games'] if _utc(completed) < _utc(g['lock_at'])]
+    result['completed_at'] = completed
+    output.mkdir()
+    artifacts = {'admission.json':_json(report), 'snapshot.json':_json(result),
+                 'receipt.json':_json(dict(identity=IDENTITY, started_at=started, completed_at=completed,
+                                          season_pointer_sha256=_sha(pointer_raw), season_checked_at=state['checked_at'],
+                                          source_state_unchanged=_sha((Path(root)/'current.json').read_bytes())==_sha(pointer_raw),
+                                          history_manifest_sha256=validation.EXPECTED_MANIFEST_SHA256,
+                                          prepared_manifest_sha256=PREPARED_SHA256,
+                                          code_sha256=_sha(Path(__file__).read_bytes()), charter_sha256=_sha((DIRECTORY/'charter.md').read_bytes())))}
+    for name, value in artifacts.items(): (output/name).write_bytes(value)
+    (output/'manifest.json').write_bytes(_json(dict(identity=IDENTITY, files={name:dict(bytes=len(value),sha256=_sha(value)) for name,value in artifacts.items()})))
+    if any(datetime.now(timezone.utc) >= _utc(g['lock_at']) for g in result['games']):
+        (output/'failure.json').write_bytes(_json(dict(status='FAILED_PRESERVED', reason='T-60 elapsed during durable capture')))
+        raise ValueError('Replacement-depth durable capture crossed T-60')
+    return result
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--root', type=Path, default=ROOT/'docs/evidence/season-2026')
+    parser.add_argument('--output', type=Path, required=True)
+    value = record(**vars(parser.parse_args()))
+    print(json.dumps(dict(status=value['status'], teams=len(value['teams']), games=len(value['games']), generated_at=value['generated_at']), indent=2))
