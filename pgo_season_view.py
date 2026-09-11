@@ -599,13 +599,18 @@ def _accuracy(summary):
         return f'{_integer(metric["n"])} eligible; {_integer(metric["excluded"])} not counted'
     primary = summary['primary']
     probability, confidence = primary['probabilities'], primary['confidence']
-    cards = []
-    for key, title in (('margin_mae','Average lead error'),('total_mae','Average combined-score error')):
+    record = primary['record']
+    winners = (f'{_integer(record["wins"])} correct; {_integer(record["losses"])} incorrect; '
+               f'{_integer(record["ties"])} tied') if record['n'] else 'Awaiting eligible finals'
+    cards = [f'<div><dt>Correct winners</dt><dd><strong>{winners}</strong><br>{count(record)}</dd></div>']
+    for key, title in (('margin_mae','Average margin error'),('total_mae','Average combined-score error')):
         metric = primary[key]
         value = number(metric['value'],2) + (' points' if metric['value'] is not None else '')
         cards.append(f'<div><dt>{title}</dt><dd><strong>{value}</strong><br>{count(metric)}</dd></div>')
-    cards.append(f'<div><dt>Probability accuracy</dt><dd>Brier: {number(probability["brier"])}<br>'
-                 f'Log loss: {number(probability["log_loss"])}<br>{count(probability)}</dd></div>')
+    probability_count = _integer(probability['n'])
+    probability_note = ('No eligible pre-lock probabilities have been graded yet.' if probability_count == 0 else
+                        'Only 1 eligible game has been graded; too few to judge the win chances.' if probability_count == 1 else
+                        f'{probability_count} eligible games have been graded. Small samples cannot establish reliable win chances.')
     earned = confidence['earned_points']
     cards.append(f'<div><dt>Pool points on completed picks</dt><dd><strong>{"Awaiting finals" if earned is None else _integer(earned)} earned</strong>'
                  f'<br>{number(confidence["expected_points"],2)} expected<br>{count(confidence)}'
@@ -635,8 +640,10 @@ def _accuracy(summary):
         rows = '; '.join(f'{_text(reasons.get(k,k))}: {_integer(v)}' for k,v in primary[key]['reasons'].items()) or 'None'
         exclusions.append(f'<li>{title}: {rows}.</li>')
     return ('<h3 id="season-accuracy">Season accuracy</h3><p>Original saved picks, verified finals. '
-            'A correct winner can still come with a poor score estimate. Each measure below tests a different part of the forecast; lower error is better.</p>'
+            'A correct winner can still come with a poor score estimate. Margin error is how far the predicted winning margin was from the actual margin; '
+            'combined-score error is how far the predicted total was from both teams\' final points added together. Lower error is better.</p>'
             '<dl class="season-freshness">' + ''.join(cards) + '</dl>'
+            + f'<p><strong>How the win chances are holding up:</strong> {probability_note}</p>'
             '<p class="season-caption">These are early results, not proof of accuracy. Confidence accounting includes marked late entries; '
             'pregame probability accuracy excludes them. Expected points shown here cover the same completed picks as earned points.</p>'
             '<details class="model-update-evidence" data-view-key="accuracy-comparisons"><summary>Compare models on the same games</summary>'
@@ -650,8 +657,11 @@ def _accuracy(summary):
             '<div class="table-shell" data-view-key="accuracy-reliability-table"><table><thead><tr><th>Saved chance range</th>'
             '<th>Games</th><th>Average saved chance</th><th>Actually won</th></tr></thead><tbody>' + ''.join(bins) + '</tbody></table></div>'
             '<p>Ranges include their lower bound and exclude their upper bound, except the last range includes 100%. '
-            'Brier measures squared error across home win, away win and tie, on a 0-to-2 scale. '
-            'Log loss penalizes confident misses more strongly. Both improve as they get smaller.</p></details>'
+            '</p><details data-view-key="accuracy-probability-method"><summary>Technical probability scores</summary>'
+            f'<p>Brier: {number(probability["brier"])}; Log loss: {number(probability["log_loss"])}. {count(probability)}.</p>'
+            '<p>Brier measures squared error across home win, away win and tie, on a 0-to-2 scale. '
+            'Log loss penalizes confident misses more strongly. Both improve as they get smaller. '
+            'Sample size alone does not establish calibration.</p></details></details>'
             '<details class="model-update-evidence" data-view-key="accuracy-exclusions"><summary>What is not counted?</summary><ul>'
             + ''.join(exclusions) + '</ul><p>These counts refer to the weekly model\'s saved schedule. '
             'The source archives retain every original forecast and its timing.</p></details>')
@@ -662,6 +672,53 @@ def _test_table(key, headings, rows):
             + ''.join(f'<th scope="col">{_text(h)}</th>' for h in headings) + '</tr></thead><tbody>'
             + ''.join('<tr>' + ''.join(f'<td>{cell}</td>' for cell in row) + '</tr>' for row in rows)
             + '</tbody></table></div>')
+
+
+def _market_benchmark(summary):
+    benchmark = summary['benchmark']
+    n = _integer(benchmark['n'])
+    cards = []
+    for key, label in (('pgo', 'PGO'), ('sportsbook', 'Saved sportsbook forecast')):
+        error = benchmark[key + '_margin_mae']
+        value = 'Awaiting matched final scores' if error is None else f'{_number(error):.2f} points'
+        record = benchmark[key + '_record']
+        winners = (f'{_integer(record["wins"])} correct; {_integer(record["losses"])} incorrect; '
+                   f'{_integer(record["ties"])} tied; {_integer(record["no_pick"])} no pick') if n else 'Awaiting matched final scores'
+        cards.append(f'<div><dt>{label}</dt><dd><strong>{value}</strong> average margin error<br>{winners}</dd></div>')
+    difference = benchmark['difference']
+    if n and difference is not None:
+        gap = _number(difference)
+        comparison = (f'{"PGO" if gap < 0 else "The sportsbook forecast"} was {abs(gap):.2f} points closer on average on these games.'
+                      if gap else 'Both forecasts had the same average margin error on these games.')
+    else:
+        comparison = 'Awaiting matched final scores.'
+    bands = []
+    for row in summary['ats_bands']:
+        results = (f'{_integer(row["wins"])} covered; {_integer(row["losses"])} not covered; '
+                   f'{_integer(row["pushes"])} pushes; {_integer(row["pending"])} pending; '
+                   f'{_integer(row["no_edge"])} no edge')
+        bands.append(f'<div><dt>{_text(row["label"])}</dt><dd>{results}</dd></div>')
+    excluded = '; '.join(f'{_text(summary.get("reason_labels", {}).get(key, key.replace("_", " ")))}: {_integer(count)}'
+                         for key, count in benchmark['reasons'].items()) or 'None'
+    return ('<details class="model-update-evidence" id="season-market-benchmark" data-view-key="market-benchmark">'
+            '<summary>PGO versus the saved sportsbook forecast</summary>'
+            f'<p><strong>{n} matched game{"s" if n != 1 else ""}</strong>; {_integer(benchmark["excluded"])} not counted. '
+            'Both forecasts are checked against the same final scores. Lower margin error means the predicted winning margin was closer.</p>'
+            '<dl class="season-freshness">' + ''.join(cards) + f'</dl><p>{comparison}</p>'
+            '<p>This uses the saved DraftKings handicap captured through ESPN before prediction lock. '
+            'An even line has no sportsbook favorite; a zero PGO margin has no model winner pick. Tied games and no picks are counted separately. '
+            'These results do not establish predictive superiority or profitability.</p>'
+            f'<p>Not counted: {excluded}.</p>'
+            '<details data-view-key="ats-gap-study"><summary>Do larger differences from the sportsbook perform better?</summary>'
+            '<p><strong>Descriptive results.</strong> The groups use the absolute difference between the saved PGO margin and sportsbook forecast: '
+            'zero, under 1 point, 1 to under 3 points, and 3 or more points. Zero means no ATS edge. '
+            'The groups were fixed for this study; earlier outcomes were already known.</p>'
+            '<dl class="season-freshness">' + ''.join(bands) + '</dl>'
+            f'<p>{_integer(summary["ats"]["unavailable"])} unavailable. Pushes are separate from wins and losses. '
+            'There is not enough evidence to adopt a minimum ATS difference. A larger difference is not a verified cover probability. '
+            'Original ATS suggestions remain unchanged.</p>'
+            '<p><a href="https://github.com/walshja9/Postgame_Outlet/tree/main/research/pgo_ats_gap_20260911">'
+            'Fixed study rules and saved evidence</a></p></details></details>')
 
 
 def _test_value(value, digits=2):
@@ -799,7 +856,7 @@ def _experiments(state):
             'from tests first created afterward. No experiment automatically replaces the main model.</p>' + ''.join(panels))
 
 
-def render_season(state, *, accuracy=None, mccabe=None):
+def render_season(state, *, accuracy=None, mccabe=None, market=None):
     """Render validated saved state using the existing shared PGO styles once per page."""
     if state['schema_version'] != 1 or state['status'] not in ('READY','BLOCKED'):
         raise ValueError('Unknown season view state')
@@ -872,7 +929,7 @@ def render_season(state, *, accuracy=None, mccabe=None):
             f'<tbody>{"".join(records)}</tbody></table></div>'
             '<p>Each record covers its own saved schedule. Weekly editions cover published weeks; '
             'the preseason baselines cover all 272 regular-season games, so their pending counts can be larger.</p>'
-            + _accuracy(accuracy) +
+            + _accuracy(accuracy) + (_market_benchmark(market) if market is not None else '') +
             f'<h3>Week {current} picks and grades</h3>'
             '<p>Winner grades count who won. Each game also shows how its saved picks compared with the PGO projection '
             'and sportsbook line. A correct winner can fall below the projected margin or fail to cover the spread.</p>'

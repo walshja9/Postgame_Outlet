@@ -39,6 +39,51 @@ def state():
 
 
 class SeasonViewTests(unittest.TestCase):
+    def test_market_summary_keeps_matched_counts_gap_bands_and_unavailable_explicit(self):
+        summary = dict(games_total=3, benchmark=dict(n=1, game_ids=['final'], excluded=2,
+            reasons={'no_verified_final':1,'missing_quote':1}, pgo_margin_mae=4.2,
+            sportsbook_margin_mae=3.5, difference=.7,
+            pgo_record=dict(wins=1,losses=0,ties=0,no_pick=0),
+            sportsbook_record=dict(wins=0,losses=0,ties=0,no_pick=1)),
+            ats_bands=[dict(key='under_1',label='Under 1 point',wins=0,losses=1,pushes=0,
+                            pending=1,no_edge=0,n=1,game_ids=['final'])],
+            ats=dict(wins=0,losses=1,pushes=0,pending=1,no_edge=0,unavailable=1))
+        before=copy.deepcopy(summary)
+        page=view._market_benchmark(summary)
+        for text in ('1 matched game','4.20 points','3.50 points','0.70 points closer',
+                     '1 no pick', 'Under 1 point','0 covered; 1 not covered; 0 pushes',
+                     '1 pending','1 unavailable','Descriptive results','minimum ATS difference'):
+            self.assertIn(text,page)
+        self.assertEqual(summary,before)
+        self.assertNotIn('closing line',page.lower())
+        summary['benchmark'].update(n=0,pgo_margin_mae=None,sportsbook_margin_mae=None,difference=None)
+        page=view._market_benchmark(summary)
+        self.assertIn('Awaiting matched final scores',page)
+        self.assertNotIn('points closer',page)
+
+    def test_accuracy_leads_with_plain_results_and_keeps_probability_scores_in_details(self):
+        from pgo_season_accuracy import summarize
+        from tests.test_pgo_season_accuracy import SeasonAccuracyTests
+        fixture = SeasonAccuracyTests()
+        game = fixture.game('one', probability=dict(home=.6, away=.3, tie=.1))
+        summary = summarize(fixture.state([game], [fixture.final(game)]))
+        before = copy.deepcopy(summary)
+        page = view._accuracy(summary)
+        headline = page.split('<details', 1)[0]
+        for text in ('Correct winners', '1 correct', 'Average margin error',
+                     'Average combined-score error', 'Only 1 eligible game', 'too few to judge'):
+            self.assertIn(text, headline)
+        self.assertNotIn('Brier:', headline)
+        self.assertNotIn('Log loss:', headline)
+        technical = page.split('data-view-key="accuracy-probability-method"', 1)[1].split('</details>', 1)[0]
+        self.assertIn('Brier: 0.260', technical)
+        self.assertIn('Log loss: 0.511', technical)
+        self.assertEqual(summary, before)
+        empty = view._accuracy(summarize(fixture.state([], [])))
+        self.assertIn('Awaiting eligible finals', empty)
+        self.assertNotIn('0 correct', empty)
+        self.assertIn('No eligible pre-lock probabilities have been graded yet', empty)
+
     def test_postgame_card_distinguishes_pick_cover_and_score_errors(self):
         data=state(); game=data['weeks'][0]['games'][0]
         game.update(margin=3.3,total=44.8,home_points=24.05,away_points=20.75,

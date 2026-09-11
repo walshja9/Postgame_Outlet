@@ -1,0 +1,40 @@
+{
+  "files": {
+    "pgo_ats.py": {
+      "bytes": 19621,
+      "copy": "pgo_ats.py",
+      "sha256": "e9753ec59387f0b6b6e9babfb0d4c5a12a67a6b37b3935aa5066e5fd7ca45883"
+    },
+    "pgo_market_benchmark.py": {
+      "bytes": 8370,
+      "copy": "pgo_market_benchmark.py",
+      "sha256": "ca64a0a0b2f34e78ad1735cc9ca962feefb5981f9285aa03d0cf09a2124c63f1"
+    },
+    "pgo_season.py": {
+      "bytes": 48565,
+      "copy": "pgo_season.py",
+      "sha256": "253beb796de4c3d06cb3ef679e89f5111baf793ffed6d61f6186c50fea28e5bb"
+    },
+    "pgo_season_accuracy.py": {
+      "bytes": 12843,
+      "copy": "pgo_season_accuracy.py",
+      "sha256": "60ac762be0929f8c9157f838e25f61c6a0c419b8b322ffba7c8b5cd901ce98e9"
+    },
+    "research/pgo_ats_gap_20260911/report.py": {
+      "bytes": 5272,
+      "copy": "report.py",
+      "sha256": "5c8cf392ab38e1b71958313248e498747b959948ef310ad59fd988073ed5ef69"
+    },
+    "tests/test_pgo_ats.py": {
+      "bytes": 16195,
+      "copy": "test_pgo_ats.py",
+      "sha256": "cb9d74e12ced70a3f3ec854b72f9ac5b8ae2905edca81f8ac6b5d778aed522a8"
+    },
+    "tests/test_pgo_market_benchmark.py": {
+      "bytes": 6982,
+      "copy": "test_pgo_market_benchmark.py",
+      "sha256": "e5b39be8f42ac0a3919ac5f22b75787860ac0f5c0906f0ad430aa22339c4a673"
+    }
+  },
+  "reason": "Exact implementation and test bytes for immutable attempt01; canonical files may evolve."
+}

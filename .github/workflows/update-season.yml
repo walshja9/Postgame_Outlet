@@ -6,10 +6,16 @@ on:
     # Extra checks only do full work during an inactive watch window; GitHub can delay runs.
     - cron: "2,12,17,27,32,42,47,57 * * * *"
   workflow_dispatch:
+    inputs:
+      alert_delivery_check:
+        description: Send a clearly labeled owner notification setup check
+        type: boolean
+        default: false
 
 permissions:
   contents: write
   pages: write
+  issues: write
 
 concurrency:
   group: board-update
@@ -54,18 +60,28 @@ jobs:
               output.write(f'run_refresh={str(run_refresh).lower()}\n')
           print('Full season refresh' if run_refresh else 'No inactive watch window; extra tick skipped')
       - name: Verify automatic grading, model updates, availability and rendering
+        id: verify
         if: steps.route.outputs.run_refresh == 'true'
-        run: python -m unittest tests.test_pgo_season tests.test_pgo_season_boundaries tests.test_pgo_season_sources tests.test_pgo_season_model tests.test_pgo_season_availability tests.test_pgo_season_view tests.test_pgo_season_storage tests.test_pgo_season_rollover tests.test_pgo_season_accuracy tests.test_pgo_penalty_candidate tests.test_pgo_penalty_monitor tests.test_pgo_penalty_integration tests.test_pgo_totals_monitor tests.test_pgo_weights_monitor tests.test_pgo_replacement_depth tests.test_pgo_season_experiments tests.test_pgo_experiment_view tests.test_pgo_ats tests.test_pgo_ats_view tests.test_pgo_inactive_monitor tests.test_pgo_publication_guard tests.test_pgo_workflow_status tests.test_public_board_workflow
+        run: python -m unittest tests.test_pgo_season tests.test_pgo_season_boundaries tests.test_pgo_season_sources tests.test_pgo_season_model tests.test_pgo_season_availability tests.test_pgo_season_view tests.test_pgo_season_storage tests.test_pgo_season_rollover tests.test_pgo_season_accuracy tests.test_pgo_market_benchmark tests.test_pgo_alerts tests.test_pgo_penalty_candidate tests.test_pgo_penalty_monitor tests.test_pgo_penalty_integration tests.test_pgo_totals_monitor tests.test_pgo_weights_monitor tests.test_pgo_replacement_depth tests.test_pgo_season_experiments tests.test_pgo_experiment_view tests.test_pgo_ats tests.test_pgo_ats_view tests.test_pgo_inactive_monitor tests.test_pgo_publication_guard tests.test_pgo_workflow_status tests.test_public_board_workflow
       - name: Capture verified finals and advance eligible forecasts
         id: refresh
         if: steps.route.outputs.run_refresh == 'true'
-        run: python pgo_season.py --refresh
+        run: |
+          python - <<'PY'
+          import os
+          from datetime import datetime, timezone
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+              output.write('started_at=' + datetime.now(timezone.utc).isoformat() + '\n')
+          PY
+          python pgo_season.py --refresh
       - name: Render current board and auditable archives
+        id: render
         if: steps.route.outputs.run_refresh == 'true'
         run: |
           python pgo_comparison.py --refresh-mccabe
           python pgo_forecast_lab.py
       - name: Publish changed season data and pages
+        id: publish
         if: steps.route.outputs.run_refresh == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -92,3 +108,43 @@ jobs:
           path: output/rollover-${{ github.run_id }}-${{ github.run_attempt }}.json
           if-no-files-found: error
           retention-days: 90
+      - name: Check notification delivery when requested
+        if: github.event_name == 'workflow_dispatch' && inputs.alert_delivery_check && steps.publish.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PYTHONPATH: ${{ github.workspace }}
+          PGO_VERIFY: ${{ steps.verify.outcome }}
+          PGO_REFRESH: ${{ steps.refresh.outcome }}
+          PGO_RENDER: ${{ steps.render.outcome }}
+          PGO_PUBLISH: ${{ steps.publish.outcome }}
+          PGO_REFRESH_STARTED: ${{ steps.refresh.outputs.started_at }}
+        shell: python
+        run: |
+          import json
+          import os
+          import pgo_alerts as alerts
+          report = alerts.assess(alerts.load_current(alerts.DEFAULT_ROOT),
+              outcomes={stage: os.environ['PGO_' + stage.upper()] for stage in alerts.STAGES},
+              refresh_started_at=os.environ['PGO_REFRESH_STARTED'],
+              public_pointer=alerts.fetch_public_pointer())
+          if report['can_resolve'] and alerts._owned_issue(alerts.github_api)[0] is None:
+              report['conditions'] = [dict(key='commissioning', urgent=False,
+                  message='Notification delivery setup check only. No model or data failure is being reported.')]
+              report['can_resolve'] = False
+              url = ('https://github.com/' + alerts.REPOSITORY + '/actions/runs/'
+                     + os.environ['GITHUB_RUN_ID'] + '/attempts/' + os.environ['GITHUB_RUN_ATTEMPT'])
+              print(json.dumps(alerts.deliver(report, alerts.github_api, url), sort_keys=True))
+          else:
+              print('Delivery setup check skipped: current health or an existing incident needs review.')
+      - name: Notify the PGO owner when attention is needed
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python pgo_alerts.py --deliver --check-public \
+            --run-refresh '${{ steps.route.outputs.run_refresh }}' \
+            --verify-outcome '${{ steps.verify.outcome }}' \
+            --refresh-outcome '${{ steps.refresh.outcome }}' \
+            --render-outcome '${{ steps.render.outcome }}' \
+            --publish-outcome '${{ steps.publish.outcome }}' \
+            --refresh-started-at '${{ steps.refresh.outputs.started_at }}'

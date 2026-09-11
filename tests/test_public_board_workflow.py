@@ -14,6 +14,52 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class PublicBoardWorkflowTests(unittest.TestCase):
+    def test_owner_alerts_run_after_publication_and_receive_real_stage_outcomes(self):
+        workflow = (ROOT / '.github/workflows/update-season.yml').read_text(encoding='utf-8')
+        alert = workflow.split('- name: Notify the PGO owner when attention is needed', 1)[1]
+        self.assertIn('issues: write', workflow)
+        self.assertIn('if: always()', alert)
+        self.assertIn('--deliver --check-public', alert)
+        self.assertIn("--run-refresh '${{ steps.route.outputs.run_refresh }}'", alert)
+        for stage in ('verify', 'refresh', 'render', 'publish'):
+            self.assertIn('id: ' + stage, workflow)
+            self.assertIn('--' + stage + "-outcome '${{ steps." + stage + ".outcome }}'", alert)
+        self.assertIn("--refresh-started-at '${{ steps.refresh.outputs.started_at }}'", alert)
+        self.assertLess(workflow.index('git push origin HEAD:main'), workflow.index('- name: Notify the PGO owner'))
+        self.assertIn('alert_delivery_check:', workflow)
+        self.assertIn('default: false', workflow)
+        check = workflow.split('- name: Check notification delivery when requested', 1)[1].split('\n      - name:', 1)[0]
+        self.assertIn("github.event_name == 'workflow_dispatch' && inputs.alert_delivery_check", check)
+        self.assertIn('PYTHONPATH: ${{ github.workspace }}', check)
+        script = textwrap.dedent(check.split('        run: |\n', 1)[1])
+        compile(script, '<delivery-check>', 'exec')
+        for healthy, existing in ((True, None), (False, None), (True, {'number': 1})):
+            with self.subTest(healthy=healthy, existing=existing):
+                report = {'can_resolve': healthy, 'conditions': []}
+                alerts = SimpleNamespace(
+                    DEFAULT_ROOT=object(), REPOSITORY='walshja9/Postgame_Outlet',
+                    STAGES=('verify', 'refresh', 'render', 'publish'),
+                    load_current=mock.Mock(return_value='state'),
+                    fetch_public_pointer=mock.Mock(return_value='pointer'),
+                    assess=mock.Mock(return_value=report), github_api=object(),
+                    _owned_issue=mock.Mock(return_value=(existing, {})),
+                    deliver=mock.Mock(return_value={'status': 'created'}))
+                env = {**{'PGO_' + stage.upper(): 'success' for stage in alerts.STAGES},
+                       'PGO_REFRESH_STARTED': '2026-09-11T15:00:00Z',
+                       'GITHUB_RUN_ID': '123', 'GITHUB_RUN_ATTEMPT': '1'}
+                with mock.patch.dict(sys.modules, {'pgo_alerts': alerts}), mock.patch.dict(os.environ, env):
+                    exec(script, {'__name__': '__main__'})
+                alerts.assess.assert_called_once_with('state',
+                    outcomes={stage: 'success' for stage in alerts.STAGES},
+                    refresh_started_at=env['PGO_REFRESH_STARTED'], public_pointer='pointer')
+                if healthy and existing is None:
+                    alerts.deliver.assert_called_once_with(report, alerts.github_api,
+                        'https://github.com/walshja9/Postgame_Outlet/actions/runs/123/attempts/1')
+                    self.assertEqual(report['conditions'][0]['key'], 'commissioning')
+                    self.assertFalse(report['can_resolve'])
+                else:
+                    alerts.deliver.assert_not_called()
+
     def test_manual_edition_uses_tested_source_before_snapshot_and_canonical_deploy(self):
         workflow=(ROOT/'.github/workflows/publish-edition.yml').read_text(encoding='utf-8')
         header,jobs=workflow.split('\njobs:',1)

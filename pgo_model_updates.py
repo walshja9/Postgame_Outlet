@@ -466,7 +466,8 @@ def render_current_updates(*, include_original=True):
     accuracy = summarize(dict(season, accuracy_models=load_models()))
     from pgo_comparison import load_mccabe_rows, mccabe_source_timestamp, MCCABE_PATH
     mccabe = dict(rows=load_mccabe_rows(MCCABE_PATH),as_of=mccabe_source_timestamp(MCCABE_PATH))
-    current = render_season(season, accuracy=accuracy, mccabe=mccabe)
+    from pgo_market_benchmark import summarize as summarize_market
+    current = render_season(season, accuracy=accuracy, mccabe=mccabe, market=summarize_market(season))
     originals = ('<details class="model-update-evidence" id="opening-week-editions">'
                  '<summary>Original Week 1 editions and confidence allocations</summary>'
                  + earlier.replace(STYLE, '', 1) + '</details>' if include_original else

@@ -1,0 +1,16 @@
+{
+  "files": {
+    "completion.json": {
+      "bytes": 2932,
+      "sha256": "8bd2c8bb31ef16737d049e9a64afce824116030a463802bfa6050b342e21c3f6"
+    },
+    "receipt.json": {
+      "bytes": 2850,
+      "sha256": "3bea2b2bad8f9672eb579b49d045e644cf465ed9ff208276cb5878bf9cda47ae"
+    },
+    "summary.json": {
+      "bytes": 11769,
+      "sha256": "5c5f0e75bbbce68ec4a1cb2ef5a5f1810b75f84054fc6a9c49a4ccfe460c2f31"
+    }
+  }
+}
