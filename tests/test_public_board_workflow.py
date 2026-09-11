@@ -14,6 +14,37 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class PublicBoardWorkflowTests(unittest.TestCase):
+    def test_manual_edition_uses_tested_source_before_snapshot_and_canonical_deploy(self):
+        workflow=(ROOT/'.github/workflows/publish-edition.yml').read_text(encoding='utf-8')
+        header,jobs=workflow.split('\njobs:',1)
+        self.assertNotIn('\nconcurrency:',header)
+        tests,publisher=jobs.split('\n  publish:',1)
+        self.assertIn('\n  test:',tests)
+        self.assertNotIn('concurrency:',tests)
+        self.assertIn('contents: read',tests)
+        self.assertIn('ref: ${{ github.sha }}',tests)
+        self.assertIn('tested_sha: ${{ steps.tested.outputs.sha }}',tests)
+        self.assertIn('python -m unittest discover -s tests',tests)
+        self.assertNotIn('python snapshot.py',tests)
+        self.assertNotIn('python pgo_comparison.py',tests)
+        self.assertIn('needs: test',publisher)
+        self.assertIn('group: board-update',publisher)
+        self.assertIn('cancel-in-progress: false',publisher)
+        self.assertIn('ref: main',publisher)
+        self.assertIn('TESTED_SHA: ${{ needs.test.outputs.tested_sha }}',publisher)
+        self.assertIn('git show "$TESTED_SHA:pgo_publication_guard.py"',publisher)
+        self.assertLess(publisher.index('pgo_publication_guard.py'),publisher.index('python -m pip install'))
+        self.assertLess(publisher.index('pgo_publication_guard.py'),publisher.index('python snapshot.py "$LABEL"'))
+        self.assertIn('LABEL: ${{ inputs.label }}',publisher)
+        self.assertIn('git add data/snapshots.json docs/index.html docs/forecast-lab.html',publisher)
+        self.assertNotIn('git pull',publisher)
+        self.assertIn('git push origin HEAD:main',publisher)
+        self.assertIn('pages: write',workflow)
+        deploy=publisher.split('- name: Request canonical Pages build',1)[1]
+        self.assertIn("if: github.repository == 'walshja9/Postgame_Outlet'",deploy)
+        self.assertIn('GH_TOKEN: ${{ github.token }}',deploy)
+        self.assertIn('gh api --method POST repos/${{ github.repository }}/pages/builds',deploy)
+
     def test_full_tests_do_not_hold_the_publishing_lock(self):
         workflow = (ROOT / '.github/workflows/update-board.yml').read_text(encoding='utf-8')
         header, jobs = workflow.split('\njobs:', 1)

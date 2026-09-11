@@ -66,18 +66,28 @@ def identity(left, right):
 
 def parse_scoreboard(payload, schedule, captured_at):
     """Only explicit completed FINAL statuses are results; observed time is conservative."""
-    season, week = payload['season']['year'], payload['week']['number']
-    require(type(season) is int and season == SEASON and payload['season']['type'] == 2, 'Scoreboard season/type differs')
+    require(isinstance(payload, dict) and isinstance(payload.get('season'), dict)
+            and isinstance(payload.get('week'), dict) and isinstance(payload.get('events'), list),
+            'Scoreboard requires season/week objects and an events list')
+    season, week = payload['season'].get('year'), payload['week'].get('number')
+    require(type(season) is int and season == SEASON and payload['season'].get('type') == 2, 'Scoreboard season/type differs')
     require(type(week) is int and 1 <= week <= 18, 'Scoreboard week differs')
     expected = {(g['away'], g['home']): g for g in schedule if g['season'] == season and g['week'] == week}
     require(expected, 'Scoreboard has no expected games')
     seen, event_ids, events, results = set(), set(), {}, []
     for event in payload['events']:
-        require(event['season']['year'] == season and event['season']['type'] == 2 and event['week']['number'] == week, 'Event season/week/type differs')
-        require(len(event['competitions']) == 1, 'Ambiguous competition')
+        require(isinstance(event, dict) and isinstance(event.get('season'), dict)
+                and isinstance(event.get('week'), dict), 'Scoreboard event requires season/week objects')
+        require(event['season'].get('year') == season and event['season'].get('type') == 2 and event['week'].get('number') == week, 'Event season/week/type differs')
+        require(isinstance(event.get('competitions'), list) and len(event['competitions']) == 1
+                and isinstance(event['competitions'][0], dict), 'Ambiguous competition')
         comp = event['competitions'][0]
         require(str(event['id']) not in event_ids and str(comp.get('id')) == str(event['id']), 'Duplicate or mismatched provider event ID')
         event_ids.add(str(event['id']))
+        require(isinstance(comp.get('competitors'), list) and all(isinstance(x, dict)
+                and x.get('homeAway') in ('home', 'away') and isinstance(x.get('team'), dict)
+                and isinstance(x['team'].get('abbreviation'), str) for x in comp['competitors']),
+                'Scoreboard competitors require home/away sides and team identities')
         sides = {x['homeAway']: x for x in comp['competitors']}
         require(len(comp['competitors']) == 2 and set(sides) == {'home', 'away'}, 'Invalid competitors')
         pair = tuple(pgo_sources.normalize_team({'WSH':'WAS'}.get(sides[k]['team']['abbreviation'], sides[k]['team']['abbreviation'])) for k in ('away', 'home'))
@@ -85,7 +95,12 @@ def parse_scoreboard(payload, schedule, captured_at):
         seen.add(pair); g = expected[pair]
         require(not g.get('espn_id') or str(g['espn_id']) == str(event['id']), 'Schedule provider event ID differs')
         require(utc(event['date']) == utc(g['kickoff']), 'Schedule kickoff differs; review rescheduling')
+        for container in (event, comp):
+            if 'status' in container:
+                require(isinstance(container['status'], dict) and isinstance(container['status'].get('type', {}), dict),
+                        'Scoreboard status and status type must be objects')
         status = comp.get('status', event.get('status', {})).get('type', {})
+        require(isinstance(status.get('name', 'UNKNOWN'), str), 'Scoreboard status name must be text')
         if 'status' in event and 'status' in comp:
             require(all(event['status'].get('type',{}).get(k)==status.get(k) for k in ('completed','state','name')), 'Conflicting event and competition status')
         events[g['game_id']] = {'event_id': str(event['id']), 'status': status.get('name', 'UNKNOWN')}

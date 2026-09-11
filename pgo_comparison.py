@@ -1239,14 +1239,73 @@ def add_current_injury_notes(page, source_path=None):
     if 'id="panel-fantasy"' not in page:
         return page
     configured = source_path or generate_site.load_config().get("injury_snapshot", "")
-    if not configured:
-        return page
-    path = HERE / configured
-    snapshot_data = pgo_injury_source.load_snapshot(path)
-    raw = json.loads(path.read_text(encoding="utf-8"))
-    sources = {row["team"]: row for row in raw["team_sources"]}
-    players = {(row["team"], row["gsis_id"]): row for row in snapshot_data["players"]
-               if row["source_kind"] in ("formal_injury_report", "official_news")}
+    notes = {}
+    original_as_of = None
+    parse_time = pgo_injury_source._parse_timestamp
+
+    def admit(key, status, url, checked, bound, priority=0):
+        if not checked:
+            raise ValueError("Current injury annotation requires the actual source capture time")
+        captured = parse_time(checked, "source capture time")
+        if captured > parse_time(bound, "snapshot time"):
+            raise ValueError("Source capture time is later than the injury snapshot")
+        # Recapturing a practice/report page cannot supersede a final inactive list.
+        order = (priority, captured)
+        if key not in notes or order > notes[key][0]:
+            notes[key] = (order, status, url, checked)
+
+    if configured:
+        path = HERE / configured
+        snapshot_data = pgo_injury_source.load_snapshot(path)
+        original_as_of = snapshot_data["source_as_of"]
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        sources = {row["team"]: row for row in raw["team_sources"]}
+        for player in snapshot_data["players"]:
+            if player["source_kind"] not in ("formal_injury_report", "official_news"):
+                continue
+            designation = player["game_status"]
+            status = (player["availability_text"] if player["source_kind"] == "official_news" else
+                      f'Game designation: {designation.upper()}' if designation else
+                      f'Practice: {player["practice_status"]}; no final game designation supplied')
+            if player["injury"]:
+                status += f' ({player["injury"]})'
+            admit((player["team"],player["gsis_id"]), status, player["source_url"],
+                  sources[player["team"]].get("captured_at"), original_as_of,
+                  int(player["source_kind"] == "official_news" and "inactive" in status.casefold()))
+
+    from pgo_season import DEFAULT_ROOT, load_current
+    season = load_current(DEFAULT_ROOT)
+    edition = re.search(r'<h2>\s*(\d{4}) Week (\d+) Fantasy Rankings\s*</h2>', page)
+    if season is not None and edition:
+        availability = [game.get("availability") for week in season.get("weeks", []) for game in week["games"]]
+        availability += list(season.get("availability_context", {}).values())
+        labels = {'OUT':'Game designation: OUT', 'QUESTIONABLE':'Game designation: QUESTIONABLE',
+                  'DOUBTFUL':'Game designation: DOUBTFUL', 'INACTIVE':'Inactive',
+                  'EMERGENCY_QB':'Emergency third quarterback only'}
+        for observation in filter(None, availability):
+            if (observation.get("season"),observation.get("week")) != tuple(map(int,edition.groups())):
+                continue
+            if parse_time(observation["checked_at"], "availability time") > parse_time(season["checked_at"], "season time"):
+                raise ValueError("Availability observation follows the verified season snapshot")
+            for team, report in observation.get("teams", {}).items():
+                if team not in (observation["home"],observation["away"]):
+                    continue
+                opponent = observation["away"] if team == observation["home"] else observation["home"]
+                final_ids = {p.get("gsis_id") for p in report.get("observations", [])
+                             if p.get("status") in ("INACTIVE", "EMERGENCY_QB")}
+                for player in report.get("observations", []):
+                    designation = player.get("status")
+                    if (player.get("identity_status") != "RESOLVED" or not player.get("gsis_id")
+                            or player.get("source_kind") not in ("official_report", "official_inactives")
+                            or designation not in labels):
+                        continue
+                    status = labels[designation]
+                    if (designation in ("QUESTIONABLE", "DOUBTFUL") and report.get("final_inactives_status") == "VERIFIED_LIST"
+                            and player["gsis_id"] not in final_ids):
+                        status = 'Earlier report: ' + designation.title() + '; not on final inactive list'
+                    status += f' (Week {observation["week"]}: {observation["away"]} at {observation["home"]})'
+                    admit((team,player["gsis_id"],opponent), status, player["source_url"], player.get("captured_at"),
+                          observation["checked_at"], int(player["source_kind"] == "official_inactives"))
     marked = lambda text: '<!-- CURRENT INJURY NOTE -->' + text + '<!-- END CURRENT INJURY NOTE -->'
     matched = 0
 
@@ -1254,30 +1313,19 @@ def add_current_injury_notes(page, source_path=None):
         nonlocal matched
         attrs = dict(re.findall(r'([\w-]+)="([^"]*)"', match[1]))
         key = tuple(html.unescape(attrs.get(name, "")) for name in ("data-team", "data-player-id"))
-        player = players.get(key)
-        if player is None:
+        # Opponent is the fourth data cell in the preserved Fantasy row (after rank, position and team).
+        cells = re.findall(r'<td\b[^>]*data-sort="([^"]*)"[^>]*>', match[2])
+        candidates = [notes[k] for k in (key, key + (html.unescape(cells[3]),) if len(cells)>3 else key) if k in notes]
+        observation = max(candidates,key=lambda row:row[0]) if candidates else None
+        if observation is None:
             return match[0]
-        source = sources[key[0]]
-        checked = source.get("captured_at", "")
-        if not checked:
-            raise ValueError("Current injury annotation requires the actual source capture time")
-        capture_time = pgo_injury_source._parse_timestamp(checked, "source capture time")
-        if capture_time > pgo_injury_source._parse_timestamp(snapshot_data["source_as_of"], "snapshot time"):
-            raise ValueError("Source capture time is later than the injury snapshot")
+        _, status, url, checked = observation
         clock = pgo_current_board._time(checked)
-        designation = player["game_status"]
-        if player["source_kind"] == "official_news":
-            status = player["availability_text"]
-        else:
-            status = (f'Game designation: {designation.upper()}' if designation
-                      else f'Practice: {player["practice_status"]}; no final game designation supplied')
-        if player["injury"]:
-            status += f' ({player["injury"]})'
         note = marked(
             '<span class="fantasy-current-report" style="display:block;white-space:normal;font-size:12px;'
-            'margin-top:6px;color:var(--notice-ink)"><strong>Current report: '
-            f'{html.escape(status)}</strong>. Checked {clock}. '
-            f'<a href="{html.escape(player["source_url"], quote=True)}" target="_blank" rel="noopener noreferrer">'
+            'margin-top:6px;color:var(--notice-ink)"><strong>Saved report: '
+            f'{html.escape(status)}</strong>. Captured {clock}. '
+            f'<a href="{html.escape(url, quote=True)}" target="_blank" rel="noopener noreferrer">'
             'Official report</a>.</span>')
         cells, count = re.subn(r'(<th\b[^>]*class="fantasy-player"[^>]*>)([^<]*)',
                               lambda cell: cell[1] + cell[2] + note, match[2], count=1)
@@ -1288,10 +1336,12 @@ def add_current_injury_notes(page, source_path=None):
 
     page = re.sub(r'<tr class="fantasy-row"([^>]*)>(.*?)</tr>', annotate, page, flags=re.S)
     if matched:
-        note = marked('<p class="fantasy-current-report"><strong>Current injury notes appear beside affected players.</strong> '
-                      'Other injury labels and point projections belong to the saved projection snapshot. '
-                      'Current report notes supersede those older availability labels; points and league values have not been '
-                      'recalculated. A player ruled out should not be started. Missing current notes do not establish health.</p>')
+        original = ('Base injury-note snapshot: ' + pgo_current_board._time(original_as_of) + '. ' if original_as_of else '')
+        note = marked('<p class="fantasy-current-report"><strong>Dated injury notes appear beside affected players.</strong> '
+                      + original + 'Newer verified season reports are used when an exact team and player ID match is available. '
+                      'Each note keeps its source capture time. Other injury labels and point projections belong to the saved projection snapshot. '
+                      'These notes supersede older labels only as dated context; points and league values have not been '
+                      'recalculated. A player ruled out should not be started. Missing notes do not establish health.</p>')
         page, count = re.subn(r'(<section\b[^>]*id="panel-fantasy"[^>]*>)',
                              lambda match: match[1] + note, page, count=1)
         if count != 1:

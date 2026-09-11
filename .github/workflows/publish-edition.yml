@@ -10,17 +10,43 @@ on:
 
 permissions:
   contents: write
-
-concurrency:
-  group: board-update
-  cancel-in-progress: false
+  pages: write
 
 jobs:
-  publish:
+  test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      tested_sha: ${{ steps.tested.outputs.sha }}
+    env:
+      TZ: America/New_York
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Record the exact tested commit
+        id: tested
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install PGO test dependency
+        run: python -m pip install -r requirements-pgo.txt
+      - name: Run tests (includes the editorial gate)
+        run: python -m unittest discover -s tests
+
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    concurrency:
+      group: board-update
+      cancel-in-progress: false
     env:
       TZ: America/New_York
       LABEL: ${{ inputs.label }}
+      TESTED_SHA: ${{ needs.test.outputs.tested_sha }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -29,10 +55,12 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - name: Install PGO test dependency
+      - name: Admit only tested source with newer mutable season data
+        run: |
+          git show "$TESTED_SHA:pgo_publication_guard.py" > "$RUNNER_TEMP/pgo_publication_guard.py"
+          python "$RUNNER_TEMP/pgo_publication_guard.py" "$TESTED_SHA"
+      - name: Install PGO rendering dependency
         run: python -m pip install -r requirements-pgo.txt
-      - name: Run tests (includes the editorial gate)
-        run: python -m unittest discover -s tests
       - name: Snapshot the edition
         run: python snapshot.py "$LABEL"
       - name: Refresh public board without replacing approved PGO panel
@@ -49,5 +77,9 @@ jobs:
             exit 1
           fi
           git commit -m "Publish edition: $LABEL"
-          git pull --rebase origin main
-          git push origin main
+          git push origin HEAD:main
+      - name: Request canonical Pages build
+        if: github.repository == 'walshja9/Postgame_Outlet'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --method POST repos/${{ github.repository }}/pages/builds

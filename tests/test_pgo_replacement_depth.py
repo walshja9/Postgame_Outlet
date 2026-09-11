@@ -1,7 +1,9 @@
 import copy
+import csv
 from datetime import datetime, timezone
 import gzip
 import hashlib
+import io
 import json
 from pathlib import Path
 import tempfile
@@ -110,6 +112,40 @@ class ReplacementDepthTests(unittest.TestCase):
         self.assertEqual(result['status'], 'BLOCKED')
         self.assertIsNone(result['forecast_adjustment'])
         self.assertEqual(state,before)
+
+    def test_results_only_refresh_reuses_valid_prior_sources_until_expiry(self):
+        rr, dd, history, _ = self.fixture()
+        game=dict(game_id='future',home='NE',away='SEA',kickoff='2026-09-12T00:00:00+00:00',
+                  lock_at='2026-09-11T23:00:00+00:00')
+        with tempfile.TemporaryDirectory() as temp, patch.object(depth,'_history',return_value=(history,None)):
+            root=Path(temp); (root/'source-archive').mkdir(); refs=[]
+            for url, rows in ((depth.ROSTER_URL,rr),(depth.DEPTH_URL,dd)):
+                text=io.StringIO(); writer=csv.DictWriter(text,fieldnames=list(rows[0]))
+                writer.writeheader(); writer.writerows(rows)
+                raw=gzip.compress(text.getvalue().encode(),mtime=0); digest=hashlib.sha256(raw).hexdigest()
+                relative='source-archive/'+digest+'.csv.gz'; (root/relative).write_bytes(raw)
+                refs.append(dict(url=url,path=relative,sha256=digest,bytes=len(raw),captured_at=NOW))
+            state=dict(source_captures=refs,weeks=[dict(games=[game])])
+            previous=depth.capture(state,root,NOW)
+            self.assertEqual(previous['status'],'DESCRIPTIVE / NOT IN MODEL')
+            # A results-only refresh replaces the current references, retaining the last description.
+            state=dict(source_captures=[],sources=[],weeks=state['weeks'],replacement_depth=previous)
+            before=copy.deepcopy(state); checked='2026-09-10T21:00:00+00:00'
+            result=depth.capture(state,root,checked)
+            self.assertEqual(result['status'],'DESCRIPTIVE / NOT IN MODEL')
+            self.assertEqual(result['teams'],previous['teams'])
+            self.assertEqual(result['source_as_of'],NOW)
+            self.assertEqual(result['games'][0]['captured_at'],checked)
+            self.assertIsNone(result['forecast_adjustment'])
+            self.assertEqual(state,before)
+            expired=depth.capture(state,root,'2026-09-11T20:00:01+00:00')
+            self.assertEqual(expired['status'],'BLOCKED')
+            self.assertIn('older than 24 hours',expired['blocked_reason'])
+            for change in ({'path':'../bad.csv.gz'},{'sha256':'0'*64},{'bytes':0},
+                           {'captured_at':'2026-09-11T00:00:00+00:00'}):
+                invalid=copy.deepcopy(state); invalid['replacement_depth']['sources'][0].update(change)
+                with self.subTest(change=change), self.assertRaises(ValueError):
+                    depth.capture(invalid,root,checked)
 
     def test_only_future_unlocked_games_are_eligible(self):
         games=[dict(game_id='old',kickoff='2026-09-09T23:00:00+00:00',lock_at='2026-09-09T22:00:00+00:00'),

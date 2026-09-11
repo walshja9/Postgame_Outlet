@@ -128,5 +128,27 @@ class SeasonBoundaryTests(unittest.TestCase):
                     if case=='incomplete':build.assert_not_called()
                     else:self.assertEqual(updated['status'],'BLOCKED');self.assertEqual(updated['model_records'][0]['wins'],2)
 
+    def test_malformed_scoreboard_saves_blocked_state_without_changing_prior_forecasts(self):
+        game=self.game();state=self.state([game])
+        with tempfile.TemporaryDirectory() as temporary,patch.object(api,'now',return_value=state['checked_at']), \
+             patch.object(api,'legacy_models',return_value=[]):
+            root=Path(temporary);api.decorate(state,[])
+            prior=api.save_state(state,root);prior_bytes=(prior/'state.json.gz').read_bytes()
+            malformed=json.dumps({'season':None,'week':{'number':1},'events':[]}).encode()
+            with patch.object(api,'now',return_value='2026-09-13T15:01:00Z'), \
+                 patch.object(api,'parse_schedule',return_value=[game]), \
+                 patch.object(api,'fetch_source',side_effect=[(b'schedule',{}),(malformed,{'captured_at':'2026-09-13T15:01:00Z'})]), \
+                 patch.object(api,'refresh_experiments'):
+                try:
+                    updated=api.refresh(root)
+                except Exception as error:
+                    self.fail(f'Malformed provider response escaped refresh: {type(error).__name__}')
+            self.assertEqual(updated['status'],'BLOCKED')
+            self.assertIn('Automatic update needs review: Scoreboard',updated['blocked_reason'])
+            self.assertEqual(updated['weeks'],state['weeks'])
+            self.assertEqual(updated['results'],state['results'])
+            self.assertEqual((prior/'state.json.gz').read_bytes(),prior_bytes)
+            self.assertEqual(api.load_current(root),updated)
+
 
 if __name__=='__main__':unittest.main()

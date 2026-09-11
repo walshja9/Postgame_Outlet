@@ -8,6 +8,7 @@ on:
       - "pgo_*.py"
       - ".github/workflows/update-board.yml"
       - ".github/workflows/update-season.yml"
+      - ".github/workflows/publish-edition.yml"
       - "pgo_publication_guard.py"
       - "pgo_workflow_status.py"
       - "requirements-pgo.txt"

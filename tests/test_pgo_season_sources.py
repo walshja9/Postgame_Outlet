@@ -49,6 +49,34 @@ class SeasonSourceTests(unittest.TestCase):
             with self.subTest(events=changed['events']), self.assertRaises(ValueError):
                 season.parse_scoreboard(changed,games,'2026-09-10T04:00:00Z')
 
+    def test_malformed_provider_containers_raise_validation_errors(self):
+        game=self.game();good=self.scoreboard([game])
+        paths=[(),('season',),('week',),('events',),('events',0),
+               ('events',0,'season'),('events',0,'week'),('events',0,'competitions'),
+               ('events',0,'competitions',0),('events',0,'competitions',0,'competitors'),
+               ('events',0,'competitions',0,'competitors',0),
+               ('events',0,'competitions',0,'competitors',0,'team'),
+               ('events',0,'competitions',0,'status'),('events',0,'competitions',0,'status','type')]
+        for path in paths:
+            for malformed in (None,42,'invalid',[],{}):
+                changed=copy.deepcopy(good)
+                if not path:changed=malformed
+                else:
+                    target=changed
+                    for key in path[:-1]:target=target[key]
+                    target[path[-1]]=malformed
+                with self.subTest(path=path,value=malformed):
+                    try:
+                        season.parse_scoreboard(changed,[game],'2026-09-10T04:00:00Z')
+                    except ValueError:
+                        pass
+                    except Exception as error:
+                        self.fail(f'Malformed provider shape escaped validation: {type(error).__name__}')
+                    else:
+                        # An absent status object is still a pending observation.
+                        self.assertIn(path[-1:] , [('status',),('type',)])
+                        self.assertEqual(malformed,{})
+
     def test_accepted_event_identity_cannot_change_even_when_final_score_matches(self):
         final=self.final(self.game())
         later=dict(final,finalized_at='2026-09-10T05:00:00Z')

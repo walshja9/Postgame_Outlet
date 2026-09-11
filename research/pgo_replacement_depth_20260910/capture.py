@@ -225,6 +225,7 @@ def capture(state, root, checked_at):
                 historical_admission='BLOCKED FOR FITTING', teams=[], games=[], sources=[])
     refs = [*state.get('source_captures',[]), *state.get('sources',[]), *state.get('rankings',{}).get('source_captures',[])]
     refs += [r for values in state.get('edition_sources',{}).values() for r in values]
+    refs += state.get('replacement_depth',{}).get('sources',[])
     chosen = {}
     for url in (ROSTER_URL, DEPTH_URL):
         matches = [r for r in refs if r.get('url') == url and 'path' in r]

@@ -1,159 +1,63 @@
-# NFL Power Ratings (2026 season)
+# Postgame Outlet: ratings, forecasts and records
 
-A roster-based, points-denominated power-rating system. Every team's rating is
-expressed in **points vs. a league-average team (0.0)** and is the straight sum
-of its components:
+PGO publishes Sean McCabe's human NFL ratings alongside an independent experimental model, saved game predictions, straight-up and spread records, and a Fantasy preview. Shopify supplies the public site and commerce shell; the app and Forecast Lab are hosted by GitHub Pages.
 
-```
-Team Rating = QB + Offense(non-QB) + Defense   (+ Coaching + Scheme + Edge, future)
-```
+Start with [season operations](docs/pgo-season-operations.md) for automatic updates, verification, locks and archives. See [Shopify hosting](SHOPIFY.md) for required assets and [the September 10 model update](docs/model-update-2026-09-10.md) for research findings.
 
-All numbers live in `data/ratings.csv` — that is the one file you edit. Three
-scripts read it and produce the artifacts below. Edit the CSV, re-run the
-script(s), done.
+## Separate inputs and products
 
-## Files
+| Product | Inputs and workflow |
+|---|---|
+| McCabe human ratings | `data/ratings.csv`, `data/qb_depth.csv`, `data/writeups/<ABBR>.md`, `data/config.csv`; reviewed components and analysis |
+| McCabe edition history | `data/snapshots.json`; `snapshot.py` and the manual Publish edition workflow |
+| PGO weekly model | `pgo_season.py`, `pgo_season_model.py`, frozen fitted coefficients and verified inputs; current pointer at `docs/evidence/season-2026/current.json` |
+| PGO picks and grades | Saved weekly records, verified finals, `pgo_season_accuracy.py`, `pgo_ats.py` and fixed confidence allocation |
+| Availability | Archived official reports/inactive lists and separate later context with matchup, player and source-time checks |
+| Fantasy | Saved preview projections, scoring controls and dated availability annotations |
+| Research | Frozen experiments in `research/` and linked evidence; distinct from the production model |
 
-```
-data/
-  ratings.csv      THE file you edit. 32 teams: QB/Off/Def values + names + notes.
-  qb_depth.csv     Backup QBs (2nd/3rd string) with values. Feeds the QB Depth tab.
-  prior_2025.csv   Last season's ENDING ratings (reference prior).
-  hfa.csv          Home-field advantage: base 1.5, per-team bumps. Used by spreads.py.
-  config.csv       Home-field default, season label.
-  writeups/        Optional per-team analysis: one <ABBR>.md per team (e.g. SEA.md).
+Editing McCabe's CSV does not edit PGO's fitted coefficients. PGO's current weekly model uses regular-season plus postseason history and advances verified inputs after complete weeks without automatically refitting coefficients. Current non-QB injury and replacement effects are context, not adopted numerical adjustments. The model remains experimental.
 
-build_ratings.py   -> NFL_Power_Ratings_2026.xlsx  (workbook: ratings, QBs, depth, projections)
-generate_site.py   -> output/ratings-preview/YYYY-MM-DD/index.html (private preview)
-spreads.py         -> terminal + spreads.html       (schedule + my line vs. ESPN market line)
-```
+## Setup and checks
 
-## Commands
+Use Python 3.12, matching CI:
 
 ```bash
-cd ~/nfl-power-ratings
-
-# After editing data/ratings.csv, regenerate whichever you want:
-python3 build_ratings.py          # the Excel workbook
-python generate_site.py
-# -> output/ratings-preview/YYYY-MM-DD/index.html (dated private preview)
-
-# Production output is explicit and is run only after preview approval:
-python generate_site.py --output docs/index.html
-
-# Spreads vs. the market (free, unofficial ESPN JSON API — no key/install):
-python3 spreads.py 1              # one week
-python3 spreads.py all            # full 18-week season + summary
-python3 spreads.py all 2026 --html # also write spreads.html
-
-# Open output/ratings-preview/YYYY-MM-DD/index.html in your browser.
+python -m pip install -r requirements-pgo.txt
+python -m unittest discover -s tests
 ```
 
-Generation stops if any row in `data/ratings.csv` has `needs_review=Y`. Clear
-those flags through editorial review; never bypass the gate. The default command
-writes a private preview and does not replace the GitHub Pages artifact.
+The optional Excel export additionally needs `openpyxl`; the PGO web app does not. CI also runs the dedicated corrected-roster and defensive-depth research checks in `.github/workflows/update-board.yml`.
 
-## Independent PGO model comparison (private preview)
+## Preview and publication
 
-### Matchup preview
+`python generate_site.py` writes a dated private McCabe preview under `output/ratings-preview/`. It is not the combined public app. Missing or unreviewed McCabe rows block generation; resolve their `needs_review` flags through editorial review.
+
+The combined render uses the existing PGO/Fantasy panels and verified saved season state:
 
 ```bash
-python pgo_matchup_comparison.py 1 2026 --pgo-ratings research/pgo_v1/ratings_2026_preseason.csv
+python pgo_comparison.py --refresh-mccabe
+python pgo_forecast_lab.py
 ```
 
-This writes a private `output/pgo-matchup-preview/<date>/index.html`; it does
-not publish. The current experimental/HOLD receipt is non-certifying.
+These write `docs/index.html` and `docs/forecast-lab.html`; they do not deploy by themselves. Preview changes in an isolated or ignored staging copy, then let the tested board workflow render and publish from the admitted source. Do not use `generate_site.py --output docs/index.html` for a combined release: that path omits the complete PGO/Fantasy enrichment.
 
-`python pgo_challenger.py --as-of 2026-07-21T12:00:00-04:00` rebuilds the
-locked pgo_v1 receipt. Exit `0` is validated `PASS`, exit `1` is an honest
-statistical `HOLD`, and exit `2` is `BLOCKED`. An integrity-eligible `HOLD`
-writes 32 ratings labeled `EXPERIMENTAL`; `BLOCKED` writes no ratings.
+- `update-board.yml` tests source, admits permitted newer mutable season data, renders and requests deployment.
+- `update-season.yml` captures verified sources, grades finals and advances eligible weekly editions.
+- `publish-edition.yml` saves a named McCabe edition and refreshes the app through the tested-source publication pattern.
 
-`python pgo_comparison.py` compares the eligible PGO snapshot with Sean
-McCabe's reviewed ratings and writes a dated private page under
-`output/pgo-comparison-preview/`. It never changes `docs/index.html` or any
-live service. PGO v0 remains backtest evidence only.
+`python pgo_season.py` verifies and summarizes the saved state without capturing sources. `python pgo_season.py --refresh` is a separate writing operation: it captures actual feeds, archives state and can issue/revise unlocked forecasts. Prefer the canonical season workflow for production captures.
 
-After editorial review and explicit publication approval, the fixed-destination
-release command is:
+Publish required `docs/` assets together, respecting `_config.yml` archive exclusions. Verify CI, the actual Pages build, public bytes and the Shopify embed. A source push alone is not a deployment receipt.
 
-```bash
-python pgo_comparison.py --publish
-```
+## Meaning of the numbers
 
-It writes only `docs/index.html`. PGO v1 remains labeled
-`Experimental model — HOLD`; the command does not modify Shopify or any rating
-input.
+McCabe's rating is the sum of his QB, non-QB offense and defense components. His prior-year column is a reference, not an automatic blend. The human board's Methodology tab describes these judgments.
 
-## Team write-ups (click-to-expand on the site)
+For the current PGO model, subtracting the opponent's rating gives the neutral-site, equal-rest margin. Venue and rest adjustments produce the game margin. Expected team scores split the scoring-total estimate using that margin; their sum and difference reconcile. These averages are not exact-score promises.
 
-Every team row in the generated ratings artifact expands (click it) to show a QB/Off/Def bar
-breakdown plus your analysis. The analysis comes from `data/writeups/<ABBR>.md`
-— plain markdown (`##` headings, `**bold**`, `- bullets`, paragraphs). If a team
-has no write-up file yet, the row falls back to the one-line `notes` from
-`ratings.csv` and shows a hint with the filename to create.
+Straight-up records grade who won. Sportsbook ATS records grade the saved handicap and keep pushes, missing quotes and no-edge choices separate. PGO's own line has an exceeded/matched/below check; that is not a sportsbook record or a measure of closeness. Expected pool points equal fixed confidence points times the selected team's win probability and are not NFL scoreboard points.
 
-```bash
-# Team abbreviations match the chips (BUF, SEA, KC, LAR, ...). To add one:
-$EDITOR data/writeups/BUF.md      # write markdown
-python3 generate_site.py          # rebuild the dated private preview
-```
+## Archives and experiments
 
-Two examples ship already: `data/writeups/SEA.md` and `KC.md`.
-
-## Publishing to postgameoutlet.com
-
-Shopify owns the public content and commerce shell. The approved ratings artifact
-remains independently hosted and is embedded in the native Power Ratings page.
-See `SHOPIFY.md` for the preview-first embed and release workflow.
-
-## Rating conventions (how the numbers were calibrated)
-
-- **QB**: the dominant lever. 0.0 ≈ ~QB16-18 (a middling starter). Elite +5 to +6.5,
-  worst starter floor ~ -2.5. Backups: 2nd string -2.5 to -4.5, 3rd string -4.5 to -6.0.
-  QB value is *expected 2026 value*, so injury uncertainty is priced in (e.g. Mahomes
-  carries an injury haircut despite being the most talented).
-- **Offense / Defense** (non-QB units): centered at average — ~16 teams above 0.0 on
-  each, almost all within +/-1.0. Driven by the 2026 FA/draft roster movement; the
-  `notes` column in ratings.csv records the key adds/losses behind each number.
-- **Spread model** (spreads.py): `my_margin(home) = rating_home - rating_away + HFA`,
-  where `HFA = per-team base (default 1.5) + 0.5 for a primetime home game`.
-  `my_spread = -my_margin` (negative = home favored). `edge = market - my_spread`;
-  |edge| >= 1.5 is flagged.
-
-## The prior / blend (history)
-
-The 2026 preseason numbers were sanity-checked against `prior_2025.csv` (last
-season's ending ratings) — injury-deflated finishers (KC/CIN/BAL, whose QBs were
-hurt) were trusted toward the roster build, hot finishers (SEA) toward the prior.
-The displayed Rating is now the straight component sum, NOT a blend; the prior is
-kept only as a reference column on the website.
-
-## PGO team model (shadow only)
-
-`python pgo_model.py` runs a pinned, chronological backtest of Postgame's
-independent team-results model and writes its receipt under `research/pgo/`.
-It does not read Sean McCabe's QB/offense/defense inputs or any market line.
-A `PASS` makes the shadow ratings eligible for human review only; it does not
-publish them or add them to the ratings site.
-
-## PGO forward-looking challenger (shadow only)
-
-Install its single dependency with `python -m pip install -r requirements-pgo.txt`.
-`python pgo_challenger.py --freeze-sources --as-of <ISO-8601>` explicitly
-freezes a research snapshot; later `python pgo_challenger.py --as-of <same value>`
-runs offline from the lock. Outputs stay in `research/pgo_v1/`.
-
-`PASS` permits private prospective shadow tracking only. `HOLD` writes diagnostics
-and no ratings. Neither result publishes or changes McCabe ratings, Shopify, or
-GitHub Pages.
-
-## Notes & caveats
-
-- ESPN endpoint is undocumented/unofficial; spreads only populate close to game week.
-  Early-summer lines are placeholders — don't over-read specific edges yet.
-- If one or two teams dominate the season-long edge list, that usually means YOUR
-  rating on those teams is the outlier, not the market. (As of last build: GB and
-  NYJ recurred — worth a sanity check when real lines firm up.)
-- Coaching / Scheme / Edge columns exist in ratings.csv but are still 0.0 — the
-  natural next layer.
+Saved forecasts, lines, source clocks and grades remain auditable. Late entries cannot become pregame probability evidence. Earlier PGO v0/v1 and corrected editions are historical evidence; their scripts are not the current operating procedure. Do not rerun or overwrite frozen research attempts during routine publishing. The penalty and alternative-weight studies failed their improvement screens; updating totals remains a separate candidate. Historical results and software tests do not promote a model.

@@ -40,6 +40,8 @@ Operational checks do not prove the model predicts accurately. PGO remains EXPER
 
 ### Board publication and queued season updates
 
+The named-edition workflow follows the same tested-source admission and short writer lock as the board workflow. It validates the admitted source before snapshotting the McCabe edition, pushes without rebasing, and explicitly requests the canonical Pages build. A concurrent untested source change requires a new run.
+
 The board workflow tests its exact triggering commit without holding the shared `board-update` publishing lock. After those tests pass, its publisher takes the same lock used by the season updater and checks out the latest `main`. The tested commit's `pgo_publication_guard.py` requires that commit to be an ancestor. It permits additions to the existing season archive folders and updates to `current.json`, `docs/index.html` and `docs/forecast-lab.html`. Existing archives cannot be rewritten or deleted; the season model seed is excluded. Source, workflow, dependency, styling and frozen-evidence changes require their own passing run.
 
 The publisher renders from that checked-out state and pushes without rebasing an older render. A conflicting push fails instead of overwriting newer work. Canonical pushes explicitly request a Pages build; the testing mirror keeps its artifact upload and deployment flow. This removes the long full test suite from the season updater's lock, but GitHub scheduling and the shorter publishing jobs can still delay checks.
@@ -55,6 +57,8 @@ Recent successful season jobs took [195 seconds](https://github.com/walshja9/Pos
 Run `python -m unittest tests.test_pgo_publication_guard tests.test_pgo_workflow_status tests.test_public_board_workflow` to check allowed mutable updates, rejected source/frozen-file drift, rename handling, tested ancestry, health reporting and workflow ordering.
 
 ### Accuracy and continuing model comparisons
+
+The separate [weights/probability prospective decision protocol](pgo-weights-prospective-decision-protocol-20260911.md) defines the formal future cohort, evidence floor and review rules. It was written after Week 1 issuance began; existing comparisons remain descriptive. Its activation requires an actual publication receipt and does not alter the frozen historical charter or any issued forecast.
 
 The accuracy view derives its measures from saved forecasts and verified finals. Each metric states its own eligible count. Historical models are compared only on identical eligible games, and absent original probabilities or totals are not reconstructed. After-lock confidence entries remain visible in pool accounting but do not enter pregame probability scores. Expected pool points and NFL scoreboard points use different units.
 
