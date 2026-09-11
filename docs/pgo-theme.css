@@ -77,14 +77,22 @@ td[data-v],.brk-v { font-variant-numeric:tabular-nums; }
 .pgo-scale-label { display:flex; justify-content:space-between; gap:8px; min-width:150px; }
 .pgo-column-toggle { display:none; align-items:center; gap:8px; margin:10px 0; color:var(--mut); }
 .rating-explanation > summary { font-variant-numeric:tabular-nums; font-weight:800; }
-.season-nav { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0; }
-.season-nav a { display:inline-flex; align-items:center; min-height:44px; padding:0 14px; border:1px solid var(--border2); border-radius:6px; color:var(--ink); text-decoration:none; font-weight:700; background:var(--panel2); }
-.season-nav a:hover { border-color:var(--accent); color:var(--highlight); }
+.season-nav { display:flex; align-items:flex-start; flex-wrap:wrap; gap:8px; margin:16px 0; }
+.season-nav a,.season-nav-more > summary { display:inline-flex; align-items:center; min-height:44px; padding:0 14px; border:1px solid var(--border2); border-radius:6px; color:var(--ink); text-decoration:none; font-weight:700; background:var(--panel2); }
+.season-nav a:hover,.season-nav-more > summary:hover { border-color:var(--accent); color:var(--highlight); }
+.season-nav-more > summary { cursor:pointer; gap:8px; color:var(--mut); }
+.season-nav-more > summary::after { content:'+'; }
+.season-nav-more[open] > summary::after { content:'\2212'; }
+.season-nav-more[open] { flex-basis:100%; }
+.season-nav-more > div { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.season-nav-more a { border-color:var(--border); font-weight:500; }
 .season-freshness,.game-day-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); gap:12px; margin:16px 0; }
 .season-freshness > div,.game-day-card { min-width:0; padding:18px; border:1px solid var(--border); border-radius:8px; background:var(--panel2); }
 .season-freshness dt,.game-day-card dt { color:var(--mut); font-size:12px; font-weight:700; }
 .season-freshness dd,.game-day-card dd { margin:5px 0 12px; font-variant-numeric:tabular-nums; }
 .season-freshness dd { margin-bottom:0; font-size:13px; }
+.season-freshness.season-checks { gap:12px 20px; padding:12px 0; border-block:1px solid var(--border); }
+.season-freshness.season-checks > div { padding:0; border:0; border-radius:0; background:transparent; }
 .freshness-status { display:block; color:var(--highlight); margin-top:5px; }
 .freshness-status[data-overdue="true"] { color:var(--notice-ink); font-weight:700; }
 .season-caption { color:var(--mut); font-size:12px; }

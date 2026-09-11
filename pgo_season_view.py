@@ -67,10 +67,8 @@ def _freshness(state):
             ('Forecast availability checked', availability),
             ('Results checked', _check_time(min(score_checks,key=utc) if score_checks else None,checked)),
             ('Automation checked', _check_time(checked,checked))]
-    return ('<dl class="season-freshness">' + ''.join(f'<div><dt>{title}</dt><dd>{value}</dd></div>' for title,value in rows)
-            + '</dl><p class="season-caption">Rankings update after a complete week and verified statistics; '
-            'an expected-quarterback change can also revise unlocked picks. Forecast availability refreshes before prediction lock. Final inactive checks continue separately around kickoff; a check does not mean every player is healthy. '
-            'Overdue means more than 30 minutes for availability or 45 minutes for results and automation.</p>')
+    return ('<dl class="season-freshness season-checks">'
+            + ''.join(f'<div><dt>{title}</dt><dd>{value}</dd></div>' for title,value in rows) + '</dl>')
 
 
 def _absences(game, compact=False):
@@ -132,7 +130,7 @@ def _inactive_watch(state):
             '<p>Later availability updates are reader context. They do not rewrite locked predictions or grades.</p></aside>')
 
 
-def _latest_availability(game, context):
+def _latest_availability(game, context, *, compact=False):
     if not context:
         return ''
     captured = context.get('checked_at')
@@ -141,11 +139,18 @@ def _latest_availability(game, context):
         timing = 'This update was observed after kickoff.'
     elif captured and utc(captured) >= utc(game['lock_at']):
         timing = 'This update was observed after prediction lock.'
+    current = dict(game, availability=context)
+    body = (_absences(current) + '<p>This is separate from the saved forecast availability and expected quarterbacks. '
+            'It does not change the original prediction or its grade.</p>')
+    if compact:
+        missing = any(context.get('teams',{}).get(team,{}).get('final_inactives_status') != 'VERIFIED_LIST'
+                      for team in (game['away'],game['home']))
+        body = (('<p><strong>Final inactive lists are not fully verified.</strong></p>' if missing else '')
+                + _absences(current, True)
+                + f'<details data-view-key="game-day-latest-{_text(game["game_id"])}">'
+                '<summary>All latest absences and sources</summary>' + body + '</details>')
     return ('<div class="forecast-reason-block"><h3>Latest availability update</h3>'
-            f'<p>Observed {_time(captured)}. <strong>{timing}</strong></p>'
-            + _absences(dict(game, availability=context)) +
-            '<p>This is separate from the saved forecast availability and expected quarterbacks. '
-            'It does not change the original prediction or its grade.</p></div>')
+            f'<p>Observed {_time(captured)}. <strong>{timing}</strong></p>' + body + '</div>')
 
 
 def _game_day(state):
@@ -185,7 +190,7 @@ def _game_day(state):
         cards.append(f'<article class="game-day-card"><div><h4>{_text(game["away"])} @ {_text(game["home"])}</h4>'
                      f'<p class="game-day-pick">{pick}</p>{chance}{lines}<p>{status}</p>'
                      f'<dl class="game-day-times"><div><dt>Kickoff</dt><dd>{_time(game["kickoff"],clock_only=True)}</dd></div>'
-                     f'<div><dt>Prediction lock</dt><dd>{_time(game["lock_at"],clock_only=True)}</dd></div></dl></div><div>{_latest_availability(game,context) if context else _absences(game,True)}'
+                     f'<div><dt>Prediction lock</dt><dd>{_time(game["lock_at"],clock_only=True)}</dd></div></dl></div><div>{_latest_availability(game,context,compact=True) if context else _absences(game,True)}'
                      f'<details data-view-key="game-day-availability-{key}"><summary>Saved forecast availability</summary>{_absences(game)}'
                      f'<p>{_check_time((game.get("availability") or {}).get("checked_at"),state["checked_at"],30,game["lock_at"])}</p>'
                      '<p>Non-QB absences are context; their impact is not fitted into this pick.</p></details>'
@@ -754,15 +759,18 @@ def render_season(state, *, accuracy=None):
     archives = ''.join(_week(w,False,comparisons,state.get('availability_context')) for w in sorted(weeks,key=lambda w:w['week'],reverse=True) if w['week'] != current)
     links = [('season-game-day','Game day')]
     if current_weeks: links.append((f'season-week-{current}',f'Week {current} picks'))
-    links.append(('season-records','Model records'))
-    links.append(('season-accuracy','Accuracy'))
     if state.get('rankings'): links.append(('season-rankings','Rankings'))
-    if state.get('ats'): links.append(('season-ats','Spreads & ATS'))
-    if state.get('penalty_shadow'): links.append(('pgo-penalty-test','Penalty test'))
+    links.append(('season-records','Model records'))
+    more = [('season-accuracy','Accuracy')]
+    if state.get('ats'): more.append(('season-ats','Spreads & ATS'))
+    if state.get('penalty_shadow'): more.append(('pgo-penalty-test','Penalty test'))
     if any(state.get(k) for k in ('totals_shadow','weights_shadow','replacement_depth')):
-        links.append(('season-model-tests','Model tests'))
+        more.append(('season-model-tests','Model tests'))
     navigation = '<nav class="season-nav" aria-label="PGO sections">' + ''.join(
-        f'<a href="#{target}" data-view-key="nav-{target}">{label}</a>' for target,label in links) + '</nav>'
+        f'<a href="#{target}" data-view-key="nav-{target}">{label}</a>' for target,label in links)
+    navigation += ('<details class="season-nav-more" data-view-key="nav-more"><summary>More</summary><div>'
+                   + ''.join(f'<a href="#{target}" data-view-key="nav-{target}">{label}</a>' for target,label in more)
+                   + '</div></details></nav>')
     return (f'<div class="pgo-model-updates" id="pgo-season" data-season-checked-at="{_text(state["checked_at"])}"><h2>PGO Power Rankings &mdash; Experimental</h2>'
             f'<p><strong>{season} &middot; Week {current} &middot; EXPERIMENTAL / HOLD.</strong> '
             'Accuracy is still being tested. The record below tracks saved forecasts.</p>'
@@ -778,13 +786,18 @@ def render_season(state, *, accuracy=None):
             'Fixed confidence points weight the picks within one weekly pool. Points times win probability gives expected '
             'pool points, not NFL scoreboard points. None of these numbers guarantees a result.</p>'
             '<p>Rounded score estimates can look equal even when one team has a small edge. '
-            'About 25 points each is not a prediction of a tied game. Open Model averages for decimal estimates.</p></details>'
-            f'<p>Automation status: {state["status"]}. Last automation check: {_time(state["checked_at"])}. {_text(state.get("freshness", ""))}</p>{block}'
+            'About 25 points each is not a prediction of a tied game. Open Model averages for decimal estimates.</p>'
+            f'<p>{_text(state.get("freshness", ""))}</p>'
+            '<p>Rankings update after a complete week and verified statistics; '
+            'an expected-quarterback change can also revise unlocked picks. Forecast availability refreshes before prediction lock. Final inactive checks continue separately around kickoff; a check does not mean every player is healthy. '
+            'Overdue means more than 30 minutes for availability or 45 minutes for results and automation.</p>'
             '<p><strong>The main W/L/T records grade straight-up winners. Spread comparisons have separate records below.</strong> '
             'Any victory by the selected team earns a W, regardless of the winning margin. '
             'Lead error separately measures how close the predicted margin was. The predicted lead is a model estimate, not a sportsbook line. '
             'Grades use saved picks and verified final scores. Missing results remain pending. '
-            'Injury news is shown as context; current non-QB injuries and backup quality are not separately rated.</p>'
+            'Injury news is shown as context; current non-QB injuries and backup quality are not separately rated.</p></details>'
+            f'<p class="season-caption">Automation: {_text(state["status"])}. '
+            'Non-QB injuries and backup quality are context, not fitted adjustments.</p>' + block
             + _freshness(state) + _inactive_watch(state) + _game_day(state) + _rankings(state.get('rankings')) +
             '<h3 id="season-records">Model records</h3><div class="table-shell" data-view-key="model-records-table"><table><thead><tr><th>Saved model series</th>'
             '<th>W</th><th>L</th><th>T</th><th>No pick</th><th>Pending</th></tr></thead>'

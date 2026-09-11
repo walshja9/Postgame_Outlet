@@ -809,7 +809,7 @@ location.hash = '#missing'; events.hashchange();
             html,
         )
         self.assertIn(
-            '</style><link rel="stylesheet" href="pgo-theme.css?v=20260910-readable">', html
+            '</style><link rel="stylesheet" href="pgo-theme.css?v=20260911-cleanup">', html
         )
 
         escaped = pgo_forecast_lab.render_lab(

@@ -1520,7 +1520,7 @@ def render_lab(lock, results, provenance, *, snapshot=None, sensitivity=None, st
 .forecast-week tbody th{{text-transform:none;letter-spacing:normal}}
 .corrected-team thead th{{font-size:11px;letter-spacing:normal;text-transform:none}}
 .corrected-team td{{white-space:nowrap;overflow-wrap:normal;font-size:12px}}
-</style><link rel="stylesheet" href="pgo-theme.css?v=20260910-readable"></head><body><main class="lab-wrap">
+</style><link rel="stylesheet" href="pgo-theme.css?v=20260911-cleanup"></head><body><main class="lab-wrap">
 {lead}{archive_open}{archive_heading}
 <section><h2>Record so far</h2>{_metric_cards(metrics)}
 <p>The theoretical 50% winner benchmark is a reference only.</p></section>

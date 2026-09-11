@@ -39,6 +39,45 @@ def state():
 
 
 class SeasonViewTests(unittest.TestCase):
+    def test_compact_navigation_and_disclosures_preserve_visible_warnings_and_all_evidence(self):
+        data=state();data.update(status='BLOCKED',blocked_reason='Source conflict needs review')
+        data['penalty_shadow']={'games':[], 'metrics':{}, 'excluded':[]}
+        game=data['weeks'][1]['games'][0];game.update(blocked_reason='Expected QB unavailable',pick=None)
+        context=dict(checked_at='2026-09-16T22:20:00Z',teams={
+            'NE':dict(final_inactives_status='UNKNOWN',observations=[
+                dict(name=f'Absent {i}',position='LB',status='INACTIVE',source_url='https://example.com/inactives')
+                for i in range(5)]), 'SEA':dict(final_inactives_status='VERIFIED_LIST',observations=[])})
+        data['availability_context']={'current':context};before=copy.deepcopy(data)
+        page=view.render_season(data)
+        nav=page.split('<nav class="season-nav" aria-label="PGO sections">')[1].split('</nav>')[0]
+        self.assertIn('<details class="season-nav-more" data-view-key="nav-more">',nav)
+        primary,more=nav.split('<details',1)
+        self.assertEqual(primary.count('<a '),4)
+        for target in ('season-game-day','season-week-2','season-rankings','season-records'):
+            self.assertIn(f'href="#{target}"',primary)
+        for target in ('season-accuracy','pgo-penalty-test'):
+            self.assertIn(f'href="#{target}"',more)
+        self.assertIn('<summary>More</summary>',more)
+        intro=page.split('<h3 id="season-game-day">')[0]
+        guide=intro.split('data-view-key="numbers-guide"')[1].split('</details>')[0]
+        self.assertIn('Any victory by the selected team earns a W',guide)
+        self.assertIn('Sources checked; no new final results',guide)
+        self.assertNotIn('Any victory by the selected team earns a W',intro.replace(guide,''))
+        self.assertIn('class="season-freshness season-checks"',intro)
+        self.assertIn('Source conflict needs review',intro.replace(guide,''))
+        self.assertIn('Non-QB injuries and backup quality are context',intro.replace(guide,''))
+        card=page.split('data-view-key="game-day-latest-current"')[0].rsplit('<article class="game-day-card">',1)[1]
+        self.assertIn('Pick withheld',card)
+        self.assertIn('This update was observed after prediction lock',card)
+        self.assertIn('2026-09-16T22:20:00Z',card)
+        self.assertIn('Final inactive lists are not fully verified',card)
+        self.assertIn('2 more in availability details',card)
+        full=page.split('data-view-key="game-day-latest-current"')[1].split('</details>')[0]
+        for i in range(5):self.assertIn(f'Absent {i}',full)
+        self.assertIn('https://example.com/inactives',full)
+        self.assertIn('It does not change the original prediction or its grade',full)
+        self.assertEqual(data,before)
+
     def test_week_cells_keep_accessible_headers_and_card_labels(self):
         class Table(HTMLParser):
             def __init__(self, text):
