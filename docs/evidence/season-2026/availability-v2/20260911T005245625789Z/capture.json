@@ -1,0 +1,113 @@
+{
+  "checked_at": "2026-09-11T00:52:47.047923+00:00",
+  "sources": [
+    {
+      "bytes": 366634,
+      "captured_at": "2026-09-11T00:52:45.770535+00:00",
+      "file": "raw/000.html.gz",
+      "final_url": "https://www.nfl.com/injuries/",
+      "kind": "official_report",
+      "sha256": "783692d2d9f8bc50a29b831dd1ca2a8226b4561ef41a6b3a043431bc94032c0a",
+      "started_at": "2026-09-11T00:52:45.634275+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/injuries/"
+    },
+    {
+      "bytes": 370663,
+      "captured_at": "2026-09-11T00:52:45.952451+00:00",
+      "file": "raw/001.html.gz",
+      "final_url": "https://www.therams.com/news/",
+      "kind": "team_news",
+      "sha256": "ff045a810d1dad225404f59654b03e560916d090ab5906bc4182482d36a7ab21",
+      "started_at": "2026-09-11T00:52:45.634635+00:00",
+      "status": 200,
+      "team": "LAR",
+      "url": "https://www.therams.com/news/"
+    },
+    {
+      "bytes": 535945,
+      "captured_at": "2026-09-11T00:52:46.081014+00:00",
+      "file": "raw/002.html.gz",
+      "final_url": "https://www.49ers.com/news/",
+      "kind": "team_news",
+      "sha256": "25d718b8246a8bc094a44facb1d750064978005cf7a406672dfb66e17523bffa",
+      "started_at": "2026-09-11T00:52:45.635101+00:00",
+      "status": 200,
+      "team": "SF",
+      "url": "https://www.49ers.com/news/"
+    },
+    {
+      "bytes": 1618363,
+      "captured_at": "2026-09-11T00:52:46.280483+00:00",
+      "file": "raw/003.html.gz",
+      "final_url": "https://www.nfl.com/news",
+      "kind": "league_news",
+      "sha256": "274b7febee72d5f0b214024e8154f05533bb5a3f2149c06b8dbb1fbbd5df6ab6",
+      "started_at": "2026-09-11T00:52:45.635442+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/news/"
+    },
+    {
+      "bytes": 455579,
+      "captured_at": "2026-09-11T00:52:46.604349+00:00",
+      "file": "raw/004.html.gz",
+      "final_url": "https://www.49ers.com/news/tatum-bethune-jordan-watkins-out-vs-rams-inactives-for-week-1-sfvslar",
+      "kind": "official_inactives",
+      "sha256": "b58ff260a8b6f51021a0d481fdc59ff0458c9b81c7298e3aaf24e720de66df23",
+      "started_at": "2026-09-11T00:52:46.364854+00:00",
+      "status": 200,
+      "team": "SF",
+      "url": "https://www.49ers.com/news/tatum-bethune-jordan-watkins-out-vs-rams-inactives-for-week-1-sfvslar"
+    },
+    {
+      "bytes": 458785,
+      "captured_at": "2026-09-11T00:52:46.864108+00:00",
+      "file": "raw/005.html.gz",
+      "final_url": "https://www.49ers.com/news/ricky-pearsall-active-ji-ayir-brown-out-vs-seahawks-inactives-for-divisional-sfvssea",
+      "kind": "official_inactives",
+      "sha256": "16e48e6c1ad2ef976937898f0ddb6f05551311c8b047fc89d46e1d82cb570396",
+      "started_at": "2026-09-11T00:52:46.365217+00:00",
+      "status": 200,
+      "team": "SF",
+      "url": "https://www.49ers.com/news/ricky-pearsall-active-ji-ayir-brown-out-vs-seahawks-inactives-for-divisional-sfvssea"
+    },
+    {
+      "bytes": 457434,
+      "captured_at": "2026-09-11T00:52:46.881887+00:00",
+      "file": "raw/006.html.gz",
+      "final_url": "https://www.49ers.com/news/ricky-pearsall-out-trent-williams-active-vs-eagles-inactives-for-wild-card-sfvsphi",
+      "kind": "official_inactives",
+      "sha256": "c0c23ddc91f578a37b6c158fa8ce8a6029ddd6d88c3b96a82c7d822bba95905a",
+      "started_at": "2026-09-11T00:52:46.365525+00:00",
+      "status": 200,
+      "team": "SF",
+      "url": "https://www.49ers.com/news/ricky-pearsall-out-trent-williams-active-vs-eagles-inactives-for-wild-card-sfvsphi"
+    },
+    {
+      "bytes": 457627,
+      "captured_at": "2026-09-11T00:52:46.720578+00:00",
+      "file": "raw/007.html.gz",
+      "final_url": "https://www.49ers.com/news/trent-williams-ricky-pearsall-out-george-kittle-active-vs-seahawks-inactives-for-week-18-seavssf",
+      "kind": "official_inactives",
+      "sha256": "a91eaf538d3f8b592eb9b631bfb1e5e748387589e913f81840db899fc621784c",
+      "started_at": "2026-09-11T00:52:46.365789+00:00",
+      "status": 200,
+      "team": "SF",
+      "url": "https://www.49ers.com/news/trent-williams-ricky-pearsall-out-george-kittle-active-vs-seahawks-inactives-for-week-18-seavssf"
+    },
+    {
+      "bytes": 719217,
+      "captured_at": "2026-09-11T00:52:46.908937+00:00",
+      "file": "raw/008.html.gz",
+      "final_url": "https://www.nfl.com/news/australia-game-inactives-san-francisco-49ers-at-los-angeles-rams",
+      "kind": "official_inactives",
+      "sha256": "44b6c61ad439e5f3207a67bdf4d04410df632e435449e42029b5d37a894b6beb",
+      "started_at": "2026-09-11T00:52:46.604414+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/news/australia-game-inactives-san-francisco-49ers-at-los-angeles-rams"
+    }
+  ]
+}
