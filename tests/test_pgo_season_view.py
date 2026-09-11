@@ -1,6 +1,7 @@
 import copy
 from html.parser import HTMLParser
 import unittest
+from unittest.mock import patch
 
 import generate_site
 import pgo_season_view as view
@@ -38,6 +39,54 @@ def state():
 
 
 class SeasonViewTests(unittest.TestCase):
+    def test_final_inactive_watch_and_late_context_do_not_rewrite_saved_forecast(self):
+        data = state()
+        game = data['weeks'][1]['games'][0]
+        original = copy.deepcopy(game)
+        base_row = view._game(game,data['weeks'][1]).split('id="season-game-current"')[1].split('</tr>')[0]
+        context = dict(checked_at='2026-09-16T22:20:00Z', summary='Latest <official> list',
+                       teams={'NE': {'final_inactives_status':'VERIFIED_LIST', 'observations':[
+                           dict(name='New <inactive>', position='LB', status='INACTIVE',
+                                source_url='https://example.com/inactives')]},
+                              'SEA': {'final_inactives_status':'UNKNOWN', 'observations':[]}})
+        data['availability_context'] = {'current':context}
+        watch = dict(status='ATTENTION', checked_at=data['checked_at'], games=[
+            dict(game_id='current', home='SEA', away='NE', kickoff=game['kickoff'], lock_at=game['lock_at'],
+                 checked_at=context['checked_at'], missing_teams=['SEA'], status='MISSING', after_lock=True)])
+        before = copy.deepcopy(data)
+        with patch('pgo_season.availability_watch', return_value=watch, create=True):
+            page = view.render_season(data)
+        self.assertEqual(data, before)
+        self.assertEqual(game, original)
+        self.assertEqual(page.split('id="season-game-current"')[1].split('</tr>')[0], base_row)
+        self.assertIn('id="season-inactive-watch"', page)
+        banner = page.split('id="season-inactive-watch"')[1].split('</aside>')[0]
+        self.assertIn('Final inactive lists missing: SEA', banner)
+        self.assertNotIn('<details', banner)
+        self.assertIn('data-freshness-minutes="10"', banner)
+        self.assertIn('data-freshness-until="2026-09-16T23:00:00Z"', banner)
+        self.assertIn('data-freshness-ended-label="Kickoff reached; final list status shown above"', banner)
+        card = next(part.split('</article>')[0] for part in page.split('class="game-day-card"')[1:]
+                    if 'data-view-key="game-day-availability-current"' in part.split('</article>')[0])
+        self.assertIn('Latest availability update', card)
+        self.assertIn('This update was observed after prediction lock', card)
+        self.assertIn('Saved forecast availability', card)
+        self.assertNotIn('Latest &lt;official&gt; list', card)
+        self.assertNotIn('VERIFIED_LIST', card)
+        self.assertIn('New &lt;inactive&gt;', card)
+        self.assertIn('https://example.com/inactives', card)
+        self.assertNotIn('This update was observed after kickoff', card)
+        context['teams']['NE']['observations'].append(dict(name='Earlier uncertain player', position='LB',
+                                                         status='QUESTIONABLE', gsis_id='00-0000002'))
+        with patch('pgo_season.availability_watch', return_value=watch, create=True):
+            current = view.render_season(data)
+        self.assertIn('Earlier report: Questionable; not on final inactive list', current)
+        context['checked_at'] = '2026-09-16T23:10:00Z'
+        data['checked_at'] = '2026-09-16T23:15:00Z'
+        with patch('pgo_season.availability_watch', return_value=watch, create=True):
+            page = view.render_season(data)
+        self.assertIn('This update was observed after kickoff', page)
+
     def test_inline_grades_keep_winner_and_saved_spread_outcomes_separate(self):
         from tests.test_pgo_ats_view import fixture
         data=state(); game=data['weeks'][0]['games'][0]

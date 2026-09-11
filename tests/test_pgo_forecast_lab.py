@@ -41,7 +41,8 @@ const events = {};
 const freshness = [
   {dataset:{freshnessAt:new Date(Date.now()-46*60000).toISOString(),freshnessMinutes:'45'},textContent:''},
   {dataset:{freshnessAt:new Date().toISOString(),freshnessMinutes:'30'},textContent:''},
-  {dataset:{freshnessAt:'2020-01-01T00:00:00Z',freshnessMinutes:'30',freshnessUntil:'2020-01-02T00:00:00Z'},textContent:''}
+  {dataset:{freshnessAt:'2020-01-01T00:00:00Z',freshnessMinutes:'30',freshnessUntil:'2020-01-02T00:00:00Z'},textContent:''},
+  {dataset:{freshnessAt:'2020-01-01T00:00:00Z',freshnessMinutes:'10',freshnessUntil:'2020-01-02T00:00:00Z',freshnessEndedLabel:'Kickoff reached; final list status shown above'},textContent:''}
 ];
 const panel = {hidden:true, getAttribute(name) {return name === 'aria-labelledby' ? 'tab-comparison' : null;}};
 const detail = {tagName:'DETAILS', open:false, parentElement:null};
@@ -70,6 +71,7 @@ assert.equal(freshness[0].textContent,'Update overdue');
 assert.equal(freshness[0].dataset.overdue,'true');
 assert.equal(freshness[1].textContent,'Recently checked');
 assert.equal(freshness[2].textContent,'Updates closed at lock');
+assert.equal(freshness[3].textContent,'Kickoff reached; final list status shown above');
 // The script runs inside the PGO panel, before the page binds tab handlers.
 handlerReady = true;
 if (events.DOMContentLoaded) events.DOMContentLoaded();

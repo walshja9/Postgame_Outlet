@@ -25,6 +25,8 @@ def report_health(state, summary_path=None):
         report[prefix + '_status'] = component.get('status', 'UNKNOWN')
         report[prefix + '_blocked_reason'] = component.get('blocked_reason')
     report['replacement_depth_historical_admission'] = (state.get('replacement_depth') or {}).get('historical_admission')
+    from pgo_season import availability_watch
+    report['availability_watch'] = availability_watch(state)
     rendered = json.dumps(report, indent=2)
     print(rendered)
     if summary_path:
@@ -37,6 +39,14 @@ def report_health(state, summary_path=None):
         if report[prefix + '_status'] != healthy:
             warnings.append('PGO ' + prefix.replace('_', ' ') + ' monitor: '
                             + (report[prefix + '_blocked_reason'] or 'Saved status is unavailable'))
+    watch = report['availability_watch']
+    if watch.get('blocked_reason'):
+        warnings.append('PGO final inactive watch: ' + watch['blocked_reason'])
+    for game in watch['games']:
+        if game['status'] in ('MISSING', 'STALE'):
+            warnings.append(f'PGO final inactives {game["status"]}: {game["away"]} @ {game["home"]}; '
+                            + 'missing teams: ' + (', '.join(game['missing_teams']) or 'none; check overdue')
+                            + '; last observation: ' + (game.get('checked_at') or 'unavailable'))
     for warning in warnings:
         escaped = warning.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
         print('::warning::' + escaped)

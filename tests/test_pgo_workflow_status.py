@@ -3,6 +3,7 @@ import io
 import json
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from pgo_workflow_status import report_health
@@ -26,6 +27,25 @@ class WorkflowStatusTests(unittest.TestCase):
             saved = summary.read_text(encoding='utf-8')
         self.assertIn(json.dumps(payload, indent=2), saved)
         return payload, output.getvalue()
+
+    def test_final_inactive_watch_warns_without_blocking_main_health(self):
+        games = [dict(game_id=str(i), home='SEA', away='NE', missing_teams=['SEA'], status=status,
+                      checked_at='2026-09-10T16:20:00Z', after_lock=False)
+                 for i,status in enumerate(('MISSING','STALE','AWAITING','VERIFIED'))]
+        watch = dict(status='ATTENTION', checked_at='2026-09-10T16:22:00Z', games=games)
+        with patch('pgo_season.availability_watch', return_value=watch, create=True):
+            payload, output = self.report()
+        self.assertEqual(payload['condition'], 'READY')
+        self.assertEqual(payload.get('availability_watch'), watch)
+        self.assertEqual(output.count('::warning::'), 2)
+        self.assertIn('final inactives MISSING: NE @ SEA', output)
+        self.assertIn('final inactives STALE: NE @ SEA', output)
+        self.assertIn('SEA', output)
+        watch['blocked_reason'] = 'Official source unavailable\n::error::not a new command'
+        with patch('pgo_season.availability_watch', return_value=watch, create=True):
+            _, output = self.report()
+        self.assertIn('::warning::PGO final inactive watch: Official source unavailable%0A', output)
+        self.assertNotIn('\n::error::', output)
 
     def test_ready_state_records_the_actual_check_without_warning(self):
         payload, output = self.report()

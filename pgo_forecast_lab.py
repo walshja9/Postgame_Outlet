@@ -43,7 +43,7 @@ function updateWeeklyLocks() {
     const locked = now >= Date.parse(node.dataset.freshnessUntil);
     const valid = Number.isFinite(checked) && minutes > 0;
     const overdue = valid && !locked && now - checked > minutes * 60000;
-    node.textContent = !valid ? 'Check time unavailable' : checked > now ? 'Check time ahead of this clock' : locked ? 'Updates closed at lock' : overdue ? 'Update overdue' : 'Recently checked';
+    node.textContent = !valid ? 'Check time unavailable' : checked > now ? 'Check time ahead of this clock' : locked ? (node.dataset.freshnessEndedLabel || 'Updates closed at lock') : overdue ? 'Update overdue' : 'Recently checked';
     node.dataset.overdue = String(overdue);
   });
   if (document.querySelector('[data-weekly-cutoff],[data-freshness-at]')) weeklyLockTimer = setTimeout(updateWeeklyLocks, Math.max(1, next - now));

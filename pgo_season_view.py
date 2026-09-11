@@ -38,13 +38,14 @@ def _time(value, *, clock_only=False):
     return board._time(value)
 
 
-def _check_time(value, reference, minutes=45, until=None):
+def _check_time(value, reference, minutes=45, until=None, *, ended_label=None):
     if not value:
         return 'No verified check saved'
     expired = until and utc(reference) >= utc(until)
-    status = ('Check time ahead of this clock' if utc(value)>utc(reference) else 'Updates closed at lock' if expired else
+    status = ('Check time ahead of this clock' if utc(value)>utc(reference) else (ended_label or 'Updates closed at lock') if expired else
               'Update overdue' if (utc(reference)-utc(value)).total_seconds() > minutes*60 else 'Recently checked')
     end = f' data-freshness-until="{_text(until)}"' if until else ''
+    if ended_label: end += f' data-freshness-ended-label="{_text(ended_label)}"'
     return (_time(value) + f'<span class="freshness-status" data-freshness-at="{_text(value)}" '
             f'data-freshness-minutes="{minutes}" data-overdue="{str(status == "Update overdue").lower()}"{end}>{status}</span>')
 
@@ -61,12 +62,12 @@ def _freshness(state):
                     _check_time(min(available,key=utc),checked,30,max((g['lock_at'] for g in upcoming),key=utc))
                     if all(available) else 'Some games in the check window have no verified check saved')
     rows = [('Rankings calculated', _time(rankings.get('generated_at'))),
-            ('Game-day availability checked', availability),
+            ('Forecast availability checked', availability),
             ('Results checked', _check_time(min(score_checks,key=utc) if score_checks else None,checked)),
             ('Automation checked', _check_time(checked,checked))]
     return ('<dl class="season-freshness">' + ''.join(f'<div><dt>{title}</dt><dd>{value}</dd></div>' for title,value in rows)
             + '</dl><p class="season-caption">Rankings update after a complete week and verified statistics; '
-            'an expected-quarterback change can also revise unlocked picks. Availability refreshes during the 24 hours before kickoff until lock; a check does not mean every player is healthy. '
+            'an expected-quarterback change can also revise unlocked picks. Forecast availability refreshes before prediction lock. Final inactive checks continue separately around kickoff; a check does not mean every player is healthy. '
             'Overdue means more than 30 minutes for availability or 45 minutes for results and automation.</p>')
 
 
@@ -77,10 +78,17 @@ def _absences(game, compact=False):
     labels = {'OUT':'Out', 'INACTIVE':'Inactive', 'EMERGENCY_QB':'Emergency third QB',
               'DOUBTFUL':'Doubtful', 'QUESTIONABLE':'Questionable'}
     for team in (game['away'],game['home']):
-        for item in teams.get(team,{}).get('observations',[]):
+        observations = teams.get(team,{}).get('observations',[])
+        final_ids = {item.get('gsis_id') or item.get('name') for item in observations
+                     if item.get('status') in ('INACTIVE','EMERGENCY_QB')}
+        for item in observations:
             status = labels.get(item.get('status'))
             key = (team,item.get('gsis_id') or item.get('name'),status)
             if not status or key in seen: continue
+            if (item.get('status') in ('QUESTIONABLE','DOUBTFUL')
+                    and teams[team].get('final_inactives_status') == 'VERIFIED_LIST'
+                    and (item.get('gsis_id') or item.get('name')) not in final_ids):
+                status = 'Earlier report: ' + status + '; not on final inactive list'
             seen.add(key)
             identity = ' (identity unconfirmed)' if item.get('identity_status') not in (None,'RESOLVED') else ''
             rows.append(f'<li>{_text(team)} &middot; {_text(item["name"])} ({_text(item.get("position","Unknown role"))}): {status}{identity}</li>')
@@ -95,6 +103,49 @@ def _absences(game, compact=False):
     return notes
 
 
+def _inactive_watch(state):
+    from pgo_season import availability_watch
+    watch = availability_watch(state)
+    if not watch['games'] and not watch.get('blocked_reason'):
+        return ''
+    rows = []
+    for game in watch['games']:
+        missing = ', '.join(game['missing_teams'])
+        if game['status'] == 'MISSING':
+            note = 'Final inactive lists missing: ' + missing
+        elif game['status'] == 'STALE':
+            note = 'Final inactive check was overdue' + ('; lists missing: ' + missing if missing else '')
+        elif game['status'] == 'AWAITING':
+            note = 'Awaiting final inactive lists: ' + missing
+        else:
+            note = 'Final inactive lists verified for both teams'
+        rows.append(f'<li><strong>{_text(game["away"])} @ {_text(game["home"])}: {_text(note)}.</strong> '
+                    f'Last observation: {_check_time(game.get("checked_at"),watch["checked_at"],10,game["kickoff"],ended_label="Kickoff reached; final list status shown above")}.'
+                    + (' Prediction is already locked.' if game['after_lock'] else '') + '</li>')
+    blocked = (f'<p><strong>Availability update needs review:</strong> {_text(watch["blocked_reason"])}</p>'
+               if watch.get('blocked_reason') else '')
+    return ('<aside class="notice" id="season-inactive-watch"><h3>Final inactive watch</h3>'
+            f'<p>Watch assessed {_time(watch["checked_at"])}.</p>'
+            + blocked + '<ul>' + ''.join(rows) + '</ul>'
+            '<p>Later availability updates are reader context. They do not rewrite locked predictions or grades.</p></aside>')
+
+
+def _latest_availability(game, context):
+    if not context:
+        return ''
+    captured = context.get('checked_at')
+    timing = ''
+    if captured and utc(captured) >= utc(game['kickoff']):
+        timing = 'This update was observed after kickoff.'
+    elif captured and utc(captured) >= utc(game['lock_at']):
+        timing = 'This update was observed after prediction lock.'
+    return ('<div class="forecast-reason-block"><h3>Latest availability update</h3>'
+            f'<p>Observed {_time(captured)}. <strong>{timing}</strong></p>'
+            + _absences(dict(game, availability=context)) +
+            '<p>This is separate from the saved forecast availability and expected quarterbacks. '
+            'It does not change the original prediction or its grade.</p></div>')
+
+
 def _game_day(state):
     eastern = ZoneInfo('America/New_York')
     day = utc(state['checked_at']).astimezone(eastern).date()
@@ -103,6 +154,7 @@ def _game_day(state):
     cards = []
     ats_games = {g['game_id']:g for g in (state.get('ats') or {}).get('games',[])}
     for game in today:
+        context = (state.get('availability_context') or {}).get(game['game_id'])
         key = _text(game['game_id']); confidence = game.get('confidence') or {}
         pick = ('Pick withheld' if game.get('blocked_reason') or game['forecast_status']=='BLOCKED' else
                 f'PGO winner pick: {_text(game["pick"])}' if game.get('pick') else 'No model edge')
@@ -131,8 +183,8 @@ def _game_day(state):
         cards.append(f'<article class="game-day-card"><div><h4>{_text(game["away"])} @ {_text(game["home"])}</h4>'
                      f'<p class="game-day-pick">{pick}</p>{chance}{lines}<p>{status}</p>'
                      f'<dl class="game-day-times"><div><dt>Kickoff</dt><dd>{_time(game["kickoff"],clock_only=True)}</dd></div>'
-                     f'<div><dt>Prediction lock</dt><dd>{_time(game["lock_at"],clock_only=True)}</dd></div></dl></div><div>{_absences(game,True)}'
-                     f'<details data-view-key="game-day-availability-{key}"><summary>Absences and availability</summary>{_absences(game)}'
+                     f'<div><dt>Prediction lock</dt><dd>{_time(game["lock_at"],clock_only=True)}</dd></div></dl></div><div>{_latest_availability(game,context) if context else _absences(game,True)}'
+                     f'<details data-view-key="game-day-availability-{key}"><summary>Saved forecast availability</summary>{_absences(game)}'
                      f'<p>{_check_time((game.get("availability") or {}).get("checked_at"),state["checked_at"],30,game["lock_at"])}</p>'
                      '<p>Non-QB absences are context; their impact is not fitted into this pick.</p></details>'
                      f'<a class="game-day-link" href="#season-game-{key}" data-view-key="game-day-link-{key}">Score estimate and explanation</a></div></article>')
@@ -235,7 +287,7 @@ def _rankings(snapshot):
             + ''.join(explanations) + '</details>')
 
 
-def _game(game, week, comparison=None):
+def _game(game, week, comparison=None, availability_context=None):
     from pgo_forecast_lab import _spread, _projected_score
     if game['grade'] not in GRADES or game['forecast_status'] not in FORECAST_STATES:
         raise ValueError('Unknown season forecast or grade status')
@@ -346,12 +398,13 @@ def _game(game, week, comparison=None):
             '<summary>Forecast explanation and availability</summary><div class="forecast-reason-body">'
             f'<div class="forecast-reason-block"><h3>Saved calculation</h3><p>{calculation}</p>'
             f'<p>Edition: {_text(game.get("source_edition",week["source_edition"]))}.</p>{provenance}</div>'
-            f'<div class="forecast-reason-block"><h3>Availability context</h3><p>{note}</p>'
+            f'<div class="forecast-reason-block"><h3>Saved forecast availability</h3><p>{note}</p>'
             + (_absences(game) if availability.get('teams') else '') +
-            '<p>Non-QB injury news is context, not a fitted injury adjustment.</p></div></div></details></td></tr>')
+            '<p>Non-QB injury news is context, not a fitted injury adjustment.</p></div>'
+            + _latest_availability(game,availability_context) + '</div></details></td></tr>')
 
 
-def _week(week, current, comparisons=None):
+def _week(week, current, comparisons=None, availability_context=None):
     if week['status'] not in WEEK_STATES: raise ValueError('Unknown week status')
     games = week['games']
     _integer(week['week'])
@@ -362,7 +415,7 @@ def _week(week, current, comparisons=None):
     if len(ids) != len(set(ids)) or len(points) != len(set(points)):
         raise ValueError('Duplicate game or confidence allocation in week')
     counts = Counter(game['grade'] for game in games)
-    rows = ''.join(_game(game,week,(comparisons or {}).get(game['game_id'])) for game in games)
+    rows = ''.join(_game(game,week,(comparisons or {}).get(game['game_id']),(availability_context or {}).get(game['game_id'])) for game in games)
     allocations = [game['confidence'] for game in games if game.get('confidence') is not None]
     pool_summary = ''
     if allocations:
@@ -668,8 +721,8 @@ def render_season(state, *, accuracy=None):
         counts = ''.join(f'<td>{_integer(row[key])}</td>' for key in ('wins','losses','ties','no_pick','pending'))
         records.append(f'<tr><th scope="row">{_text(row["name"])}<br><small>{_text(row["edition"])}</small></th>{counts}</tr>')
     block = f'<p><strong>Update blocked:</strong> {_text(state["blocked_reason"])}</p>' if state.get('blocked_reason') else ''
-    current_weeks = ''.join(_week(w,True,comparisons) for w in weeks if w['week'] == current)
-    archives = ''.join(_week(w,False,comparisons) for w in sorted(weeks,key=lambda w:w['week'],reverse=True) if w['week'] != current)
+    current_weeks = ''.join(_week(w,True,comparisons,state.get('availability_context')) for w in weeks if w['week'] == current)
+    archives = ''.join(_week(w,False,comparisons,state.get('availability_context')) for w in sorted(weeks,key=lambda w:w['week'],reverse=True) if w['week'] != current)
     links = [('season-game-day','Game day')]
     if current_weeks: links.append((f'season-week-{current}',f'Week {current} picks'))
     links.append(('season-records','Model records'))
@@ -703,7 +756,7 @@ def render_season(state, *, accuracy=None):
             'Lead error separately measures how close the predicted margin was. The predicted lead is a model estimate, not a sportsbook line. '
             'Grades use saved picks and verified final scores. Missing results remain pending. '
             'Injury news is shown as context; current non-QB injuries and backup quality are not separately rated.</p>'
-            + _freshness(state) + _game_day(state) + _rankings(state.get('rankings')) +
+            + _freshness(state) + _inactive_watch(state) + _game_day(state) + _rankings(state.get('rankings')) +
             '<h3 id="season-records">Model records</h3><div class="table-shell" data-view-key="model-records-table"><table><thead><tr><th>Saved model series</th>'
             '<th>W</th><th>L</th><th>T</th><th>No pick</th><th>Pending</th></tr></thead>'
             f'<tbody>{"".join(records)}</tbody></table></div>'

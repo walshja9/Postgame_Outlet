@@ -1,5 +1,6 @@
 import copy
 import importlib.util
+import gzip
 import json
 from pathlib import Path
 import tempfile
@@ -180,6 +181,115 @@ class SeasonAvailabilityTests(unittest.TestCase):
             self.assertEqual(len(parsed['observations']),7)
             self.assertEqual(parsed['unparsed_lines'],[])
         self.assertIn('emergency third quarterback',json.dumps(parsed))
+
+    def real_sf_lar(self):
+        # Exact relevant JSON-LD fields from the September 11 official captures.
+        # nfl.html SHA256 5eb2a5d2925862c28e0b9f36a6fcf68f5a2cdc91045173d381199560f057702a
+        # 49ers.html SHA256 8d1e991106ea22bb563bd3ddf8c19b948c71ae5e919a0aaebe68786c3d3c6711
+        game=dict(game_id='2026_01_SF_LA',season=2026,week=1,game_type='REG',home='LAR',away='SF',
+                  kickoff='2026-09-11T00:35:00Z',lock_at='2026-09-10T23:35:00Z')
+        nfl=dict(headline='Australia game inactives: San Francisco 49ers at Los Angeles Rams',
+                 datePublished='2026-09-10T23:26:21.831Z',dateModified='2026-09-10T23:26:21.831Z',
+                 articleBody='WHERE:\u00a0Melbourne\u00a0Cricket\u00a0Ground\u00a0(Melbourne,\u00a0Australia)\n'
+                 'WHEN:\u00a08:35 p.m. ET | Netflix, NFL+\n\nNINERS\n\nQB Kurtis Rourke\nCB Ephesians Prysock\n'
+                 'RB Jordan James\nWR Jordan Watkins\nLB Tatum Bethune\nOT Enrique Cruz Jr.\n\nRAMS\n\n'
+                 'QB\u00a0Ty Simpson (emergency third QB)\nWR CJ Daniels\nWR Tutu Atwell\nOL Bill Murray\nTE Max Klare')
+        club=dict(headline='Tatum Bethune, Jordan Watkins OUT vs. Rams; Inactives for Week 1 #SFvsLAR',
+                  datePublished='2026-09-10T23:37:43.628Z',dateModified='2026-09-10T23:38:24.546Z',
+                  articleBody='The San Francisco 49ers have finalized their inactive list ahead of the Week 1 matchup '
+                  'against the Los Angeles Rams at the Melbourne Cricket Ground. With rosters limited to 48 active players '
+                  'on gameday, several players will be sidelined for the primetime contest.\n\n'
+                  'Earlier in the week, the 49ers ruled out DL Alfred Collins after suffering a torn patellar injury '
+                  'during practice in Melbourne. He will be sidelined for the rest of the 2026 season.\n\n'
+                  'The 49ers enter Week 1 with several players returning to full participation after working through '
+                  'injuries during the week. DL Nick Bosa (knee), TE George Kittle\u00a0(achilles), and FB Kyle Juszczyk '
+                  '(finger) did not receive game designations Thursday, and today are available for the season opener. '
+                  'DL James Thompson Jr.\u00a0(hamstring), who was listed as questionable on the final injury report, '
+                  "is also active for Friday's matchup.\n\n"
+                  'Here are the 49ers inactives for Week 1 against the Rams:\n\n\nCB Ephesians Prysock\n'
+                  'RB Jordan James\nWR Jordan Watkins\nLB Tatum Bethune\nOL Enrique Cruz Jr.\nQB Kurtis Rourke')
+        def raw(article):
+            return ('<script type="application/ld+json">'+json.dumps(dict(article,**{'@type':'NewsArticle'}))+'</script>').encode()
+        return game,nfl,club,raw
+
+    def test_v2_real_nfl_team_sections_and_49ers_intro(self):
+        game,nfl,club,raw=self.real_sf_lar();captured='2026-09-11T00:31:36Z'
+        sf=availability.parse_final_inactives(raw(nfl),game,'SF',captured)
+        lar=availability.parse_final_inactives(raw(nfl),game,'LAR',captured)
+        self.assertEqual([r['name'] for r in sf['observations']],['Kurtis Rourke','Ephesians Prysock','Jordan James','Jordan Watkins','Tatum Bethune','Enrique Cruz Jr.'])
+        self.assertEqual([r['name'] for r in lar['observations']],['Ty Simpson','CJ Daniels','Tutu Atwell','Bill Murray','Max Klare'])
+        self.assertEqual(lar['observations'][0]['status'],'EMERGENCY_QB')
+        self.assertEqual(sf['unparsed_lines'],[]);self.assertEqual(lar['unparsed_lines'],[])
+        club_list=availability.parse_final_inactives(raw(club),game,'SF',captured)
+        self.assertEqual({r['name'] for r in sf['observations']},{r['name'] for r in club_list['observations']})
+        self.assertEqual(club_list['unparsed_lines'],[])
+        for article in (nfl,club):
+            with self.assertRaises(ValueError):availability.parse_final_inactives(raw(article),game,'SF',captured,parser_version=1)
+
+    def test_context_time_window_keeps_default_lock_and_pregame_article_limits(self):
+        args=([self.game],self.roster,self.qbs,[])
+        with self.assertRaisesRegex(ValueError,'T-60'):
+            availability.build_availability(*args,checked_at='2026-09-20T17:20:00Z')
+        before=copy.deepcopy(args)
+        for now in ('2026-09-20T17:20:00Z','2026-09-20T23:00:00Z'):
+            out=availability.build_availability(*args,checked_at=now,purpose='context')
+            self.assertEqual(out['purpose'],'context');self.assertEqual(out['parser_version'],2)
+            self.assertEqual(out['games'][self.game['game_id']]['qb_gate'],'CONDITIONAL')
+        self.assertEqual(args,before)
+        with self.assertRaisesRegex(ValueError,'context'):
+            availability.build_availability(*args,checked_at='2026-09-20T23:00:01Z',purpose='context')
+        with self.assertRaises(ValueError):availability.build_availability(*args,checked_at=self.now,purpose='anything')
+        with self.assertRaises(ValueError):availability.build_availability(*args,checked_at=self.now,parser_version=99)
+        source=self.source(self.article(published='2026-09-20T17:01:00Z'),kind='official_inactives',team='NE',url='https://www.patriots.com/news/inactives')
+        source.update(started_at='2026-09-20T17:20:00Z',captured_at='2026-09-20T17:20:00Z')
+        out=availability.build_availability([self.game],self.roster,self.qbs,[source],checked_at=source['captured_at'],purpose='context')
+        self.assertEqual(out['games'][self.game['game_id']]['teams']['NE']['final_inactives_status'],'UNKNOWN')
+
+    def test_context_discovers_nfl_article_once_and_replays_versioned_capture(self):
+        game,nfl,club,raw=self.real_sf_lar();calls=[]
+        url='https://www.nfl.com/news/australia-game-inactives-san-francisco-49ers-at-los-angeles-rams'
+        players=[('SF','QB','Kurtis Rourke'),('SF','CB','Ephesians Prysock'),('SF','RB','Jordan James'),
+                 ('SF','WR','Jordan Watkins'),('SF','LB','Tatum Bethune'),('SF','OT','Enrique Cruz Jr.'),
+                 ('LAR','QB','Ty Simpson'),('LAR','WR','CJ Daniels'),('LAR','WR','Tutu Atwell'),
+                 ('LAR','OL','Bill Murray'),('LAR','TE','Max Klare'),('SF','QB','Brock Purdy'),('LAR','QB','Matthew Stafford')]
+        roster=[dict(team=t,position=p,full_name=n,gsis_id=f'00-{i:07d}',status='ACT') for i,(t,p,n) in enumerate(players,1)]
+        qbs={'SF':roster[-2]['gsis_id'],'LAR':roster[-1]['gsis_id']}
+        def fetch(target):
+            calls.append(target)
+            body=(raw(nfl) if target==url else
+                  f'<a href="{url}">{nfl["headline"]}</a>'.encode() if target==availability.NFL_NEWS_URL else b'<html></html>')
+            return dict(body=body,status=200,final_url=target)
+        with tempfile.TemporaryDirectory() as tmp:
+            directory=Path(tmp)/'context'
+            out=availability.capture_availability([game],roster,qbs,directory,purpose='context',now='2026-09-11T01:00:00Z',fetch=fetch)
+            self.assertEqual(calls.count(availability.NFL_NEWS_URL),1);self.assertEqual(calls.count(url),1)
+            self.assertEqual(out,availability.load_availability(directory))
+            inputs=json.loads(gzip.decompress((directory/'inputs.json.gz').read_bytes()))
+            self.assertEqual((inputs['purpose'],inputs['parser_version']),('context',2))
+            for team in out['games'][game['game_id']]['teams'].values():
+                self.assertEqual(team['final_inactives_status'],'VERIFIED_LIST')
+                self.assertEqual(team['expected_qb_status'],'UNKNOWN')
+            self.assertNotIn('margin',out['games'][game['game_id']])
+
+    def test_legacy_capture_missing_version_replays_original_shape(self):
+        directory=Path(__file__).resolve().parents[1]/'docs/evidence/season-2026/availability-v2/20260910T232558473366Z'
+        expected=json.loads((directory/'availability.json').read_bytes())
+        self.assertNotIn('purpose',expected);self.assertNotIn('parser_version',expected)
+        self.assertEqual(availability.load_availability(directory),expected)
+
+    def test_context_capture_crossing_six_hour_write_bound_is_failed(self):
+        clock=[availability._utc('2026-09-20T22:59:59Z')]
+        def fetch(url):return dict(body=b'<html></html>',status=200,final_url=url)
+        write=availability._write
+        def slow_write(path,raw):
+            write(path,raw)
+            if path.name=='manifest.json':clock[0]=availability._utc('2026-09-20T23:00:01Z')
+        with tempfile.TemporaryDirectory() as tmp, patch.object(availability,'_clock',side_effect=lambda now=None:clock[0]), patch.object(availability,'_write',side_effect=slow_write):
+            directory=Path(tmp)/'context'
+            with self.assertRaisesRegex(ValueError,'context'):
+                availability.capture_availability([self.game],self.roster,self.qbs,directory,purpose='context',fetch=fetch)
+            self.assertTrue((directory/'failure.json').exists())
+            with self.assertRaisesRegex(ValueError,'failed'):availability.load_availability(directory)
 
 
 if __name__=='__main__':unittest.main()
