@@ -276,7 +276,7 @@ def main():
     if args.run_refresh != 'false':
         try:
             state = load_current(args.root)
-        except (OSError, ValueError, KeyError, TypeError):
+        except (OSError, ValueError, KeyError, TypeError, ImportError):
             pass
     report = assess(state, outcomes={stage: getattr(args, stage + '_outcome') for stage in STAGES},
                     run_refresh=args.run_refresh != 'false', refresh_started_at=args.refresh_started_at,

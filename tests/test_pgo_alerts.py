@@ -9,6 +9,21 @@ from tests import test_pgo_season_boundaries as fixtures
 
 
 class AlertTests(unittest.TestCase):
+    def test_missing_dependency_keeps_safe_failure_notification_reachable(self):
+        with patch('sys.argv', ['pgo_alerts.py', '--deliver', '--verify-outcome', 'failure',
+                               '--refresh-outcome', 'skipped', '--render-outcome', 'skipped',
+                               '--publish-outcome', 'skipped']), \
+             patch.dict(alerts.os.environ, {'GITHUB_REPOSITORY': alerts.REPOSITORY,
+                 'GITHUB_RUN_ID': '123', 'GITHUB_RUN_ATTEMPT': '1'}), \
+             patch.object(alerts, 'load_current', side_effect=ImportError('private dependency detail')), \
+             patch.object(alerts, 'deliver', return_value={'action': 'created'}) as deliver, \
+             patch('builtins.print') as printed:
+            alerts.main()
+        report = deliver.call_args.args[0]
+        self.assertFalse(report['can_resolve'])
+        self.assertEqual({row['key'] for row in report['conditions']}, {'failed-verify', 'state-unverified'})
+        self.assertNotIn('private dependency detail', str(printed.call_args_list))
+
     def state(self):
         fixture = fixtures.SeasonBoundaryTests()
         game = fixture.game()
