@@ -100,6 +100,13 @@ class RolloverTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'after edition'):
                 rollover.source_bytes(root, ref, '2026-09-09T00:00:00Z')
 
+    def test_wrong_week_final_cannot_satisfy_completed_inventory(self):
+        state = {'schedule': [{'game_id': 'a', 'week': 1}],
+                 'results': [{'game_id': 'a', 'week': 2}]}
+        with patch.object(rollover, 'source_bytes', side_effect=AssertionError('Wrong identity must fail before source read')):
+            with self.assertRaisesRegex(ValueError, 'Final week differs'):
+                rollover.verify_finals(state, '.', 1)
+
     def test_statistics_require_full_matching_production(self):
         from tests.test_pgo_season_model import SeasonModelTests
         SeasonModelTests.setUpClass()

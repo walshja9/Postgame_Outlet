@@ -91,9 +91,10 @@ def verify_finals(state, root, completed):
     finals = index(state['results'])
     parsed = {}
     for key, result in finals.items():
+        require(key in schedule, 'Final is absent from schedule')
+        require(result['week'] == schedule[key]['week'], 'Final week differs from schedule')
         if result['week'] > completed:
             continue
-        require(key in schedule, 'Final is absent from schedule')
         ref = result['source']
         if ref['path'] not in parsed:
             raw = source_bytes(root, ref, state['checked_at'])
