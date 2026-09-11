@@ -39,6 +39,43 @@ def state():
 
 
 class SeasonViewTests(unittest.TestCase):
+    def test_postgame_card_distinguishes_pick_cover_and_score_errors(self):
+        data=state(); game=data['weeks'][0]['games'][0]
+        game.update(margin=3.3,total=44.8,home_points=24.05,away_points=20.75,
+                    result={'home_score':13,'away_score':10})
+        comparison={'ats_pick':'NE','grade':{'ats':'W'}}
+        before=copy.deepcopy((game,comparison))
+        card=view._postgame_card(game,comparison)
+        for text in ('Winner pick','SEA: Correct','ATS suggestion','NE: Covered',
+                     'Margin error','0.3 points','Scoring error','21.8 points too high'):
+            self.assertIn(text,card)
+        self.assertEqual((game,comparison),before)
+        for grade,label in [('L','Not covered'),('PUSH','Push'),('NOEDGE','No edge'),('UNAVAILABLE','Unavailable')]:
+            comparison['grade']['ats']=grade
+            self.assertIn(label,view._postgame_card(game,comparison))
+        self.assertIn('No saved sportsbook line',view._postgame_card(game,None))
+        game.update(pick=None,grade='NO_PICK',margin=None,total=None)
+        self.assertIn('No pick',view._postgame_card(game,None))
+        self.assertIn('No saved estimate',view._postgame_card(game,None))
+        game.update(pick='SEA',grade='T',result={'home_score':10,'away_score':10})
+        self.assertIn('Game tied',view._postgame_card(game,None))
+        game.update(grade='PENDING',forecast_status='LOCKED',result=None)
+        self.assertEqual(view._postgame_card(game,None),'')
+
+    def test_current_rank_comparison_is_dated_complete_and_uses_rank_positions(self):
+        data=state(); rows=[dict(abbr=t['team'],rank=33-t['rank']) for t in data['rankings']['teams']]
+        mccabe=dict(rows=rows,as_of='2026-09-10T20:00:00Z')
+        before=copy.deepcopy((data,mccabe))
+        page=view.render_season(data,mccabe=mccabe)
+        card=page.split('id="season-rank-comparison"')[1].split('</details>')[0]
+        self.assertEqual(card.count('data-rank-compare='),32)
+        for text in ('McCabe','PGO','31 places higher','31 places lower','2026-09-10T20:00:00Z',
+                     '2026-09-16T21:00:00Z','rank positions, not points'):
+            self.assertIn(text,card)
+        self.assertEqual((data,mccabe),before)
+        mccabe['rows']=rows[:-1]
+        with self.assertRaisesRegex(ValueError,'32'):view.render_season(data,mccabe=mccabe)
+
     def test_compact_navigation_and_disclosures_preserve_visible_warnings_and_all_evidence(self):
         data=state();data.update(status='BLOCKED',blocked_reason='Source conflict needs review')
         data['penalty_shadow']={'games':[], 'metrics':{}, 'excluded':[]}

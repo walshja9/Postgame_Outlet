@@ -859,7 +859,7 @@ TEMPLATE = """<!DOCTYPE html>
     *, *::before, *::after { scroll-behavior:auto !important; transition:none !important; }
   }
 </style>
-<link rel="stylesheet" href="pgo-theme.css?v=20260911-cleanup">
+<link rel="stylesheet" href="pgo-theme.css?v=20260911-reportcards">
 </head>
 <body>
 <div class="hero">

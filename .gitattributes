@@ -77,3 +77,7 @@ pgo_forecast_snapshot.py -text whitespace=cr-at-eol
 pgo_model.py -text whitespace=cr-at-eol
 pgo_prospective.py -text whitespace=cr-at-eol
 pgo_sources.py -text whitespace=cr-at-eol
+research/pgo_score_ranges_20260911/** -text whitespace=cr-at-eol
+research/pgo_injury_usage_20260911/** -text whitespace=cr-at-eol
+tests/test_pgo_score_ranges.py -text whitespace=cr-at-eol
+tests/test_pgo_injury_usage.py -text whitespace=cr-at-eol

@@ -217,7 +217,35 @@ def _sources(sources):
     return '<ul>' + ''.join(rows) + '</ul>' if rows else ''
 
 
-def _rankings(snapshot):
+def _rank_comparison(snapshot, mccabe):
+    if mccabe is None:
+        return ''
+    rows = mccabe['rows']
+    codes = {team['team'] for team in snapshot['teams']}
+    if (len(rows) != 32 or {row['abbr'] for row in rows} != codes
+            or sorted(_integer(row['rank']) for row in rows) != list(range(1,33))):
+        raise ValueError('McCabe comparison requires all 32 ranked teams')
+    ranks = {row['abbr']: row['rank'] for row in rows}
+    differences = [(team, ranks[team['team']]-team['rank']) for team in snapshot['teams']]
+    def label(gap):
+        return ('Same rank' if gap == 0 else
+                f'PGO {abs(gap)} {"place" if abs(gap)==1 else "places"} {"higher" if gap>0 else "lower"}')
+    largest = sorted(differences,key=lambda item:(-abs(item[1]),item[0]['team']))[:3]
+    overview = '; '.join(f'{_text(team["team"])}: {label(gap)}' for team,gap in largest if gap)
+    body = ''.join(f'<tr data-rank-compare="{_text(team["team"])}"><th scope="row">{_text(team["team"])}</th>'
+                   f'<td>{team["rank"]}</td><td>{ranks[team["team"]]}</td><td>{label(gap)}</td></tr>'
+                   for team,gap in sorted(differences,key=lambda item:item[0]['rank']))
+    return ('<details class="model-update-evidence" id="season-rank-comparison" data-view-key="rank-comparison">'
+            '<summary>Current PGO vs. McCabe rankings</summary>'
+            f'<p>PGO edition: {_time(snapshot["generated_at"])}. McCabe source: {_time(mccabe["as_of"])}.</p>'
+            '<p>This compares rank positions, not points. Each board uses its own method and rating scale.</p>'
+            f'<p><strong>Largest rank gaps:</strong> {overview or "Both boards have the same order"}.</p>'
+            '<div class="table-shell"><table class="rank-comparison-table"><thead><tr>'
+            '<th scope="col">Team</th><th scope="col">PGO</th><th scope="col">McCabe</th><th scope="col">Rank difference</th>'
+            f'</tr></thead><tbody>{body}</tbody></table></div></details>')
+
+
+def _rankings(snapshot, mccabe=None):
     if snapshot is None:
         return '<p>Rankings unavailable.</p>'
     from pgo_forecast_lab import _rating_labels
@@ -291,7 +319,36 @@ def _rankings(snapshot):
             '<th class="model-update-extra">Rating scale</th><th class="model-update-extra">Expected QB</th>'
             f'</tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
             '<details class="model-update-evidence" data-view-key="rating-reasons"><summary>Why teams rank here</summary>'
-            + ''.join(explanations) + '</details>')
+            + ''.join(explanations) + '</details>' + _rank_comparison(snapshot,mccabe))
+
+
+def _postgame_card(game, comparison):
+    result = game.get('result')
+    if result is None or game['forecast_status'] != 'FINAL' or game['grade'] == 'PENDING':
+        return ''
+    from pgo_ats_view import grade_label
+    actual_margin = _integer(result['home_score'])-_integer(result['away_score'])
+    actual_total = result['home_score']+result['away_score']
+    winner = {'W':'Correct','L':'Incorrect','T':'Game tied','NO_PICK':'No pick'}[game['grade']]
+    if game.get('pick'): winner = f'{_text(game["pick"])}: {winner}'
+    ats = 'No saved sportsbook line'
+    if comparison is not None:
+        ats = grade_label(comparison.get('grade',{}).get('ats','UNAVAILABLE'),ats_choice=True)
+        if comparison.get('ats_pick'):
+            ats = f'{_text(comparison["ats_pick"])}: {ats}'
+    margin = ('No saved estimate' if game.get('margin') is None else
+              f'{abs(_number(game["margin"])-actual_margin):.1f} points')
+    total = 'No saved estimate'
+    if game.get('total') is not None:
+        error = _number(game['total'])-actual_total
+        total = f'{abs(error):.1f} points' + (' too high' if error>0 else ' too low' if error<0 else ' (exact)')
+    items = [('Winner pick',winner),('ATS suggestion',ats),('Margin error',margin),('Scoring error',total)]
+    key = _text(game['game_id'])
+    return (f'<div class="postgame-card" role="group" aria-labelledby="recap-{key}">'
+            f'<h4 id="recap-{key}">Result report card</h4><dl>'
+            + ''.join(f'<div><dt>{title}</dt><dd>{value}</dd></div>' for title,value in items) + '</dl>'
+            '<p>Errors compare the saved, unrounded estimates with the final score. Lower is better. '
+            'ATS uses the saved sportsbook line.</p></div>')
 
 
 def _game(game, week, comparison=None, availability_context=None):
@@ -418,7 +475,8 @@ def _game(game, week, comparison=None, availability_context=None):
                  + '</ol>') if explanation_steps else f'<p>{calculation}</p>'
     return (f'<tr id="season-game-{game_id}" data-season-game-id="{game_id}" class="season-game-row" role="row">'
             f'<th scope="row" role="rowheader">{away} @ {home}</th>' + ''.join(cells) + '</tr>'
-            f'<tr class="forecast-reason-row" role="row"><td colspan="7" role="cell"><details class="forecast-reason" data-view-key="reason-{game_id}">'
+            f'<tr class="forecast-reason-row" role="row"><td colspan="7" role="cell">' + _postgame_card(game,comparison) +
+            f'<details class="forecast-reason" data-view-key="reason-{game_id}">'
             '<summary>Forecast explanation and availability</summary><div class="forecast-reason-body">'
             f'<div class="forecast-reason-block"><h3>Why this forecast</h3>{narrative}'
             f'<details class="season-calculation" data-view-key="calculation-{game_id}"><summary>Exact saved calculation</summary><p>{calculation}</p>'
@@ -725,13 +783,23 @@ def _experiments(state):
             'Official report coverage is stated separately for each team.</p>' + ''.join(teams)
             + '<details data-view-key="replacement-sources"><summary>Captured roster and depth sources</summary>'
             + _sources(depth.get('sources',[])) + '</details>'
-            f'<p><a href="{base}pgo_replacement_depth_20260910/README.md">Admission audit, missing information and capture history</a>.</p></details>')
+            f'<p><a href="{base}pgo_replacement_depth_20260910/README.md">Admission audit, missing information and capture history</a>.</p>'
+            '<p><strong>September 11 usage check:</strong> Pregame roles are preserved. The captured postgame playing-time file '
+            'does not yet contain a matching game with eligible pregame records. Missing player rows stay unknown, not zero. '
+            f'<a href="{base}pgo_injury_usage_20260911/README.md">Injury and replacement-usage study</a>.</p></details>')
+    panels.append('<details class="model-update-evidence" data-view-key="score-range-study"><summary>How much could the score vary?</summary>'
+        '<p><strong>Reliable outcome ranges are not available yet.</strong> The displayed score is an average estimate, '
+        'not a narrow promise about the final score. We tested a fixed range method on historical games, using only earlier '
+        'seasons to set each later season\'s range. Those reused records lack the timestamps needed to establish pregame data availability.</p>'
+        '<p>Future saved ranges need to be checked against actual results before we can describe them as reliable. '
+        'Differences between model versions are not the same as a likely range of game outcomes.</p>'
+        f'<p><a href="{base}pgo_score_ranges_20260911/README.md">Score-range study and validation requirements</a>.</p></details>')
     return ('<h3 id="season-model-tests">Model tests</h3><p>These fixed comparisons are separate from the main picks. '
             'Original test forecasts are saved before lock and graded when verified finals arrive. The completed opener is excluded '
             'from tests first created afterward. No experiment automatically replaces the main model.</p>' + ''.join(panels))
 
 
-def render_season(state, *, accuracy=None):
+def render_season(state, *, accuracy=None, mccabe=None):
     """Render validated saved state using the existing shared PGO styles once per page."""
     if state['schema_version'] != 1 or state['status'] not in ('READY','BLOCKED'):
         raise ValueError('Unknown season view state')
@@ -798,7 +866,7 @@ def render_season(state, *, accuracy=None):
             'Injury news is shown as context; current non-QB injuries and backup quality are not separately rated.</p></details>'
             f'<p class="season-caption">Automation: {_text(state["status"])}. '
             'Non-QB injuries and backup quality are context, not fitted adjustments.</p>' + block
-            + _freshness(state) + _inactive_watch(state) + _game_day(state) + _rankings(state.get('rankings')) +
+            + _freshness(state) + _inactive_watch(state) + _game_day(state) + _rankings(state.get('rankings'),mccabe) +
             '<h3 id="season-records">Model records</h3><div class="table-shell" data-view-key="model-records-table"><table><thead><tr><th>Saved model series</th>'
             '<th>W</th><th>L</th><th>T</th><th>No pick</th><th>Pending</th></tr></thead>'
             f'<tbody>{"".join(records)}</tbody></table></div>'

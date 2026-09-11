@@ -1,0 +1,20 @@
+{
+  "files": {
+    "metrics.json": {
+      "sha256": "53551eb5bf2ae93eac09ce8af6fff03e967fa2e67ac7923b01974531f4e73c5f",
+      "bytes": 14627
+    },
+    "ranges.csv": {
+      "sha256": "c71a2ca9bb4304fb0754e8105a91fb44b30717706f9538bfe6ad587d4423061c",
+      "bytes": 285901
+    },
+    "run-receipt.json": {
+      "sha256": "e4875d3b63e2360ef60592b5fb32e59e107f11cade1efde9b30642a5559d8c30",
+      "bytes": 1794
+    },
+    "run-start.json": {
+      "sha256": "b9efa0f98ed50e6e1327db408341a92ae10eb8e85b1042b0ac7515e07a6383ac",
+      "bytes": 925
+    }
+  }
+}

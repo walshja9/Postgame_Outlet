@@ -100,8 +100,8 @@ def add_current_board(page, snapshot=None, mccabe_rows=None):
             f'<td class="pgo-rating-scale pgo-detail">{rating_bar(team["rating"])}</td>'
             f'<td class="pgo-detail">{html.escape(team["qb_name"])}</td>'
             f'<td class="pgo-detail">{mccabe_rank}</td><td class="pgo-detail">{rank - mccabe_rank:+d}</td></tr>')
-    updates = render_current_updates()
-    selected = f'data-edition="{selected_edition}"' in updates
+    updates = render_current_updates(include_original=False)
+    selected = 'id="pgo-season"' in updates or f'data-edition="{selected_edition}"' in updates
     if updates:
         from pgo_forecast_lab import FORECAST_DISPLAY_SCRIPT
         updates += FORECAST_DISPLAY_SCRIPT

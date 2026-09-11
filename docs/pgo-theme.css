@@ -167,6 +167,17 @@ input,select,textarea { accent-color:var(--accent); }
 #pgo-season .season-late-accounting { display:block; margin-top:6px; color:var(--notice-ink); }
 #pgo-season .season-explanation-steps { margin:0; padding-left:20px; }
 #pgo-season .season-explanation-steps li { margin:0 0 10px; padding-left:4px; }
+#pgo-season .postgame-card { padding:12px 0; }
+#pgo-season .postgame-card h4 { margin:0 0 10px; font-size:15px; }
+#pgo-season .postgame-card dl { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin:0; }
+#pgo-season .postgame-card dl > div { padding:10px; background:var(--panel); border:1px solid var(--border); border-radius:6px; }
+#pgo-season .postgame-card dt { color:var(--mut); font-size:12px; }
+#pgo-season .postgame-card dd { margin:4px 0 0; font-size:14px; font-weight:700; overflow-wrap:anywhere; }
+#pgo-season .postgame-card p { margin:8px 0 0; color:var(--mut); font-size:12px; }
+#pgo-season .rank-comparison-table { width:100%; }
+#pgo-season .rank-comparison-table :is(th,td) { white-space:normal; min-width:0; text-align:left; }
+.archive-fragment { display:none; }
+.archive-fragment:target { display:block; padding:12px 0; }
 @container(max-width:1050px) {
   #pgo-season .season-picks-table,
   #pgo-season .season-picks-table tbody { display:block; width:100%; }
@@ -204,6 +215,8 @@ input,select,textarea { accent-color:var(--accent); }
   #pgo-season .season-picks-table summary { min-height:44px; box-sizing:border-box; padding:10px 0; }
 }
 @container(max-width:520px) {
+  #pgo-season .postgame-card dl { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  #pgo-season .rank-comparison-table :is(th,td) { padding:8px 5px; font-size:12px; }
   #pgo-season .season-picks-table tr[data-season-game-id] { grid-template-columns:repeat(2,minmax(0,1fr)); }
   #pgo-season .season-picks-table tr[data-season-game-id] > :is(td:nth-of-type(3),td:nth-of-type(6)) { grid-column:1/-1; }
 }

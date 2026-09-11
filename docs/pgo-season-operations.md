@@ -38,6 +38,18 @@ Run `python -m unittest discover -s tests -p "test_pgo_season*.py"` for the seas
 
 Operational checks do not prove the model predicts accurately. PGO remains EXPERIMENTAL / HOLD while its prospective record accumulates.
 
+### Observing the first real weekly transition
+
+`python pgo_season_rollover.py --output output/rollover-observation.json` reads the saved season state and writes a new machine-readable receipt. It performs no fetch, model update or season write, and refuses to overwrite a receipt. The existing season job can run it after refresh and retain its JSON as an Actions artifact, using the run ID and attempt in the filename. It needs no additional scheduler or public mutable file.
+
+The default target is Week 1 to Week 2; `--completed-week N` selects another regular-season transition through Week 17 to Week 18. `WAITING` exits successfully when games remain unfinished or no statistics-ready next edition has been saved. `INVALID` exits with failure when archived evidence fails verification. `VERIFIED` requires a hash-linked pre-transition state and next edition, replayed explicit provider finals, archived team/player production that passes the existing exposure checks, 32 ranked teams with finite ratings, and the complete next fixture inventory matching the captured schedule. The verifier follows the archived pointer chain from the current state back to that transition. Locked forecasts and confidence allocations, saved sportsbook lines and choices, and already accepted finals/grades must survive every checked link. New final grades and earned confidence points may appear for previously pending games.
+
+The September 11 saved-state observation is **WAITING**: the state checked at `2026-09-11T12:57:08.554691+00:00` contains two verified Week 1 finals, fourteen unfinished games, and rankings through completed Week 0. Its two locked forecasts match the immediately preceding hash-verified archive. No real Week 1-to-2 rollover has been observed. Waiting receipts check the current and preceding states; the complete transition-chain and next-edition checks run only after the target edition exists. Receipts describe archived evidence, not guaranteed scheduler timeliness, independent statistical acceptance or prediction quality.
+
+Run `python -m unittest tests.test_pgo_season_rollover` for archive-tampering, source clocks/finals, locked allocation, accepted-result, production-coverage and transition-boundary checks. Synthetic transition tests demonstrate verifier behavior only.
+
+The preservation check uses the later archive's manifest `created_at` (durable-save time), falling back to its saved check time for legacy evidence without that field. A revision may change before T-60, but a write that crosses or reaches T-60 must retain the previous forecast, confidence allocation and sportsbook core. A pre-cutoff `issued_at` alone cannot excuse a write completed after the lock; this matches the production durable-write guard.
+
 ### Board publication and queued season updates
 
 The named-edition workflow follows the same tested-source admission and short writer lock as the board workflow. It validates the admitted source before snapshotting the McCabe edition, pushes without rebasing, and explicitly requests the canonical Pages build. A concurrent untested source change requires a new run.

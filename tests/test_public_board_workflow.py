@@ -145,6 +145,17 @@ class PublicBoardWorkflowTests(unittest.TestCase):
         self.assertGreater(workflow.index('python pgo_workflow_status.py'),
                            workflow.index('gh api --method POST'))
 
+    def test_rollover_receipt_is_observed_after_refresh_and_retained_on_failure(self):
+        workflow=(ROOT / '.github/workflows/update-season.yml').read_text(encoding='utf-8')
+        self.assertIn('tests.test_pgo_season_rollover',workflow)
+        step=workflow.split('- name: Observe the first weekly rollover',1)[1].split('\n      - name:',1)[0]
+        self.assertIn("if: always() && steps.refresh.outcome == 'success'",step)
+        self.assertIn('python pgo_season_rollover.py --output output/rollover-${{ github.run_id }}-${{ github.run_attempt }}.json',step)
+        upload=workflow.split('- name: Retain rollover evidence',1)[1]
+        self.assertIn('if: always()',upload)
+        self.assertIn('actions/upload-artifact@v7',upload)
+        self.assertIn('if-no-files-found: error',upload)
+
     def test_route_imports_checkout_when_python_shell_uses_a_temporary_script(self):
         workflow = (ROOT / '.github/workflows/update-season.yml').read_text(encoding='utf-8')
         route = workflow.split('- name: Route extra inactive checks', 1)[1].split('\n      - name:', 1)[0]

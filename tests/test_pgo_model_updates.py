@@ -78,6 +78,26 @@ class ModelUpdateTests(unittest.TestCase):
         self.assertIn('function openFragment(hash)', lab.FORECAST_DISPLAY_SCRIPT)
         self.assertEqual(before, {path: hashlib.sha256(path.read_bytes()).hexdigest() for path in before})
 
+    def test_main_board_links_original_editions_to_existing_lab_archive(self):
+        compact=view.render_current_updates(include_original=False)
+        archive=view.render_current_updates()
+        self.assertIn('id="pgo-season"',compact)
+        self.assertIn('forecast-lab.html#opening-week-editions',compact)
+        self.assertIn('forecast-lab.html#latest-inactive-notes',compact)
+        self.assertNotIn('data-postseason-game-id=',compact)
+        self.assertIn('id="opening-week-editions"',archive)
+        self.assertEqual(archive.count('data-postseason-game-id='),16)
+        self.assertGreater(len(archive)-len(compact),500000)
+
+    def test_moved_edition_fragments_keep_exact_destinations_without_duplicate_current_ids(self):
+        earlier='<div id="postseason-rating-NE" data-game-id="not-a-fragment"><p id="latest-inactive-notes"></p><i id="keep"></i></div>'
+        links=view._original_editions_link(earlier,'<div id="keep"></div>')
+        for key in ('opening-week-editions','postseason-rating-NE','latest-inactive-notes'):
+            self.assertIn(f'id="{key}"',links)
+            self.assertIn(f'href="forecast-lab.html#{key}"',links)
+        self.assertNotIn('id="keep"',links)
+        self.assertNotIn('not-a-fragment',links)
+
     def test_selected_postseason_board_leads_and_previous_models_roundtrip(self):
         import pgo_current_board as board
         import pgo_forecast_lab as lab

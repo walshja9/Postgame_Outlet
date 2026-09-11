@@ -1,0 +1,645 @@
+{
+  "public_status": "UNAVAILABLE",
+  "scientific_status": "EXPERIMENTAL / HOLD",
+  "leakage_verdict": "REVIEW REQUIRED",
+  "input_n": 2127,
+  "calibration_only_n": 512,
+  "evaluated_n": 1615,
+  "prospective_admissible_n": 0,
+  "timing_exclusions": {
+    "missing_issued_at": 2127,
+    "missing_inputs_available_at": 2127,
+    "missing_final_verified_at": 2127
+  },
+  "folds": [
+    {
+      "season": 2018,
+      "calibration_n": 0,
+      "target_n": 256,
+      "status": "calibration_only"
+    },
+    {
+      "season": 2019,
+      "calibration_n": 256,
+      "target_n": 256,
+      "status": "calibration_only"
+    },
+    {
+      "season": 2020,
+      "calibration_n": 512,
+      "target_n": 256,
+      "calibration_seasons": [
+        2018,
+        2019
+      ],
+      "calibration_last_kickoff": "2019-12-29T20:20-05:00",
+      "test_first_kickoff": "2020-09-10T20:20-04:00",
+      "radii": {
+        "margin": 17.140251260776644,
+        "total": 18.719298245614034
+      },
+      "status": "diagnostic_only"
+    },
+    {
+      "season": 2021,
+      "calibration_n": 768,
+      "target_n": 272,
+      "calibration_seasons": [
+        2018,
+        2019,
+        2020
+      ],
+      "calibration_last_kickoff": "2021-01-03T20:20-05:00",
+      "test_first_kickoff": "2021-09-09T20:20-04:00",
+      "radii": {
+        "margin": 16.813964212298433,
+        "total": 18.455592105263158
+      },
+      "status": "diagnostic_only"
+    },
+    {
+      "season": 2022,
+      "calibration_n": 1040,
+      "target_n": 271,
+      "calibration_seasons": [
+        2018,
+        2019,
+        2020,
+        2021
+      ],
+      "calibration_last_kickoff": "2022-01-09T20:20-05:00",
+      "test_first_kickoff": "2022-09-08T20:20-04:00",
+      "radii": {
+        "margin": 17.12992842522334,
+        "total": 18.25
+      },
+      "status": "diagnostic_only"
+    },
+    {
+      "season": 2023,
+      "calibration_n": 1311,
+      "target_n": 272,
+      "calibration_seasons": [
+        2018,
+        2019,
+        2020,
+        2021,
+        2022
+      ],
+      "calibration_last_kickoff": "2023-01-08T20:20-05:00",
+      "test_first_kickoff": "2023-09-07T20:20-04:00",
+      "radii": {
+        "margin": 16.691332555202944,
+        "total": 18.128851540616246
+      },
+      "status": "diagnostic_only"
+    },
+    {
+      "season": 2024,
+      "calibration_n": 1583,
+      "target_n": 272,
+      "calibration_seasons": [
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023
+      ],
+      "calibration_last_kickoff": "2024-01-07T20:20-05:00",
+      "test_first_kickoff": "2024-09-05T20:20-04:00",
+      "radii": {
+        "margin": 16.771653673594386,
+        "total": 17.96875
+      },
+      "status": "diagnostic_only"
+    },
+    {
+      "season": 2025,
+      "calibration_n": 1855,
+      "target_n": 272,
+      "calibration_seasons": [
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024
+      ],
+      "calibration_last_kickoff": "2025-01-05T20:20-05:00",
+      "test_first_kickoff": "2025-09-04T20:20-04:00",
+      "radii": {
+        "margin": 16.68481800015724,
+        "total": 17.71875
+      },
+      "status": "diagnostic_only"
+    }
+  ],
+  "metrics": [
+    {
+      "season": "pooled",
+      "slice": "all",
+      "target": "margin",
+      "n": 1615,
+      "covered": 1313,
+      "coverage": 0.8130030959752322,
+      "mean_width": 33.73834791580825
+    },
+    {
+      "season": "pooled",
+      "slice": "all",
+      "target": "total",
+      "n": 1615,
+      "covered": 1326,
+      "coverage": 0.8210526315789474,
+      "mean_width": 36.40354058520915
+    },
+    {
+      "season": "pooled",
+      "slice": "week1",
+      "target": "margin",
+      "n": 96,
+      "covered": 82,
+      "coverage": 0.8541666666666666,
+      "mean_width": 33.74398270908433
+    },
+    {
+      "season": "pooled",
+      "slice": "week1",
+      "target": "total",
+      "n": 96,
+      "covered": 86,
+      "coverage": 0.8958333333333334,
+      "mean_width": 36.41374729716448
+    },
+    {
+      "season": "pooled",
+      "slice": "weeks1_4",
+      "target": "margin",
+      "n": 383,
+      "covered": 319,
+      "coverage": 0.8328981723237598,
+      "mean_width": 33.74258187406483
+    },
+    {
+      "season": "pooled",
+      "slice": "weeks1_4",
+      "target": "total",
+      "n": 383,
+      "covered": 326,
+      "coverage": 0.8511749347258486,
+      "mean_width": 36.41107145070478
+    },
+    {
+      "season": "pooled",
+      "slice": "weeks5_18",
+      "target": "margin",
+      "n": 1232,
+      "covered": 994,
+      "coverage": 0.8068181818181818,
+      "mean_width": 33.73703167716193
+    },
+    {
+      "season": "pooled",
+      "slice": "weeks5_18",
+      "target": "total",
+      "n": 1232,
+      "covered": 1000,
+      "coverage": 0.8116883116883117,
+      "mean_width": 36.40119941517277
+    },
+    {
+      "season": 2020,
+      "slice": "all",
+      "target": "margin",
+      "n": 256,
+      "covered": 212,
+      "coverage": 0.828125,
+      "mean_width": 34.28050252155329
+    },
+    {
+      "season": 2020,
+      "slice": "all",
+      "target": "total",
+      "n": 256,
+      "covered": 207,
+      "coverage": 0.80859375,
+      "mean_width": 37.43859649122807
+    },
+    {
+      "season": 2020,
+      "slice": "week1",
+      "target": "margin",
+      "n": 16,
+      "covered": 15,
+      "coverage": 0.9375,
+      "mean_width": 34.28050252155329
+    },
+    {
+      "season": 2020,
+      "slice": "week1",
+      "target": "total",
+      "n": 16,
+      "covered": 15,
+      "coverage": 0.9375,
+      "mean_width": 37.43859649122807
+    },
+    {
+      "season": 2020,
+      "slice": "weeks1_4",
+      "target": "margin",
+      "n": 63,
+      "covered": 58,
+      "coverage": 0.9206349206349206,
+      "mean_width": 34.28050252155329
+    },
+    {
+      "season": 2020,
+      "slice": "weeks1_4",
+      "target": "total",
+      "n": 63,
+      "covered": 52,
+      "coverage": 0.8253968253968254,
+      "mean_width": 37.43859649122807
+    },
+    {
+      "season": 2020,
+      "slice": "weeks5_18",
+      "target": "margin",
+      "n": 193,
+      "covered": 154,
+      "coverage": 0.7979274611398963,
+      "mean_width": 34.28050252155329
+    },
+    {
+      "season": 2020,
+      "slice": "weeks5_18",
+      "target": "total",
+      "n": 193,
+      "covered": 155,
+      "coverage": 0.8031088082901554,
+      "mean_width": 37.43859649122807
+    },
+    {
+      "season": 2021,
+      "slice": "all",
+      "target": "margin",
+      "n": 272,
+      "covered": 208,
+      "coverage": 0.7647058823529411,
+      "mean_width": 33.62792842459687
+    },
+    {
+      "season": 2021,
+      "slice": "all",
+      "target": "total",
+      "n": 272,
+      "covered": 221,
+      "coverage": 0.8125,
+      "mean_width": 36.91118421052631
+    },
+    {
+      "season": 2021,
+      "slice": "week1",
+      "target": "margin",
+      "n": 16,
+      "covered": 13,
+      "coverage": 0.8125,
+      "mean_width": 33.62792842459687
+    },
+    {
+      "season": 2021,
+      "slice": "week1",
+      "target": "total",
+      "n": 16,
+      "covered": 15,
+      "coverage": 0.9375,
+      "mean_width": 36.911184210526315
+    },
+    {
+      "season": 2021,
+      "slice": "weeks1_4",
+      "target": "margin",
+      "n": 64,
+      "covered": 53,
+      "coverage": 0.828125,
+      "mean_width": 33.62792842459687
+    },
+    {
+      "season": 2021,
+      "slice": "weeks1_4",
+      "target": "total",
+      "n": 64,
+      "covered": 57,
+      "coverage": 0.890625,
+      "mean_width": 36.911184210526315
+    },
+    {
+      "season": 2021,
+      "slice": "weeks5_18",
+      "target": "margin",
+      "n": 208,
+      "covered": 155,
+      "coverage": 0.7451923076923077,
+      "mean_width": 33.62792842459687
+    },
+    {
+      "season": 2021,
+      "slice": "weeks5_18",
+      "target": "total",
+      "n": 208,
+      "covered": 164,
+      "coverage": 0.7884615384615384,
+      "mean_width": 36.911184210526315
+    },
+    {
+      "season": 2022,
+      "slice": "all",
+      "target": "margin",
+      "n": 271,
+      "covered": 232,
+      "coverage": 0.8560885608856088,
+      "mean_width": 34.25985685044668
+    },
+    {
+      "season": 2022,
+      "slice": "all",
+      "target": "total",
+      "n": 271,
+      "covered": 223,
+      "coverage": 0.8228782287822878,
+      "mean_width": 36.5
+    },
+    {
+      "season": 2022,
+      "slice": "week1",
+      "target": "margin",
+      "n": 16,
+      "covered": 13,
+      "coverage": 0.8125,
+      "mean_width": 34.25985685044668
+    },
+    {
+      "season": 2022,
+      "slice": "week1",
+      "target": "total",
+      "n": 16,
+      "covered": 13,
+      "coverage": 0.8125,
+      "mean_width": 36.5
+    },
+    {
+      "season": 2022,
+      "slice": "weeks1_4",
+      "target": "margin",
+      "n": 64,
+      "covered": 57,
+      "coverage": 0.890625,
+      "mean_width": 34.25985685044668
+    },
+    {
+      "season": 2022,
+      "slice": "weeks1_4",
+      "target": "total",
+      "n": 64,
+      "covered": 54,
+      "coverage": 0.84375,
+      "mean_width": 36.5
+    },
+    {
+      "season": 2022,
+      "slice": "weeks5_18",
+      "target": "margin",
+      "n": 207,
+      "covered": 175,
+      "coverage": 0.8454106280193237,
+      "mean_width": 34.25985685044668
+    },
+    {
+      "season": 2022,
+      "slice": "weeks5_18",
+      "target": "total",
+      "n": 207,
+      "covered": 169,
+      "coverage": 0.8164251207729468,
+      "mean_width": 36.5
+    },
+    {
+      "season": 2023,
+      "slice": "all",
+      "target": "margin",
+      "n": 272,
+      "covered": 215,
+      "coverage": 0.7904411764705882,
+      "mean_width": 33.38266511040589
+    },
+    {
+      "season": 2023,
+      "slice": "all",
+      "target": "total",
+      "n": 272,
+      "covered": 227,
+      "coverage": 0.8345588235294118,
+      "mean_width": 36.25770308123249
+    },
+    {
+      "season": 2023,
+      "slice": "week1",
+      "target": "margin",
+      "n": 16,
+      "covered": 12,
+      "coverage": 0.75,
+      "mean_width": 33.38266511040589
+    },
+    {
+      "season": 2023,
+      "slice": "week1",
+      "target": "total",
+      "n": 16,
+      "covered": 15,
+      "coverage": 0.9375,
+      "mean_width": 36.25770308123249
+    },
+    {
+      "season": 2023,
+      "slice": "weeks1_4",
+      "target": "margin",
+      "n": 64,
+      "covered": 47,
+      "coverage": 0.734375,
+      "mean_width": 33.38266511040589
+    },
+    {
+      "season": 2023,
+      "slice": "weeks1_4",
+      "target": "total",
+      "n": 64,
+      "covered": 55,
+      "coverage": 0.859375,
+      "mean_width": 36.25770308123249
+    },
+    {
+      "season": 2023,
+      "slice": "weeks5_18",
+      "target": "margin",
+      "n": 208,
+      "covered": 168,
+      "coverage": 0.8076923076923077,
+      "mean_width": 33.38266511040589
+    },
+    {
+      "season": 2023,
+      "slice": "weeks5_18",
+      "target": "total",
+      "n": 208,
+      "covered": 172,
+      "coverage": 0.8269230769230769,
+      "mean_width": 36.25770308123249
+    },
+    {
+      "season": 2024,
+      "slice": "all",
+      "target": "margin",
+      "n": 272,
+      "covered": 224,
+      "coverage": 0.8235294117647058,
+      "mean_width": 33.54330734718877
+    },
+    {
+      "season": 2024,
+      "slice": "all",
+      "target": "total",
+      "n": 272,
+      "covered": 229,
+      "coverage": 0.8419117647058824,
+      "mean_width": 35.9375
+    },
+    {
+      "season": 2024,
+      "slice": "week1",
+      "target": "margin",
+      "n": 16,
+      "covered": 14,
+      "coverage": 0.875,
+      "mean_width": 33.54330734718877
+    },
+    {
+      "season": 2024,
+      "slice": "week1",
+      "target": "total",
+      "n": 16,
+      "covered": 16,
+      "coverage": 1.0,
+      "mean_width": 35.9375
+    },
+    {
+      "season": 2024,
+      "slice": "weeks1_4",
+      "target": "margin",
+      "n": 64,
+      "covered": 50,
+      "coverage": 0.78125,
+      "mean_width": 33.54330734718877
+    },
+    {
+      "season": 2024,
+      "slice": "weeks1_4",
+      "target": "total",
+      "n": 64,
+      "covered": 56,
+      "coverage": 0.875,
+      "mean_width": 35.9375
+    },
+    {
+      "season": 2024,
+      "slice": "weeks5_18",
+      "target": "margin",
+      "n": 208,
+      "covered": 174,
+      "coverage": 0.8365384615384616,
+      "mean_width": 33.54330734718877
+    },
+    {
+      "season": 2024,
+      "slice": "weeks5_18",
+      "target": "total",
+      "n": 208,
+      "covered": 173,
+      "coverage": 0.8317307692307693,
+      "mean_width": 35.9375
+    },
+    {
+      "season": 2025,
+      "slice": "all",
+      "target": "margin",
+      "n": 272,
+      "covered": 222,
+      "coverage": 0.8161764705882353,
+      "mean_width": 33.36963600031448
+    },
+    {
+      "season": 2025,
+      "slice": "all",
+      "target": "total",
+      "n": 272,
+      "covered": 219,
+      "coverage": 0.8051470588235294,
+      "mean_width": 35.4375
+    },
+    {
+      "season": 2025,
+      "slice": "week1",
+      "target": "margin",
+      "n": 16,
+      "covered": 15,
+      "coverage": 0.9375,
+      "mean_width": 33.36963600031448
+    },
+    {
+      "season": 2025,
+      "slice": "week1",
+      "target": "total",
+      "n": 16,
+      "covered": 12,
+      "coverage": 0.75,
+      "mean_width": 35.4375
+    },
+    {
+      "season": 2025,
+      "slice": "weeks1_4",
+      "target": "margin",
+      "n": 64,
+      "covered": 54,
+      "coverage": 0.84375,
+      "mean_width": 33.36963600031448
+    },
+    {
+      "season": 2025,
+      "slice": "weeks1_4",
+      "target": "total",
+      "n": 64,
+      "covered": 52,
+      "coverage": 0.8125,
+      "mean_width": 35.4375
+    },
+    {
+      "season": 2025,
+      "slice": "weeks5_18",
+      "target": "margin",
+      "n": 208,
+      "covered": 168,
+      "coverage": 0.8076923076923077,
+      "mean_width": 33.36963600031448
+    },
+    {
+      "season": 2025,
+      "slice": "weeks5_18",
+      "target": "total",
+      "n": 208,
+      "covered": 167,
+      "coverage": 0.8028846153846154,
+      "mean_width": 35.4375
+    }
+  ]
+}

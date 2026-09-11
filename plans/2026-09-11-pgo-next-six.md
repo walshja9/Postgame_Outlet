@@ -26,4 +26,12 @@ Each owner records commands, results and limitations in its task report. Root ve
 
 ## Progress
 
-- Plan/design captured from the approved six recommendations; implementation pending.
+- Implemented result cards and dated current PGO/McCabe rank comparison. Winner/ATS grades and score errors remain separate; saved numerical inputs and evidence have no changes.
+- Implemented read-only rollover verifier and scheduled receipt upload. Reviewed correction checks cutoff-crossing updates against the later durable save timestamp. Fresh local observation is WAITING: 2 verified finals, 14 missing; real Week 1-to-2 proof awaits completed games/statistics.
+- Injury study captured actual September 11 source bytes. Preserved pregame SF/LAR cohort has no matching postgame snap rows yet; opener has no eligible pregame capture. Report02 admits 0/136 links (0/14 final-game rows). Reviewed duplicate and final-team identity fixes preserve report01 and its exact executed code/tests.
+- Outcome-range diagnostic evaluated 1,615 games using earlier seasons for calibration. All historical rows lack required source/issuance/final timing; public numerical ranges remain UNAVAILABLE. No injury weight, interval, probability or model promotion shipped.
+- Main board links original Week 1 editions to existing Forecast Lab. Preview HTML reduced from 2,555,730 to 1,880,685 bytes (26.4%); elements from 59,369 to 30,599. All prior IDs retained and 92 cross-page archive links verified. No new duplicate IDs. Native alias links preserve old bookmarks and forward to the exact archive fragment.
+- Reviews: research/operations and site reviewers found cutoff, identity and deep-link defects; each was repaired and re-reviewed without remaining important findings. No source-quality issue is masked by a test pass.
+- Local verification: 35 model/current-board/view tests passed; 55 research/rollover/accuracy/ATS/storage/publication tests passed; final 97 presentation/workflow/Lab tests passed. Receipts/logs are in ignored `output/next-six-20260911/`.
+- Browser: desktop 1265px document had no overflow; 390px requested phone viewport produced 375px content, report-card widths/scroll widths 289px, comparison width/scroll width 341px, 32 comparison rows. Keyboard disclosure toggles and old NE explanation forwarding passed. Screenshot capture timed out, so no screenshot-based visual approval is claimed. These are structural/layout observations, not a measured mobile CPU/latency benchmark.
+- Publication and deployed rollover receipt verification pending.

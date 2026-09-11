@@ -1,0 +1,11 @@
+{
+  "started_at": "2026-09-11T09:19:55.238705-04:00",
+  "hashes": {
+    "research\\pgo_score_ranges_20260911\\charter.md": "2cb485b84212da6cfc16e29719d3f5f1d08294991ceba9a326dfbd6cffbad7e6",
+    "research\\pgo_score_ranges_20260911\\experiment.py": "3e8db385625803188cefbc8e5cf98bea3e84e5ed2d06b46eb9b2660acbc2f4c8",
+    "research\\pgo_postseason_candidate\\run-20260909-attempt01\\matched-predictions.csv": "3df4dbf26743a3686b6253bb4eb578457d0e2629dde1f0218f215c462feea0cf",
+    "research\\pgo_totals_candidate_20260910\\attempt01\\predictions.csv": "f96c85bf348a7df7c88dc6288bc2d470c4270134505d5bb95ce84c2fc534fce8",
+    "research\\pgo_postseason_candidate\\run-20260909-attempt01\\manifest.json": "a58aeff835471182a555e4b926beafd0db01c7c5e3fe19827ddf56bd03f2514a",
+    "research\\pgo_totals_candidate_20260910\\attempt01\\manifest.json": "790fd10b4d3d8afa431c41737b5f8361387844c44d354b175459eba1cf9c0183"
+  }
+}

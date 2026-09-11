@@ -51,9 +51,11 @@ const tab = {click() {clicks++; if (handlerReady) panel.hidden = false;}};
 const target = {tagName:'DIV', parentElement:detail,
   closest(selector) {return selector === '[role="tabpanel"]' ? panel : null;},
   scrollIntoView() {scrolls++;}};
+const archive = {tagName:'A',href:'https://example.test/forecast-lab.html#postseason-rating-NE',
+  getAttribute(name) {return name==='data-edition-archive' ? 'true' : 'forecast-lab.html#postseason-rating-NE';}};
 const document = {
   readyState:'loading',
-  getElementById(id) {return {'reason':target, 'tab-comparison':tab}[id] || null;},
+  getElementById(id) {return {'reason':target, 'tab-comparison':tab,'postseason-rating-NE':archive}[id] || null;},
   querySelectorAll(selector) {return selector==='[data-freshness-at]' ? freshness : [];}, querySelector() {return null;},
   addEventListener(name, callback) {events[name] = callback;}
 };
@@ -92,6 +94,11 @@ const before = clicks;
 events.hashchange();
 assert.equal(detail.open, true); assert.equal(clicks, before);
 location.hash = '#missing'; events.hashchange();
+let forwarded;
+location.replace = value => {forwarded=value;};
+location.hash = '#postseason-rating-NE'; events.hashchange();
+assert.equal(forwarded,archive.href,'moved edition keeps exact archive fragment');
+location.hash = '#missing';
 (async () => {
   let reloads=0, replacements=0, requests=0, latest='2026-09-09T11:00:00Z', ok=true, releaseFetch;
   location.reload=() => reloads++;
@@ -809,7 +816,7 @@ location.hash = '#missing'; events.hashchange();
             html,
         )
         self.assertIn(
-            '</style><link rel="stylesheet" href="pgo-theme.css?v=20260911-cleanup">', html
+            '</style><link rel="stylesheet" href="pgo-theme.css?v=20260911-reportcards">', html
         )
 
         escaped = pgo_forecast_lab.render_lab(

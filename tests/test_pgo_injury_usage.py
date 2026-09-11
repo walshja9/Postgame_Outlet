@@ -1,0 +1,56 @@
+﻿import copy
+import unittest
+from research.pgo_injury_usage_20260911 import audit
+
+class InjuryUsageTests(unittest.TestCase):
+    def setUp(self):
+        self.game = dict(game_id='2026_01_SF_LA', home='LAR', away='SF', kickoff='2026-09-11T00:35:00+00:00', lock_at='2026-09-10T23:35:00+00:00')
+        self.snapshot = dict(generated_at='2026-09-10T20:00:00+00:00', completed_at='2026-09-10T20:00:01+00:00', sources=[], games=[self.game], teams=[dict(team='SF', depth_snapshot_at='2026-09-10T12:00:00+00:00', unavailable_players=[dict(gsis_id='00-0030000', name='Test Player', prior_role_share=None, observations=[], availability_statuses=['UNKNOWN'], roster_status='RES', depth_rows=[])])])
+        self.roster=[dict(season='2026',team='SF',gsis_id='00-0030000',pfr_id='PlayTe00')]
+        self.final=dict(self.game,home_team='LAR',away_team='SF',season=2026,week=1,game_type='REG',finalized_at='2026-09-11T03:30:00+00:00')
+        self.snap=dict(game_id=self.game['game_id'],season='2026',week='1',game_type='REG',team='SF',opponent='LA',pfr_player_id='PlayTe00',defense_snaps='0')
+        self.clock='2026-09-11T12:00:00+00:00'
+    def run_report(self, rows=None, finals=None):
+        return audit.link(self.snapshot,self.roster,[self.snap] if rows is None else rows,[self.final] if finals is None else finals,self.clock)
+    def test_zero_is_observed_missing_stays_unknown_and_inputs_unchanged(self):
+        before=copy.deepcopy(self.snapshot)
+        r=self.run_report();self.assertEqual(r['rows'][0]['defensive_snaps'],0);self.assertIsNone(r['rows'][0]['prior_role_share']);self.assertEqual(r['joined'],1)
+        self.assertIsNone(self.run_report(rows=[])['rows'][0]['defensive_snaps']);self.assertEqual(self.snapshot,before)
+    def test_late_and_equal_cutoff_are_excluded(self):
+        self.snapshot['completed_at']=self.game['lock_at']
+        self.assertIn('LATE_PREGAME_CAPTURE',self.run_report()['rows'][0]['exclusions'])
+    def test_future_features_and_unknown_depth_are_excluded(self):
+        self.snapshot['sources']=[dict(captured_at=self.clock)]
+        self.snapshot['teams'][0]['depth_snapshot_at']=None
+        reasons=self.run_report()['rows'][0]['exclusions']
+        self.assertIn('LATE_FEATURE_SOURCE',reasons);self.assertIn('UNKNOWN_DEPTH_CLOCK',reasons)
+    def test_wrong_event_opponent_and_no_final_do_not_join(self):
+        self.snap['opponent']='SEA'
+        self.assertEqual(self.run_report()['joined'],0)
+        self.assertIn('NO_VERIFIED_FINAL',self.run_report(finals=[])['rows'][0]['exclusions'])
+    def test_duplicate_targets_and_identity_ambiguity_do_not_join(self):
+        self.assertEqual(self.run_report(rows=[self.snap,self.snap])['joined'],0)
+        self.roster.append(dict(self.roster[0],gsis_id='00-0030001'))
+        self.assertEqual(self.run_report()['joined'],0)
+    def test_invalid_duplicate_cannot_leave_valid_zero_admitted(self):
+        r=self.run_report(rows=[self.snap,dict(self.snap,defense_snaps='NaN')])
+        self.assertEqual(r['joined'],0)
+        self.assertIn('DUPLICATE_TARGET_IDENTITY',r['rows'][0]['exclusions'])
+    def test_final_requires_both_matching_teams(self):
+        for field in ('home_team','away_team'):
+            saved=self.final[field]
+            self.final[field]='SEA'
+            self.assertIn('FINAL_EVENT_MISMATCH',self.run_report()['rows'][0]['exclusions'])
+            self.final[field]=saved
+    def test_nonfinite_negative_fractional_and_missing_targets_excluded(self):
+        for count in ('NaN','-1','0.5',''):
+            self.snap['defense_snaps']=count
+            self.assertEqual(self.run_report()['joined'],0)
+    def test_target_before_final_observation_excluded(self):
+        self.clock='2026-09-11T02:00:00+00:00'
+        self.assertIn('TARGET_BEFORE_FINAL_OBSERVATION',self.run_report()['rows'][0]['exclusions'])
+    def test_unpreserved_opener_is_explicit(self):
+        self.snap['game_id']='2026_01_NE_SEA'
+        r=self.run_report();self.assertEqual(r['joined'],0);self.assertIn('NO_PRESERVED_PREGAME_GAME',r['excluded_target_rows'][0]['exclusions'])
+
+if __name__=='__main__': unittest.main()
