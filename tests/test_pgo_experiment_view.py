@@ -80,6 +80,10 @@ class ExperimentViewTests(unittest.TestCase):
         self.assertIn('Later snap reports can show who played', page)
         self.assertNotIn('This saved edition lacks', page)
         self.assertEqual(state, before)
+        depth['status'] = 'BLOCKED'
+        page = view._experiments(state)
+        self.assertIn('earlier named inventory remains preserved', page)
+        self.assertNotIn('This saved edition lacks', page)
         del depth['teams'][0]['inventory_version']
         self.assertIn('This saved edition lacks', view._experiments(state))
 

@@ -819,11 +819,13 @@ def _experiments(state):
             f'<p><a href="{base}pgo_weights_candidate_20260910/README.md">Every variant, review rules and saved evidence</a>.</p></details>')
     if depth:
         inventory = depth.get('teams', [])
-        if depth.get('status') == 'DESCRIPTIVE / NOT IN MODEL' and depth.get('inventory_version') == 1 and inventory and all(
+        if depth.get('inventory_version') == 1 and inventory and all(
                 team.get('inventory_version') == 1 and isinstance(team.get('defenders'), list) for team in inventory):
             count = sum(len(team['defenders']) for team in inventory)
             inventory_note = (f'{count} named defender record{"s" if count != 1 else ""} saved. '
                               'Later snap reports can show who played; they do not prove who replaced whom or how many points an injury cost.')
+            if depth.get('status') != 'DESCRIPTIVE / NOT IN MODEL':
+                inventory_note = 'The latest defender update could not be verified. The earlier named inventory remains preserved.'
         else:
             inventory_note = ('This saved edition lacks the complete named defender inventory. '
                               'New captures will retain it; older captures are not filled in afterward.')
