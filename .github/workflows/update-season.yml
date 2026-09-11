@@ -34,6 +34,7 @@ jobs:
       - name: Route extra inactive checks
         id: route
         env:
+          PYTHONPATH: ${{ github.workspace }}
           PGO_EVENT: ${{ github.event_name }}
           PGO_SCHEDULE: ${{ github.event.schedule }}
         shell: python

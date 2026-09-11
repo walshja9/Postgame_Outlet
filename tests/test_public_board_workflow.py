@@ -1,4 +1,5 @@
 import os
+import subprocess
 import sys
 import tempfile
 import textwrap
@@ -112,6 +113,23 @@ class PublicBoardWorkflowTests(unittest.TestCase):
         self.assertIn("if: always() && steps.refresh.outcome == 'success'", workflow)
         self.assertGreater(workflow.index('python pgo_workflow_status.py'),
                            workflow.index('gh api --method POST'))
+
+    def test_route_imports_checkout_when_python_shell_uses_a_temporary_script(self):
+        workflow = (ROOT / '.github/workflows/update-season.yml').read_text(encoding='utf-8')
+        route = workflow.split('- name: Route extra inactive checks', 1)[1].split('\n      - name:', 1)[0]
+        script = textwrap.dedent(route.split('        run: |\n', 1)[1])
+        with tempfile.TemporaryDirectory() as folder:
+            target = Path(folder) / 'github-output'
+            command = Path(folder) / 'runner-step.py'
+            command.write_text(script, encoding='utf-8')
+            env = dict(os.environ, PGO_EVENT='workflow_dispatch', PGO_SCHEDULE='', GITHUB_OUTPUT=str(target))
+            env.pop('PYTHONPATH', None)
+            if 'PYTHONPATH: ${{ github.workspace }}' in route:
+                env['PYTHONPATH'] = str(ROOT)
+            result = subprocess.run([sys.executable, str(command)], cwd=ROOT, env=env,
+                                    capture_output=True, text=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(target.read_text(encoding='utf-8'), 'run_refresh=true\n')
 
     def test_board_workflows_use_the_approved_pgo_publisher(self):
         update_board = (ROOT / ".github" / "workflows" / "update-board.yml").read_text(

@@ -120,7 +120,7 @@ def _inactive_watch(state):
         else:
             note = 'Final inactive lists verified for both teams'
         rows.append(f'<li><strong>{_text(game["away"])} @ {_text(game["home"])}: {_text(note)}.</strong> '
-                    f'Last observation: {_check_time(game.get("checked_at"),watch["checked_at"],10,game["kickoff"],ended_label="Kickoff reached; final list status shown above")}.'
+                    f'Last observation: {_check_time(game.get("checked_at"),watch["checked_at"],10,game["kickoff"],ended_label="Kickoff reached; final list status shown above")}'
                     + (' Prediction is already locked.' if game['after_lock'] else '') + '</li>')
     blocked = (f'<p><strong>Availability update needs review:</strong> {_text(watch["blocked_reason"])}</p>'
                if watch.get('blocked_reason') else '')
