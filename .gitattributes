@@ -84,3 +84,5 @@ tests/test_pgo_injury_usage.py -text whitespace=cr-at-eol
 research/pgo_ats_gap_20260911/** -text whitespace=cr-at-eol
 pgo_market_benchmark.py -text whitespace=cr-at-eol
 tests/test_pgo_market_benchmark.py -text whitespace=cr-at-eol
+research/pgo_defender_inventory_20260911/** -text whitespace=cr-at-eol
+tests/test_pgo_defender_inventory.py -text whitespace=cr-at-eol

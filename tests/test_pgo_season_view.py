@@ -39,9 +39,43 @@ def state():
 
 
 class SeasonViewTests(unittest.TestCase):
+    def test_off_day_links_next_matchup_and_its_complete_saved_week(self):
+        data = state()
+        data['checked_at'] = '2026-09-15T12:00:00Z'
+        data['weeks'][0]['games'][0]['kickoff'] = '2026-09-10T23:00:00Z'
+        data['weeks'][1]['games'].append(dict(data['weeks'][1]['games'][0],
+            game_id='later', kickoff='2026-09-17T00:00:00Z'))
+        before = copy.deepcopy(data)
+        page = view._game_day(data)
+        self.assertIn('href="#season-game-current"', page)
+        self.assertIn('href="#season-week-2"', page)
+        self.assertIn('See all 2 Week 2 games', page)
+        self.assertEqual(data, before)
+        data['checked_at'] = '2026-09-18T12:00:00Z'
+        page = view._game_day(data)
+        self.assertNotIn('Next saved game', page)
+        self.assertNotIn('href="#season-week-', page)
+
+    def test_accuracy_counts_pending_finals_separately_from_excluded_probabilities(self):
+        from pgo_season_accuracy import summarize
+        from tests.test_pgo_season_accuracy import SeasonAccuracyTests
+        fixture = SeasonAccuracyTests()
+        games = [fixture.game(key, probability=dict(home=.6, away=.3, tie=.1))
+                 for key in ('graded', 'late', 'pending')]
+        games[1]['confidence']['added_after_lock'] = True
+        summary = summarize(fixture.state(games, [fixture.final(g) for g in games[:2]]))
+        before = copy.deepcopy(summary)
+        page = view._accuracy(summary)
+        headline = page.split('<details', 1)[0]
+        self.assertIn('2 games graded; 1 awaiting final score', headline)
+        self.assertNotIn('not counted', headline)
+        technical = page.split('data-view-key="accuracy-probability-method"', 1)[1].split('</details>', 1)[0]
+        self.assertIn('1 game graded; 1 awaiting final score; 1 excluded', technical)
+        self.assertEqual(summary, before)
+
     def test_market_summary_keeps_matched_counts_gap_bands_and_unavailable_explicit(self):
         summary = dict(games_total=3, benchmark=dict(n=1, game_ids=['final'], excluded=2,
-            reasons={'no_verified_final':1,'missing_quote':1}, pgo_margin_mae=4.2,
+            reasons={'pending':1,'missing_quote':1}, pgo_margin_mae=4.2,
             sportsbook_margin_mae=3.5, difference=.7,
             pgo_record=dict(wins=1,losses=0,ties=0,no_pick=0),
             sportsbook_record=dict(wins=0,losses=0,ties=0,no_pick=1)),
@@ -55,6 +89,7 @@ class SeasonViewTests(unittest.TestCase):
                      '1 pending','1 unavailable','Descriptive results','minimum ATS difference'):
             self.assertIn(text,page)
         self.assertEqual(summary,before)
+        self.assertIn('1 awaiting final score; 1 excluded',page)
         self.assertNotIn('closing line',page.lower())
         summary['benchmark'].update(n=0,pgo_margin_mae=None,sportsbook_margin_mae=None,difference=None)
         page=view._market_benchmark(summary)
@@ -408,7 +443,8 @@ class SeasonViewTests(unittest.TestCase):
         self.assertIn('Week 2',page)
         self.assertIn('Any victory by the selected team earns a W, regardless of the winning margin.',page)
         self.assertIn('Week 1',page)
-        self.assertIn('Model records',page)
+        self.assertIn('Winner records (straight-up)',page)
+        self.assertIn('W: the selected team won.',page)
         self.assertIn('data-season-checked-at="2026-09-16T22:30:00Z"',page)
         self.assertIn('About 25 points each',page)
         self.assertIn('SEA by 0.2 points',page)

@@ -21,6 +21,42 @@ class InactiveMonitorTests(unittest.TestCase):
                     teams={t: dict(final_inactives_status='VERIFIED_LIST' if complete else 'UNKNOWN')
                            for t in (game['home'], game['away'])})
 
+    def test_crossing_lock_during_either_forecast_outcome_captures_context_same_run(self):
+        for failed in (False, True):
+            with self.subTest(failed_forecast=failed):
+                state, game = self.fixture()
+                before = copy.deepcopy(state['weeks'])
+                clock = ['2026-09-13T15:59:59Z']
+                error = ValueError('Availability capture must finish before the T-60 lock')
+                def forecast(*args):
+                    clock[0] = '2026-09-13T16:00:01Z'
+                    if failed:
+                        raise error
+                    return [{'label': 'Earlier valid forecast capture'}]
+                observation = self.observation(game, checked='2026-09-13T16:00:01Z')
+                selected = {team: dict(gsis_id=team + '-old') for team in ('SEA', 'NE')}
+                with tempfile.TemporaryDirectory() as tmp, \
+                     patch.object(api, 'now', side_effect=lambda: clock[0]), \
+                     patch.object(api, 'refresh_forecast_availability', side_effect=forecast), \
+                     patch.object(api, 'fetch_source', return_value=(b'', {})), \
+                     patch.object(api, 'csv_rows', return_value=[]), \
+                     patch.object(api, 'select_roster', return_value=selected), \
+                     patch('pgo_season_availability.capture_availability',
+                           return_value={'games': {game['game_id']: observation}}) as capture:
+                    if failed:
+                        with self.assertRaises(ValueError) as raised:
+                            api.refresh_availability(state, Path(tmp))
+                        self.assertIs(raised.exception, error)
+                    else:
+                        refs = api.refresh_availability(state, Path(tmp))
+                        self.assertIn({'label': 'Earlier valid forecast capture'}, refs)
+                self.assertEqual(capture.call_count, 1)
+                self.assertEqual(capture.call_args.kwargs['purpose'], 'context')
+                self.assertEqual(state['availability_context'][game['game_id']]['checked_at'], clock[0])
+                self.assertEqual(state['weeks'], before)
+                self.assertEqual(state['weeks'][0]['games'][0]['pick'], game['pick'])
+                self.assertEqual(state['weeks'][0]['games'][0]['confidence'], game['confidence'])
+
     def test_late_capture_is_separate_and_failed_attempt_retains_its_real_clock(self):
         state, game = self.fixture(); before = copy.deepcopy(state['weeks'])
         observation = self.observation(game)

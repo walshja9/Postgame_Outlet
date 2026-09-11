@@ -204,7 +204,8 @@ def build_teams(roster, depth, histories, observations, *, checked_at, depth_cap
                               remaining_experienced_backups_not_confirmed_out=sum(p['prior_role_share'] is not None for p in remaining),
                               remaining_unknown_history_backups_not_confirmed_out=sum(p['prior_role_share'] is None for p in remaining),
                               uncertain_backups=sum(p['uncertain'] for p in remaining)))
-        result.append(dict(team=team, depth_status=depth_status, depth_snapshot_at=stamp.isoformat() if stamp else None,
+        result.append(dict(team=team, inventory_version=1, defenders=players,
+                           depth_status=depth_status, depth_snapshot_at=stamp.isoformat() if stamp else None,
                            active_defenders=len(active), reserve_defenders=sum(p['roster_status']=='RES' for p in players),
                            other_roster_defenders=sum(p['roster_status'] in {'DEV','EXE'} for p in players),
                            listed_first=sum(any(r['rank']==1 for r in p['depth_rows']) for p in active),
@@ -221,7 +222,7 @@ def build_teams(roster, depth, histories, observations, *, checked_at, depth_cap
 def capture(state, root, checked_at):
     """Return an observation for the existing state writer; never mutate its input."""
     root = Path(root); now = _utc(checked_at)
-    base = dict(identity=IDENTITY, status='BLOCKED', generated_at=now.isoformat(), forecast_adjustment=None,
+    base = dict(identity=IDENTITY, inventory_version=1, status='BLOCKED', generated_at=now.isoformat(), forecast_adjustment=None,
                 historical_admission='BLOCKED FOR FITTING', teams=[], games=[], sources=[])
     refs = [*state.get('source_captures',[]), *state.get('sources',[]), *state.get('rankings',{}).get('source_captures',[])]
     refs += [r for values in state.get('edition_sources',{}).values() for r in values]

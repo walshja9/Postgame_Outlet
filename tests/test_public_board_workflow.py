@@ -126,6 +126,7 @@ class PublicBoardWorkflowTests(unittest.TestCase):
                      'research/pgo_totals_candidate_20260910/**',
                      'research/pgo_weights_candidate_20260910/**',
                      'research/pgo_replacement_depth_20260910/**',
+                     'research/pgo_defender_inventory_20260911/**',
                      'tests/**', 'requirements-pgo.txt'):
             self.assertIn('"' + path + '"', paths)
 
@@ -133,7 +134,7 @@ class PublicBoardWorkflowTests(unittest.TestCase):
         workflow = (ROOT / '.github/workflows/update-season.yml').read_text(encoding='utf-8')
         gate = workflow.split('- name: Capture verified finals',1)[0]
         for module in ('test_pgo_season_accuracy','test_pgo_totals_monitor','test_pgo_weights_monitor',
-                       'test_pgo_replacement_depth','test_pgo_season_experiments','test_pgo_experiment_view',
+                       'test_pgo_replacement_depth','test_pgo_defender_inventory','test_pgo_season_experiments','test_pgo_experiment_view',
                        'test_pgo_inactive_monitor'):
             self.assertIn('tests.'+module,gate)
 

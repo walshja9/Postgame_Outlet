@@ -197,7 +197,13 @@ def _game_day(state):
                      f'<a class="game-day-link" href="#season-game-{key}" data-view-key="game-day-link-{key}">Score estimate and explanation</a></div></article>')
     empty = '<p>No games on this date.'
     next_game = next((g for g in games if utc(g['kickoff']).astimezone(eastern).date()>day),None)
-    if next_game: empty += f' Next saved game: {_text(next_game["away"])} @ {_text(next_game["home"])} &middot; {_time(next_game["kickoff"])}.'
+    if next_game:
+        week = _integer(next_game['week'])
+        count = sum(len(w['games']) for w in state['weeks'] if w['week'] == week)
+        slate = f'See all {count} Week {week} games' if count != 1 else f'See the Week {week} game'
+        empty += (f' Next saved game: <a href="#season-game-{_text(next_game["game_id"])}">'
+                  f'{_text(next_game["away"])} @ {_text(next_game["home"])}</a> &middot; {_time(next_game["kickoff"])}. '
+                  f'<a href="#season-week-{week}">{slate}</a>.')
     return (f'<h3 id="season-game-day">Game day &middot; {day.strftime("%B %d").replace(" 0"," ")} (Eastern)</h3>'
             + ('<div class="game-day-grid">' + ''.join(cards) + '</div>' if cards else empty+'</p>'))
 
@@ -596,7 +602,13 @@ def _accuracy(summary):
     def number(value, digits=3):
         return 'Awaiting eligible finals' if value is None else f'{_number(value):.{digits}f}'
     def count(metric):
-        return f'{_integer(metric["n"])} eligible; {_integer(metric["excluded"])} not counted'
+        graded = _integer(metric['n'])
+        pending = _integer(metric.get('reasons', {}).get('no_verified_final', 0))
+        excluded = _integer(_integer(metric['excluded']) - pending)
+        labels = [f'{graded} game{"s" if graded != 1 else ""} graded']
+        if pending: labels.append(f'{pending} awaiting final score{"s" if pending != 1 else ""}')
+        if excluded: labels.append(f'{excluded} excluded')
+        return '; '.join(labels)
     primary = summary['primary']
     probability, confidence = primary['probabilities'], primary['confidence']
     record = primary['record']
@@ -677,6 +689,10 @@ def _test_table(key, headings, rows):
 def _market_benchmark(summary):
     benchmark = summary['benchmark']
     n = _integer(benchmark['n'])
+    pending = _integer(benchmark['reasons'].get('pending', 0))
+    excluded_count = _integer(_integer(benchmark['excluded']) - pending)
+    progress = (f'; {pending} awaiting final score{"s" if pending != 1 else ""}' if pending else '')
+    if excluded_count: progress += f'; {excluded_count} excluded'
     cards = []
     for key, label in (('pgo', 'PGO'), ('sportsbook', 'Saved sportsbook forecast')):
         error = benchmark[key + '_margin_mae']
@@ -702,13 +718,13 @@ def _market_benchmark(summary):
                          for key, count in benchmark['reasons'].items()) or 'None'
     return ('<details class="model-update-evidence" id="season-market-benchmark" data-view-key="market-benchmark">'
             '<summary>PGO versus the saved sportsbook forecast</summary>'
-            f'<p><strong>{n} matched game{"s" if n != 1 else ""}</strong>; {_integer(benchmark["excluded"])} not counted. '
+            f'<p><strong>{n} matched game{"s" if n != 1 else ""}</strong>{progress}. '
             'Both forecasts are checked against the same final scores. Lower margin error means the predicted winning margin was closer.</p>'
             '<dl class="season-freshness">' + ''.join(cards) + f'</dl><p>{comparison}</p>'
             '<p>This uses the saved DraftKings handicap captured through ESPN before prediction lock. '
             'An even line has no sportsbook favorite; a zero PGO margin has no model winner pick. Tied games and no picks are counted separately. '
             'These results do not establish predictive superiority or profitability.</p>'
-            f'<p>Not counted: {excluded}.</p>'
+            f'<p>Pending games and exclusions: {excluded}.</p>'
             '<details data-view-key="ats-gap-study"><summary>Do larger differences from the sportsbook perform better?</summary>'
             '<p><strong>Descriptive results.</strong> The groups use the absolute difference between the saved PGO margin and sportsbook forecast: '
             'zero, under 1 point, 1 to under 3 points, and 3 or more points. Zero means no ATS edge. '
@@ -802,6 +818,15 @@ def _experiments(state):
             '<details data-view-key="weights-issued"><summary>Original test picks and probabilities</summary>' + ''.join(issued) + '</details>'
             f'<p><a href="{base}pgo_weights_candidate_20260910/README.md">Every variant, review rules and saved evidence</a>.</p></details>')
     if depth:
+        inventory = depth.get('teams', [])
+        if depth.get('status') == 'DESCRIPTIVE / NOT IN MODEL' and depth.get('inventory_version') == 1 and inventory and all(
+                team.get('inventory_version') == 1 and isinstance(team.get('defenders'), list) for team in inventory):
+            count = sum(len(team['defenders']) for team in inventory)
+            inventory_note = (f'{count} named defender record{"s" if count != 1 else ""} saved. '
+                              'Later snap reports can show who played; they do not prove who replaced whom or how many points an injury cost.')
+        else:
+            inventory_note = ('This saved edition lacks the complete named defender inventory. '
+                              'New captures will retain it; older captures are not filled in afterward.')
         teams = []
         for team in depth.get('teams',[]):
             rows = [[_text(role['position'])] + [str(_integer(role[key])) for key in
@@ -837,7 +862,8 @@ def _experiments(state):
             'does not prove health; a backup not confirmed out is not confirmed available. Provider position labels are kept as supplied. '
             'Multiple defensive packages can list more than eleven players first. These latest observations do not revise locked forecasts.</p>'
             f'<p>{_integer(len(depth.get("teams",[])))} team summaries; {_integer(len(depth.get("games",[])))} unlocked matchups captured. '
-            'Official report coverage is stated separately for each team.</p>' + ''.join(teams)
+            'Official report coverage is stated separately for each team.</p>'
+            + f'<p>{inventory_note} <a href="{base}pgo_defender_inventory_20260911/README.md">Named defender usage checks</a>.</p>' + ''.join(teams)
             + '<details data-view-key="replacement-sources"><summary>Captured roster and depth sources</summary>'
             + _sources(depth.get('sources',[])) + '</details>'
             f'<p><a href="{base}pgo_replacement_depth_20260910/README.md">Admission audit, missing information and capture history</a>.</p>'
@@ -885,7 +911,7 @@ def render_season(state, *, accuracy=None, mccabe=None, market=None):
     links = [('season-game-day','Game day')]
     if current_weeks: links.append((f'season-week-{current}',f'Week {current} picks'))
     if state.get('rankings'): links.append(('season-rankings','Rankings'))
-    links.append(('season-records','Model records'))
+    links.append(('season-records','Winner records'))
     more = [('season-accuracy','Accuracy')]
     if state.get('ats'): more.append(('season-ats','Spreads & ATS'))
     if state.get('penalty_shadow'): more.append(('pgo-penalty-test','Penalty test'))
@@ -924,7 +950,10 @@ def render_season(state, *, accuracy=None, mccabe=None, market=None):
             f'<p class="season-caption">Automation: {_text(state["status"])}. '
             'Non-QB injuries and backup quality are context, not fitted adjustments.</p>' + block
             + _freshness(state) + _inactive_watch(state) + _game_day(state) + _rankings(state.get('rankings'),mccabe) +
-            '<h3 id="season-records">Model records</h3><div class="table-shell" data-view-key="model-records-table"><table><thead><tr><th>Saved model series</th>'
+            '<h3 id="season-records">Winner records (straight-up)</h3>'
+            '<p>W: the selected team won. L: the selected team lost. T: the game ended in a tie. '
+            'Sportsbook spread records are tracked separately.</p>'
+            '<div class="table-shell" data-view-key="model-records-table"><table><thead><tr><th>Saved model series</th>'
             '<th>W</th><th>L</th><th>T</th><th>No pick</th><th>Pending</th></tr></thead>'
             f'<tbody>{"".join(records)}</tbody></table></div>'
             '<p>Each record covers its own saved schedule. Weekly editions cover published weeks; '

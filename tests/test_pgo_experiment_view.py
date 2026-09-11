@@ -68,6 +68,21 @@ class ExperimentViewTests(unittest.TestCase):
         self.assertIn('weights-game-2026_02_A_B',parser.keys)
         self.assertIn('replacement-team-NE',parser.keys)
 
+    def test_named_inventory_is_separate_from_older_incomplete_captures(self):
+        state = self.fixture()
+        self.assertIn('This saved edition lacks the complete named defender inventory', view._experiments(state))
+        depth = state['replacement_depth']
+        depth['inventory_version'] = 1
+        depth['teams'][0].update(inventory_version=1, defenders=depth['teams'][0]['unavailable_players'])
+        before = copy.deepcopy(state)
+        page = view._experiments(state)
+        self.assertIn('1 named defender record saved', page)
+        self.assertIn('Later snap reports can show who played', page)
+        self.assertNotIn('This saved edition lacks', page)
+        self.assertEqual(state, before)
+        del depth['teams'][0]['inventory_version']
+        self.assertIn('This saved edition lacks', view._experiments(state))
+
     def test_absent_or_blocked_optional_sources_do_not_invent_live_results(self):
         self.assertEqual(view._experiments({}),'')
         page=view._experiments(dict(replacement_depth=dict(status='BLOCKED',blocked_reason='No source <saved>',teams=[],games=[])))

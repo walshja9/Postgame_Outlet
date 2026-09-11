@@ -21,6 +21,7 @@ MARKER = '<!-- pgo-alerts:v1 -->'
 META = re.compile(r'<!-- pgo-alert-state:(\{[^\n]*\}) -->')
 RUN_URL = 'https://github.com/' + REPOSITORY + '/actions/runs/1'
 STAGES = ('verify', 'refresh', 'render', 'publish')
+FAILURE_CATEGORIES = ('ISSUE_RESPONSE', 'ISSUE_OWNERSHIP', 'ISSUE_METADATA', 'ISSUE_DUPLICATE', 'ISSUE_CONFIRMATION')
 PUBLIC_POINTER = 'https://walshja9.github.io/Postgame_Outlet/evidence/season-2026/current.json'
 NOT_CHECKED = object()
 
@@ -178,35 +179,52 @@ def github_api(method, path, payload=None):
         raise RuntimeError('GitHub request failed') from None
 
 
+class AlertError(ValueError):
+    """A fixed public-safe delivery failure category."""
+
+
+def _issue_metadata(row):
+    if (not isinstance(row, dict) or type(row.get('number')) is not int or row['number'] < 1
+            or row.get('state') != 'open' or not isinstance(row.get('body'), str)):
+        raise AlertError('ISSUE_RESPONSE')
+    if ('pull_request' in row or not isinstance(row.get('user'), dict)
+            or row['user'].get('login') != BOT or row['user'].get('type') != 'Bot'
+            or not isinstance(row.get('assignees'), list)
+            or any(not isinstance(user, dict) for user in row['assignees'])
+            or [user.get('login') for user in row['assignees']] != [ASSIGNEE]):
+        raise AlertError('ISSUE_OWNERSHIP')
+    matches = META.findall(row['body'])
+    if row['body'].count(MARKER) != 1 or len(matches) != 1:
+        raise AlertError('ISSUE_METADATA')
+    try:
+        metadata = json.loads(matches[0])
+    except ValueError:
+        raise AlertError('ISSUE_METADATA') from None
+    if (not isinstance(metadata, dict) or not isinstance(metadata.get('conditions'), dict)
+            or not all(isinstance(key, str) and type(value) is bool for key, value in metadata['conditions'].items())
+            or ('pending' in metadata and not re.fullmatch(r'[0-9a-f]{32}', str(metadata['pending'])))):
+        raise AlertError('ISSUE_METADATA')
+    return metadata
+
+
 def _owned_issue(api):
     found = []
     page = 1
     while True:
         rows = api('GET', 'repos/' + REPOSITORY + '/issues?state=open&per_page=100&page=' + str(page))
         if not isinstance(rows, list):
-            raise ValueError('Invalid GitHub issue response')
+            raise AlertError('ISSUE_RESPONSE')
         for row in rows:
+            if not isinstance(row, dict) or not isinstance(row.get('body') or '', str):
+                raise AlertError('ISSUE_RESPONSE')
             if MARKER not in (row.get('body') or ''):
                 continue
-            if ('pull_request' in row or row.get('user', {}).get('login') != BOT
-                    or row.get('user', {}).get('type') != 'Bot'
-                    or [user.get('login') for user in row.get('assignees', [])] != [ASSIGNEE]):
-                raise ValueError('Ambiguous alert ownership; no issue was modified')
-            matches = META.findall(row['body'])
-            if len(matches) != 1:
-                raise ValueError('Invalid alert metadata; no issue was modified')
-            metadata = json.loads(matches[0])
-            if (not isinstance(metadata.get('conditions'), dict)
-                    or not all(isinstance(key, str) and type(value) is bool for key, value in metadata['conditions'].items())):
-                raise ValueError('Invalid alert metadata; no issue was modified')
-            if ('pending' in metadata and not re.fullmatch(r'[0-9a-f]{32}', str(metadata['pending']))) or type(row.get('number')) is not int or row['number'] < 1:
-                raise ValueError('Invalid alert metadata; no issue was modified')
-            found.append((row, metadata))
+            found.append((row, _issue_metadata(row)))
         if len(rows) < 100:
             break
         page += 1
     if len(found) > 1:
-        raise ValueError('Multiple open alert incidents; no issue was modified')
+        raise AlertError('ISSUE_DUPLICATE')
     return found[0] if found else (None, {})
 
 
@@ -224,11 +242,18 @@ def deliver(report, api, run_url):
                            'Urgent availability check' if any(current.values()) else 'Update needs attention')
         if issue is None:
             issue = api('POST', base, dict(title=title, body=body, assignees=[ASSIGNEE]))
+            metadata = _issue_metadata(issue)
+            if metadata.get('conditions') != current:
+                raise AlertError('ISSUE_CONFIRMATION')
+            confirmed = api('GET', base + '/' + str(issue['number']))
+            if _issue_metadata(confirmed) != metadata or confirmed['number'] != issue['number']:
+                raise AlertError('ISSUE_CONFIRMATION')
             # GitHub has no atomic create-if-absent operation. The workflow lock is the
-            # race prevention; this check fails visibly if an out-of-band writer races it.
-            observed, _ = _owned_issue(api)
-            if not observed or observed['number'] != issue['number']:
-                raise ValueError('Created alert could not be verified')
+            # race prevention. The list may lag the confirmed direct issue read, but
+            # an observed duplicate or different incident still fails visibly.
+            observed, listed_metadata = _owned_issue(api)
+            if observed and (observed['number'] != issue['number'] or listed_metadata != metadata):
+                raise AlertError('ISSUE_CONFIRMATION')
             return dict(action='created', issue=issue['number'])
         if current == previous and not metadata.get('pending'):
             return dict(action='unchanged', issue=issue['number'])
@@ -242,11 +267,14 @@ def deliver(report, api, run_url):
             while True:
                 comments = api('GET', path + '/comments?per_page=100&page=' + str(page))
                 if not isinstance(comments, list):
-                    raise ValueError('Invalid GitHub comments response')
+                    raise AlertError('ISSUE_RESPONSE')
                 for comment in comments:
-                    if marker in (comment.get('body') or ''):
-                        if comment.get('user', {}).get('login') != BOT or comment.get('user', {}).get('type') != 'Bot':
-                            raise ValueError('Ambiguous notification ownership')
+                    if not isinstance(comment, dict) or not isinstance(comment.get('body'), str):
+                        raise AlertError('ISSUE_RESPONSE')
+                    if marker in comment['body']:
+                        if (not isinstance(comment.get('user'), dict) or comment['user'].get('login') != BOT
+                                or comment['user'].get('type') != 'Bot'):
+                            raise AlertError('ISSUE_OWNERSHIP')
                         sent = True
                 if len(comments) < 100:
                     break
@@ -291,9 +319,15 @@ def main():
         print(json.dumps(deliver(report, github_api, url), sort_keys=True))
 
 
-if __name__ == '__main__':
+def cli():
     try:
         main()
-    except (RuntimeError, ValueError, KeyError, TypeError):
-        print('::error::PGO alert delivery was not verified. Check issue ownership, API availability and workflow permissions.')
-        raise SystemExit(1)
+    except (RuntimeError, ValueError, KeyError, TypeError) as error:
+        category = str(error) if isinstance(error, AlertError) and str(error) in FAILURE_CATEGORIES else 'GITHUB_API' if isinstance(error, RuntimeError) else 'INPUT_INVALID'
+        print('::error::PGO alert delivery was not verified [' + category + ']. Check the alert and workflow permissions.')
+        return 1
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(cli())

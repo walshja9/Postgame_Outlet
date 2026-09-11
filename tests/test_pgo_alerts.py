@@ -144,6 +144,76 @@ class AlertTests(unittest.TestCase):
         self.assertEqual(alerts.deliver(report, fake, alerts.RUN_URL)['action'], 'unchanged')
         self.assertEqual(len(fake.calls), 1)
 
+    def test_created_issue_is_verified_by_id_despite_temporary_list_omission(self):
+        fake = FakeAPI([])
+        def omit_from_list(method, path, payload=None):
+            result = fake(method, path, payload)
+            return [] if method == 'GET' and '?state=open' in path else result
+        self.assertEqual(alerts.deliver(self.incident(), omit_from_list, alerts.RUN_URL), {'action': 'created', 'issue': 1})
+        self.assertEqual(sum(method == 'POST' for method, _, _ in fake.calls), 1)
+        self.assertIn(('GET', 'repos/' + alerts.REPOSITORY + '/issues/1', None), fake.calls)
+
+    def test_post_and_direct_confirmation_reject_wrong_identity_and_new_duplicates(self):
+        for phase, changed in [('POST', {'assignees': []}), ('GET', {'user': {'login': 'walshja9', 'type': 'User'}}),
+                               ('GET', {'body': alerts.MARKER}), ('GET', {'number': 2})]:
+            with self.subTest(phase=phase, changed=changed):
+                fake = FakeAPI([])
+                def wrong(method, path, payload=None):
+                    result = fake(method, path, payload)
+                    if method == phase and (method == 'POST' or path.endswith('/issues/1')):
+                        return dict(result, **changed)
+                    return result
+                with self.assertRaises(ValueError):
+                    alerts.deliver(self.incident(), wrong, alerts.RUN_URL)
+                self.assertEqual(sum(method == 'POST' for method, _, _ in fake.calls), 1)
+        fake = FakeAPI([])
+        def concurrent_create(method, path, payload=None):
+            result = fake(method, path, payload)
+            if method == 'POST':
+                fake.issues.append(self.issue(self.incident(), number=2))
+            return result
+        with self.assertRaises(ValueError):
+            alerts.deliver(self.incident(), concurrent_create, alerts.RUN_URL)
+        self.assertFalse(any(method == 'PATCH' for method, _, _ in fake.calls))
+        fake = FakeAPI([])
+        def failed_confirmation(method, path, payload=None):
+            result = fake(method, path, payload)
+            if method == 'GET' and path.endswith('/issues/1'):
+                raise RuntimeError('Temporary API failure')
+            return result
+        with self.assertRaises(RuntimeError):
+            alerts.deliver(self.incident(), failed_confirmation, alerts.RUN_URL)
+        self.assertEqual(sum(method == 'POST' for method, _, _ in fake.calls), 1)
+
+    def test_cli_emits_fixed_failure_categories_without_exception_details(self):
+        for error, category in [(RuntimeError('private API detail'), 'GITHUB_API'),
+                                 (ValueError('private input detail'), 'INPUT_INVALID'),
+                                 (alerts.AlertError('private detail'), 'INPUT_INVALID'),
+                                 *[(alerts.AlertError(category), category) for category in alerts.FAILURE_CATEGORIES]]:
+            with patch.object(alerts, 'main', side_effect=error), patch('builtins.print') as printed:
+                self.assertEqual(alerts.cli(), 1)
+            output = ' '.join(str(call) for call in printed.call_args_list)
+            self.assertIn(category, output)
+            self.assertNotIn('private', output)
+
+    def test_malformed_comment_response_stops_notification_with_safe_category(self):
+        report = self.incident()
+        pending = 'a' * 32
+        marker = '<!-- pgo-alert-notification:' + pending + ' -->'
+        for comment, category in [(None, 'ISSUE_RESPONSE'), ({'body': ['private detail']}, 'ISSUE_RESPONSE'),
+                                  ({'body': marker + ' private detail', 'user': None}, 'ISSUE_OWNERSHIP'),
+                                  ({'body': marker, 'user': ['private detail']}, 'ISSUE_OWNERSHIP')]:
+            with self.subTest(comment=comment):
+                fake = FakeAPI([self.issue(report, body=alerts.issue_body(report, alerts.RUN_URL, pending))])
+                fake.comments = [comment]
+                with patch.object(alerts, 'main', side_effect=lambda: alerts.deliver(report, fake, alerts.RUN_URL)), \
+                     patch('builtins.print') as printed:
+                    self.assertEqual(alerts.cli(), 1)
+                output = ' '.join(str(call) for call in printed.call_args_list)
+                self.assertIn(category, output)
+                self.assertNotIn('private detail', output)
+                self.assertFalse(any(method == 'POST' for method, _, _ in fake.calls))
+
     def test_new_urgent_condition_comments_once_and_fresh_health_closes(self):
         prior = self.incident()
         fake = FakeAPI([self.issue(prior)])
@@ -241,6 +311,9 @@ class FakeAPI:
             self.comments.append(item)
             return item
         if method == 'GET':
+            if '?state=open' not in path:
+                number = int(path.rsplit('/', 1)[1])
+                return next(item for item in self.issues if item['number'] == number)
             page = int(path.rsplit('page=', 1)[1])
             return [i for i in self.issues if i['state'] == 'open'][(page - 1) * 100:page * 100]
         if method == 'POST' and path.endswith('/issues'):

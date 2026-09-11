@@ -36,6 +36,7 @@ on:
       - "research/pgo_totals_candidate_20260910/**"
       - "research/pgo_weights_candidate_20260910/**"
       - "research/pgo_replacement_depth_20260910/**"
+      - "research/pgo_defender_inventory_20260911/**"
       - "research/pgo_score_ranges_20260911/**"
       - "research/pgo_injury_usage_20260911/**"
       - "research/pgo_ats_gap_20260911/**"

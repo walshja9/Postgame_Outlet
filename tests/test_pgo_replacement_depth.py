@@ -49,6 +49,20 @@ class ReplacementDepthTests(unittest.TestCase):
         self.assertEqual(team['roles'][0]['position'], 'LB')
         self.assertEqual(args, before)
 
+    def test_complete_inventory_preserves_unavailable_subset_and_existing_counts(self):
+        args = self.fixture(); before = copy.deepcopy(args)
+        team = depth.build_teams(*args, checked_at=NOW, depth_captured_at=NOW, teams={'NE'})[0]
+        self.assertEqual(team.get('inventory_version'), 1)
+        self.assertEqual(len(team['defenders']), 4)
+        self.assertEqual(team['unavailable_players'], [p for p in team['defenders'] if p['confirmed_unavailable']])
+        self.assertEqual([p['gsis_id'] for p in team['defenders']], [r['gsis_id'] for r in args[0]])
+        self.assertEqual(team['active_defenders'], 3)
+        self.assertEqual(team['reserve_defenders'], 1)
+        self.assertEqual(team['unavailable_prior_usage_subtotal'], .8)
+        self.assertIsNone(team['defenders'][2]['prior_role_share'])
+        self.assertEqual(team['roles'][0]['remaining_experienced_backups_not_confirmed_out'], 1)
+        self.assertEqual(args, before)
+
     def test_dnp_uncertain_missing_and_name_conflict_remain_distinct(self):
         rr, dd, hh, obs = self.fixture()
         obs['NE']['observations'][0].update(status='NO_GAME_DESIGNATION', practice_status='Did Not Participate')

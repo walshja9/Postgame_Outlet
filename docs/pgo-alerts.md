@@ -41,7 +41,11 @@ Unchanged conditions make no writes. New conditions or higher urgency update the
 
 Resolve only after all required stages succeeded, the verified saved state is fresh and captured after this run's refresh began, the public pointer is fresh, and no alert conditions remain. Old apparently healthy snapshots, missing start times or skipped ticks cannot close an incident. A later incident opens a new assigned issue; closed history remains available.
 
-GitHub has no atomic create-if-absent issue operation. Existing workflow concurrency prevents concurrent writers. A post-create read verifies unique bot ownership and assignment; an out-of-band duplicate fails visibly instead of silently closing either issue. Do not run concurrent manual deliveries outside that lock.
+GitHub has no atomic create-if-absent issue operation. Existing workflow concurrency prevents concurrent writers. Creation validates the POST response and then reads the returned issue ID directly using the same ownership, assignment and metadata checks. It still paginates the open list for duplicates, but temporary omission from that list does not invalidate the directly confirmed issue. An observed duplicate fails visibly instead of silently closing either issue. POST is never automatically retried, and an API failure still requires a later check. Do not run concurrent manual deliveries outside that lock.
+
+Delivery errors now identify a fixed safe category: `GITHUB_API`, `ISSUE_RESPONSE`, `ISSUE_OWNERSHIP`, `ISSUE_METADATA`, `ISSUE_DUPLICATE`, `ISSUE_CONFIRMATION` or `INPUT_INVALID`. These distinguish unavailable API confirmation from invalid ownership without disclosing exception details. This addresses the confirmation ambiguity observed when issue #8 was created and assigned successfully but its immediate confirmation step failed; the original transient cause was not established.
+
+Post-lock inactive context is selected using a fresh clock after the forecast capture attempt. If that attempt crosses T-60, the same run can collect later context while retaining the original forecast error and immutable pick/confidence records. This closes an intra-run timing gap; it does not guarantee GitHub schedule start times.
 
 The current publication step proves that its git push and Pages build request succeeded. It does not prove that the resulting build finished or a reader's browser refreshed. Resolution therefore says "fresh saved refresh and publication request"; the separate public-pointer check detects a public update stalled beyond the freshness allowance.
 

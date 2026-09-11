@@ -540,6 +540,12 @@ def availability_watch(state, checked_at=None):
 
 def refresh_availability(state, root):
     """Keep the existing forecast gate; collect later news outside frozen games."""
+    refs = []
+    forecast_error = None
+    try:
+        refs += refresh_forecast_availability(state, root)
+    except (ValueError, KeyError, OSError) as error:
+        forecast_error = error
     checked = utc(now())
     finals = {r['game_id'] for r in state.get('results', [])}
     contexts = []
@@ -551,12 +557,6 @@ def refresh_availability(state, root):
             complete = all(latest.get('teams', {}).get(t, {}).get('final_inactives_status') == 'VERIFIED_LIST' for t in (game['home'],game['away']))
             if checked < utc(game['kickoff']) or not complete:
                 contexts.append(game)
-    refs = []
-    forecast_error = None
-    try:
-        refs += refresh_forecast_availability(state, root)
-    except (ValueError, KeyError, OSError) as error:
-        forecast_error = error
     if contexts:
         from pgo_season_availability import capture_availability
         try:
