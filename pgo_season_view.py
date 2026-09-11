@@ -12,6 +12,8 @@ from pgo_season import utc
 GRADES = {'W': 'W', 'L': 'L', 'T': 'T', 'PENDING': 'Pending', 'NO_PICK': 'No pick'}
 FORECAST_STATES = {'DRAFT', 'LOCKED', 'BLOCKED', 'FINAL'}
 WEEK_STATES = {'UPCOMING', 'IN_PROGRESS', 'COMPLETE', 'BLOCKED'}
+SEASON_HEADERS = ('Matchup', 'Winner pick', 'Predicted score', 'Winner and spread checks',
+                  'Final score', 'Confidence allocation', 'Forecast status and times')
 
 
 def _text(value):
@@ -300,6 +302,7 @@ def _game(game, week, comparison=None, availability_context=None):
     game_id = _text(game['game_id'])
     scores = 'Forecast unavailable'
     calculation = 'No saved numerical forecast is available for this matchup.'
+    explanation_steps = []
     favorite = 'No pick' if game.get('pick') is None else _text(game['pick'])
     if game.get('margin') is not None:
         margin, total, hp, ap = (_number(game[name]) for name in ('margin','total','home_points','away_points'))
@@ -315,6 +318,11 @@ def _game(game, week, comparison=None, availability_context=None):
             neutral, venue, rest = (_number(explanation[name]) for name in ('neutral_margin','home_adjustment','rest_adjustment'))
             if not math.isclose(math.fsum((neutral,venue,rest)),margin,rel_tol=0,abs_tol=1e-8):
                 raise ValueError('Saved matchup explanation does not reconcile to its margin')
+            explanation_steps.append('On a neutral field, neither team has a projected edge.' if neutral == 0 else
+                                     'On a neutral field, PGO favors ' + _spread(dict(game,margin=neutral)) + '.')
+            for label, adjustment in (('venue',venue),('rest',rest)):
+                explanation_steps.append(f'No {label} adjustment.' if adjustment == 0 else
+                                         f'The {label} adjustment favors ' + _spread(dict(game,margin=adjustment)) + '.')
             components = (f'Neutral matchup: {neutral:+.2f} points; Home/venue adjustment: {venue:+.2f} points; '
                           f'rest adjustment: {rest:+.2f} points. Positive values favor {home}. ')
             if 'home_rating' in explanation or 'away_rating' in explanation:
@@ -323,11 +331,13 @@ def _game(game, week, comparison=None, availability_context=None):
                     raise ValueError('Saved rating inputs do not reconcile to neutral matchup')
                 components = (f'Ratings saved for this forecast: {home} {home_rating:+.3f}; {away} {away_rating:+.3f}. '
                               f'Rating inputs through {_time(explanation.get("rating_inputs_as_of"))}. ' + components)
+        explanation_steps.append(f'Final projected edge: {_spread(game)}. Combined-points estimate: {total:.1f}.')
         calculation = (components + f'The saved model favors {_spread(game)}. Its combined-points estimate is {total:.1f}. '
                        f'Home average = (combined points + home lead) / 2 = {hp:.2f}; away average = '
                        f'(combined points - home lead) / 2 = {ap:.2f}. Rounded scores are not literal final-score predictions.')
         if game['forecast_status'] == 'BLOCKED' or game.get('blocked_reason'):
             scores = '<strong>Saved conditional estimate</strong><br>' + scores
+            explanation_steps.insert(0,'This estimate is withheld as a pick until the blocking issue is resolved.')
             calculation = 'This estimate is withheld as a pick until the blocking issue is resolved. ' + calculation
     result = game.get('result')
     actual = 'Pending' if result is None else f'Final: {away} {_integer(result["away_score"])}, {home} {_integer(result["home_score"])}'
@@ -375,11 +385,13 @@ def _game(game, week, comparison=None, availability_context=None):
                 f'Expected pool points: {expected_text}<br>Earned pool points: {earned_text}')
         if confidence.get('added_after_lock'):
             pool += '<br><strong>Added after lock</strong>'
+        elif confidence.get('added_after_lock') is None:
+            pool += '<br><strong>Timing not recorded</strong>'
     availability = game.get('availability') or {}
-    note = _text(availability.get('summary') or 'Availability not verified')
+    note = '' if availability.get('teams') else _text(availability.get('summary') or 'Availability not verified')
     reason = game.get('blocked_reason') or availability.get('blocked_reason')
-    if reason: note += f'<br><strong>{_text(reason)}</strong>'
-    note += '<br>Checked ' + _time(availability.get('checked_at'))
+    if reason: note += ('<br>' if note else '') + f'<strong>{_text(reason)}</strong>'
+    note += ('<br>' if note else '') + 'Checked ' + _time(availability.get('checked_at'))
     provenance = ''
     if game.get('issued_at'):
         provenance += f'<p>Issued {_time(game["issued_at"])}; inputs through {_time(game.get("inputs_as_of"))}.</p>'
@@ -390,14 +402,22 @@ def _game(game, week, comparison=None, availability_context=None):
     status = game['forecast_status']
     if status in ('DRAFT','LOCKED'):
         status = f'<span class="weekly-status" data-weekly-cutoff="{_text(game["lock_at"])}">{status.title()}</span>'
-    return (f'<tr id="season-game-{game_id}" data-season-game-id="{game_id}"><th scope="row">{away} @ {home}</th>'
-            f'<td>{favorite}</td><td>{scores}</td><td class="game-grade-checks" data-grade="{game["grade"]}">{outcomes}</td>'
-            f'<td>{actual}</td><td>{pool}</td><td>{status}<br>Deadline {_time(game.get("lock_at"))}'
-            f'<br>Kickoff {_time(game["kickoff"])}</td></tr>'
-            f'<tr class="forecast-reason-row"><td colspan="7"><details class="forecast-reason" data-view-key="reason-{game_id}">'
+    values = (favorite, scores, outcomes, actual, pool,
+              f'{status}<br>Deadline {_time(game.get("lock_at"))}<br>Kickoff {_time(game["kickoff"])}')
+    cells = []
+    for index,(label,value) in enumerate(zip(SEASON_HEADERS[1:],values)):
+        attrs = f' class="game-grade-checks" data-grade="{game["grade"]}"' if index == 2 else ''
+        cells.append(f'<td role="cell"{attrs}><span class="season-cell-label" aria-hidden="true">{label}</span>'
+                     f'<div class="season-cell-value">{value}</div></td>')
+    narrative = ('<ol class="season-explanation-steps">' + ''.join(f'<li>{step}</li>' for step in explanation_steps)
+                 + '</ol>') if explanation_steps else f'<p>{calculation}</p>'
+    return (f'<tr id="season-game-{game_id}" data-season-game-id="{game_id}" class="season-game-row" role="row">'
+            f'<th scope="row" role="rowheader">{away} @ {home}</th>' + ''.join(cells) + '</tr>'
+            f'<tr class="forecast-reason-row" role="row"><td colspan="7" role="cell"><details class="forecast-reason" data-view-key="reason-{game_id}">'
             '<summary>Forecast explanation and availability</summary><div class="forecast-reason-body">'
-            f'<div class="forecast-reason-block"><h3>Saved calculation</h3><p>{calculation}</p>'
-            f'<p>Edition: {_text(game.get("source_edition",week["source_edition"]))}.</p>{provenance}</div>'
+            f'<div class="forecast-reason-block"><h3>Why this forecast</h3>{narrative}'
+            f'<details class="season-calculation" data-view-key="calculation-{game_id}"><summary>Exact saved calculation</summary><p>{calculation}</p>'
+            f'<p>Edition: {_text(game.get("source_edition",week["source_edition"]))}.</p>{provenance}</details></div>'
             f'<div class="forecast-reason-block"><h3>Saved forecast availability</h3><p>{note}</p>'
             + (_absences(game) if availability.get('teams') else '') +
             '<p>Non-QB injury news is context, not a fitted injury adjustment.</p></div>'
@@ -422,15 +442,24 @@ def _week(week, current, comparisons=None, availability_context=None):
         earned = sum(c.get('earned_points') or 0 for c in allocations)
         expected = ('Unavailable' if any(c.get('expected_points') is None for c in allocations)
                     else f"{math.fsum(c['expected_points'] for c in allocations):.2f}")
-        pool_summary = (f'<p>Confidence pool: {earned} earned so far; {sum(c["points"] for c in allocations)} allocated points. '
-                        f'Expected pool points from the saved chances: {expected}. Late entries remain marked below.</p>')
+        late = [c for c in allocations if c.get('added_after_lock') is True]
+        late_earned = sum(c.get('earned_points') or 0 for c in late)
+        unknown = sum(c.get('added_after_lock') is None for c in allocations)
+        timing = (f'<strong class="season-late-accounting">Includes {len(late)} late {"entry" if len(late)==1 else "entries"} '
+                  f'with {late_earned} earned pool points.</strong> ') if late else ''
+        if unknown:
+            timing += f'Timing is unknown for {unknown} {"entry" if unknown==1 else "entries"}. '
+        qualification = ' Late entries and entries with unknown timing remain in these tracking totals.' if late or unknown else ''
+        pool_summary = (f'<p class="season-pool-summary">Confidence pool: {earned} earned so far; '
+                        f'{sum(c["points"] for c in allocations)} allocated points. {timing}'
+                        f'Expected pool points from the saved chances: {expected}.{qualification}</p>')
     return (f'<details class="forecast-week" id="season-week-{week["week"]}" data-view-key="week-{week["week"]}"{" open" if current else ""}>'
             f'<summary>Week {week["week"]}: {_text(week["status"].replace("_"," "))}</summary>'
             f'<p>Straight-up record: {counts["W"]} W / {counts["L"]} L / {counts["T"]} T; {counts["NO_PICK"]} no pick; {counts["PENDING"]} pending.</p>'
             f'<p>Original forecast saved {_time(week["generated_at"])}; inputs through {_time(week["inputs_as_of"])}.</p>{pool_summary}'
-            f'<div class="table-shell" data-view-key="week-table-{week["week"]}"><table><thead><tr><th>Matchup</th><th>Winner pick</th><th>Predicted score</th>'
-            '<th>Winner and spread checks</th><th>Final score</th><th>Confidence allocation</th><th>Forecast status and times</th>'
-            f'</tr></thead><tbody>{rows}</tbody></table></div></details>')
+            f'<div class="table-shell" data-view-key="week-table-{week["week"]}"><table class="season-picks-table" role="table"><thead role="rowgroup"><tr role="row">'
+            + ''.join(f'<th scope="col" role="columnheader">{header}</th>' for header in SEASON_HEADERS)
+            + f'</tr></thead><tbody role="rowgroup">{rows}</tbody></table></div></details>')
 
 
 def _penalty_shadow(shadow):

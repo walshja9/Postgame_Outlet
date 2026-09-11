@@ -39,6 +39,81 @@ def state():
 
 
 class SeasonViewTests(unittest.TestCase):
+    def test_week_cells_keep_accessible_headers_and_card_labels(self):
+        class Table(HTMLParser):
+            def __init__(self, text):
+                super().__init__(); self.tags=[]; self.labels=[]; self.in_label=False; self.feed(text)
+            def handle_starttag(self, tag, attrs):
+                attrs=dict(attrs); self.tags.append((tag,attrs))
+                if tag=='span' and attrs.get('class')=='season-cell-label':
+                    self.in_label=True; self.labels.append('')
+            def handle_endtag(self, tag):
+                if tag=='span': self.in_label=False
+            def handle_data(self, text):
+                if self.in_label: self.labels[-1]+=text
+        data=state(); before=copy.deepcopy(data)
+        page=view._week(data['weeks'][1], True); table=Table(page)
+        expected=['Winner pick','Predicted score','Winner and spread checks','Final score',
+                  'Confidence allocation','Forecast status and times']
+        self.assertEqual(table.labels,expected)
+        self.assertIn(('table',{'class':'season-picks-table','role':'table'}),table.tags)
+        for tag,attrs in table.tags:
+            if attrs.get('class')=='season-cell-label': self.assertEqual(attrs.get('aria-hidden'),'true')
+            if tag in ('thead','tbody'): self.assertEqual(attrs.get('role'),'rowgroup')
+            if tag=='tr': self.assertEqual(attrs.get('role'),'row')
+            if tag=='td': self.assertEqual(attrs.get('role'),'cell')
+            if tag=='th': self.assertIn(attrs.get('role'),('columnheader','rowheader'))
+        self.assertEqual(sum(a.get('class')=='season-cell-value' for _,a in table.tags),6)
+        self.assertEqual(sum(a.get('colspan')=='7' for _,a in table.tags),1)
+        self.assertIn('Predicted: About 25 points each',page)
+        self.assertIn('data-grade="PENDING"',page)
+        self.assertEqual(data,before)
+
+    def test_explanation_names_direction_before_preserved_exact_calculation(self):
+        data=state(); game=data['weeks'][1]['games'][0]
+        cases=[(-.3,.5,0,('On a neutral field, PGO favors NE by 0.3 points.',
+                          'The venue adjustment favors SEA by 0.5 points.','No rest adjustment.')),
+               (1.2,0,-.2,('On a neutral field, PGO favors SEA by 1.2 points.',
+                            'No venue adjustment.','The rest adjustment favors NE by 0.2 points.')),
+               (0,0,0,('On a neutral field, neither team has a projected edge.',
+                        'No venue adjustment.','No rest adjustment.')),
+               (.001,0,0,('On a neutral field, PGO favors SEA by less than 0.1 point.',))]
+        for neutral,venue,rest,phrases in cases:
+            with self.subTest(neutral=neutral,venue=venue,rest=rest):
+                margin=neutral+venue+rest
+                game.update(margin=margin,home_points=(50.2+margin)/2,away_points=(50.2-margin)/2,
+                            pick='SEA' if margin>0 else 'NE' if margin<0 else None,
+                            explanation=dict(neutral_margin=neutral,home_adjustment=venue,rest_adjustment=rest))
+                before=copy.deepcopy(game); page=view._game(game,data['weeks'][1])
+                for phrase in phrases: self.assertIn(phrase,page)
+                self.assertIn('Combined-points estimate: 50.2.',page)
+                self.assertIn('data-view-key="calculation-current"',page)
+                self.assertLess(page.index(phrases[0]),page.index('data-view-key="calculation-current"'))
+                self.assertIn(f'Neutral matchup: {neutral:+.2f} points',page)
+                self.assertIn('Home average = (combined points + home lead) / 2',page)
+                self.assertEqual(game,before)
+
+    def test_late_accounting_and_structured_report_are_plain_and_explicit(self):
+        data=state(); week=data['weeks'][0]; game=week['games'][0]
+        for earned in (1,0):
+            game['confidence']['earned_points']=earned
+            page=view._week(week,False)
+            self.assertIn(f'Includes 1 late entry with {earned} earned pool points.',page)
+        game['confidence']['added_after_lock']=False
+        clean=view._week(week,False)
+        self.assertNotIn('season-late-accounting',clean)
+        self.assertNotIn('Timing is unknown',clean)
+        self.assertNotIn('remain in these tracking totals',clean)
+        game['confidence'].pop('added_after_lock')
+        self.assertIn('Timing is unknown for 1 entry.',view._week(week,False))
+        game['availability'].update(summary='SF: VERIFIED_REPORT / UNKNOWN',teams={
+            'NE':{'final_inactives_status':'UNKNOWN','observations':[]}})
+        page=view._week(week,False)
+        self.assertNotIn('VERIFIED_REPORT',page)
+        self.assertIn('<h3>Saved forecast availability</h3><p>Checked ',page)
+        self.assertIn('Final inactive lists are not fully verified',page)
+        self.assertIn('2026-09-16T21:00:00Z',page)
+
     def test_final_inactive_watch_and_late_context_do_not_rewrite_saved_forecast(self):
         data = state()
         game = data['weeks'][1]['games'][0]
@@ -254,7 +329,8 @@ class SeasonViewTests(unittest.TestCase):
         game.update(grade='T',result={'home_score':20,'away_score':20},forecast_status='FINAL')
         game['confidence']['earned_points']=0
         page=view.render_season(data)
-        self.assertIn('data-grade="T"><strong>Winner:</strong> T',page)
+        grade_cell=page.split('data-season-game-id="current"')[1].split('data-grade="T"')[1].split('</td>')[0]
+        self.assertIn('<strong>Winner:</strong> T',grade_cell)
         self.assertIn('SEA 20',page)
         self.assertIn('Earned pool points: 0',page)
         self.assertIn('Expected pool points: 0.51',page)

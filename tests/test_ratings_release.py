@@ -473,7 +473,7 @@ class GeneratedDocumentTests(unittest.TestCase):
             with patch.object(generate_site, "DATA", temp):
                 document = generate_site.build_html(self.rows, self.config)
 
-        theme_link = '<link rel="stylesheet" href="pgo-theme.css?v=20260910-six">'
+        theme_link = '<link rel="stylesheet" href="pgo-theme.css?v=20260910-readable">'
         self.assertEqual(document.count(theme_link), 1)
         self.assertGreater(document.index(theme_link), document.index("</style>"))
         self.assertNotIn("fonts.googleapis.com", document)
