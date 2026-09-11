@@ -58,7 +58,7 @@ Run `python -m unittest tests.test_pgo_publication_guard tests.test_pgo_workflow
 
 ### Accuracy and continuing model comparisons
 
-The separate [weights/probability prospective decision protocol](pgo-weights-prospective-decision-protocol-20260911.md) defines the formal future cohort, evidence floor and review rules. It was written after Week 1 issuance began; existing comparisons remain descriptive. Its activation requires an actual publication receipt and does not alter the frozen historical charter or any issued forecast.
+The separate [weights/probability prospective decision protocol](pgo-weights-prospective-decision-protocol-20260911.md) defines the formal future cohort, evidence floor and review rules. It was written after Week 1 issuance began; existing comparisons remain descriptive. The [publication receipt](pgo-weights-protocol-publication-20260911.json) records the actual public-byte observation, source commit and protocol hash that establish activation. This does not alter the frozen historical charter or any issued forecast.
 
 The accuracy view derives its measures from saved forecasts and verified finals. Each metric states its own eligible count. Historical models are compared only on identical eligible games, and absent original probabilities or totals are not reconstructed. After-lock confidence entries remain visible in pool accounting but do not enter pregame probability scores. Expected pool points and NFL scoreboard points use different units.
 
