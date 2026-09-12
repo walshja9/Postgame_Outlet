@@ -14,7 +14,7 @@ At inspected code `fd3abeefeef4328736df46c4adc963f55dc2663a`, ATL-PIT is safely 
 
 Game `2026_01_ATL_PIT` kicks off September 13, 2026 at **17:00 UTC / 1:00 PM EDT**. Any changed forecast must be durably saved **strictly before 16:00 UTC / noon EDT**, including the final save-time check. A late announcement or failed update must not rewrite the locked forecast.
 
-This follow-up is separate from the September 12 non-QB validation release, whose implementation and evidence work is complete subject to full CI verification. No numerical non-QB adjustment, new fit, manual point spread or forecast change was made for this handoff.
+This follow-up is separate from the September 12 non-QB validation release, whose implementation, evidence work and full CI verification are complete (Update board run 34707613897: 955 passed, one skipped). No numerical non-QB adjustment, new fit, manual point spread or forecast change was made for this handoff.
 
 ## Evidence to preserve
 
@@ -41,11 +41,26 @@ The roster identifies **Cooper Rush: ATL, QB, ACT, season 2026, week 1, GSIS `00
 
 ## Required replay and preservation checks
 
-- [ ] Start with an offline fixture of this blocked ATL game and the pinned roster/depth. Prove current selection returns Tua; a verified same-game announcement selects Rush without changing either source file.
-- [ ] Exercise the real selection, `refresh_forecast_availability`, saved-fit `build_next`, and `save_state` path with only external fetching mocked. Confirm Rush appears consistently in rankings, game explanation and availability identity; an OUT designation for Rush must still hold the pick.
-- [ ] Confirm restored confidence remains exactly **4**, with `expected_points = 4 * win_probability`; do not reallocate other fixed points. Retain other games' availability blocks, accepted results and locked sportsbook lines. Compare unaffected games' numerical values, allowing expected edition metadata and centered-board changes.
-- [ ] Repeat with unchanged provider depth to prove no reversion to Tua. Reject missing/conflicting/tampered evidence, wrong roster identity, future timestamps and a Week 2 reuse of this Week 1 announcement.
-- [ ] Cross T-60 during evaluation and during durable saving: preserve the complete old game and source/QB identity. Verify original state/source/manifest hashes and the prior archive pointer remain intact after a successful pre-lock update.
-- [ ] Extend `tests/test_pgo_season_boundaries.py` (existing QB preservation test mocks selection and rebuilding) with the real blocked-to-supported-QB recovery path; add focused selection fixtures if needed. Run `python -m unittest tests.test_pgo_season_boundaries tests.test_pgo_season_availability tests.test_pgo_season`, then the scheduled gate and independent review before any operational refresh/publication.
+- [x] Start with an offline fixture of this blocked ATL game and the pinned roster/depth. Prove current selection returns Tua; a verified same-game announcement selects Rush without changing either source file.
+- [x] Exercise the real selection, `refresh_forecast_availability`, saved-fit `build_next`, and `save_state` path with only external fetching mocked. Confirm Rush appears consistently in rankings, game explanation and availability identity; an OUT designation for Rush must still hold the pick.
+- [x] Confirm restored confidence remains exactly **4**, with `expected_points = 4 * win_probability`; do not reallocate other fixed points. Retain other games' availability blocks, accepted results and locked sportsbook lines. Compare unaffected games' numerical values, allowing expected edition metadata and centered-board changes.
+- [x] Repeat with unchanged provider depth to prove no reversion to Tua. Reject missing/conflicting/tampered evidence, wrong roster identity, future timestamps and a Week 2 reuse of this Week 1 announcement.
+- [x] Cross T-60 during evaluation and during durable saving: preserve the complete old game and source/QB identity. Verify original state/source/manifest hashes and the prior archive pointer remain intact after a successful pre-lock update.
+- [x] Extend `tests/test_pgo_season_boundaries.py` (existing QB preservation test mocks selection and rebuilding) with the real blocked-to-supported-QB recovery path; add focused selection fixtures if needed. Run `python -m unittest tests.test_pgo_season_boundaries tests.test_pgo_season_availability tests.test_pgo_season`, then the scheduled gate and independent review before any operational refresh/publication.
 
-Until those checks and the evidence-backed selection are implemented, keep ATL-PIT held with its four allocated points preserved. This handoff contains no replacement prediction and makes no claim that Rush's forecast is ready.
+Implementation and offline replay checks are complete. Operational publication and verification of the actually issued forecast remain the final steps; fixture values below are not public predictions.
+
+
+## September 12 implementation evidence
+
+The official announcement has now been captured and reviewed. JSON-LD dates are published `2026-09-11T18:12:22.097Z` and modified `2026-09-11T18:30:49.99Z`. Actual response capture is `2026-09-12T17:48:48.402488+00:00`; review is `2026-09-12T17:50:56.932245+00:00`. HTTP 200 returned the identical official URL. Raw HTML is 623,012 bytes, SHA-256 `66c9eab491409329a2901309645532976f9a23fffab1606fce535fd3e5171866`. The immutable envelope is `source-archive/08e9cb25040d8852f92854213db350cfef036763f4beaa2c3967bc4287367976.json`, 832,676 bytes, SHA-256 equal to its filename stem.
+
+`pgo_expected_starters.py` validates the captured primary article, decision-time clocks, matchup, exact source bytes and current active roster identity. The normal pre-lock refresh uses that selection for both the frozen model and availability capture. Original announcement evidence remains verifiable in current and archived states. Later same-week board revisions and post-lock context retain the issued starter; next-week selection requires fresh authority. The durable T-60 guard covers announcement changes too.
+
+The implementation also fixes a shared-list alias in revision source captures: display links appended to the returned list must not contaminate raw edition-source references. No fitted model, performance inputs, confidence allocation, non-QB weights or original archive is replaced. The game explanation links the official article and saved source evidence in plain language.
+
+The existing model ages QB history using the elapsed calendar time (365.25-day half-life). A September 12 Tua control isolates this behavior from the starter substitution: changing only ATL to Rush produces exactly zero change to other games. Rebuilding on September 12 instead of September 9 changes other draft margins by at most 0.00798961747 points in the offline fixture. This is existing model behavior, not a new weight or injury adjustment.
+
+Independent code review: SPEC PASS and QUALITY PASS, closed after verifying the final test receipt and file hashes. Four real integration regressions passed in 44.547 seconds. The exact scheduled workflow gate passed all 269 tests in 57.039 seconds (`output/atl-starter-20260912/scheduled-gate-01.log`). Local artifacts, including earlier failed checks, are retained under `output/atl-starter-20260912/` and `output/atl-starter-update-20260912/`. Offline fixture forecasts are diagnostic, not issued public forecasts.
+
+Publication will use the existing GitHub main/Pages workflow. Full canonical CI and live archive checks must still be verified for the published source commit.

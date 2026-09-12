@@ -199,6 +199,14 @@ def archive_href(relative):
     return 'evidence/season-2026/' + relative
 
 
+def check_starter_announcements(state, root):
+    for week in state.get('weeks', []):
+        for game in week['games']:
+            if 'starter_announcements' in game:
+                from pgo_expected_starters import verify
+                verify(game, game['starter_announcements'], root)
+
+
 def save_state(state, root=DEFAULT_ROOT):
     root = Path(root); root.mkdir(parents=True, exist_ok=True)
     require(not root.is_symlink(), 'Season root is a symlink')
@@ -216,7 +224,7 @@ def save_state(state, root=DEFAULT_ROOT):
         for week in state['weeks']:
             for game in week['games']:
                 before = prior_games.get(game['game_id'])
-                fields = ('margin','total','home_points','away_points','issued_at','source_edition','inputs_as_of','explanation','expected_qbs','availability','blocked_reason')
+                fields = ('margin','total','home_points','away_points','issued_at','source_edition','inputs_as_of','explanation','expected_qbs','availability','blocked_reason','starter_announcements')
                 changed = before is not None and any(before.get(k)!=game.get(k) for k in fields)
                 new_pick = before is None and game.get('margin') is not None
                 if changed or new_pick:
@@ -236,6 +244,7 @@ def save_state(state, root=DEFAULT_ROOT):
         from pgo_ats import check_durable
         check_durable(state, prior, durable)
     check_availability_context(state, root, durable)
+    check_starter_announcements(state, root)
     manifest = dict(schema_version=1, created_at=durable, files={'state.json.gz': {'sha256':sha(payload),'bytes':len(payload)}},
                     code_sha256=sha(Path(__file__).read_bytes()))
     previous = root/'current.json'
@@ -289,6 +298,7 @@ def load_current(root=DEFAULT_ROOT):
         load_availability(root/path)
     if state.get('availability_context'):
         check_availability_context(state, root, manifest['created_at'])
+    check_starter_announcements(state, root)
     return state
 
 
@@ -563,8 +573,14 @@ def refresh_availability(state, root):
             raw, roster_source = fetch_source(URLS['roster'], root); roster = csv_rows(raw)
             raw, depth_source = fetch_source(URLS['depth'], root); depth = csv_rows(raw)
             selected = select_roster(roster, depth, now())
+            expected = {t:r['gsis_id'] for t,r in selected.items()}
+            for game in contexts:
+                if game.get('starter_announcements'):
+                    from pgo_expected_starters import verify
+                    verify(game, game['starter_announcements'], root)
+                    expected.update({a['team']:a['gsis_id'] for a in game['starter_announcements']})
             path = Path(root)/'availability-v2'/utc(now()).strftime('%Y%m%dT%H%M%S%fZ')
-            captured = capture_availability(contexts, roster, {t:r['gsis_id'] for t,r in selected.items()}, path, purpose='context')
+            captured = capture_availability(contexts, roster, expected, path, purpose='context')
             incomplete = []
             for game in contexts:
                 observation = captured['games'][game['game_id']]
@@ -590,19 +606,33 @@ def refresh_availability(state, root):
 
 def refresh_forecast_availability(state, root):
     from pgo_season_availability import capture_availability
+    from pgo_expected_starters import apply, select_player, verify
     checked=now()
     games=[g for w in state['weeks'] for g in w['games'] if timedelta(minutes=60)<utc(g['kickoff'])-utc(checked)<=timedelta(hours=24)]
     if not games:return []
     raw, roster_source=fetch_source(URLS['roster'],root);roster=csv_rows(raw)
     raw, depth_source=fetch_source(URLS['depth'],root);depth=csv_rows(raw)
     selected=select_roster(roster,depth,now())
+    selected,announcements=apply(selected,roster,games,root,now())
+    retained_sources=[]
+    for week in state['weeks']:
+        if week['week'] != state['rankings']['completed_week']+1:continue
+        for game in week['games']:
+            if utc(now()) < utc(game['kickoff'])-timedelta(minutes=60):continue
+            saved=game.get('starter_announcements',[])
+            if saved:
+                verify(game,saved,root)
+                for announcement in saved:
+                    selected[announcement['team']]=select_player(roster,announcement,game)
+                    retained_sources.append(announcement['source'])
     expected={t:r['gsis_id'] for t,r in selected.items()}
     before={t['team']:t['qb_gsis_id'] for t in state['rankings']['teams']}
     changed={team for team in expected if before[team]!=expected[team]}
     path=Path(root)/'availability-v2'/utc(checked).strftime('%Y%m%dT%H%M%S%fZ')
     captured=capture_availability(games,roster,expected,path)
-    refs=[roster_source,depth_source]
-    if any(changed & {g['home'],g['away']} for g in games):
+    refs=[roster_source,depth_source,*retained_sources,*(a['source'] for rows in announcements.values() for a in rows)]
+    if any(changed & {g['home'],g['away']} or
+           announcements.get(g['game_id'],[]) != g.get('starter_announcements',[]) for g in games):
         rankings,revision,sources=build_next(state,state['schedule'],state['results'],root,
             completed=state['rankings']['completed_week'],selected=selected,roster_sources=refs)
         new_games={g['game_id']:g for g in revision['games']}
@@ -614,7 +644,11 @@ def refresh_forecast_availability(state, root):
                 if new.get('confidence') and assigned:
                     new['confidence']['points']=assigned['points']
                     new['confidence']['expected_points']=assigned['points']*new['confidence']['win_probability']
+                elif assigned:
+                    new['withheld_confidence']=copy.deepcopy(assigned)
                 new['expected_qbs']={t:selected[t]['full_name'] for t in (new['home'],new['away'])}
+                if announcements.get(new['game_id']):
+                    new['starter_announcements']=copy.deepcopy(announcements[new['game_id']])
                 new['availability']=old.get('availability',{})
                 if old.get('blocked_by_availability') and not changed & {old['home'],old['away']}:
                     for key in ('blocked_reason','blocked_by_availability','withheld_confidence'):
@@ -623,7 +657,7 @@ def refresh_forecast_availability(state, root):
                 week['games'][index]=revise_game(old,new,now())
             if week['week']==revision['week']:
                 week.update(source_edition=revision['source_edition'],generated_at=revision['generated_at'],inputs_as_of=revision['inputs_as_of'])
-        state['rankings']=rankings;state.setdefault('edition_sources',{})[rankings['edition']]=sources;refs=sources
+        state['rankings']=rankings;state.setdefault('edition_sources',{})[rankings['edition']]=sources;refs=list(sources)
         games=[g for w in state['weeks'] for g in w['games'] if g['game_id'] in captured['games']]
     for g in games:
         observation=captured['games'][g['game_id']]

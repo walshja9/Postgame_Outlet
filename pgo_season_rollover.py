@@ -30,6 +30,7 @@ def load_archive(root, pointer):
     meta = manifest['files'][name]
     require(sha(payload) == meta['sha256'] and len(payload) == meta['bytes'], 'Archive state hash differs')
     state = json.loads(gzip.decompress(payload) if name.endswith('.gz') else payload)
+    season.check_starter_announcements(state, root)
     return state, manifest
 
 

@@ -8,7 +8,7 @@ from urllib.parse import unquote, urlsplit
 from zoneinfo import ZoneInfo
 
 import pgo_current_board as board
-from pgo_season import utc
+from pgo_season import archive_href, utc
 
 GRADES = {'W': 'W', 'L': 'L', 'T': 'T', 'PENDING': 'Pending', 'NO_PICK': 'No pick'}
 FORECAST_STATES = {'DRAFT', 'LOCKED', 'BLOCKED', 'FINAL'}
@@ -491,12 +491,20 @@ def _game(game, week, comparison=None, availability_context=None):
                      f'<div class="season-cell-value">{value}</div></td>')
     narrative = ('<ol class="season-explanation-steps">' + ''.join(f'<li>{step}</li>' for step in explanation_steps)
                  + '</ol>') if explanation_steps else f'<p>{calculation}</p>'
+    starter_note = ''
+    for announcement in game.get('starter_announcements', []):
+        source = announcement['source']
+        starter_note += (f'<p><strong>Starter update:</strong> {_text(announcement["team"])}: '
+                         f'{_text(announcement["full_name"])}. The forecast was recalculated for this starting quarterback. '
+                         f'Announcement saved {_time(source["captured_at"])}.</p>'
+                         + _sources([dict(href=source['url'],label='Official starter announcement'),
+                                     dict(href=archive_href(source['path']),label='Saved announcement and source evidence')]))
     return (f'<tr id="season-game-{game_id}" data-season-game-id="{game_id}" class="season-game-row" role="row">'
             f'<th scope="row" role="rowheader">{away} @ {home}</th>' + ''.join(cells) + '</tr>'
             f'<tr class="forecast-reason-row" role="row"><td colspan="7" role="cell">' + _postgame_card(game,comparison) +
             f'<details class="forecast-reason" data-view-key="reason-{game_id}">'
             '<summary>Forecast explanation and availability</summary><div class="forecast-reason-body">'
-            f'<div class="forecast-reason-block"><h3>Why this forecast</h3>{narrative}'
+            f'<div class="forecast-reason-block"><h3>Why this forecast</h3>{starter_note}{narrative}'
             f'<details class="season-calculation" data-view-key="calculation-{game_id}"><summary>Exact saved calculation</summary><p>{calculation}</p>'
             f'<p>Edition: {_text(game.get("source_edition",week["source_edition"]))}.</p>{provenance}</details></div>'
             f'<div class="forecast-reason-block"><h3>Saved forecast availability</h3><p>{note}</p>'

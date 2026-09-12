@@ -1,0 +1,15 @@
+{
+  "announcements": [
+    {
+      "game_id": "2026_01_ATL_PIT",
+      "source": {
+        "bytes": 832676,
+        "captured_at": "2026-09-12T17:48:48.402488+00:00",
+        "path": "source-archive/08e9cb25040d8852f92854213db350cfef036763f4beaa2c3967bc4287367976.json",
+        "sha256": "08e9cb25040d8852f92854213db350cfef036763f4beaa2c3967bc4287367976",
+        "url": "https://www.atlantafalcons.com/news/tua-tagovailoa-cooper-rush-michael-penix-jr-state-of-qb-atlanta"
+      }
+    }
+  ],
+  "schema_version": 1
+}

@@ -39,6 +39,20 @@ def state():
 
 
 class SeasonViewTests(unittest.TestCase):
+    def test_starter_update_explains_recalculation_and_links_saved_authority(self):
+        data=state(); week=data['weeks'][1]; game=week['games'][0]
+        source={'url':'https://www.patriots.com/news/starter',
+                'captured_at':'2026-09-16T20:00:00Z','path':'source-archive/'+'a'*64+'.json'}
+        game['starter_announcements']=[{'team':'NE','full_name':'New <QB>','gsis_id':'00-0000001','source':source}]
+        page=view._game(game,week)
+        self.assertIn('Starter update:',page)
+        self.assertIn('NE: New &lt;QB&gt;',page)
+        self.assertIn('recalculated for this starting quarterback',page)
+        self.assertIn('href="https://www.patriots.com/news/starter"',page)
+        self.assertIn(source['path'],page)
+        source['url']='javascript:alert(1)'
+        with self.assertRaises(ValueError):view._game(game,week)
+
     def test_off_day_shows_check_window_and_lock_without_claiming_a_check_happened(self):
         data = state()
         data['weeks'] = data['weeks'][1:]

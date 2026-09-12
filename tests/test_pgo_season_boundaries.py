@@ -102,6 +102,19 @@ class SeasonBoundaryTests(unittest.TestCase):
         self.assertNotIn('new_source_extra',restored)
         self.assertEqual(restored['forecast_status'],'LOCKED')
 
+    def test_starter_evidence_alone_cannot_change_at_durable_lock(self):
+        state=self.state([self.game()])
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary)
+            with patch.object(api,'now',return_value='2026-09-13T15:59:00Z'):
+                api.save_state(state,root)
+            pointer=(root/'current.json').read_bytes()
+            state['checked_at']='2026-09-13T16:00:00Z'
+            state['weeks'][0]['games'][0]['starter_announcements']=[{'new':'evidence'}]
+            with patch.object(api,'now',return_value=state['checked_at']), self.assertRaisesRegex(ValueError,'durable-write lock'):
+                api.save_state(state,root)
+            self.assertEqual((root/'current.json').read_bytes(),pointer)
+
     def test_week_rollover_requires_complete_finals_and_retains_grades_when_stats_missing(self):
         first=self.game(kickoff='2026-09-09T20:00:00Z');second=self.game('2026_01_BAL_BUF','BUF','BAL',points=8)
         future=self.game('2026_02_NE_SEA',kickoff='2026-09-20T17:00:00Z');future['week']=2

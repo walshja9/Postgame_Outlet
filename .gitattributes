@@ -90,3 +90,7 @@ tests/test_pgo_replacement_refresh.py text eol=lf
 research/pgo_nonqb_validation_20260912/** -text whitespace=cr-at-eol
 pgo_injury_usage_monitor.py text eol=lf
 tests/test_pgo_injury_usage_monitor.py text eol=lf
+pgo_expected_starters.py text eol=lf
+tests/test_pgo_expected_starters.py text eol=lf
+tests/test_pgo_starter_revision.py text eol=lf
+data/pgo_starter_announcements.json -text
