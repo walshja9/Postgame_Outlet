@@ -63,6 +63,33 @@ class ReplacementDepthTests(unittest.TestCase):
         self.assertEqual(team['roles'][0]['remaining_experienced_backups_not_confirmed_out'], 1)
         self.assertEqual(args, before)
 
+    def test_v2_preserves_dated_ina_context_without_inventing_future_absence(self):
+        rr, dd, hh, obs = self.fixture()
+        rr.append(dict(roster('00-0000005', 'Inactive Five', 'INA'), game_type='REG'))
+        dd.append(slot('00-0000005', 'Inactive Five', 5, position='NB')); before = copy.deepcopy((rr, dd, hh, obs))
+        arguments = dict(checked_at=NOW, depth_captured_at=NOW, teams={'NE'})
+        legacy = depth.build_teams(rr, dd, hh, obs, **arguments)[0]
+        explicit_legacy = depth.build_teams(rr, dd, hh, obs, **arguments, inventory_version=1)[0]
+        current = depth.build_teams(rr, dd, hh, obs, **arguments, inventory_version=2)[0]
+        self.assertEqual(legacy, explicit_legacy)
+        self.assertEqual(len(legacy['defenders']), 4); self.assertNotIn('inactive_roster_defenders', legacy)
+        self.assertEqual(current['inventory_version'], 2)
+        self.assertEqual(current['inactive_roster_defenders'], 1)
+        player = current['defenders'][-1]
+        self.assertEqual(player['roster_context'], dict(season='2026', week='1', game_type='REG'))
+        self.assertEqual(player['depth_rows'], [dict(position='NB', rank=5)])
+        self.assertIsNone(current['defenders'][0]['roster_context']['game_type'])
+        self.assertFalse(player['confirmed_unavailable']); self.assertEqual(player['availability_statuses'], ['UNKNOWN'])
+        self.assertIsNone(player['prior_role_share'])
+        for key in ('active_defenders', 'reserve_defenders', 'other_roster_defenders', 'roles', 'unavailable_prior_usage_subtotal'):
+            self.assertEqual(current[key], legacy[key], key)
+        self.assertEqual((rr, dd, hh, obs), before)
+        obs['NE']['observations'].append(dict(gsis_id='00-0000005', name='Inactive Five', status='INACTIVE',
+                                              identity_status='RESOLVED', captured_at=NOW))
+        confirmed = depth.build_teams(rr, dd, hh, obs, **arguments, inventory_version=2)[0]
+        self.assertTrue(confirmed['defenders'][-1]['confirmed_unavailable'])
+        self.assertEqual(confirmed['unavailable_players'], [p for p in confirmed['defenders'] if p['confirmed_unavailable']])
+
     def test_dnp_uncertain_missing_and_name_conflict_remain_distinct(self):
         rr, dd, hh, obs = self.fixture()
         obs['NE']['observations'][0].update(status='NO_GAME_DESIGNATION', practice_status='Did Not Participate')

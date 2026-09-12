@@ -6,19 +6,27 @@ unlisted players and reserve/practice-squad context. Rookies and missing histori
 remain unknown. A listed backup is not necessarily the actual replacement;
 defensive snaps do not establish assignment, talent or causal injury impact.
 
-The [declared protocol](charter.md) applies only to newly saved, versioned
-inventories. Existing forecasts, injury values and model weights do not change.
+The [original protocol](charter.md) and [September 12 version 2 addendum](inventory-v2-addendum.md)
+apply only to newly saved, versioned inventories. Existing forecasts, injury values and model weights do not change.
 Earlier captures without this inventory cannot be backfilled or admitted.
 
 ## Capture contract
 
 `research.pgo_replacement_depth_20260910.capture.capture(state, root, checked_at)`
-now returns top-level `inventory_version: 1`; each team has the same version and
+retains the compatibility default `inventory_version: 1`; each team has the same version and
 a `defenders` list. These are the exact already constructed player records.
 Existing `unavailable_players`, role summaries and prior-usage subtotals remain
 unchanged. A player listed in several provider positions occurs once, retaining
 all of those roles. Unresolved roster identities remain separately visible in
 `unresolved_roster`; the inventory does not invent their identities.
+
+The scheduled writer explicitly passes `inventory_version=2` for new captures.
+Version 2 also retains roster rows marked `INA`, their supplied season/week/game
+type context, and a separate `inactive_roster_defenders` team count. A roster
+label can describe a prior game: it does not establish an injury or automatically
+mark a player unavailable for the next game. Version 1 omitted these rows; its
+saved membership and counts remain unchanged. Readers reproduce each known
+version with its own rules and reject unsupported versions.
 
 The season writer retains source archives and enforces durable saving before
 T-60. A newly generated preview is not a previously published pregame inventory.

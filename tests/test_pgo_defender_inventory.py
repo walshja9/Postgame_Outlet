@@ -1,10 +1,14 @@
 import copy
+import csv
 import importlib.util
 import hashlib
+import gzip
+import io
 import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from tests import test_pgo_injury_usage
 
@@ -44,6 +48,68 @@ class DefenderInventoryTests(unittest.TestCase):
         self.assertEqual(missing['missing_target'], 1)
         self.assertEqual(missing['observed_zero'], 1)
         self.assertEqual(helper.snapshot, before)
+
+    def test_v2_ina_context_links_observed_usage_without_becoming_unavailable(self):
+        api = self.api(); helper = self.fixture(); helper.snapshot['inventory_version'] = 2
+        for team in helper.snapshot['teams']: team['inventory_version'] = 2
+        player = helper.snapshot['teams'][0]['defenders'][1]
+        player.update(roster_status='INA', roster_context=dict(season='2026', week='1', game_type='REG'))
+        before = copy.deepcopy(helper.snapshot)
+        out = api.link(helper.snapshot, helper.roster, [helper.snap, dict(helper.snap, pfr_player_id='BackTe00', defense_snaps='0')], [helper.final], helper.clock)
+        self.assertEqual(out['inventory_version'], 2); self.assertEqual(out['joined'], 2)
+        self.assertEqual(out['observed_zero'], 2)
+        self.assertFalse(out['rows'][1]['confirmed_unavailable'])
+        self.assertEqual(out['rows'][1]['roster_context'], player['roster_context'])
+        self.assertEqual(helper.snapshot, before)
+
+    def test_unknown_inventory_versions_are_rejected_at_reader_boundaries(self):
+        api = self.api()
+        for version in (None, 0, 3, True, 1.0, '1'):
+            for location in ('snapshot', 'team'):
+                helper = self.fixture()
+                target = helper.snapshot if location == 'snapshot' else helper.snapshot['teams'][0]
+                target['inventory_version'] = version
+                with self.subTest(version=version, location=location), self.assertRaises(ValueError):
+                    api.link(helper.snapshot, helper.roster, [helper.snap], [helper.final], helper.clock)
+            state = dict(schema_version=1, season=2026, checked_at=helper.snapshot['generated_at'],
+                         replacement_depth=dict(helper.snapshot, inventory_version=version))
+            with patch.object(api, 'load_archive', return_value=(state, dict(created_at=helper.snapshot['completed_at']))):
+                with self.subTest(load_version=version), self.assertRaises(ValueError):
+                    api.load_inventory(Path('unused'), {})
+            with self.subTest(capture_version=version), self.assertRaises(ValueError):
+                api.capture.capture({}, Path('unused'), helper.clock, inventory_version=version)
+        helper = self.fixture(); helper.snapshot['teams'][0]['inventory_version'] = 2
+        with self.assertRaises(ValueError):
+            api.link(helper.snapshot, helper.roster, [helper.snap], [helper.final], helper.clock)
+
+    def test_saved_v1_and_v2_inventory_replay_their_own_roster_scope(self):
+        api = self.api()
+        from tests.test_pgo_replacement_depth import NOW, roster, slot
+        rr = [roster('00-0000001', 'Active One'), dict(roster('00-0000002', 'Inactive Two', 'INA'), game_type='REG')]
+        rr[0]['game_type'] = 'REG'
+        dd = [slot(row['gsis_id'], row['full_name'], i+1) for i, row in enumerate(rr)]
+        with tempfile.TemporaryDirectory() as tmp, patch.object(api.capture, '_history', return_value=({}, None)):
+            root = Path(tmp); (root/'source-archive').mkdir(); refs = []
+            for url, rows in ((api.capture.ROSTER_URL, rr), (api.capture.DEPTH_URL, dd)):
+                text = io.StringIO(); writer = csv.DictWriter(text, fieldnames=list(rows[0]))
+                writer.writeheader(); writer.writerows(rows); raw = gzip.compress(text.getvalue().encode(), mtime=0)
+                digest = hashlib.sha256(raw).hexdigest(); relative = 'source-archive/' + digest + '.csv.gz'
+                (root/relative).write_bytes(raw)
+                refs.append(dict(url=url, path=relative, captured_at=NOW, sha256=digest, bytes=len(raw)))
+            for version in (1, 2):
+                state = dict(schema_version=1, season=2026, checked_at=NOW, source_captures=refs, weeks=[])
+                snapshot = api.capture.capture(state, root, NOW, inventory_version=version)
+                self.assertEqual(snapshot['inventory_version'], version)
+                state['replacement_depth'] = snapshot
+                archive = f'runs-v2/20260910T20000{version}000000Z'; directory = root/archive; directory.mkdir(parents=True)
+                raw = json.dumps(state).encode(); (directory/'state.json').write_bytes(raw)
+                manifest = json.dumps(dict(created_at=f'2026-09-10T20:00:0{version}+00:00',
+                    files={'state.json': dict(sha256=hashlib.sha256(raw).hexdigest(), bytes=len(raw))})).encode()
+                (directory/'manifest.json').write_bytes(manifest)
+                loaded, raw_roster = api.load_inventory(root, dict(path=archive, manifest_sha256=hashlib.sha256(manifest).hexdigest()))
+                self.assertEqual(loaded['teams'], snapshot['teams']); self.assertEqual(raw_roster, rr)
+                ne = next(team for team in loaded['teams'] if team['team'] == 'NE')
+                self.assertEqual(len(ne['defenders']), version)
 
     def test_old_or_incomplete_inventory_is_unavailable_not_reconstructed(self):
         api = self.api()
@@ -113,6 +179,31 @@ class DefenderInventoryTests(unittest.TestCase):
                 with self.subTest(change=change), self.assertRaises(ValueError): api.load_target(source)
             (source / 'receipt.json').write_text(json.dumps(dict(receipt, http_status=404)), encoding='utf-8')
             self.assertEqual(api.load_target(source)[0], [])
+
+    def test_report_receipt_pins_v2_addendum_only_for_v2_inventory(self):
+        api = self.api()
+        with tempfile.TemporaryDirectory(dir=api.ROOT) as tmp:
+            here = Path(tmp); root = here/'season'; root.mkdir(); source = here/'source'; source.mkdir()
+            (root/'current.json').write_text('{}'); selected = here/'selected.json'; selected.write_text('{}')
+            (source/'receipt.json').write_text('{}'); (source/'response.bin').write_bytes(b'fixture')
+            (here/'charter.md').write_bytes(b'original protocol fixture')
+            addendum = here/'inventory-v2-addendum.md'
+            for version in (1, 2):
+                if version == 2: addendum.write_bytes(b'version two protocol fixture')
+                helper = self.fixture(); helper.snapshot['inventory_version'] = version
+                for team in helper.snapshot['teams']: team['inventory_version'] = version
+                output = here/f'report{version}'
+                with patch.object(api, 'HERE', here), \
+                     patch.object(api, 'load_inventory', return_value=(helper.snapshot, helper.roster)), \
+                     patch.object(api, 'load_target', return_value=([], dict(captured_at=helper.clock))), \
+                     patch.object(api, 'load_current', return_value=dict(results=[], checked_at=helper.clock)), \
+                     patch.object(api, 'verify_finals'):
+                    api.run(selected, source, output, root)
+                pins = json.loads((output/'receipt.json').read_bytes())['inputs']
+                for path in (here/'charter.md', addendum):
+                    key = path.relative_to(api.ROOT).as_posix()
+                    if path == addendum and version == 1: self.assertNotIn(key, pins)
+                    else: self.assertEqual(pins[key], dict(sha256=hashlib.sha256(path.read_bytes()).hexdigest(), bytes=path.stat().st_size))
 
 
 if __name__ == '__main__':

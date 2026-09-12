@@ -753,7 +753,7 @@ def refresh_experiments(state, previous, root):
             if key!='replacement_depth':arguments.append(copy.deepcopy(previous))
             if needs_root:arguments.append(root)
             arguments.append(state['checked_at'])
-            result=operation(*arguments)
+            result=operation(*arguments, inventory_version=2) if key=='replacement_depth' else operation(*arguments)
             require(isinstance(result,dict), 'Experiment returned no saved payload')
             if key=='replacement_depth' and result.get('status')=='BLOCKED' and old:
                 result=dict(copy.deepcopy(old),status='BLOCKED',blocked_reason=result.get('blocked_reason'),checked_at=state['checked_at'])

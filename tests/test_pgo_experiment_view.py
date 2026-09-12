@@ -95,5 +95,28 @@ class ExperimentViewTests(unittest.TestCase):
         state=self.fixture();state['replacement_depth']['sources'][0]['href']='javascript:alert(1)'
         with self.assertRaises(ValueError):view._experiments(state)
 
+    def test_inactive_roster_context_is_not_a_current_game_absence(self):
+        state = self.fixture(); depth = state['replacement_depth']; team = depth['teams'][0]
+        inactive = dict(name='Dated <inactive>', position='LB', roster_status='INA',
+                        confirmed_unavailable=False, prior_role_share=None)
+        depth['inventory_version'] = 2
+        team.update(inventory_version=2, defenders=[*team['unavailable_players'], inactive], inactive_roster_defenders=1)
+        before = copy.deepcopy(state); page = view._experiments(state)
+        self.assertIn('2 named defender records saved', page)
+        self.assertIn('Roster-listed inactive defenders: Dated &lt;inactive&gt;', page)
+        self.assertIn('does not establish absence for an upcoming game', page)
+        self.assertNotIn('Dated &lt;inactive&gt; (LB): Confirmed unavailable', page)
+        self.assertEqual(state, before)
+        for version in (1, 3):
+            depth['inventory_version'] = version
+            page = view._experiments(state)
+            self.assertIn('This saved edition lacks', page)
+            self.assertNotIn('Roster-listed inactive defenders:', page)
+        depth['inventory_version'] = team['inventory_version'] = 1
+        team['defenders'] = team['unavailable_players']
+        page = view._experiments(state)
+        self.assertIn('This older inventory omitted roster-listed inactive players', page)
+        self.assertNotIn('Roster-listed inactive defenders:', page)
+
 
 if __name__=='__main__': unittest.main()

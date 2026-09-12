@@ -111,14 +111,16 @@ def eligible_games(state, checked_at):
     return games
 
 
-def build_teams(roster, depth, histories, observations, *, checked_at, depth_captured_at, teams=CURRENT_TEAMS):
+def build_teams(roster, depth, histories, observations, *, checked_at, depth_captured_at, teams=CURRENT_TEAMS, inventory_version=1):
     """Pure descriptive aggregation. All field names preserve unknown availability."""
+    _require(type(inventory_version) is int and inventory_version in (1, 2), 'Unknown defender inventory version')
+    roster_statuses = {'ACT','RES','DEV','EXE'} | ({'INA'} if inventory_version == 2 else set())
     now, cutoff = _utc(checked_at), _utc(depth_captured_at)
     _require(cutoff <= now, 'Depth capture is in the future')
     roster_by_team = defaultdict(list); identities = set(); unresolved_roster = defaultdict(list)
     for raw in roster:
         team = normalize_team(raw.get('team',''))
-        if raw.get('position','').upper() not in evidence.DEFENSE or raw.get('status') not in {'ACT','RES','DEV','EXE'}:
+        if raw.get('position','').upper() not in evidence.DEFENSE or raw.get('status') not in roster_statuses:
             continue
         if team not in teams:
             continue
@@ -190,9 +192,11 @@ def build_teams(roster, depth, histories, observations, *, checked_at, depth_cap
                                 prior_observed_games=profile.get('observed_games',0),
                                 confirmed_unavailable=unavailable, uncertain=bool(statuses & {'QUESTIONABLE','DOUBTFUL'}),
                                 availability_statuses=sorted(statuses) or ['UNKNOWN'], observations=official))
+            if inventory_version == 2:
+                players[-1]['roster_context'] = {key: row.get(key) or None for key in ('season', 'week', 'game_type')}
         active = [p for p in players if p['roster_status']=='ACT']
         lost = [p for p in players if p['confirmed_unavailable']]
-        slots = sorted({r['position'] for p in players for r in p['depth_rows']})
+        slots = sorted({r['position'] for p in players if p['roster_status'] in {'ACT','RES','DEV','EXE'} for r in p['depth_rows']})
         roles = []
         for slot in slots:
             first = [p for p in active if any(r['position']==slot and r['rank']==1 for r in p['depth_rows'])]
@@ -204,7 +208,7 @@ def build_teams(roster, depth, histories, observations, *, checked_at, depth_cap
                               remaining_experienced_backups_not_confirmed_out=sum(p['prior_role_share'] is not None for p in remaining),
                               remaining_unknown_history_backups_not_confirmed_out=sum(p['prior_role_share'] is None for p in remaining),
                               uncertain_backups=sum(p['uncertain'] for p in remaining)))
-        result.append(dict(team=team, inventory_version=1, defenders=players,
+        result.append(dict(team=team, inventory_version=inventory_version, defenders=players,
                            depth_status=depth_status, depth_snapshot_at=stamp.isoformat() if stamp else None,
                            active_defenders=len(active), reserve_defenders=sum(p['roster_status']=='RES' for p in players),
                            other_roster_defenders=sum(p['roster_status'] in {'DEV','EXE'} for p in players),
@@ -216,13 +220,16 @@ def build_teams(roster, depth, histories, observations, *, checked_at, depth_cap
                            unavailable_prior_usage_subtotal=math.fsum(p['prior_role_share'] for p in lost if p['prior_role_share'] is not None),
                            unavailable_unknown_prior_role=sum(p['prior_role_share'] is None for p in lost),
                            expected_unavailable_exposure=None, unavailable_players=lost, roles=roles))
+        if inventory_version == 2:
+            result[-1]['inactive_roster_defenders'] = sum(p['roster_status']=='INA' for p in players)
     return result
 
 
-def capture(state, root, checked_at):
+def capture(state, root, checked_at, *, inventory_version=1):
     """Return an observation for the existing state writer; never mutate its input."""
+    _require(type(inventory_version) is int and inventory_version in (1, 2), 'Unknown defender inventory version')
     root = Path(root); now = _utc(checked_at)
-    base = dict(identity=IDENTITY, inventory_version=1, status='BLOCKED', generated_at=now.isoformat(), forecast_adjustment=None,
+    base = dict(identity=IDENTITY, inventory_version=inventory_version, status='BLOCKED', generated_at=now.isoformat(), forecast_adjustment=None,
                 historical_admission='BLOCKED FOR FITTING', teams=[], games=[], sources=[])
     refs = [*state.get('source_captures',[]), *state.get('sources',[]), *state.get('rankings',{}).get('source_captures',[])]
     refs += [r for values in state.get('edition_sources',{}).values() for r in values]
@@ -260,7 +267,7 @@ def capture(state, root, checked_at):
             _require(team not in observations, 'Multiple eligible role observations for one team')
             observations[team] = dict(info, checked_at=saved['checked_at'])
     teams = build_teams(_csv(roster_raw), _csv(depth_raw), histories, observations,
-                        checked_at=checked_at, depth_captured_at=chosen[DEPTH_URL]['captured_at'])
+                        checked_at=checked_at, depth_captured_at=chosen[DEPTH_URL]['captured_at'], inventory_version=inventory_version)
     source_refs = [dict(ref) for ref in chosen.values()]
     for ref in packages:
         raw = (root/ref/'manifest.json').read_bytes()
@@ -279,7 +286,9 @@ def capture(state, root, checked_at):
                              'ACT and not confirmed OUT do not establish that a player will play.',
                              'Provider LB/OLB/DE labels are preserved and are not automatically EDGE.',
                              'Unknown roles, rookies, missing reports and reserve context remain visible.',
-                             'Historical role/publication admission failed; no injury weights or forecast changes.'])
+                             'Historical role/publication admission failed; no injury weights or forecast changes.']
+                            + (['INA is dated provider roster context, not an injury diagnosis or confirmation of absence for a future game.']
+                               if inventory_version == 2 else []))
 
 
 def record(root, output):

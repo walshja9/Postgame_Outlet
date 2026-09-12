@@ -831,13 +831,17 @@ def _experiments(state):
             f'<p><a href="{base}pgo_weights_candidate_20260910/README.md">Every variant, review rules and saved evidence</a>.</p></details>')
     if depth:
         inventory = depth.get('teams', [])
-        if depth.get('inventory_version') == 1 and inventory and all(
-                team.get('inventory_version') == 1 and isinstance(team.get('defenders'), list) for team in inventory):
+        if depth.get('inventory_version') in (1, 2) and inventory and all(
+                team.get('inventory_version') == depth['inventory_version'] and isinstance(team.get('defenders'), list) for team in inventory):
             count = sum(len(team['defenders']) for team in inventory)
             inventory_note = (f'{count} named defender record{"s" if count != 1 else ""} saved. '
                               'Later snap reports can show who played; they do not prove who replaced whom or how many points an injury cost.')
             if depth.get('status') != 'DESCRIPTIVE / NOT IN MODEL':
                 inventory_note = 'The latest defender update could not be verified. The earlier named inventory remains preserved.'
+            if depth['inventory_version'] == 1:
+                inventory_note += ' This older inventory omitted roster-listed inactive players; its original counts are preserved.'
+            else:
+                inventory_note += ' Roster-listed inactive players are retained as dated context; that label does not establish absence for an upcoming game.'
         else:
             inventory_note = ('This saved edition lacks the complete named defender inventory. '
                               'New captures will retain it; older captures are not filled in afterward.')
@@ -854,6 +858,9 @@ def _experiments(state):
                 unavailable.append(f'<li>{_text(player["name"])} ({_text(player["position"])}): {status}; '
                                    f'roster {_text(player["roster_status"])}. {prior}.</li>')
             code = _text(team['team'])
+            inactive_names = [p['name'] for p in team.get('defenders', []) if p.get('roster_status') == 'INA'] if depth.get('inventory_version') == team.get('inventory_version') == 2 else []
+            inactive_note = ('<p>Roster-listed inactive defenders: ' + ', '.join(_text(name) for name in inactive_names)
+                             + '. This may describe an earlier game; use the current game\'s official report to check availability.</p>') if inactive_names else ''
             unresolved = sorted(set(team.get('unresolved_official_names',[]) + [r['name'] for r in team.get('unresolved_roster',[])]))
             teams.append(f'<details data-view-key="replacement-team-{code}"><summary>{code} &middot; defensive depth observations</summary>'
                 f'<p>Provider depth list: {_time(team.get("depth_snapshot_at"))}. Official report: {_text(team["report_status"])}; '
@@ -863,6 +870,7 @@ def _experiments(state):
                 + f'<p>Unresolved depth names: {_integer(team["depth_identity_conflicts"])}. '
                 f'Active defenders missing from depth list: {_integer(team["unlisted_active_defenders"])}. '
                 f'Unavailable defenders with unknown prior role: {_integer(team["unavailable_unknown_prior_role"])}.</p>'
+                + inactive_note
                 + ('<p>Names awaiting identity resolution: ' + ', '.join(_text(name) for name in unresolved) + '.</p>' if unresolved else '')
                 + ('<ul>' + ''.join(unavailable) + '</ul>' if unavailable else '<p>No unavailable players resolved in these saved sources; this does not establish full health.</p>')
                 + '</details>')

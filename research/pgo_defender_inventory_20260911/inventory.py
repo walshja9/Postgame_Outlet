@@ -17,17 +17,28 @@ ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
 
 
+def _inventory_version(record):
+    if 'inventory_version' not in record:
+        return None
+    version = record['inventory_version']
+    require(type(version) is int and version in (1, 2), 'Unknown defender inventory version')
+    return version
+
+
 def link(snapshot, roster, snaps, finals, target_captured_at):
     """Caller verifies sources; adapt a detached inventory to the established join."""
     projected = copy.deepcopy(snapshot)
     require(len({game['game_id'] for game in projected['games']}) == len(projected['games']), 'Duplicate pregame game')
     teams = {team['team']: team for team in projected['teams']}
     require(len(teams) == len(projected['teams']), 'Duplicate inventory team')
+    version = _inventory_version(projected)
+    for team in teams.values(): _inventory_version(team)
     known = set(); ready = set()
-    if projected.get('inventory_version') == 1:
+    if version is not None:
         for name, team in teams.items():
-            if team.get('inventory_version') != 1 or not isinstance(team.get('defenders'), list):
+            if 'inventory_version' not in team or not isinstance(team.get('defenders'), list):
                 continue
+            require(team['inventory_version'] == version, 'Team inventory version differs from snapshot')
             for player in team['defenders']:
                 pid = player.get('gsis_id')
                 require(isinstance(pid, str) and re.fullmatch(r'00-\d{7}', pid) and pid not in known,
@@ -48,7 +59,7 @@ def link(snapshot, roster, snaps, finals, target_captured_at):
                 and result['actual_margin'] == result['home_score']-result['away_score'], 'Invalid final scores')
     result = audit.link(projected, roster, snaps, finals, target_captured_at)
     rows = result['rows']
-    result.update(inventory_version=1, cohort='Complete preserved defender inventory; listed backups are not proven replacements',
+    result.update(inventory_version=version or 1, cohort='Complete preserved defender inventory; listed backups are not proven replacements',
                   unavailable_inventory_games=unavailable, observed_zero=sum(r['defensive_snaps'] == 0 for r in rows),
                   observed_positive=sum(r['defensive_snaps'] is not None and r['defensive_snaps'] > 0 for r in rows),
                   pending=sum('NO_VERIFIED_FINAL' in r['exclusions'] for r in rows),
@@ -62,7 +73,9 @@ def load_inventory(root, pointer):
     state, manifest = load_archive(root, pointer)
     require(state['schema_version'] == 1 and state['season'] == 2026, 'Unexpected pregame season state')
     snapshot = copy.deepcopy(state.get('replacement_depth') or {})
-    if snapshot.get('inventory_version') != 1:
+    version = _inventory_version(snapshot)
+    for team in snapshot.get('teams', []): _inventory_version(team)
+    if version is None:
         return dict(snapshot, teams=snapshot.get('teams', []), games=snapshot.get('games', []),
                     sources=snapshot.get('sources', []), generated_at=snapshot.get('generated_at', state['checked_at']),
                     completed_at=manifest['created_at']), []
@@ -70,7 +83,7 @@ def load_inventory(root, pointer):
             'Pregame inventory is not a valid descriptive capture')
     require(utc(snapshot['generated_at']) <= utc(state['checked_at']) <= utc(manifest['created_at']),
             'Pregame durable clock differs')
-    replay = capture.capture(state, root, snapshot['generated_at'])
+    replay = capture.capture(state, root, snapshot['generated_at'], inventory_version=version)
     require(all(snapshot.get(key) == replay.get(key) for key in
                 ('inventory_version', 'teams', 'games', 'sources', 'generated_at', 'source_as_of')),
             'Inventory does not reproduce from its captured sources')
@@ -118,6 +131,8 @@ def run(pregame_pointer, source, output, root=ROOT / 'docs/evidence/season-2026'
     require((root / 'current.json').read_bytes() == current_pointer, 'Final-state pointer changed during report')
     tracked = [Path(__file__), HERE / 'charter.md', Path(capture.__file__), Path(audit.__file__),
                ROOT / 'tests/test_pgo_defender_inventory.py', source / 'receipt.json', source / 'response.bin']
+    if snapshot.get('inventory_version') == 2:
+        tracked.append(HERE / 'inventory-v2-addendum.md')
     receipt = dict(completed_at=datetime.now(timezone.utc).isoformat(),
                    inputs={path.relative_to(ROOT).as_posix(): dict(sha256=capture._sha(path.read_bytes()), bytes=path.stat().st_size) for path in tracked},
                    source_state_unchanged=True)

@@ -50,6 +50,7 @@ class SeasonExperimentIntegrationTests(unittest.TestCase):
         for mocked in (penalty,totals,weights,replacement,ats):self.assertEqual(mocked.call_count,1)
         self.assertEqual(totals.call_args.args[2],state['checked_at'])
         self.assertEqual(replacement.call_args.args[1],Path('fixture-root'))
+        self.assertEqual(replacement.call_args.kwargs, {'inventory_version': 2})
         self.assertEqual(ats.call_args.args[2:],(Path('fixture-root'),state['checked_at']))
 
     def test_ats_guard_runs_before_pointer_and_retained_quote_sources_are_reverified(self):
@@ -108,9 +109,13 @@ class SeasonExperimentIntegrationTests(unittest.TestCase):
     def test_old_replacement_observation_survives_failure_after_lock_but_new_one_does_not(self):
         self.assertTrue(hasattr(season,'check_replacement_depth'),'Replacement durable guard is missing')
         previous=self.fixture();previous['replacement_depth']=self.depth(previous)
+        previous['replacement_depth']['inventory_version'] = 1
         current=copy.deepcopy(previous);current['checked_at']='2026-09-11T03:00:00Z'
         current['replacement_depth'].update(status='BLOCKED',blocked_reason='Source unavailable',checked_at=current['checked_at'])
         season.check_replacement_depth(current,previous,'2026-09-11T03:00:01Z')
+        current['replacement_depth']['inventory_version'] = 2
+        with self.assertRaises(ValueError):season.check_replacement_depth(current,previous,'2026-09-11T03:00:01Z')
+        current['replacement_depth']['inventory_version'] = 1
         current['replacement_depth']['teams']=[{'team':'SEA','new_observation':True}]
         with self.assertRaises(ValueError):season.check_replacement_depth(current,previous,'2026-09-11T03:00:01Z')
 
