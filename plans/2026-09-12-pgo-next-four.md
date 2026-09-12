@@ -48,9 +48,9 @@
 ## Integration and release (root)
 - [x] Integrate optional operations in dependency order with dedicated status/alert handling and plain-language displays. Preserve old monitor semantics. Add any needed durable validation in save/load/archive readers with meaningful regression.
 - [x] Pin source/test/charter byte behavior; add tests to scheduled gate and new paths to tested-publication rules only as needed. Update operations docs in this release, including exact completed evidence rather than deferring a closure-only push.
-- [ ] Review each task and full diff independently, fix substantive findings, run affected tests and the exact scheduled gate. Full canonical Python3.12 suite is the release gate.
-- [ ] Publish through existing authorized main/Pages workflow, coordinate with the single writer; perform one normal refresh to capture actual future offensive and score-error observations. Check exact public bytes, desktop/phone update-link behavior, archive/source replay, unchanged all16 forecast values/allocations and both locked games/results/ATS.
-- [ ] Record actual collection counts and missingness, never describe successful software execution as validated injury effects or reliable outcome ranges. Keep the worktree clean and publish a concise completion report.
+- [x] Review each task and full diff independently, fix substantive findings, run affected tests and the exact scheduled gate. Full canonical Python3.12 suite is the release gate.
+- [x] Publish through existing authorized main/Pages workflow, coordinate with the single writer; perform one normal refresh to capture actual future offensive and score-error observations. Check exact public bytes, desktop/phone update-link behavior, archive/source replay, unchanged all16 forecast values/allocations and both locked games/results/ATS.
+- [x] Record actual collection counts and missingness, never describe successful software execution as validated injury effects or reliable outcome ranges. Keep the worktree clean and publish a concise completion report.
 
 ## Verification notes before publication
 
@@ -58,6 +58,16 @@
 - First exact scheduled gate: 316 tests passed in 67.678 seconds. Independent review then identified additional scientific-custody cases; final gate follows those repairs.
 - No source activation, forecast rewrite or live collection has been performed in implementation tests. The current starter configuration and frozen historical study bytes remain unchanged.
 
-- Final independent reviews passed for all four tasks. Repairs cover concurrent starter activation, failed-response custody, stale roster/cutoff handling, conflicting offensive roles, no fallback from a damaged latest inventory, dependency recipe identity, and persistent exclusions. Current candidate collection replay:14future games,2excluded openers; no numerical adjustments/ranges.
+- Final independent reviews passed for all four tasks. Repairs cover concurrent starter activation, failed-response custody, stale roster/cutoff handling, conflicting offensive roles, no fallback from a damaged latest inventory, dependency recipe identity, and persistent exclusions. Candidate collection replay: 14 future games, 2 excluded openers; no numerical adjustments or ranges.
 
-- Final exact scheduled gate passed:320tests in61.141seconds after all review fixes. Canonical full Python3.12 CI and live publication checks follow this source commit.
+- Final exact scheduled gate passed: 320 tests in 61.141 seconds after all review fixes.
+
+## Completed release evidence
+
+- Source commit: `a72f340ce754ecd1a241c7880f3f5f421247bf5f`. Canonical Python 3.12 [Update board run 34715150764](https://github.com/walshja9/Postgame_Outlet/actions/runs/34715150764) succeeded: 996 discovery tests in 948.409 seconds (one skipped), plus 14 corrected-roster research checks and 14 defensive-depth research checks. Its publisher completed at September 12, 2026, 20:05:55 UTC.
+- Two normal refreshes succeeded: [34715164917](https://github.com/walshja9/Postgame_Outlet/actions/runs/34715164917) and [34715425905](https://github.com/walshja9/Postgame_Outlet/actions/runs/34715425905). They retained the first actual observations and then confirmed their durable receipts. Current archive: `runs-v2/20260912T195339106705Z`; manifest SHA-256: `e62e2ab0e72fd5bcfacaaa3c9bb99c8055935d6de37973af16d858a59e1c97c7`.
+- Final publisher: `dd2ec349450cdff5d04e70c73c1428c209dab94a`. Canonical [Pages run 34716082023](https://github.com/walshja9/Postgame_Outlet/actions/runs/34716082023) succeeded at 20:06:54 UTC. At 20:07:34 UTC, the public index, Forecast Lab and theme CSS all returned HTTP 200 and matched that commit byte for byte.
+- Read-only source replay confirmed 1,108 identified offensive players across all 32 teams, with one unresolved roster identity retained explicitly. Fourteen future games are pending; the two completed openers remain excluded. Score-error collection has 14 confirmed pregame observations, zero awaiting a durable receipt and zero finalized games. No numerical injury adjustment or outcome range is enabled; the calibration minimum remains unmet.
+- Every original ranking record, all 16 issued forecasts and confidence records, all 136 allocated points, both accepted results and locked ATS entries were preserved against the pre-change baseline. The existing starter authority and frozen historical study bytes remain unchanged.
+- Public browser checks covered the actual Shopify iframe, starter-link click and Enter behavior, unique disclosure IDs, desktop layout, and a 390px phone viewport with a 375px document width. The visible page automatically refreshed to the second saved collection without navigation. The temporary preview server and owned browser tab were closed; viewport restored.
+- Detailed independent review reports, test logs, source replay receipts, browser results and public byte receipts are retained locally under `output/next-four-20260912/`. This closure changes documentation only.
