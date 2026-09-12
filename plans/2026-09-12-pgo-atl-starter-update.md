@@ -1,6 +1,6 @@
-# Atlanta expected-starter update implementation handoff
+# Atlanta expected-starter update release record
 
-> This is unresolved operational follow-up under the user's existing authorization for pre-kickoff refreshes and publication. Execution requires supported source evidence and verification, with the source, clock and preservation checks below. This document makes no forecast changes. Use executing-plans or subagent-driven-development to carry out the follow-up.
+> COMPLETE AND PUBLISHED September 12, 2026. The official Cooper Rush starter update passed offline, production, repeated-refresh, public-byte and browser checks. The starting-state notes below are retained as historical evidence; final publication and CI results are recorded at the end.
 
 **Goal:** Admit a dated, official starter announcement into the existing pre-lock QB revision path while preserving issued forecasts and fixed confidence points.
 
@@ -8,7 +8,7 @@
 
 **Tech stack:** Existing Python standard-library season updater and immutable JSON/source archives; no new dependency or fitted weight.
 
-## Current operational state and boundary
+## Starting state and lock boundary
 
 At inspected code `fd3abeefeef4328736df46c4adc963f55dc2663a`, ATL-PIT is safely held: `pick=null`, `confidence=null`, `blocked_by_availability=true`, and `withheld_confidence.points=4`. The saved expected ATL QB remains Tua Tagovailoa, whom the archived official report marks OUT. The previous margin and its original issue time remain in the archived record. This is not a resolved starter update.
 
@@ -48,7 +48,7 @@ The roster identifies **Cooper Rush: ATL, QB, ACT, season 2026, week 1, GSIS `00
 - [x] Cross T-60 during evaluation and during durable saving: preserve the complete old game and source/QB identity. Verify original state/source/manifest hashes and the prior archive pointer remain intact after a successful pre-lock update.
 - [x] Extend `tests/test_pgo_season_boundaries.py` (existing QB preservation test mocks selection and rebuilding) with the real blocked-to-supported-QB recovery path; add focused selection fixtures if needed. Run `python -m unittest tests.test_pgo_season_boundaries tests.test_pgo_season_availability tests.test_pgo_season`, then the scheduled gate and independent review before any operational refresh/publication.
 
-Implementation and offline replay checks are complete. Operational publication and verification of the actually issued forecast remain the final steps; fixture values below are not public predictions.
+Implementation, offline replay, operational publication and issued-forecast verification are complete. Offline fixture values remain diagnostic; the actual public forecast is recorded below.
 
 
 ## September 12 implementation evidence
@@ -63,4 +63,25 @@ The existing model ages QB history using the elapsed calendar time (365.25-day h
 
 Independent code review: SPEC PASS and QUALITY PASS, closed after verifying the final test receipt and file hashes. Four real integration regressions passed in 44.547 seconds. The exact scheduled workflow gate passed all 269 tests in 57.039 seconds (`output/atl-starter-20260912/scheduled-gate-01.log`). Local artifacts, including earlier failed checks, are retained under `output/atl-starter-20260912/` and `output/atl-starter-update-20260912/`. Offline fixture forecasts are diagnostic, not issued public forecasts.
 
-Publication will use the existing GitHub main/Pages workflow. Full canonical CI and live archive checks must still be verified for the published source commit.
+Publication used the existing GitHub main/Pages workflow. Canonical CI and live archive checks passed for the published source commit; details follow.
+
+
+## Published forecast and verification
+
+Source release: `0507f78058e5635eb60deddf1703f9d2061d94c9`. Normal season run `34710601005` passed all 269 tests in 46.244 seconds and published `f1c7de432f9348035bc6048aaad1d832fe1682df`. Its primary state is READY; weekly rollover is correctly WAITING for the remaining games.
+
+The issued ATL-PIT forecast is saved at `2026-09-12T18:15:59.179079+00:00`, before Sunday's `16:00 UTC` lock. Expected ATL quarterback is Cooper Rush. Pittsburgh is favored by 4.828082411 points; score averages are PIT 24.891165388 and ATL 20.063082978. The straight-up chance is 65.614328%; confidence remains 4 points, with 2.624573127 expected pool points. The current saved sportsbook comparison is PIT -6 / ATL +6; PGO's ATS suggestion is ATL +6, an approximately 1.17-point difference from that line. These remain experimental forecasts, not claims of proven accuracy.
+
+Read-only production verification (`output/atl-starter-20260912/production-receipt01.json`) passed current/archive/source replay, original archive byte preservation, both locked games, accepted results, locked ATS entries and all 16 fixed confidence allocations (136 points). The saved-fit same-clock Tua control favors PIT by 1.124782626; unaffected draft scores differ by at most 5.55e-17, ordinary floating-point precision. No source fetch, forecast save or new fit occurred in this verification.
+
+The published board, Forecast Lab and stylesheet returned HTTP 200 and matched the publisher's exact bytes (`public-f1c7de432f93.json`). Browser review confirmed the Shopify embed, revised game row, source-linked plain-language starter explanation, readable desktop and 390x844 phone layout, and no horizontal overflow; the temporary viewport was reset. Evidence: `browser-review01.json` in the same output directory.
+
+Canonical full CI `34710594897` completed successfully. Discovery ran 945 tests in 730.591 seconds with one skipped; the two candidate suites each passed 14 tests (0.049 and 0.002 seconds). Total: 973 tests, 972 passed and one skipped. Exact tested source is `0507f78058e5635eb60deddf1703f9d2061d94c9`.
+
+
+The next natural scheduled run `34710953537` also succeeded: 269 tests passed in 41.463 seconds, publishing `3df1e098dbbe78cc379f264adbbb7a24f1f654d9`. Its archive remains READY and preserves all 16 games' QB identities, starter annotations, original issuance clocks, score/margin/picks and confidence values from the first Rush publication. This verifies actual repeated-refresh persistence. The newly deployed board, Forecast Lab and stylesheet again matched that commit's bytes (`public-3df1e098dbbe.json`). The public raw GitHub manifest, state and announcement files returned HTTP 200 with exact expected hashes (`public-evidence01.json`); these are the archive destinations used by the rendered site links.
+
+
+The full workflow's publication guard admitted only tested source plus newer mutable data at `3df1e098dbbe78cc379f264adbbb7a24f1f654d9`, then successfully published `13e6b5a9b3f62637e9f90b80a2da1470655ee864`. The final public board, Forecast Lab and stylesheet again matched that commit exactly at `2026-09-12T18:31:04.230746+00:00` (`public-13e6b5a9b3f6.json`). Final page publication changed only the rendered board; issued forecast archives were unchanged. The complete CI log is retained as `ci-board-log-20260912T183005003217Z.txt` in the local evidence directory.
+
+Closure: all required work is complete. Normal availability refresh, T-60 locks, postgame grading, weekly rollover and immutable archives continue through the existing workflow. Non-QB injuries remain contextual while the already-published prospective validation monitor accumulates eligible evidence; no unvalidated non-QB numerical adjustment was admitted in this release.
