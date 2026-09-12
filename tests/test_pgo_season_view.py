@@ -39,6 +39,22 @@ def state():
 
 
 class SeasonViewTests(unittest.TestCase):
+    def test_visible_starter_notice_links_to_explanation_with_forecast_issue_time(self):
+        data = state(); week = data['weeks'][1]; game = week['games'][0]
+        game['issued_at'] = '2026-09-16T21:15:00Z'
+        game['starter_announcements'] = [dict(team='NE', full_name='New QB', source=dict(
+            url='https://www.patriots.com/news/starter', captured_at='2026-09-16T20:00:00Z',
+            path='source-archive/'+'a'*64+'.json'))]
+        before = copy.deepcopy(data)
+        page = view._game(game, week)
+        row = page.split('</tr>', 1)[0]
+        self.assertIn('href="#season-reason-current">Starter updated</a>', row)
+        self.assertIn(view._time(game['issued_at']), row)
+        self.assertNotIn(view._time(game['starter_announcements'][0]['source']['captured_at']), row)
+        self.assertEqual(page.count('id="season-reason-current"'), 1)
+        self.assertNotIn('Starter updated', view._game(data['weeks'][0]['games'][0], data['weeks'][0]))
+        self.assertEqual(data, before)
+
     def test_starter_update_explains_recalculation_and_links_saved_authority(self):
         data=state(); week=data['weeks'][1]; game=week['games'][0]
         source={'url':'https://www.patriots.com/news/starter',

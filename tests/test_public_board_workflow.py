@@ -128,6 +128,8 @@ class PublicBoardWorkflowTests(unittest.TestCase):
                      'research/pgo_weights_candidate_20260910/**',
                      'research/pgo_replacement_depth_20260910/**',
                      'research/pgo_defender_inventory_20260911/**',
+                     'research/pgo_offensive_usage_20260912/**',
+                     'research/pgo_score_ranges_20260912_collection/**',
                      'tests/**', 'requirements-pgo.txt'):
             self.assertIn('"' + path + '"', paths)
 
@@ -136,7 +138,8 @@ class PublicBoardWorkflowTests(unittest.TestCase):
         gate = workflow.split('- name: Capture verified finals',1)[0]
         for module in ('test_pgo_season_accuracy','test_pgo_totals_monitor','test_pgo_weights_monitor',
                        'test_pgo_replacement_depth','test_pgo_replacement_refresh','test_pgo_defender_inventory','test_pgo_season_experiments','test_pgo_experiment_view',
-                       'test_pgo_inactive_monitor'):
+                       'test_pgo_inactive_monitor','test_pgo_offensive_inventory','test_pgo_offensive_usage_monitor',
+                       'test_pgo_score_range_monitor','test_pgo_starter_capture'):
             self.assertIn('tests.'+module,gate)
 
     def test_inactive_schedule_keeps_the_shared_lock_and_canonical_publisher(self):

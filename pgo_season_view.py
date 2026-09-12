@@ -492,6 +492,8 @@ def _game(game, week, comparison=None, availability_context=None):
     narrative = ('<ol class="season-explanation-steps">' + ''.join(f'<li>{step}</li>' for step in explanation_steps)
                  + '</ol>') if explanation_steps else f'<p>{calculation}</p>'
     starter_note = ''
+    starter_badge = (f'<br><small><a href="#season-reason-{game_id}">Starter updated</a>'
+                     f'<br>{_time(game.get("issued_at"))}</small>') if game.get('starter_announcements') else ''
     for announcement in game.get('starter_announcements', []):
         source = announcement['source']
         starter_note += (f'<p><strong>Starter update:</strong> {_text(announcement["team"])}: '
@@ -500,9 +502,9 @@ def _game(game, week, comparison=None, availability_context=None):
                          + _sources([dict(href=source['url'],label='Official starter announcement'),
                                      dict(href=archive_href(source['path']),label='Saved announcement and source evidence')]))
     return (f'<tr id="season-game-{game_id}" data-season-game-id="{game_id}" class="season-game-row" role="row">'
-            f'<th scope="row" role="rowheader">{away} @ {home}</th>' + ''.join(cells) + '</tr>'
+            f'<th scope="row" role="rowheader">{away} @ {home}{starter_badge}</th>' + ''.join(cells) + '</tr>'
             f'<tr class="forecast-reason-row" role="row"><td colspan="7" role="cell">' + _postgame_card(game,comparison) +
-            f'<details class="forecast-reason" data-view-key="reason-{game_id}">'
+            f'<details id="season-reason-{game_id}" class="forecast-reason" data-view-key="reason-{game_id}">'
             '<summary>Forecast explanation and availability</summary><div class="forecast-reason-body">'
             f'<div class="forecast-reason-block"><h3>Why this forecast</h3>{starter_note}{narrative}'
             f'<details class="season-calculation" data-view-key="calculation-{game_id}"><summary>Exact saved calculation</summary><p>{calculation}</p>'
@@ -764,7 +766,9 @@ def _test_value(value, digits=2):
 def _experiments(state):
     totals, weights, depth = (state.get(k) or {} for k in ('totals_shadow','weights_shadow','replacement_depth'))
     usage = state.get('injury_usage') or {}
-    if not any((totals, weights, depth, usage)): return ''
+    offense, offensive_usage, score_collection = (state.get(k) or {} for k in
+        ('offensive_inventory','offensive_usage','score_range_collection'))
+    if not any((totals, weights, depth, usage, offense, offensive_usage, score_collection)): return ''
     base = 'https://github.com/walshja9/Postgame_Outlet/blob/main/research/'
     panels = []
     if totals:
@@ -911,7 +915,7 @@ def _experiments(state):
         'has a matching row. A player missing from that file is unknown, not automatically zero plays.</p>'
         '<p>We are checking original pregame defender lists against later playing-time reports. '
         'This tells us whether the data can support a fair test; it does not yet tell us how many points an injury costs. '
-        'Offensive player coverage and a separate test of forecast accuracy are still required.</p>')
+        'We are also collecting offensive player records. A separate test of forecast accuracy is still required.</p>')
     if usage:
         if usage.get('forecast_adjustment') is not None or usage.get('predictive_status') != 'UNAVAILABLE':
             raise ValueError('Defender usage is descriptive, not a forecast adjustment')
@@ -940,17 +944,67 @@ def _experiments(state):
                                                    ('source', 'Captured playing-time source receipt')) if usage.get(key)])
     else:
         validation += '<p>The automatic playing-time check has no saved result yet.</p>'
+    if offense or offensive_usage:
+        if offense.get('forecast_adjustment') is not None or offensive_usage.get('forecast_adjustment') is not None or offensive_usage.get('predictive_status', 'UNAVAILABLE') != 'UNAVAILABLE':
+            raise ValueError('Offensive usage is descriptive, not a forecast adjustment')
+        validation += ('<h4 id="season-offensive-usage">Offensive players: can the data support an injury test?</h4>'
+            '<p>Running backs, receivers, tight ends and offensive linemen are tracked separately from defenders. '
+            'Saved roster status and depth-chart position are context, not injury diagnoses or player grades. '
+            'Missing playing time is unknown, not zero. No point adjustment is applied.</p>')
+        for label, component in (('Player list', offense), ('Playing-time check', offensive_usage)):
+            if component.get('status') == 'BLOCKED':
+                validation += f'<p><strong>{label} needs review.</strong> {_text(component.get("blocked_reason") or "The latest check could not be verified.")} Earlier evidence is retained.</p>'
+        teams = offense.get('teams', [])
+        validation += (f'<p>List saved {_time(offense.get("generated_at"))}: '
+            f'{_integer(sum(len(t.get("players", [])) for t in teams))} offensive player records across {_integer(len(teams))} teams. '
+            f'{_integer(sum(len(t.get("unresolved_roster", [])) for t in teams))} roster entries still lack a usable player identity. '
+            'A list qualifies for a completed game only if its archive was saved before prediction lock.</p>')
+        metrics = offensive_usage.get('metrics') or {}
+        validation += (f'<p>Eligible completed games: {_integer(metrics.get("games", 0))}; '
+            f'games awaiting finals: {_integer(offensive_usage.get("pending_games", 0))}; '
+            f'completed games without an eligible list: {_integer(len(offensive_usage.get("excluded_games", [])))}. '
+            f'Matched playing-time rows: {_integer(metrics.get("joined", 0))} of {_integer(metrics.get("cohort_rows", 0))}; '
+            f'{_integer(metrics.get("observed_positive", 0))} recorded playing time, '
+            f'{_integer(metrics.get("observed_zero", 0))} explicitly recorded zero, '
+            f'{_integer(metrics.get("missing_target", 0))} have no matching row.</p>'
+            + _sources([dict(href='evidence/season-2026/' + offensive_usage[key]['path'], label=label)
+                for key, label in (('report', 'Saved offensive playing-time report'),
+                                   ('source', 'Captured playing-time source receipt')) if offensive_usage.get(key)])
+            + f'<p><a href="{base}pgo_offensive_usage_20260912/README.md">Offensive collection rules</a>.</p>')
     panels.append(validation + f'<p><a href="{base}pgo_nonqb_validation_20260912/README.md">'
                   'Validation findings, data gaps and next test</a>.</p></details>')
-    panels.append('<details class="model-update-evidence" data-view-key="score-range-study"><summary>How much could the score vary?</summary>'
+    collected = ''
+    if score_collection:
+        if score_collection.get('ranges') is not None or score_collection.get('forecast_adjustment') is not None or score_collection.get('predictive_status') != 'UNAVAILABLE':
+            raise ValueError('Score collection cannot publish outcome ranges or forecast adjustments')
+        metrics = score_collection.get('metrics') or {}
+        collected = (f'<p>Collection checked {_time(score_collection.get("checked_at"))}: '
+            f'{_integer(metrics.get("selected_games", 0))} selected games; '
+            f'{_integer(metrics.get("eligible_games", 0))} have verified pre-lock collection receipts; '
+            f'{_integer(metrics.get("finalized_games", 0))} verified completed games; '
+            f'{_integer(metrics.get("awaiting_durable_receipt", 0))} awaiting their archive receipt. '
+            f'Games excluded or awaiting a valid forecast: {_integer(len(score_collection.get("excluded", [])))}.</p>'
+            '<p>We save the forecast before lock, then compare it with the final score. '
+            'These errors will help test how wide a useful score range should be. '
+            'Repeated checks do not add games. Changed prediction methods are tracked separately.</p>'
+            f'<p>{_integer(metrics.get("complete_calibration_seasons", 0))} complete and '
+            f'{_integer(metrics.get("partial_calibration_seasons", 0))} partial season records. '
+            'The current study requires 2 completed calibration seasons and at least 500 games '
+            'from a consistent method, followed by a separate evaluation. A partial season does not satisfy that requirement.</p>'
+            f'<p><a href="{base}pgo_score_ranges_20260912_collection/README.md">Future score-error collection rules</a>.</p>')
+        if score_collection.get('status') == 'BLOCKED':
+            collected = ('<p><strong>Score-error collection needs review.</strong> '
+                + _text(score_collection.get('blocked_reason') or 'The latest check could not be verified.')
+                + ' Earlier evidence is retained.</p>' + collected)
+    panels.append('<details class="model-update-evidence" id="season-score-collection" data-view-key="score-range-study"><summary>How much could the score vary?</summary>'
         '<p><strong>Reliable outcome ranges are not available yet.</strong> The displayed score is an average estimate, '
         'not a narrow promise about the final score. We tested a fixed range method on historical games, using only earlier '
         'seasons to set each later season\'s range. Those reused records lack the timestamps needed to establish pregame data availability.</p>'
         '<p>Future saved ranges need to be checked against actual results before we can describe them as reliable. '
         'Differences between model versions are not the same as a likely range of game outcomes.</p>'
-        f'<p><a href="{base}pgo_score_ranges_20260911/README.md">Score-range study and validation requirements</a>.</p></details>')
+        + collected + f'<p><a href="{base}pgo_score_ranges_20260911/README.md">Score-range study and validation requirements</a>.</p></details>')
     return ('<h3 id="season-model-tests">Model tests</h3><p>These fixed comparisons are separate from the main picks. '
-            'Test forecasts are saved before lock and graded when verified finals arrive. Defender checks compare saved player lists '
+            'Test forecasts are saved before lock and graded when verified finals arrive. Player checks compare saved lists '
             'with later playing time. Games without eligible pregame evidence are excluded. '
             'No experiment automatically replaces the main model.</p>' + ''.join(panels))
 
@@ -985,6 +1039,9 @@ def render_season(state, *, accuracy=None, mccabe=None, market=None):
         ('weights_shadow', 'season-weights-test', 'Model-input tests'),
         ('replacement_depth', 'season-defender-info', 'Defender information'),
         ('injury_usage', 'season-injury-validation', 'Injury validation checks'),
+        ('offensive_inventory', 'season-offensive-usage', 'Offensive player information'),
+        ('offensive_usage', 'season-offensive-usage', 'Offensive playing-time checks'),
+        ('score_range_collection', 'season-score-collection', 'Score-error collection'),
         ('ats', 'season-ats', 'Sportsbook comparisons')) if (state.get(key) or {}).get('status') == 'BLOCKED']
     update_note = ('<p class="season-caption">Separate updates needing review: ' + ', '.join(failed_updates)
                    + '. Earlier saved information is retained.</p>') if failed_updates else ''
@@ -998,7 +1055,7 @@ def render_season(state, *, accuracy=None, mccabe=None, market=None):
     more = [('season-accuracy','Accuracy')]
     if state.get('ats'): more.append(('season-ats','Spreads & ATS'))
     if state.get('penalty_shadow'): more.append(('pgo-penalty-test','Penalty test'))
-    if any(state.get(k) for k in ('totals_shadow','weights_shadow','replacement_depth','injury_usage')):
+    if any(state.get(k) for k in ('totals_shadow','weights_shadow','replacement_depth','injury_usage','offensive_inventory','offensive_usage','score_range_collection')):
         more.append(('season-model-tests','Model tests'))
     navigation = '<nav class="season-nav" aria-label="PGO sections">' + ''.join(
         f'<a href="#{target}" data-view-key="nav-{target}">{label}</a>' for target,label in links)

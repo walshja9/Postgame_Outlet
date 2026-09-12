@@ -44,7 +44,10 @@ class AlertTests(unittest.TestCase):
                                         ('totals_shadow', 'monitor-totals', 'READY'),
                                         ('weights_shadow', 'monitor-weights', 'READY'),
                                         ('replacement_depth', 'monitor-replacement-depth', 'DESCRIPTIVE / NOT IN MODEL'),
-                                        ('injury_usage', 'monitor-injury-usage', 'WAITING')]:
+                                        ('injury_usage', 'monitor-injury-usage', 'WAITING'),
+                                        ('offensive_inventory', 'monitor-offensive-inventory', 'DESCRIPTIVE / NOT IN MODEL'),
+                                        ('offensive_usage', 'monitor-offensive-usage', 'WAITING'),
+                                        ('score_range_collection', 'monitor-score-range-collection', 'WAITING')]:
             with self.subTest(component=key):
                 state = self.state()
                 state[key] = dict(status='BLOCKED', blocked_reason='private provider failure', historical_admission='BLOCKED FOR FITTING')

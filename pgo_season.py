@@ -220,6 +220,22 @@ def save_state(state, root=DEFAULT_ROOT):
     prior = None
     if (root/'current.json').exists():
         prior = load_current(root)
+    if 'score_range_collection' in state or 'score_range_collection' in (prior or {}):
+        from pgo_score_range_monitor import check_durable_shadow
+        try:
+            check_durable_shadow(state, prior, durable)
+        except ValueError as error:
+            # This file has no manifest or public pointer yet. Discard only the
+            # new optional observations, then recheck the actual rewritten clock.
+            state['score_range_collection'] = dict(copy.deepcopy((prior or {}).get('score_range_collection', {})),
+                status='BLOCKED', blocked_reason=str(error), checked_at=state['checked_at'],
+                forecast_adjustment=None, predictive_status='UNAVAILABLE', ranges=None)
+            payload = gzip.compress(canonical(state), mtime=0)
+            with (directory/'state.json.gz').open('wb') as handle:
+                handle.write(payload); handle.flush(); os.fsync(handle.fileno())
+            durable = now()
+            check_durable_shadow(state, prior, durable)
+    if prior:
         prior_games = {g['game_id']:g for w in prior['weeks'] for g in w['games']}
         for week in state['weeks']:
             for game in week['games']:
@@ -776,29 +792,32 @@ def refresh_experiments(state, previous, root):
                 ('weights_shadow','pgo_weights_monitor','refresh_shadow',False),
                 ('replacement_depth','research.pgo_replacement_depth_20260910.capture','capture',True),
                 ('injury_usage','pgo_injury_usage_monitor','refresh_shadow',True),
+                ('offensive_inventory','pgo_offensive_inventory','capture',True),
+                ('offensive_usage','pgo_offensive_usage_monitor','refresh_shadow',True),
+                ('score_range_collection','pgo_score_range_monitor','refresh_shadow',True),
                 ('ats','pgo_ats','refresh',True))
     for key,module_name,method,needs_root in operations:
         old=(previous or {}).get(key,{})
         try:
-            if key=='replacement_depth':
+            if key in ('replacement_depth','offensive_inventory'):
                 check=state.get('replacement_source_check') or {}
                 require(check.get('status')!='BLOCKED', check.get('blocked_reason') or 'Replacement source refresh unavailable.')
             operation=getattr(importlib.import_module(module_name),method)
             arguments=[copy.deepcopy(state)]
-            if key!='replacement_depth':arguments.append(copy.deepcopy(previous))
+            if key not in ('replacement_depth','offensive_inventory'):arguments.append(copy.deepcopy(previous))
             if needs_root:arguments.append(root)
             arguments.append(state['checked_at'])
             result=operation(*arguments, inventory_version=2) if key=='replacement_depth' else operation(*arguments)
             require(isinstance(result,dict), 'Experiment returned no saved payload')
-            if key=='replacement_depth' and result.get('status')=='BLOCKED' and old:
+            if key in ('replacement_depth','offensive_inventory') and result.get('status')=='BLOCKED' and old:
                 result=dict(copy.deepcopy(old),status='BLOCKED',blocked_reason=result.get('blocked_reason'),checked_at=state['checked_at'])
             state[key]=result
         except Exception as error:
             # An optional study must not suppress primary grades or another study.
             state[key]=dict(copy.deepcopy(old),status='BLOCKED',blocked_reason=str(error),checked_at=state['checked_at'])
-            if key=='replacement_depth' and not old:
+            if key in ('replacement_depth','offensive_inventory') and not old:
                 state[key].update(generated_at=state['checked_at'],games=[],teams=[],sources=[],forecast_adjustment=None)
-            if key=='injury_usage':
+            if key in ('injury_usage','offensive_usage','score_range_collection'):
                 state[key].update(forecast_adjustment=None,predictive_status='UNAVAILABLE')
 
 

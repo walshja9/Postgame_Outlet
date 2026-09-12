@@ -43,7 +43,9 @@ class PublicationGuardTests(unittest.TestCase):
     def test_latest_mutable_state_and_pages_are_accepted(self):
         paths = ['docs/index.html', 'docs/forecast-lab.html',
                  'docs/evidence/season-2026/current.json',
-                 'docs/evidence/season-2026/runs-v2/new/state.json.gz']
+                 'docs/evidence/season-2026/runs-v2/new/state.json.gz',
+                 'docs/evidence/season-2026/offensive-usage/reports/new.json',
+                 'docs/evidence/season-2026/injury-usage/targets/new/receipt.json']
         for path in paths:
             self.write(path)
         latest = self.commit()

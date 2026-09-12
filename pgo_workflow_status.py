@@ -20,6 +20,9 @@ def report_health(state, summary_path=None):
                   ('weights_shadow', 'weights', 'READY'),
                   ('replacement_depth', 'replacement_depth', 'DESCRIPTIVE / NOT IN MODEL'),
                   ('injury_usage', 'injury_usage', 'READY'),
+                  ('offensive_inventory', 'offensive_inventory', 'DESCRIPTIVE / NOT IN MODEL'),
+                  ('offensive_usage', 'offensive_usage', 'READY'),
+                  ('score_range_collection', 'score_range_collection', 'READY'),
                   ('ats','ats','READY')]
     for key, prefix, _ in components:
         component = state.get(key) or {}
@@ -37,7 +40,7 @@ def report_health(state, summary_path=None):
     if status != 'READY':
         warnings.append(f'PGO {condition}: {reason or "Saved status is unavailable"}')
     for _, prefix, healthy in components:
-        if prefix == 'injury_usage' and report[prefix + '_status'] in ('UNKNOWN', 'WAITING'):
+        if prefix in ('injury_usage','offensive_inventory','offensive_usage','score_range_collection') and report[prefix + '_status'] in ('UNKNOWN', 'WAITING'):
             continue
         if report[prefix + '_status'] != healthy:
             warnings.append('PGO ' + prefix.replace('_', ' ') + ' monitor: '

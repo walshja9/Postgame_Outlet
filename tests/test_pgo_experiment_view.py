@@ -7,6 +7,37 @@ import pgo_season_view as view
 
 
 class ExperimentViewTests(unittest.TestCase):
+    def test_score_collection_reports_future_evidence_without_numerical_ranges(self):
+        state = dict(score_range_collection=dict(status='READY', checked_at='2026-09-12T20:00:00Z',
+            forecast_adjustment=None, ranges=None, predictive_status='UNAVAILABLE', excluded=[{},{}],
+            metrics=dict(selected_games=14,eligible_games=0,finalized_games=0,awaiting_durable_receipt=14,
+                         complete_calibration_seasons=0,partial_calibration_seasons=1)))
+        before = copy.deepcopy(state); page = view._experiments(state)
+        for text in ('14 selected games','0 verified completed games','14 awaiting their archive receipt',
+                     '2 completed calibration seasons','500 games','Reliable outcome ranges are not available yet'):
+            self.assertIn(text, page)
+        self.assertEqual(state, before)
+        state['score_range_collection']['ranges'] = [3, 30]
+        with self.assertRaises(ValueError): view._experiments(state)
+
+    def test_offensive_collection_keeps_unknown_rows_distinct_and_claims_no_adjustment(self):
+        state = dict(offensive_inventory=dict(status='DESCRIPTIVE / NOT IN MODEL',
+            generated_at='2026-09-12T20:00:00Z', teams=[dict(team='NE', players=[{}, {}])], games=[{}]),
+            offensive_usage=dict(status='WAITING', checked_at='2026-09-12T20:00:00Z',
+            forecast_adjustment=None, predictive_status='UNAVAILABLE', pending_games=14,
+            excluded_games=[{}, {}], metrics=dict(games=1, cohort_rows=3, joined=2,
+            observed_positive=1, observed_zero=1, missing_target=1)))
+        before = copy.deepcopy(state)
+        page = view._experiments(state)
+        self.assertIn('id="season-offensive-usage"', page)
+        self.assertIn('2 offensive player records across 1 teams', page)
+        self.assertIn('1 explicitly recorded zero', page)
+        self.assertIn('1 have no matching row', page)
+        self.assertIn('Missing playing time is unknown', page)
+        self.assertEqual(state, before)
+        state['offensive_usage']['forecast_adjustment'] = 1
+        with self.assertRaises(ValueError): view._experiments(state)
+
     def fixture(self):
         arms = ('postseason', 'without_qb_passing', 'without_team_passing')
         game = dict(game_id='2026_02_A_B', away='NE', home='SEA', issued_at='2026-09-10T20:00:00Z')
@@ -128,7 +159,7 @@ class ExperimentViewTests(unittest.TestCase):
         before = copy.deepcopy(state); page = view._experiments(state)
         for text in ('Eligible completed games: 1', 'Games awaiting finals: 14', '12 of 20',
                      '2 explicitly recorded zero', '8 have no matching row',
-                     'Offensive player coverage', 'Not established.'):
+                     'collecting offensive player records', 'Not established.'):
             self.assertIn(text, page)
         self.assertEqual(state, before)
         state['injury_usage'].update(status='BLOCKED', blocked_reason='Source <failed>')

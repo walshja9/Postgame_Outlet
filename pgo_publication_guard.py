@@ -30,7 +30,8 @@ def check_publication(tested_sha, root=Path('.')):
     mutable = ('docs/index.html', 'docs/forecast-lab.html',
                'docs/evidence/season-2026/current.json')
     archives = tuple('docs/evidence/season-2026/' + folder + '/' for folder in
-                     ('runs', 'runs-v2', 'availability', 'availability-v2', 'sources', 'source-archive'))
+                     ('runs', 'runs-v2', 'availability', 'availability-v2', 'sources', 'source-archive',
+                      'injury-usage/targets', 'injury-usage/reports', 'offensive-usage/reports'))
     forbidden = [path for status, path in changes
                  if not (status in ('A', 'M') and path in mutable)
                  and not (status == 'A' and path.startswith(archives))]

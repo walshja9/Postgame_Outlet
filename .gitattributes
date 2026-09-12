@@ -94,3 +94,11 @@ pgo_expected_starters.py text eol=lf
 tests/test_pgo_expected_starters.py text eol=lf
 tests/test_pgo_starter_revision.py text eol=lf
 data/pgo_starter_announcements.json -text
+pgo_starter_capture.py text eol=lf
+pgo_offensive_*.py text eol=lf
+pgo_score_range_monitor.py text eol=lf
+tests/test_pgo_starter_capture.py text eol=lf
+tests/test_pgo_offensive_*.py text eol=lf
+tests/test_pgo_score_range_monitor.py text eol=lf
+research/pgo_offensive_usage_20260912/** -text whitespace=cr-at-eol
+research/pgo_score_ranges_20260912_collection/** -text whitespace=cr-at-eol

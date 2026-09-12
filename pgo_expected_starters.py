@@ -15,6 +15,18 @@ ROOT = Path(__file__).resolve().parent
 CONFIG = ROOT/'data/pgo_starter_announcements.json'
 
 
+def _primary_article(raw):
+    """Return the unique JSON-LD primary article from exact response bytes."""
+    articles = []
+    for script in _Page(raw.decode('utf-8').split('<article', 1)[0]).scripts:
+        value = json.loads(script)
+        for item in value if isinstance(value, list) else [value]:
+            if isinstance(item, dict) and item.get('@type') in ('NewsArticle','Article') and item.get('articleBody'):
+                articles.append(item)
+    require(len(articles) == 1, 'No unique primary starter article')
+    return articles[0]
+
+
 def _announcement(game, source, root, checked_at):
     require(type(game['season']) is int and game['season'] == 2026 and game['game_type'] == 'REG'
             and type(game['week']) is int and 1 <= game['week'] <= 18
@@ -51,14 +63,7 @@ def _announcement(game, source, root, checked_at):
     raw = base64.b64decode(record['body_base64'], validate=True)
     require(type(record['raw_bytes']) is int and len(raw) == record['raw_bytes'] > 0
             and sha(raw) == record['raw_sha256'], 'Starter HTML bytes differ')
-    articles = []
-    for script in _Page(raw.decode('utf-8').split('<article', 1)[0]).scripts:
-        value = json.loads(script)
-        for item in value if isinstance(value, list) else [value]:
-            if isinstance(item, dict) and item.get('@type') in ('NewsArticle','Article') and item.get('articleBody'):
-                articles.append(item)
-    require(len(articles) == 1, 'No unique primary starter article')
-    article = articles[0]; body = article['articleBody']; statement = decision['statement']
+    article = _primary_article(raw); body = article['articleBody']; statement = decision['statement']
     require(isinstance(body, str) and isinstance(statement, str) and statement
             and decision['full_name'] in statement and statement in body,
             'Reviewed starter statement is absent from the primary article')

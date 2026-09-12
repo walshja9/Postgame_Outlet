@@ -89,7 +89,10 @@ def assess(state, *, outcomes, run_refresh=True, checked_at=None, refresh_starte
             add('ats-source-review', 'The saved sportsbook-line update needs review. Existing locked lines remain unchanged.')
         for prefix, label in [('penalty', 'penalty comparison'), ('totals', 'scoring comparison'),
                               ('weights', 'model-weight comparison'), ('replacement_depth', 'defender evidence'),
-                              ('injury_usage', 'postgame defender usage')]:
+                              ('injury_usage', 'postgame defender usage'),
+                              ('offensive_inventory', 'offensive player inventory'),
+                              ('offensive_usage', 'postgame offensive usage'),
+                              ('score_range_collection', 'future score-error collection')]:
             if health[prefix + '_status'] == 'BLOCKED':
                 add('monitor-' + prefix.replace('_', '-'), 'The independent ' + label
                     + ' update is blocked. Main picks and grades are checked separately.')

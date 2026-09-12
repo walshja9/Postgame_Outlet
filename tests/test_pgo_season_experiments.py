@@ -3,6 +3,7 @@ import importlib.util
 import json
 from pathlib import Path
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -10,6 +11,44 @@ import pgo_season as season
 
 
 class SeasonExperimentIntegrationTests(unittest.TestCase):
+    def test_new_collectors_run_in_order_and_failure_retains_primary_forecast(self):
+        state = self.fixture(); before = copy.deepcopy(state)
+        inventory = dict(status='DESCRIPTIVE / NOT IN MODEL', teams=[], games=[])
+        def usage(detached, previous, root, checked_at):
+            self.assertEqual(detached['offensive_inventory'], inventory)
+            detached['weeks'][0]['games'][0]['margin'] = 999
+            raise ValueError('Target missing')
+        modules = {
+            'pgo_offensive_inventory': SimpleNamespace(capture=lambda *args: copy.deepcopy(inventory)),
+            'pgo_offensive_usage_monitor': SimpleNamespace(refresh_shadow=usage),
+            'pgo_score_range_monitor': SimpleNamespace(refresh_shadow=lambda *args: dict(status='WAITING'))}
+        with patch.dict('sys.modules', modules):
+            season.refresh_experiments(state, None, Path('fixture-root'))
+        self.assertEqual(state['weeks'], before['weeks'])
+        self.assertEqual(state['offensive_inventory'], inventory)
+        self.assertEqual(state['offensive_usage']['status'], 'BLOCKED')
+        self.assertIsNone(state['offensive_usage']['forecast_adjustment'])
+        self.assertEqual(state['score_range_collection']['status'], 'WAITING')
+
+    def test_late_score_collection_is_removed_before_primary_state_is_published(self):
+        state = self.fixture()
+        state['score_range_collection'] = dict(status='READY', observations=[{'game_id':'late'}])
+        calls = []
+        def guard(saved, previous, durable):
+            calls.append(durable)
+            if saved['score_range_collection'].get('observations'):
+                raise ValueError('Score collection crossed cutoff')
+        with tempfile.TemporaryDirectory() as tmp, \
+             patch.dict('sys.modules', {'pgo_score_range_monitor': SimpleNamespace(check_durable_shadow=guard)}), \
+             patch.object(season, 'now', side_effect=['2026-09-10T23:20:00Z','2026-09-10T23:20:01Z']):
+            season.save_state(state, Path(tmp))
+            saved = season.load_current(Path(tmp))
+        self.assertEqual(saved['weeks'], state['weeks'])
+        self.assertEqual(saved['status'], 'READY')
+        self.assertEqual(saved['score_range_collection']['status'], 'BLOCKED')
+        self.assertNotIn('observations', saved['score_range_collection'])
+        self.assertEqual(calls, ['2026-09-10T23:20:00Z','2026-09-10T23:20:01Z'])
+
     def fixture(self):
         game=dict(game_id='2026_01_NE_SEA',season=2026,week=1,game_type='REG',home='SEA',away='NE',
                   kickoff='2026-09-11T00:20:00Z',lock_at='2026-09-10T23:20:00Z',issued_at='2026-09-10T19:00:00Z',
