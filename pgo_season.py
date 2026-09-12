@@ -694,6 +694,47 @@ def check_replacement_depth(state, previous, durable):
         require(generated<=durable<cutoff, 'Replacement durable-write deadline crossed')
 
 
+def refresh_replacement_sources(state, root):
+    """Maintain descriptive roster/depth inputs without selecting QBs or revising picks."""
+    from research.pgo_replacement_depth_20260910 import capture
+    checked = utc(now())
+    state['replacement_source_check'] = dict(status='IDLE', checked_at=checked.isoformat(), blocked_reason=None)
+    finals = {row['game_id'] for row in state.get('results', [])}
+    if not any(game['game_id'] not in finals and checked < utc(game['lock_at'])
+               for week in state.get('weeks', []) for game in week['games']):
+        return
+    refs = [*state.get('source_captures', []), *state.get('sources', []), *state.get('rankings', {}).get('source_captures', [])]
+    refs += [ref for values in state.get('edition_sources', {}).values() for ref in values]
+    refs += state.get('replacement_depth', {}).get('sources', [])
+    failed = []
+    for kind in ('roster', 'depth'):
+        url = URLS[kind]
+        try:
+            matches = [ref for ref in refs if ref.get('url') == url and 'path' in ref]
+            require(all(utc(ref['captured_at']) <= checked for ref in matches), 'Future replacement source')
+            captured = {}
+            for ref in matches:
+                signature = (ref['sha256'], ref['bytes'])
+                require(captured.setdefault(utc(ref['captured_at']), signature) == signature,
+                        'Conflicting replacement source receipts')
+            latest = max(matches, key=lambda ref: utc(ref['captured_at']), default=None)
+            if latest is not None:
+                capture.read_source(root, latest, checked.isoformat())
+            if latest is None or checked-utc(latest['captured_at']) > timedelta(hours=24):
+                raw, ref = fetch_source(url, root)
+                observed = now()
+                require(ref['url'] == url and checked <= utc(ref['captured_at']) <= utc(observed), 'Invalid source download clock')
+                require(capture.read_source(root, ref, observed) == raw, 'Downloaded source differs from archived bytes')
+                latest = ref
+            # Carry reused receipts into normalization, including partial-failure recovery.
+            if latest not in state.setdefault('sources', []):
+                state['sources'].append(latest)
+        except (ValueError, KeyError, TypeError, OSError, OverflowError):
+            failed.append(kind)
+    state['replacement_source_check'] = dict(status='BLOCKED' if failed else 'READY', checked_at=now(),
+        blocked_reason='Replacement source refresh unavailable: ' + ', '.join(failed) + '.' if failed else None)
+
+
 def refresh_experiments(state, previous, root):
     """Run each optional comparison independently over detached verified inputs."""
     operations=(('penalty_shadow','pgo_penalty_monitor','refresh_shadow',True),
@@ -704,6 +745,9 @@ def refresh_experiments(state, previous, root):
     for key,module_name,method,needs_root in operations:
         old=(previous or {}).get(key,{})
         try:
+            if key=='replacement_depth':
+                check=state.get('replacement_source_check') or {}
+                require(check.get('status')!='BLOCKED', check.get('blocked_reason') or 'Replacement source refresh unavailable.')
             operation=getattr(importlib.import_module(module_name),method)
             arguments=[copy.deepcopy(state)]
             if key!='replacement_depth':arguments.append(copy.deepcopy(previous))
@@ -748,6 +792,10 @@ def refresh(root=DEFAULT_ROOT):
     except (ValueError,KeyError,OSError) as error:
         state.update(status='BLOCKED',blocked_reason='Automatic update needs review: '+str(error))
         decorate(state,state['results'])
+    try:refresh_replacement_sources(state,root)
+    except Exception:
+        # Optional source maintenance must not suppress primary grading/publication.
+        state['replacement_source_check']=dict(status='BLOCKED',checked_at=now(),blocked_reason='Replacement source maintenance failed.')
     state['checked_at']=now()
     if previous:
         old={g['game_id']:g for w in previous['weeks'] for g in w['games']}

@@ -39,6 +39,49 @@ def state():
 
 
 class SeasonViewTests(unittest.TestCase):
+    def test_off_day_shows_check_window_and_lock_without_claiming_a_check_happened(self):
+        data = state()
+        data['weeks'] = data['weeks'][1:]
+        game = data['weeks'][0]['games'][0]
+        data['checked_at'] = '2026-09-15T12:00:00Z'
+        game['availability']['checked_at'] = None
+        page = view._game_day(data)
+        self.assertIn('Availability checks become due', page)
+        self.assertIn('datetime="2026-09-15T23:00:00+00:00"', page)
+        self.assertIn('Prediction lock:', page)
+        self.assertNotIn('window is open', page)
+        data['checked_at'] = '2026-09-16T00:00:00Z'
+        page = view._game_day(data)
+        self.assertIn('Availability-check window is open', page)
+        self.assertIn('No verified check saved', page)
+        game.update(kickoff='2026-09-16T04:30:00Z', lock_at='2026-09-16T03:30:00Z')
+        data['checked_at'] = '2026-09-16T03:45:00Z'
+        before = copy.deepcopy(data)
+        page = view._game_day(data)
+        self.assertIn('Prediction locked:', page)
+        self.assertNotIn('window is open', page)
+        self.assertEqual(data, before)
+
+    def test_main_health_does_not_hide_failed_independent_updates(self):
+        from tests.test_pgo_experiment_view import ExperimentViewTests
+        data = state()
+        data.update(ExperimentViewTests().fixture())
+        data['replacement_depth']['status'] = 'BLOCKED'
+        before = copy.deepcopy(data)
+        page = view.render_season(data)
+        self.assertIn('Main picks and grades:', page)
+        self.assertIn('Latest refresh completed', page)
+        self.assertNotIn('Automation: READY', page)
+        self.assertIn('Separate updates needing review:', page)
+        self.assertIn('href="#season-defender-info"', page)
+        self.assertIn('id="season-defender-info"', page)
+        self.assertIn('href="#season-weights-test"', page)
+        self.assertIn('id="season-weights-test"', page)
+        self.assertEqual(data, before)
+        data['replacement_depth']['status'] = 'DESCRIPTIVE / NOT IN MODEL'
+        data['weights_shadow']['status'] = 'READY'
+        self.assertNotIn('Separate updates needing review:', view.render_season(data))
+
     def test_off_day_links_next_matchup_and_its_complete_saved_week(self):
         data = state()
         data['checked_at'] = '2026-09-15T12:00:00Z'

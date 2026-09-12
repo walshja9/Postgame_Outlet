@@ -35,9 +35,59 @@ class AlertTests(unittest.TestCase):
 
     def report(self, state=None, **kwargs):
         return alerts.assess(self.state() if state is None else state,
-            outcomes=dict.fromkeys(('verify', 'refresh', 'render', 'publish'), 'success'),
+            outcomes=kwargs.pop('outcomes', dict.fromkeys(alerts.STAGES, 'success')),
             checked_at='2026-09-13T15:31:00Z', refresh_started_at='2026-09-13T15:29:00Z',
             public_pointer=kwargs.pop('public_pointer', self.pointer()), **kwargs)
+
+    def test_blocked_optional_monitors_alert_once_without_changing_primary_and_recover(self):
+        for key, condition, healthy in [('penalty_shadow', 'monitor-penalty', 'READY'),
+                                        ('totals_shadow', 'monitor-totals', 'READY'),
+                                        ('weights_shadow', 'monitor-weights', 'READY'),
+                                        ('replacement_depth', 'monitor-replacement-depth', 'DESCRIPTIVE / NOT IN MODEL')]:
+            with self.subTest(component=key):
+                state = self.state()
+                state[key] = dict(status='BLOCKED', blocked_reason='private provider failure', historical_admission='BLOCKED FOR FITTING')
+                before = copy.deepcopy(state)
+                report = self.report(state)
+                self.assertEqual([row['key'] for row in report['conditions']], [condition])
+                self.assertFalse(report['conditions'][0]['urgent'])
+                self.assertFalse(report['can_resolve'])
+                self.assertNotIn('private provider failure', json.dumps(report))
+                self.assertEqual(state, before)
+                fake = FakeAPI([])
+                self.assertEqual(alerts.deliver(report, fake, alerts.RUN_URL)['action'], 'created')
+                self.assertEqual(alerts.deliver(self.report(state), fake, alerts.RUN_URL)['action'], 'unchanged')
+                state[key].update(status=healthy, blocked_reason=None)
+                recovered = self.report(state)
+                self.assertEqual(recovered['conditions'], [])
+                self.assertTrue(recovered['can_resolve'])
+                self.assertEqual(alerts.deliver(recovered, fake, alerts.RUN_URL)['action'], 'resolved')
+                self.assertEqual(sum(method == 'POST' for method, _, _ in fake.calls), 1)
+
+    def test_absent_optional_components_and_expected_research_holds_do_not_alert(self):
+        for component in (None, {}, {'status': 'EXPERIMENTAL / HOLD'}, {'status': 'BLOCKED FOR FITTING'},
+                          {'status': 'DESCRIPTIVE / NOT IN MODEL', 'historical_admission': 'BLOCKED FOR FITTING'}):
+            with self.subTest(component=component):
+                state = self.state()
+                for key in ('penalty_shadow', 'totals_shadow', 'weights_shadow', 'replacement_depth'):
+                    state[key] = component
+                report = self.report(state)
+                self.assertEqual(report['conditions'], [])
+                self.assertTrue(report['can_resolve'])
+
+    def test_rollover_failure_or_missing_outcome_cannot_resolve_healthy_state(self):
+        for outcome in ('failure', 'cancelled', 'skipped', None):
+            with self.subTest(outcome=outcome):
+                outcomes = dict.fromkeys(alerts.STAGES, 'success')
+                outcomes['rollover'] = outcome
+                if outcome is None:
+                    outcomes.pop('rollover')
+                report = self.report(outcomes=outcomes)
+                expected = 'failed-rollover' if outcome in ('failure', 'cancelled') else 'pipeline-incomplete'
+                self.assertEqual([row['key'] for row in report['conditions']], [expected])
+                self.assertFalse(report['can_resolve'])
+        # A valid WAITING receipt exits successfully and retains normal resolution.
+        self.assertTrue(self.report()['can_resolve'])
 
     def pointer(self, checked='2026-09-13T15:30:00Z'):
         return dict(checked_at=checked, path='runs-v2/20260913T153000000000Z', manifest_sha256='a' * 64)
@@ -113,17 +163,19 @@ class AlertTests(unittest.TestCase):
         state['checked_at'] = '2026-09-13T16:00:00Z'
         self.assertIn('state-unverified', [item['key'] for item in self.report(state)['conditions']])
         self.assertFalse(self.report({})['can_resolve'])
-        for stage in ('verify', 'refresh', 'render', 'publish'):
-            outcomes = dict.fromkeys(('verify', 'refresh', 'render', 'publish'), 'success')
+        for stage in alerts.STAGES:
+            outcomes = dict.fromkeys(alerts.STAGES, 'success')
             outcomes[stage] = 'failure'
             report = alerts.assess(self.state(), outcomes=outcomes, checked_at='2026-09-13T15:31:00Z')
             self.assertIn('failed-' + stage, [item['key'] for item in report['conditions']])
             self.assertFalse(report['can_resolve'])
-        self.assertFalse(alerts.assess(self.state(), outcomes=dict.fromkeys(('verify', 'refresh', 'render', 'publish'), 'success'),
+        self.assertFalse(alerts.assess(self.state(), outcomes=dict.fromkeys(alerts.STAGES, 'success'),
             checked_at='2026-09-13T15:31:00Z', refresh_started_at='2026-09-13T15:30:01Z')['can_resolve'])
 
     def test_noop_never_reads_issues_or_resolves(self):
-        report = alerts.assess(None, outcomes={}, run_refresh=False)
+        state = self.state()
+        state['replacement_depth'] = {'status': 'BLOCKED'}
+        report = alerts.assess(state, outcomes={'rollover': 'failure'}, run_refresh=False)
         self.assertEqual(alerts.deliver(report, lambda *args: self.fail('API called'), alerts.RUN_URL), {'action': 'skipped'})
 
     def issue(self, report, number=1, **kwargs):

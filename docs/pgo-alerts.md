@@ -6,7 +6,7 @@ Successful issue assignment is delivery evidence, not confirmation that email, m
 
 ## Invocation
 
-Run after the publication step under `if: always()`, inside the existing `board-update` concurrency group. Set `GH_TOKEN` to the workflow token and pass explicit step outcomes. Immediately before the refresh command, write a UTC timestamp to the refresh step's `started_at` output.
+Run after publication and rollover observation under `if: always()`, inside the existing `board-update` concurrency group. Set `GH_TOKEN` to the workflow token and pass explicit step outcomes. Immediately before the refresh command, write a UTC timestamp to the refresh step's `started_at` output.
 
 ```text
 python pgo_alerts.py --deliver --check-public
@@ -15,6 +15,7 @@ python pgo_alerts.py --deliver --check-public
   --refresh-outcome <refresh.outcome>
   --render-outcome <render.outcome>
   --publish-outcome <publish.outcome>
+  --rollover-outcome <rollover.outcome>
   --refresh-started-at <refresh.started_at>
 ```
 
@@ -24,11 +25,11 @@ A route value of `false` is an intentional no-op: no saved-state load, public GE
 
 ## Conditions
 
-- Reuse `pgo_workflow_status.report_health` for main source/availability failures and normal next-week waiting. Expected research holds are not operational failures; blocked sportsbook capture is.
+- Reuse `pgo_workflow_status.report_health` for main source/availability failures and normal next-week waiting. Explicitly `BLOCKED` independent penalty, scoring, model-weight and defender updates produce nonurgent conditions (`monitor-penalty`, `monitor-totals`, `monitor-weights`, `monitor-replacement-depth`). Missing optional components, experimental HOLD and historical fitting admission do not trigger these alerts. Blocked sportsbook capture retains its separate alert.
 - Reuse `pgo_season.availability_watch`: final lists can normally be awaited until 75 minutes before kickoff. Missing lists then need attention; a completed pregame list whose last check is older than 10 minutes is stale. Missing lists remain visible for the existing post-kickoff watch window. Pregame failures are urgent.
 - Match the board's existing freshness rules: saved automation older than 45 minutes is overdue; an unlocked game's availability check within the next 24 hours is overdue after 30 minutes.
 - Check only the fixed HTTPS Pages `evidence/season-2026/current.json` for public deployment health. Unavailable, malformed, future-dated or older-than-45-minute pointers need attention. This small read-only check is not another model-input collector. It allows ordinary publication delay within that freshness window; it does not require the newly pushed snapshot to be instantly public.
-- Explicit verify, refresh, render or publish failures alert even if the old saved state still looks healthy. Incomplete stage outcomes cannot resolve an incident.
+- Explicit verify, refresh, render, publish or rollover-verification failures alert even if the old saved state still looks healthy. The shared `STAGES` list defines required outcomes; incomplete or missing outcomes cannot resolve an incident. Rollover `WAITING` is a valid successful observation, while an invalid receipt fails that stage and produces `failed-rollover`. Intentional skipped ticks remain no-ops.
 - Normal next-week waiting does not immediately alert. Once all current-week scheduled games have unique matching saved verified finals, a missing next edition becomes attention after more than six hours from the latest `finalized_at`. This grace period is an operator threshold, not a delivery deadline or a claim that upstream data must be ready.
 
 No raw provider errors, credentials, source URLs or stack traces appear in issue content. Public messages use fixed descriptions, validated team names and normalized timestamps. Existing workflow evidence remains the place to investigate details.

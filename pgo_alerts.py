@@ -20,7 +20,7 @@ BOT = 'github-actions[bot]'
 MARKER = '<!-- pgo-alerts:v1 -->'
 META = re.compile(r'<!-- pgo-alert-state:(\{[^\n]*\}) -->')
 RUN_URL = 'https://github.com/' + REPOSITORY + '/actions/runs/1'
-STAGES = ('verify', 'refresh', 'render', 'publish')
+STAGES = ('verify', 'refresh', 'render', 'publish', 'rollover')
 FAILURE_CATEGORIES = ('ISSUE_RESPONSE', 'ISSUE_OWNERSHIP', 'ISSUE_METADATA', 'ISSUE_DUPLICATE', 'ISSUE_CONFIRMATION')
 PUBLIC_POINTER = 'https://walshja9.github.io/Postgame_Outlet/evidence/season-2026/current.json'
 NOT_CHECKED = object()
@@ -87,6 +87,11 @@ def assess(state, *, outcomes, run_refresh=True, checked_at=None, refresh_starte
             add('weekly-update-overdue', 'All current-week games have verified finals, but the next edition is still missing more than six hours later. Review weekly input availability.')
         if health['ats_status'] == 'BLOCKED':
             add('ats-source-review', 'The saved sportsbook-line update needs review. Existing locked lines remain unchanged.')
+        for prefix, label in [('penalty', 'penalty comparison'), ('totals', 'scoring comparison'),
+                              ('weights', 'model-weight comparison'), ('replacement_depth', 'defender evidence')]:
+            if health[prefix + '_status'] == 'BLOCKED':
+                add('monitor-' + prefix.replace('_', '-'), 'The independent ' + label
+                    + ' update is blocked. Main picks and grades are checked separately.')
         if watch.get('blocked_reason'):
             add('inactive-source-review', 'The latest official inactive-list check could not be verified.',
                 any(utc(game['kickoff']) > checked for game in watch['games']))

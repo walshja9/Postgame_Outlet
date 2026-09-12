@@ -62,7 +62,7 @@ jobs:
       - name: Verify automatic grading, model updates, availability and rendering
         id: verify
         if: steps.route.outputs.run_refresh == 'true'
-        run: python -m unittest tests.test_pgo_season tests.test_pgo_season_boundaries tests.test_pgo_season_sources tests.test_pgo_season_model tests.test_pgo_season_availability tests.test_pgo_season_view tests.test_pgo_season_storage tests.test_pgo_season_rollover tests.test_pgo_season_accuracy tests.test_pgo_market_benchmark tests.test_pgo_alerts tests.test_pgo_penalty_candidate tests.test_pgo_penalty_monitor tests.test_pgo_penalty_integration tests.test_pgo_totals_monitor tests.test_pgo_weights_monitor tests.test_pgo_replacement_depth tests.test_pgo_defender_inventory tests.test_pgo_season_experiments tests.test_pgo_experiment_view tests.test_pgo_ats tests.test_pgo_ats_view tests.test_pgo_inactive_monitor tests.test_pgo_publication_guard tests.test_pgo_workflow_status tests.test_public_board_workflow
+        run: python -m unittest tests.test_pgo_season tests.test_pgo_season_boundaries tests.test_pgo_season_sources tests.test_pgo_season_model tests.test_pgo_season_availability tests.test_pgo_season_view tests.test_pgo_season_storage tests.test_pgo_season_rollover tests.test_pgo_season_accuracy tests.test_pgo_market_benchmark tests.test_pgo_alerts tests.test_pgo_penalty_candidate tests.test_pgo_penalty_monitor tests.test_pgo_penalty_integration tests.test_pgo_totals_monitor tests.test_pgo_weights_monitor tests.test_pgo_replacement_depth tests.test_pgo_replacement_refresh tests.test_pgo_defender_inventory tests.test_pgo_season_experiments tests.test_pgo_experiment_view tests.test_pgo_ats tests.test_pgo_ats_view tests.test_pgo_inactive_monitor tests.test_pgo_publication_guard tests.test_pgo_workflow_status tests.test_public_board_workflow
       - name: Capture verified finals and advance eligible forecasts
         id: refresh
         if: steps.route.outputs.run_refresh == 'true'
@@ -98,6 +98,7 @@ jobs:
         if: always() && steps.refresh.outcome == 'success'
         run: python pgo_workflow_status.py
       - name: Observe the first weekly rollover
+        id: rollover
         if: always() && steps.refresh.outcome == 'success'
         run: python pgo_season_rollover.py --output output/rollover-${{ github.run_id }}-${{ github.run_attempt }}.json
       - name: Retain rollover evidence
@@ -117,6 +118,7 @@ jobs:
           PGO_REFRESH: ${{ steps.refresh.outcome }}
           PGO_RENDER: ${{ steps.render.outcome }}
           PGO_PUBLISH: ${{ steps.publish.outcome }}
+          PGO_ROLLOVER: ${{ steps.rollover.outcome }}
           PGO_REFRESH_STARTED: ${{ steps.refresh.outputs.started_at }}
         shell: python
         run: |
@@ -147,4 +149,5 @@ jobs:
             --refresh-outcome '${{ steps.refresh.outcome }}' \
             --render-outcome '${{ steps.render.outcome }}' \
             --publish-outcome '${{ steps.publish.outcome }}' \
+            --rollover-outcome '${{ steps.rollover.outcome }}' \
             --refresh-started-at '${{ steps.refresh.outputs.started_at }}'

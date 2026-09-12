@@ -1,5 +1,6 @@
 """Pure presentation of verified season state; never fetches, fits, issues or grades."""
 from collections import Counter
+from datetime import timedelta
 from decimal import Decimal, ROUND_HALF_UP
 import html
 import math
@@ -197,13 +198,24 @@ def _game_day(state):
                      f'<a class="game-day-link" href="#season-game-{key}" data-view-key="game-day-link-{key}">Score estimate and explanation</a></div></article>')
     empty = '<p>No games on this date.'
     next_game = next((g for g in games if utc(g['kickoff']).astimezone(eastern).date()>day),None)
-    if next_game:
+    if next_game and not cards:
         week = _integer(next_game['week'])
         count = sum(len(w['games']) for w in state['weeks'] if w['week'] == week)
         slate = f'See all {count} Week {week} games' if count != 1 else f'See the Week {week} game'
         empty += (f' Next saved game: <a href="#season-game-{_text(next_game["game_id"])}">'
                   f'{_text(next_game["away"])} @ {_text(next_game["home"])}</a> &middot; {_time(next_game["kickoff"])}. '
                   f'<a href="#season-week-{week}">{slate}</a>.')
+        checked = utc(state['checked_at'])
+        lock = utc(next_game['lock_at'])
+        starts = utc(next_game['kickoff']) - timedelta(hours=24)
+        empty += f'</p><p>Prediction {"locked" if checked >= lock else "lock"}: {_time(next_game["lock_at"])}. '
+        if checked >= lock:
+            empty += 'Later availability news is shown separately from the saved pick.'
+        elif checked < starts:
+            empty += f'Availability checks become due {_time(starts.isoformat())}.'
+        else:
+            empty += ('Availability-check window is open. Last saved forecast availability check: '
+                      + _check_time((next_game.get('availability') or {}).get('checked_at'), state['checked_at'], 30, next_game['lock_at']) + '.')
     return (f'<h3 id="season-game-day">Game day &middot; {day.strftime("%B %d").replace(" 0"," ")} (Eastern)</h3>'
             + ('<div class="game-day-grid">' + ''.join(cards) + '</div>' if cards else empty+'</p>'))
 
@@ -755,7 +767,7 @@ def _experiments(state):
                  _test_value(live.get(key,{}).get('mae'))] for key,label in names.items()]
         predictions = [[f'{_text(g["away"])} @ {_text(g["home"])}', _time(g['issued_at'])]
                        + [_test_value(g['totals'][key],1) for key in names] for g in totals.get('games',[])]
-        panels.append('<details class="model-update-evidence" data-view-key="totals-experiment"><summary>Score totals: can current-season results help?</summary>'
+        panels.append('<details class="model-update-evidence" id="season-totals-test" data-view-key="totals-experiment"><summary>Score totals: can current-season results help?</summary>'
             '<p>Two fixed formulas gradually mix this season\'s scoring with last season\'s. A 4-game starting weight means '
             'last season counts like four games; the 8-game version changes more slowly. Only verified results from earlier game days can enter.</p>'
             f'<p>Monitor: {_text(totals["status"])}. {_text(totals.get("blocked_reason") or "")}</p>'
@@ -801,7 +813,7 @@ def _experiments(state):
             issued.append(f'<details data-view-key="weights-game-{_text(game["game_id"])}"><summary>{_text(game["away"])} @ {_text(game["home"])}</summary>'
                           f'<p>Saved {_time(game["issued_at"])}. Lead estimates are NFL points; percentages are straight-up win chances.</p><ul>'
                           + ''.join(items) + '</ul></details>')
-        panels.append('<details class="model-update-evidence" data-view-key="weights-experiment"><summary>Inputs and win chances: test overlap without guessing new weights</summary>'
+        panels.append('<details class="model-update-evidence" id="season-weights-test" data-view-key="weights-experiment"><summary>Inputs and win chances: test overlap without guessing new weights</summary>'
             '<p>Recent results, team passing and quarterback passing can describe the same games. We tested removing one passing block at a time '
             'and refitted each fixed variant using earlier seasons only. We also tested two ways to convert each lead into a win chance.</p>'
             f'<p>Monitor: {_text(weights["status"])}. {_text(weights.get("blocked_reason") or "")}</p>'
@@ -854,7 +866,7 @@ def _experiments(state):
                 + ('<p>Names awaiting identity resolution: ' + ', '.join(_text(name) for name in unresolved) + '.</p>' if unresolved else '')
                 + ('<ul>' + ''.join(unavailable) + '</ul>' if unavailable else '<p>No unavailable players resolved in these saved sources; this does not establish full health.</p>')
                 + '</details>')
-        panels.append('<details class="model-update-evidence" data-view-key="replacement-experiment"><summary>Injuries and defensive backups: what we can verify</summary>'
+        panels.append('<details class="model-update-evidence" id="season-defender-info" data-view-key="replacement-experiment"><summary>Injuries and defensive backups: what we can verify</summary>'
             f'<p>Capture: {_text(depth["status"])}. {_text(depth.get("blocked_reason") or "")} '
             f'Saved {_time(depth.get("generated_at"))}; newest source {_time(depth.get("source_as_of"))}.</p>'
             '<p><strong>No numerical injury adjustment yet.</strong> We now save dated player identities, provider depth positions, '
@@ -908,6 +920,15 @@ def render_season(state, *, accuracy=None, mccabe=None, market=None):
         counts = ''.join(f'<td>{_integer(row[key])}</td>' for key in ('wins','losses','ties','no_pick','pending'))
         records.append(f'<tr><th scope="row">{_text(row["name"])}<br><small>{_text(row["edition"])}</small></th>{counts}</tr>')
     block = f'<p><strong>Update blocked:</strong> {_text(state["blocked_reason"])}</p>' if state.get('blocked_reason') else ''
+    failed_updates = [f'<a href="#{anchor}">{label}</a>' for key, anchor, label in (
+        ('penalty_shadow', 'pgo-penalty-test', 'Penalty test'),
+        ('totals_shadow', 'season-totals-test', 'Score-total test'),
+        ('weights_shadow', 'season-weights-test', 'Model-input tests'),
+        ('replacement_depth', 'season-defender-info', 'Defender information'),
+        ('ats', 'season-ats', 'Sportsbook comparisons')) if (state.get(key) or {}).get('status') == 'BLOCKED']
+    update_note = ('<p class="season-caption">Separate updates needing review: ' + ', '.join(failed_updates)
+                   + '. Earlier saved information is retained.</p>') if failed_updates else ''
+    main_status = 'Latest refresh completed' if state['status'] == 'READY' else 'Update needs review'
     current_weeks = ''.join(_week(w,True,comparisons,state.get('availability_context')) for w in weeks if w['week'] == current)
     archives = ''.join(_week(w,False,comparisons,state.get('availability_context')) for w in sorted(weeks,key=lambda w:w['week'],reverse=True) if w['week'] != current)
     links = [('season-game-day','Game day')]
@@ -949,8 +970,8 @@ def render_season(state, *, accuracy=None, mccabe=None, market=None):
             'Lead error separately measures how close the predicted margin was. The predicted lead is a model estimate, not a sportsbook line. '
             'Grades use saved picks and verified final scores. Missing results remain pending. '
             'Injury news is shown as context; current non-QB injuries and backup quality are not separately rated.</p></details>'
-            f'<p class="season-caption">Automation: {_text(state["status"])}. '
-            'Non-QB injuries and backup quality are context, not fitted adjustments.</p>' + block
+            f'<p class="season-caption"><strong>Main picks and grades:</strong> {main_status}. '
+            'Non-QB injuries and backup quality are context, not fitted adjustments.</p>' + block + update_note
             + _freshness(state) + _inactive_watch(state) + _game_day(state) + _rankings(state.get('rankings'),mccabe) +
             '<h3 id="season-records">Winner records (straight-up)</h3>'
             '<p>W: the selected team won. L: the selected team lost. T: the game ended in a tie. '

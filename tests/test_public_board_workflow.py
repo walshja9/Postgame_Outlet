@@ -21,7 +21,7 @@ class PublicBoardWorkflowTests(unittest.TestCase):
         self.assertIn('if: always()', alert)
         self.assertIn('--deliver --check-public', alert)
         self.assertIn("--run-refresh '${{ steps.route.outputs.run_refresh }}'", alert)
-        for stage in ('verify', 'refresh', 'render', 'publish'):
+        for stage in ('verify', 'refresh', 'render', 'publish', 'rollover'):
             self.assertIn('id: ' + stage, workflow)
             self.assertIn('--' + stage + "-outcome '${{ steps." + stage + ".outcome }}'", alert)
         self.assertIn("--refresh-started-at '${{ steps.refresh.outputs.started_at }}'", alert)
@@ -31,6 +31,7 @@ class PublicBoardWorkflowTests(unittest.TestCase):
         check = workflow.split('- name: Check notification delivery when requested', 1)[1].split('\n      - name:', 1)[0]
         self.assertIn("github.event_name == 'workflow_dispatch' && inputs.alert_delivery_check", check)
         self.assertIn('PYTHONPATH: ${{ github.workspace }}', check)
+        self.assertIn('PGO_ROLLOVER: ${{ steps.rollover.outcome }}', check)
         script = textwrap.dedent(check.split('        run: |\n', 1)[1])
         compile(script, '<delivery-check>', 'exec')
         for healthy, existing in ((True, None), (False, None), (True, {'number': 1})):
@@ -38,7 +39,7 @@ class PublicBoardWorkflowTests(unittest.TestCase):
                 report = {'can_resolve': healthy, 'conditions': []}
                 alerts = SimpleNamespace(
                     DEFAULT_ROOT=object(), REPOSITORY='walshja9/Postgame_Outlet',
-                    STAGES=('verify', 'refresh', 'render', 'publish'),
+                    STAGES=('verify', 'refresh', 'render', 'publish', 'rollover'),
                     load_current=mock.Mock(return_value='state'),
                     fetch_public_pointer=mock.Mock(return_value='pointer'),
                     assess=mock.Mock(return_value=report), github_api=object(),
@@ -134,7 +135,7 @@ class PublicBoardWorkflowTests(unittest.TestCase):
         workflow = (ROOT / '.github/workflows/update-season.yml').read_text(encoding='utf-8')
         gate = workflow.split('- name: Capture verified finals',1)[0]
         for module in ('test_pgo_season_accuracy','test_pgo_totals_monitor','test_pgo_weights_monitor',
-                       'test_pgo_replacement_depth','test_pgo_defender_inventory','test_pgo_season_experiments','test_pgo_experiment_view',
+                       'test_pgo_replacement_depth','test_pgo_replacement_refresh','test_pgo_defender_inventory','test_pgo_season_experiments','test_pgo_experiment_view',
                        'test_pgo_inactive_monitor'):
             self.assertIn('tests.'+module,gate)
 
@@ -196,6 +197,7 @@ class PublicBoardWorkflowTests(unittest.TestCase):
         workflow=(ROOT / '.github/workflows/update-season.yml').read_text(encoding='utf-8')
         self.assertIn('tests.test_pgo_season_rollover',workflow)
         step=workflow.split('- name: Observe the first weekly rollover',1)[1].split('\n      - name:',1)[0]
+        self.assertIn('id: rollover', step)
         self.assertIn("if: always() && steps.refresh.outcome == 'success'",step)
         self.assertIn('python pgo_season_rollover.py --output output/rollover-${{ github.run_id }}-${{ github.run_attempt }}.json',step)
         upload=workflow.split('- name: Retain rollover evidence',1)[1]

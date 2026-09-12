@@ -115,6 +115,7 @@ class SeasonBoundaryTests(unittest.TestCase):
                 with patch.object(api,'now',return_value='2026-09-14T12:00:00Z'), \
                      patch.object(api,'fetch_inputs',return_value=(schedule,results,[],{})), \
                      patch.object(api,'refresh_availability',return_value=[]),patch.object(api,'legacy_models',return_value=[]), \
+                     patch.object(api,'refresh_replacement_sources'), \
                      patch.object(api,'build_next',return_value=(new_rankings,next_week,[]),
                                   side_effect=ValueError('Completed game is missing production') if case=='missing_stats' else None)as build:
                     updated=api.refresh(root)
