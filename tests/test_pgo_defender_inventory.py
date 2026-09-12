@@ -198,7 +198,8 @@ class DefenderInventoryTests(unittest.TestCase):
                      patch.object(api, 'load_target', return_value=([], dict(captured_at=helper.clock))), \
                      patch.object(api, 'load_current', return_value=dict(results=[], checked_at=helper.clock)), \
                      patch.object(api, 'verify_finals'):
-                    api.run(selected, source, output, root)
+                    source_argument = source.relative_to(Path.cwd()) if version == 2 else source
+                    api.run(selected, source_argument, output, root)
                 pins = json.loads((output/'receipt.json').read_bytes())['inputs']
                 for path in (here/'charter.md', addendum):
                     key = path.relative_to(api.ROOT).as_posix()

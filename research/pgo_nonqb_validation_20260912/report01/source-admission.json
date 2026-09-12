@@ -1,0 +1,1640 @@
+{
+  "definitions": {
+    "coverage": "A timed row establishes only that record. Missing team reports and completeness remain unknown.",
+    "key_conflict": "Same season/week/team/GSIS and normalized modification clock with differing non-clock fields.",
+    "non_qb": "Offense/defense positions excluding QB, K, P and LS; unknown positions counted separately.",
+    "non_qb_all_positions": "All rows except QB, including separately excluded special teams and unknown positions.",
+    "timing_precedence": "Unmatched scheduled game; missing clock; invalid clock; at or after T-60; valid timestamp.",
+    "valid_timestamp": "Nonmissing aware date_modified strictly before scheduled T-60; not proof of historical source publication."
+  },
+  "feature_walks": 0,
+  "forecast_adjustment": null,
+  "historical_source_vintage": "REVIEW REQUIRED",
+  "identity_qualification": {
+    "ambiguous_CIN_rows": 16,
+    "compared_REG_snap_rows": 310475,
+    "corrected_package_status": "PASS",
+    "corrected_roster_rows": 219,
+    "historical_timing_qualified": false,
+    "original_package_status": "STOP",
+    "remaining_conflicts": 0,
+    "scope": "STRICT_HISTORICAL_IDENTITY_ONLY",
+    "unresolved_REG_snap_rows": 8461
+  },
+  "limitations": [
+    "2025 injury rows have no modification timestamps and cannot be admitted by the strict timing rule.",
+    "The earlier diagnostic includes QB losses and heuristic status probabilities; it does not isolate non-QB effects.",
+    "Qualified identity corrections do not establish historical publication vintage or complete report coverage.",
+    "A prior-usage-only diagnostic does not require historical depth; replacement-quality claims do.",
+    "No newly isolated numerical candidate is fitted or accepted at this admission stage."
+  ],
+  "model_fits": 0,
+  "prior_diagnostic": {
+    "aggregate_metrics_independently_recomputed": true,
+    "games": 2127,
+    "limits": [
+      "Post-hoc diagnostic on already inspected 2018-2025 history; not new validation.",
+      "Historical availability includes QB lost snaps and heuristic status probabilities; this is not an isolated non-QB injury test.",
+      "Only observed offense/defense availability values are zeroed; nulls and all missingness indicators are preserved.",
+      "The same saved season-fold coefficients and preprocessing are used for both predictions; no refit, tuning, historical rebuild or promotion.",
+      "Historical feature publication vintages and historical starter identities retain their previously documented limitations.",
+      "This does not validate the new last-four-positive-snap role proxy or the new OUT/IR/PUP versus uncertain-out scenario policy.",
+      "Eight season blocks give limited uncertainty information; intervals are diagnostic, not scenario confidence ranges.",
+      "Issued forecasts and the active corrected fit remain unchanged. EXPERIMENTAL / HOLD."
+    ],
+    "overall": {
+      "bootstrap": {
+        "blocks": 8,
+        "mae": {
+          "estimate": -0.0020263551768362476,
+          "lower": -0.008629912350272662,
+          "upper": 0.0033554981944519113
+        },
+        "method": "paired game-weighted season-block resampling; percentile 95% interval",
+        "positive_gain_means": "lower error with the saved availability terms",
+        "rmse": {
+          "estimate": -0.0013957965491329105,
+          "lower": -0.007184336213059694,
+          "upper": 0.004465076750002111
+        },
+        "samples": 10000,
+        "seed": 20260909
+      },
+      "metrics": {
+        "gain_with_availability": {
+          "mae": -0.0020263551768362476,
+          "rmse": -0.0013957965491329105
+        },
+        "with_availability": {
+          "count": 2127,
+          "mae": 10.099455867555735,
+          "rmse": 13.044988969614389
+        },
+        "zero_observed_availability": {
+          "count": 2127,
+          "mae": 10.097429512378898,
+          "rmse": 13.043593173065256
+        }
+      }
+    },
+    "seasons_with_positive_mae_gain": 4,
+    "status": "EXPERIMENTAL / HOLD"
+  },
+  "seasons": [
+    {
+      "expected_team_games": 512,
+      "full_report_coverage": "UNKNOWN: individual rows do not certify a complete team injury report",
+      "non_qb_all_positions": 4768,
+      "other_game_type_rows": 157,
+      "populations": {
+        "non_qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 211,
+            "MISSING": 131,
+            "Out": 725,
+            "Probable": 2531,
+            "Questionable": 1100
+          },
+          "rows": 4698,
+          "team_games_with_any_row": 511,
+          "team_games_with_timed_row": 511,
+          "team_games_without_any_row": 1,
+          "team_games_without_timed_row": 1,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 4698
+          }
+        },
+        "qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 4,
+            "Out": 42,
+            "Probable": 82,
+            "Questionable": 17
+          },
+          "rows": 145,
+          "team_games_with_any_row": 128,
+          "team_games_with_timed_row": 128,
+          "team_games_without_any_row": 384,
+          "team_games_without_timed_row": 384,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 145
+          }
+        },
+        "special_teams": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 1,
+            "MISSING": 1,
+            "Out": 8,
+            "Probable": 54,
+            "Questionable": 6
+          },
+          "rows": 70,
+          "team_games_with_any_row": 68,
+          "team_games_with_timed_row": 68,
+          "team_games_without_any_row": 444,
+          "team_games_without_timed_row": 444,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 70
+          }
+        },
+        "unknown_position": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {},
+          "rows": 0,
+          "team_games_with_any_row": 0,
+          "team_games_with_timed_row": 0,
+          "team_games_without_any_row": 512,
+          "team_games_without_timed_row": 512,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 0
+          }
+        }
+      },
+      "regular_injury_rows": 4913,
+      "season": 2013
+    },
+    {
+      "expected_team_games": 512,
+      "full_report_coverage": "UNKNOWN: individual rows do not certify a complete team injury report",
+      "non_qb_all_positions": 4771,
+      "other_game_type_rows": 166,
+      "populations": {
+        "non_qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 215,
+            "MISSING": 206,
+            "Out": 869,
+            "Probable": 2357,
+            "Questionable": 1042
+          },
+          "rows": 4689,
+          "team_games_with_any_row": 511,
+          "team_games_with_timed_row": 511,
+          "team_games_without_any_row": 1,
+          "team_games_without_timed_row": 1,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 4689
+          }
+        },
+        "qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 5,
+            "MISSING": 5,
+            "Out": 25,
+            "Probable": 81,
+            "Questionable": 25
+          },
+          "rows": 141,
+          "team_games_with_any_row": 136,
+          "team_games_with_timed_row": 136,
+          "team_games_without_any_row": 376,
+          "team_games_without_timed_row": 376,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 141
+          }
+        },
+        "special_teams": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 1,
+            "MISSING": 4,
+            "Out": 6,
+            "Probable": 56,
+            "Questionable": 15
+          },
+          "rows": 82,
+          "team_games_with_any_row": 81,
+          "team_games_with_timed_row": 81,
+          "team_games_without_any_row": 431,
+          "team_games_without_timed_row": 431,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 82
+          }
+        },
+        "unknown_position": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {},
+          "rows": 0,
+          "team_games_with_any_row": 0,
+          "team_games_with_timed_row": 0,
+          "team_games_without_any_row": 512,
+          "team_games_without_timed_row": 512,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 0
+          }
+        }
+      },
+      "regular_injury_rows": 4912,
+      "season": 2014
+    },
+    {
+      "expected_team_games": 512,
+      "full_report_coverage": "UNKNOWN: individual rows do not certify a complete team injury report",
+      "non_qb_all_positions": 4836,
+      "other_game_type_rows": 223,
+      "populations": {
+        "non_qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 228,
+            "MISSING": 147,
+            "Out": 915,
+            "Probable": 2413,
+            "Questionable": 1089
+          },
+          "rows": 4792,
+          "team_games_with_any_row": 511,
+          "team_games_with_timed_row": 511,
+          "team_games_without_any_row": 1,
+          "team_games_without_timed_row": 1,
+          "timing": {
+            "at_or_after_T60": 1,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 4791
+          }
+        },
+        "qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Out": 43,
+            "Probable": 110,
+            "Questionable": 20
+          },
+          "rows": 173,
+          "team_games_with_any_row": 148,
+          "team_games_with_timed_row": 148,
+          "team_games_without_any_row": 364,
+          "team_games_without_timed_row": 364,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 173
+          }
+        },
+        "special_teams": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 1,
+            "MISSING": 4,
+            "Out": 5,
+            "Probable": 30,
+            "Questionable": 4
+          },
+          "rows": 44,
+          "team_games_with_any_row": 40,
+          "team_games_with_timed_row": 40,
+          "team_games_without_any_row": 472,
+          "team_games_without_timed_row": 472,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 44
+          }
+        },
+        "unknown_position": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {},
+          "rows": 0,
+          "team_games_with_any_row": 0,
+          "team_games_with_timed_row": 0,
+          "team_games_without_any_row": 512,
+          "team_games_without_timed_row": 512,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 0
+          }
+        }
+      },
+      "regular_injury_rows": 5009,
+      "season": 2015
+    },
+    {
+      "expected_team_games": 512,
+      "full_report_coverage": "UNKNOWN: individual rows do not certify a complete team injury report",
+      "non_qb_all_positions": 4747,
+      "other_game_type_rows": 187,
+      "populations": {
+        "non_qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 210,
+            "MISSING": 1798,
+            "Out": 985,
+            "Questionable": 1705
+          },
+          "rows": 4698,
+          "team_games_with_any_row": 512,
+          "team_games_with_timed_row": 512,
+          "team_games_without_any_row": 0,
+          "team_games_without_timed_row": 0,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 4698
+          }
+        },
+        "qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 7,
+            "MISSING": 108,
+            "Out": 34,
+            "Questionable": 32
+          },
+          "rows": 181,
+          "team_games_with_any_row": 172,
+          "team_games_with_timed_row": 172,
+          "team_games_without_any_row": 340,
+          "team_games_without_timed_row": 340,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 181
+          }
+        },
+        "special_teams": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 1,
+            "MISSING": 28,
+            "Out": 6,
+            "Questionable": 14
+          },
+          "rows": 49,
+          "team_games_with_any_row": 48,
+          "team_games_with_timed_row": 48,
+          "team_games_without_any_row": 464,
+          "team_games_without_timed_row": 464,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 49
+          }
+        },
+        "unknown_position": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {},
+          "rows": 0,
+          "team_games_with_any_row": 0,
+          "team_games_with_timed_row": 0,
+          "team_games_without_any_row": 512,
+          "team_games_without_timed_row": 512,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 0
+          }
+        }
+      },
+      "regular_injury_rows": 4928,
+      "season": 2016
+    },
+    {
+      "expected_team_games": 512,
+      "full_report_coverage": "UNKNOWN: individual rows do not certify a complete team injury report",
+      "non_qb_all_positions": 4789,
+      "other_game_type_rows": 155,
+      "populations": {
+        "non_qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 165,
+            "MISSING": 2283,
+            "Out": 855,
+            "Questionable": 1440
+          },
+          "rows": 4743,
+          "team_games_with_any_row": 511,
+          "team_games_with_timed_row": 511,
+          "team_games_without_any_row": 1,
+          "team_games_without_timed_row": 1,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 4743
+          }
+        },
+        "qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 4,
+            "MISSING": 101,
+            "Out": 32,
+            "Questionable": 23
+          },
+          "rows": 160,
+          "team_games_with_any_row": 150,
+          "team_games_with_timed_row": 150,
+          "team_games_without_any_row": 362,
+          "team_games_without_timed_row": 362,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 160
+          }
+        },
+        "special_teams": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "MISSING": 28,
+            "Out": 5,
+            "Questionable": 13
+          },
+          "rows": 46,
+          "team_games_with_any_row": 46,
+          "team_games_with_timed_row": 46,
+          "team_games_without_any_row": 466,
+          "team_games_without_timed_row": 466,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 46
+          }
+        },
+        "unknown_position": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {},
+          "rows": 0,
+          "team_games_with_any_row": 0,
+          "team_games_with_timed_row": 0,
+          "team_games_without_any_row": 512,
+          "team_games_without_timed_row": 512,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 0
+          }
+        }
+      },
+      "regular_injury_rows": 4949,
+      "season": 2017
+    },
+    {
+      "expected_team_games": 512,
+      "full_report_coverage": "UNKNOWN: individual rows do not certify a complete team injury report",
+      "non_qb_all_positions": 4792,
+      "other_game_type_rows": 172,
+      "populations": {
+        "non_qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 163,
+            "MISSING": 2437,
+            "Out": 871,
+            "Questionable": 1249
+          },
+          "rows": 4720,
+          "team_games_with_any_row": 512,
+          "team_games_with_timed_row": 512,
+          "team_games_without_any_row": 0,
+          "team_games_without_timed_row": 0,
+          "timing": {
+            "at_or_after_T60": 2,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 4718
+          }
+        },
+        "qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 6,
+            "MISSING": 118,
+            "Out": 23,
+            "Questionable": 22
+          },
+          "rows": 169,
+          "team_games_with_any_row": 155,
+          "team_games_with_timed_row": 155,
+          "team_games_without_any_row": 357,
+          "team_games_without_timed_row": 357,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 169
+          }
+        },
+        "special_teams": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 1,
+            "MISSING": 41,
+            "Out": 12,
+            "Questionable": 18
+          },
+          "rows": 72,
+          "team_games_with_any_row": 67,
+          "team_games_with_timed_row": 67,
+          "team_games_without_any_row": 445,
+          "team_games_without_timed_row": 445,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 72
+          }
+        },
+        "unknown_position": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {},
+          "rows": 0,
+          "team_games_with_any_row": 0,
+          "team_games_with_timed_row": 0,
+          "team_games_without_any_row": 512,
+          "team_games_without_timed_row": 512,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 0
+          }
+        }
+      },
+      "regular_injury_rows": 4961,
+      "season": 2018
+    },
+    {
+      "expected_team_games": 512,
+      "full_report_coverage": "UNKNOWN: individual rows do not certify a complete team injury report",
+      "non_qb_all_positions": 5038,
+      "other_game_type_rows": 190,
+      "populations": {
+        "non_qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 161,
+            "MISSING": 2595,
+            "Out": 983,
+            "Questionable": 1230
+          },
+          "rows": 4969,
+          "team_games_with_any_row": 512,
+          "team_games_with_timed_row": 512,
+          "team_games_without_any_row": 0,
+          "team_games_without_timed_row": 0,
+          "timing": {
+            "at_or_after_T60": 5,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 4964
+          }
+        },
+        "qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 1,
+            "MISSING": 108,
+            "Out": 33,
+            "Questionable": 22
+          },
+          "rows": 164,
+          "team_games_with_any_row": 154,
+          "team_games_with_timed_row": 154,
+          "team_games_without_any_row": 358,
+          "team_games_without_timed_row": 358,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 164
+          }
+        },
+        "special_teams": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 6,
+            "MISSING": 39,
+            "Out": 6,
+            "Questionable": 18
+          },
+          "rows": 69,
+          "team_games_with_any_row": 66,
+          "team_games_with_timed_row": 66,
+          "team_games_without_any_row": 446,
+          "team_games_without_timed_row": 446,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 69
+          }
+        },
+        "unknown_position": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {},
+          "rows": 0,
+          "team_games_with_any_row": 0,
+          "team_games_with_timed_row": 0,
+          "team_games_without_any_row": 512,
+          "team_games_without_timed_row": 512,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 0
+          }
+        }
+      },
+      "regular_injury_rows": 5202,
+      "season": 2019
+    },
+    {
+      "expected_team_games": 512,
+      "full_report_coverage": "UNKNOWN: individual rows do not certify a complete team injury report",
+      "non_qb_all_positions": 5260,
+      "other_game_type_rows": 247,
+      "populations": {
+        "non_qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 147,
+            "MISSING": 2828,
+            "Out": 850,
+            "Questionable": 1349
+          },
+          "rows": 5174,
+          "team_games_with_any_row": 511,
+          "team_games_with_timed_row": 510,
+          "team_games_without_any_row": 1,
+          "team_games_without_timed_row": 2,
+          "timing": {
+            "at_or_after_T60": 13,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 5161
+          }
+        },
+        "qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 5,
+            "MISSING": 92,
+            "Out": 24,
+            "Questionable": 33
+          },
+          "rows": 154,
+          "team_games_with_any_row": 140,
+          "team_games_with_timed_row": 140,
+          "team_games_without_any_row": 372,
+          "team_games_without_timed_row": 372,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 154
+          }
+        },
+        "special_teams": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 3,
+            "MISSING": 41,
+            "Out": 9,
+            "Questionable": 33
+          },
+          "rows": 86,
+          "team_games_with_any_row": 79,
+          "team_games_with_timed_row": 79,
+          "team_games_without_any_row": 433,
+          "team_games_without_timed_row": 433,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 86
+          }
+        },
+        "unknown_position": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {},
+          "rows": 0,
+          "team_games_with_any_row": 0,
+          "team_games_with_timed_row": 0,
+          "team_games_without_any_row": 512,
+          "team_games_without_timed_row": 512,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 0
+          }
+        }
+      },
+      "regular_injury_rows": 5414,
+      "season": 2020
+    },
+    {
+      "expected_team_games": 544,
+      "full_report_coverage": "UNKNOWN: individual rows do not certify a complete team injury report",
+      "non_qb_all_positions": 5141,
+      "other_game_type_rows": 239,
+      "populations": {
+        "non_qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 152,
+            "MISSING": 2679,
+            "Out": 833,
+            "Questionable": 1401
+          },
+          "rows": 5065,
+          "team_games_with_any_row": 544,
+          "team_games_with_timed_row": 544,
+          "team_games_without_any_row": 0,
+          "team_games_without_timed_row": 0,
+          "timing": {
+            "at_or_after_T60": 3,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 5062
+          }
+        },
+        "qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 7,
+            "MISSING": 130,
+            "Out": 39,
+            "Questionable": 31
+          },
+          "rows": 207,
+          "team_games_with_any_row": 185,
+          "team_games_with_timed_row": 185,
+          "team_games_without_any_row": 359,
+          "team_games_without_timed_row": 359,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 207
+          }
+        },
+        "special_teams": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "MISSING": 45,
+            "Out": 7,
+            "Questionable": 24
+          },
+          "rows": 76,
+          "team_games_with_any_row": 70,
+          "team_games_with_timed_row": 70,
+          "team_games_without_any_row": 474,
+          "team_games_without_timed_row": 474,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 76
+          }
+        },
+        "unknown_position": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {},
+          "rows": 0,
+          "team_games_with_any_row": 0,
+          "team_games_with_timed_row": 0,
+          "team_games_without_any_row": 544,
+          "team_games_without_timed_row": 544,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 0
+          }
+        }
+      },
+      "regular_injury_rows": 5348,
+      "season": 2021
+    },
+    {
+      "expected_team_games": 542,
+      "full_report_coverage": "UNKNOWN: individual rows do not certify a complete team injury report",
+      "non_qb_all_positions": 5253,
+      "other_game_type_rows": 232,
+      "populations": {
+        "non_qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 141,
+            "MISSING": 2627,
+            "Out": 1002,
+            "Questionable": 1401
+          },
+          "rows": 5171,
+          "team_games_with_any_row": 539,
+          "team_games_with_timed_row": 539,
+          "team_games_without_any_row": 3,
+          "team_games_without_timed_row": 3,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 16,
+            "valid_timestamp": 5155
+          }
+        },
+        "qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 9,
+            "MISSING": 102,
+            "Out": 43,
+            "Questionable": 43
+          },
+          "rows": 197,
+          "team_games_with_any_row": 171,
+          "team_games_with_timed_row": 171,
+          "team_games_without_any_row": 371,
+          "team_games_without_timed_row": 371,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 1,
+            "valid_timestamp": 196
+          }
+        },
+        "special_teams": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 2,
+            "MISSING": 48,
+            "Out": 13,
+            "Questionable": 19
+          },
+          "rows": 82,
+          "team_games_with_any_row": 76,
+          "team_games_with_timed_row": 76,
+          "team_games_without_any_row": 466,
+          "team_games_without_timed_row": 466,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 82
+          }
+        },
+        "unknown_position": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {},
+          "rows": 0,
+          "team_games_with_any_row": 0,
+          "team_games_with_timed_row": 0,
+          "team_games_without_any_row": 542,
+          "team_games_without_timed_row": 542,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 0
+          }
+        }
+      },
+      "regular_injury_rows": 5450,
+      "season": 2022
+    },
+    {
+      "expected_team_games": 544,
+      "full_report_coverage": "UNKNOWN: individual rows do not certify a complete team injury report",
+      "non_qb_all_positions": 5260,
+      "other_game_type_rows": 148,
+      "populations": {
+        "non_qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 133,
+            "MISSING": 2624,
+            "Out": 939,
+            "Questionable": 1494
+          },
+          "rows": 5190,
+          "team_games_with_any_row": 543,
+          "team_games_with_timed_row": 543,
+          "team_games_without_any_row": 1,
+          "team_games_without_timed_row": 1,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 5190
+          }
+        },
+        "qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 6,
+            "MISSING": 110,
+            "Out": 35,
+            "Questionable": 40
+          },
+          "rows": 191,
+          "team_games_with_any_row": 167,
+          "team_games_with_timed_row": 167,
+          "team_games_without_any_row": 377,
+          "team_games_without_timed_row": 377,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 191
+          }
+        },
+        "special_teams": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 2,
+            "MISSING": 47,
+            "Out": 6,
+            "Questionable": 15
+          },
+          "rows": 70,
+          "team_games_with_any_row": 65,
+          "team_games_with_timed_row": 65,
+          "team_games_without_any_row": 479,
+          "team_games_without_timed_row": 479,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 70
+          }
+        },
+        "unknown_position": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {},
+          "rows": 0,
+          "team_games_with_any_row": 0,
+          "team_games_with_timed_row": 0,
+          "team_games_without_any_row": 544,
+          "team_games_without_timed_row": 544,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 0
+          }
+        }
+      },
+      "regular_injury_rows": 5451,
+      "season": 2023
+    },
+    {
+      "expected_team_games": 544,
+      "full_report_coverage": "UNKNOWN: individual rows do not certify a complete team injury report",
+      "non_qb_all_positions": 5766,
+      "other_game_type_rows": 261,
+      "populations": {
+        "non_qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 2
+          },
+          "report_status_counts": {
+            "Doubtful": 182,
+            "MISSING": 3025,
+            "Note": 5,
+            "Out": 1057,
+            "Questionable": 1398
+          },
+          "rows": 5667,
+          "team_games_with_any_row": 543,
+          "team_games_with_timed_row": 543,
+          "team_games_without_any_row": 1,
+          "team_games_without_timed_row": 1,
+          "timing": {
+            "at_or_after_T60": 1,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 5666
+          }
+        },
+        "qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 8,
+            "MISSING": 126,
+            "Note": 1,
+            "Out": 14,
+            "Questionable": 39
+          },
+          "rows": 188,
+          "team_games_with_any_row": 170,
+          "team_games_with_timed_row": 170,
+          "team_games_without_any_row": 374,
+          "team_games_without_timed_row": 374,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 188
+          }
+        },
+        "special_teams": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "MISSING": 40,
+            "Out": 20,
+            "Questionable": 27
+          },
+          "rows": 87,
+          "team_games_with_any_row": 79,
+          "team_games_with_timed_row": 79,
+          "team_games_without_any_row": 465,
+          "team_games_without_timed_row": 465,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 87
+          }
+        },
+        "unknown_position": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "MISSING": 12
+          },
+          "rows": 12,
+          "team_games_with_any_row": 9,
+          "team_games_with_timed_row": 9,
+          "team_games_without_any_row": 535,
+          "team_games_without_timed_row": 535,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 12
+          }
+        }
+      },
+      "regular_injury_rows": 5954,
+      "season": 2024
+    },
+    {
+      "expected_team_games": 544,
+      "full_report_coverage": "UNKNOWN: individual rows do not certify a complete team injury report",
+      "non_qb_all_positions": 5559,
+      "other_game_type_rows": 285,
+      "populations": {
+        "non_qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 101,
+            "MISSING": 2926,
+            "Out": 1284,
+            "Questionable": 1166
+          },
+          "rows": 5477,
+          "team_games_with_any_row": 544,
+          "team_games_with_timed_row": 0,
+          "team_games_without_any_row": 0,
+          "team_games_without_timed_row": 544,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 5477,
+            "unmatched_game": 0,
+            "valid_timestamp": 0
+          }
+        },
+        "qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 2,
+            "MISSING": 134,
+            "Out": 54,
+            "Questionable": 34
+          },
+          "rows": 224,
+          "team_games_with_any_row": 193,
+          "team_games_with_timed_row": 0,
+          "team_games_without_any_row": 351,
+          "team_games_without_timed_row": 544,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 224,
+            "unmatched_game": 0,
+            "valid_timestamp": 0
+          }
+        },
+        "special_teams": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 2,
+            "MISSING": 47,
+            "Out": 18,
+            "Questionable": 15
+          },
+          "rows": 82,
+          "team_games_with_any_row": 76,
+          "team_games_with_timed_row": 0,
+          "team_games_without_any_row": 468,
+          "team_games_without_timed_row": 544,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 82,
+            "unmatched_game": 0,
+            "valid_timestamp": 0
+          }
+        },
+        "unknown_position": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {},
+          "rows": 0,
+          "team_games_with_any_row": 0,
+          "team_games_with_timed_row": 0,
+          "team_games_without_any_row": 544,
+          "team_games_without_timed_row": 544,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 0
+          }
+        }
+      },
+      "regular_injury_rows": 5783,
+      "season": 2025
+    }
+  ],
+  "source_downloads": 0,
+  "source_selection": {
+    "injury_reports:2013": {
+      "bytes": 689228,
+      "path": "D:\\Postgame_Outlet-pgo-model\\.cache\\pgo_v1\\b84c71cf23be81375bbca62f7d2c51d53fa75330fbcf9f598ec4ac17fea7d8be.csv",
+      "sha256": "b84c71cf23be81375bbca62f7d2c51d53fa75330fbcf9f598ec4ac17fea7d8be"
+    },
+    "injury_reports:2014": {
+      "bytes": 692574,
+      "path": "D:\\Postgame_Outlet-pgo-model\\.cache\\pgo_v1\\e675fd5d86c3451d76e7c5d530095db1641347eb3f9796c9a30dd7a75e3ba634.csv",
+      "sha256": "e675fd5d86c3451d76e7c5d530095db1641347eb3f9796c9a30dd7a75e3ba634"
+    },
+    "injury_reports:2015": {
+      "bytes": 715948,
+      "path": "D:\\Postgame_Outlet-pgo-model\\.cache\\pgo_v1\\fbca54ef42594cc52facc0d8c8dd74802b812771b9e33032e44ae8c7e21b0360.csv",
+      "sha256": "fbca54ef42594cc52facc0d8c8dd74802b812771b9e33032e44ae8c7e21b0360"
+    },
+    "injury_reports:2016": {
+      "bytes": 674980,
+      "path": "D:\\Postgame_Outlet-pgo-model\\.cache\\pgo_v1\\504e05968cb9c54ddc730fd9b6e7d1dd16a62db8029cc784d3d7bafcea7ff7cb.csv",
+      "sha256": "504e05968cb9c54ddc730fd9b6e7d1dd16a62db8029cc784d3d7bafcea7ff7cb"
+    },
+    "injury_reports:2017": {
+      "bytes": 665280,
+      "path": "D:\\Postgame_Outlet-pgo-model\\.cache\\pgo_v1\\0d5139fbf41b0866517bd2bd5fd85bb20dbd4dd9bc36a706fed030a88731de6f.csv",
+      "sha256": "0d5139fbf41b0866517bd2bd5fd85bb20dbd4dd9bc36a706fed030a88731de6f"
+    },
+    "injury_reports:2018": {
+      "bytes": 665119,
+      "path": "D:\\Postgame_Outlet-pgo-model\\.cache\\pgo_v1\\4724e1f37cc3076f564e997fbf269190e7dbe795a39315b903788e0a9c40065e.csv",
+      "sha256": "4724e1f37cc3076f564e997fbf269190e7dbe795a39315b903788e0a9c40065e"
+    },
+    "injury_reports:2019": {
+      "bytes": 700757,
+      "path": "D:\\Postgame_Outlet-pgo-model\\.cache\\pgo_v1\\daddfe8e04ddc3a29bce14f362e774fbadfb274c807f1f0fde7b5bf32aaf6cdf.csv",
+      "sha256": "daddfe8e04ddc3a29bce14f362e774fbadfb274c807f1f0fde7b5bf32aaf6cdf"
+    },
+    "injury_reports:2020": {
+      "bytes": 737474,
+      "path": "D:\\Postgame_Outlet-pgo-model\\.cache\\pgo_v1\\706cca82824214f6b73ba0c6e537d3ee39766a50c644b8974b9fc28d7518de90.csv",
+      "sha256": "706cca82824214f6b73ba0c6e537d3ee39766a50c644b8974b9fc28d7518de90"
+    },
+    "injury_reports:2021": {
+      "bytes": 737083,
+      "path": "D:\\Postgame_Outlet-pgo-model\\.cache\\pgo_v1\\1049fb9ff0fe7cfcf3ba8bfe1f5a35d3aba985c461c8fb7bf5201735b6d34254.csv",
+      "sha256": "1049fb9ff0fe7cfcf3ba8bfe1f5a35d3aba985c461c8fb7bf5201735b6d34254"
+    },
+    "injury_reports:2022": {
+      "bytes": 752433,
+      "path": "D:\\Postgame_Outlet-pgo-model\\.cache\\pgo_v1\\5f0d60324e597edd1a2ced8540b04e40b51dd440591dd1df11b8d96343387c9e.csv",
+      "sha256": "5f0d60324e597edd1a2ced8540b04e40b51dd440591dd1df11b8d96343387c9e"
+    },
+    "injury_reports:2023": {
+      "bytes": 738501,
+      "path": "D:\\Postgame_Outlet-pgo-model\\.cache\\pgo_v1\\16b04e21da5aa3944cfa9c22cafcc84ed7e6d9866eaddf0344e9b8cbf2f63afe.csv",
+      "sha256": "16b04e21da5aa3944cfa9c22cafcc84ed7e6d9866eaddf0344e9b8cbf2f63afe"
+    },
+    "injury_reports:2024": {
+      "bytes": 816989,
+      "path": "D:\\Postgame_Outlet-pgo-model\\.cache\\pgo_v1\\498bce8e13cb64b2ab9bb0ad6cb81d0a63c2ddb24016c9fc90c2de2126fae449.csv",
+      "sha256": "498bce8e13cb64b2ab9bb0ad6cb81d0a63c2ddb24016c9fc90c2de2126fae449"
+    },
+    "injury_reports:2025": {
+      "bytes": 695623,
+      "path": "D:\\Postgame_Outlet-pgo-model\\.cache\\pgo_v1\\15ee790fef634caea988e7b6562fc393a63739dd7ee38229d1b42161427709df.csv",
+      "sha256": "15ee790fef634caea988e7b6562fc393a63739dd7ee38229d1b42161427709df"
+    },
+    "schedule_results": {
+      "bytes": 2173367,
+      "path": "D:\\Postgame_Outlet-pgo-model\\.cache\\pgo_v1\\cfb9c79a28ac1187a44be0bcfa0d8ff2f5a7ca201c5183a1dbf1e6d227d72f39.csv",
+      "sha256": "cfb9c79a28ac1187a44be0bcfa0d8ff2f5a7ca201c5183a1dbf1e6d227d72f39"
+    }
+  },
+  "status": "BLOCKED FOR FITTING / SOURCE ADMISSION INCOMPLETE",
+  "totals": {
+    "expected_team_games": 6814,
+    "non_qb_all_positions": 65980,
+    "regular_injury_rows": 68274
+  }
+}

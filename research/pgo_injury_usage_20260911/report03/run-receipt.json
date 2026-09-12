@@ -1,0 +1,8 @@
+{
+  "charter_sha256": "2d8f83dc61d04bdcf52b4073a9679fea2c04e906d271cd3ce7cd612f406299f3",
+  "code_sha256": "ce61ac39c00593eb330da0c8e47b518a3ca862c3fff56888eed4f86a7e8c8338",
+  "completed_at": "2026-09-12T16:49:46.790046+00:00",
+  "source_receipt_sha256": "a554dacea03601ac913d945ee3886ebee6374199a929097063f4de0074cd874f",
+  "source_state_unchanged": true,
+  "test_sha256": "ec8e31abb504274b3f7d0ddd4d33bf6cada8d967646268b7b31ef1eed5b30fc1"
+}

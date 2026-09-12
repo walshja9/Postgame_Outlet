@@ -118,5 +118,25 @@ class ExperimentViewTests(unittest.TestCase):
         self.assertIn('This older inventory omitted roster-listed inactive players', page)
         self.assertNotIn('Roster-listed inactive defenders:', page)
 
+    def test_usage_counts_do_not_claim_injury_weights_or_zero_for_missing_rows(self):
+        state = self.fixture()
+        state['injury_usage'] = dict(status='WAITING', forecast_adjustment=None,
+            predictive_status='UNAVAILABLE', checked_at='2026-09-12T16:00:00Z',
+            pending_games=14, excluded_games=[{'game_id':'old-game'}],
+            metrics=dict(games=1, cohort_rows=20, joined=12, observed_positive=10,
+                         observed_zero=2, missing_target=8))
+        before = copy.deepcopy(state); page = view._experiments(state)
+        for text in ('Eligible completed games: 1', 'Games awaiting finals: 14', '12 of 20',
+                     '2 explicitly recorded zero', '8 have no matching row',
+                     'Offensive player coverage', 'Not established.'):
+            self.assertIn(text, page)
+        self.assertEqual(state, before)
+        state['injury_usage'].update(status='BLOCKED', blocked_reason='Source <failed>')
+        page = view._experiments(state)
+        self.assertIn('Source &lt;failed&gt;', page)
+        self.assertNotIn('Matched playing-time rows:', page)
+        state['injury_usage']['forecast_adjustment'] = 1
+        with self.assertRaises(ValueError): view._experiments(state)
+
 
 if __name__=='__main__': unittest.main()

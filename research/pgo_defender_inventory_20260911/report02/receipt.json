@@ -1,0 +1,38 @@
+{
+  "completed_at": "2026-09-12T16:59:20.412598+00:00",
+  "inputs": {
+    "research/pgo_defender_inventory_20260911/charter.md": {
+      "bytes": 2505,
+      "sha256": "a4951e1e71a759c67091c9e6c823edd20ec2d5312cfa87750c37b5542147f6b0"
+    },
+    "research/pgo_defender_inventory_20260911/inventory-v2-addendum.md": {
+      "bytes": 1604,
+      "sha256": "c71f87b32b1f40a570e9018983b3bc4cd4208417cdfd8aa5a6c66d0a9d0445bf"
+    },
+    "research/pgo_defender_inventory_20260911/inventory.py": {
+      "bytes": 9784,
+      "sha256": "155aba0dffa2d2bf556347ca32119395cf1702a20d680ce86bd33609378e7fce"
+    },
+    "research/pgo_injury_usage_20260911/audit.py": {
+      "bytes": 10770,
+      "sha256": "ce61ac39c00593eb330da0c8e47b518a3ca862c3fff56888eed4f86a7e8c8338"
+    },
+    "research/pgo_injury_usage_20260911/source02/receipt.json": {
+      "bytes": 1483,
+      "sha256": "a554dacea03601ac913d945ee3886ebee6374199a929097063f4de0074cd874f"
+    },
+    "research/pgo_injury_usage_20260911/source02/response.bin": {
+      "bytes": 16543,
+      "sha256": "f4dfe061f01ab8153f4bb2e8cc7ecf23c7d8c7f6d03f62be2f156365952c4445"
+    },
+    "research/pgo_replacement_depth_20260910/capture.py": {
+      "bytes": 22174,
+      "sha256": "b86829d227b2b5fb33a5c15df4beec47aec03c53ab534aefea48eb67fb109121"
+    },
+    "tests/test_pgo_defender_inventory.py": {
+      "bytes": 14149,
+      "sha256": "edbbeca44d0685a7a32e6164a213c1231d3b6450628a343bc80950f5d4f045f8"
+    }
+  },
+  "source_state_unchanged": true
+}

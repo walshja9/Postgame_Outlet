@@ -1,0 +1,16 @@
+{
+  "files": {
+    "admission.json": {
+      "bytes": 225045,
+      "sha256": "7123c21cc2e57c1d5135a842236fe08718cf3f5e972be8a977b825a610c9880c"
+    },
+    "run-receipt.json": {
+      "bytes": 444,
+      "sha256": "8ccf1fda532882e2fa2c18e7f04bbd6e22c5e4c774a96accf82f1eb7d498b21c"
+    },
+    "season-pointer.json": {
+      "bytes": 497,
+      "sha256": "16d0d3538460811504991c608d2fa6db3c52be54e653cd8431c577443dccc780"
+    }
+  }
+}

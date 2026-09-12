@@ -1,0 +1,12 @@
+{
+  "recorded_at": "2026-09-12T16:59:12.691944+00:00",
+  "status": "FAILED BEFORE OUTPUT CREATION",
+  "output": "report01",
+  "source": "research/pgo_injury_usage_20260911/source02",
+  "pregame_pointer": "pregame-pointer01.json",
+  "failure": "inventory.run tried to make a relative source receipt path relative_to the absolute repo root",
+  "repair": "Normalize the source directory to an absolute path before receipt pin construction",
+  "regression": "test_report_receipt_pins_v2_addendum_only_for_v2_inventory failed on the relative source before repair and passed afterward",
+  "fitting": false,
+  "forecast_changes": false
+}

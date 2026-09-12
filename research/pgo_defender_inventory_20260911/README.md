@@ -82,3 +82,22 @@ save the inventories for eligible future games. After those games finish, retain
 a new actual snap-source response and run a new report against the original
 pregame pointer. This is data collection for later testing, not a fitted injury
 model or evidence of improved predictions.
+
+## September 12 replay
+
+`pregame-pointer01.json` selects the original September 12 16:40 UTC version 2
+archive. The first relative-path CLI invocation failed before creating a report;
+`attempt01-path-failure.json` retains that failure. Normalizing the source argument
+before constructing receipt paths repaired the command; the existing receipt test
+failed before the repair and passed afterward.
+
+`report02` is the successful replay against injury-usage `source02`: 1,050 pending
+player-game rows across 14 games, including 324 unknown prior histories and 1,050
+unknown official availability observations. Neither completed opener has an eligible
+full inventory, so both remain excluded; no completed player-game rows are admitted.
+These counts describe this selected archive, not future injury-report coverage.
+
+The [September 12 protocol](../pgo_nonqb_validation_20260912/charter.md) adds
+automatic postgame checks using the existing readers. The latest original inventory
+saved before T-60 is selected once per final game and retained. Later target releases
+can supply observed playing time; they cannot rewrite that pregame cohort.

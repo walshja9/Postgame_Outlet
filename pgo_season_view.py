@@ -755,7 +755,8 @@ def _test_value(value, digits=2):
 
 def _experiments(state):
     totals, weights, depth = (state.get(k) or {} for k in ('totals_shadow','weights_shadow','replacement_depth'))
-    if not any((totals, weights, depth)): return ''
+    usage = state.get('injury_usage') or {}
+    if not any((totals, weights, depth, usage)): return ''
     base = 'https://github.com/walshja9/Postgame_Outlet/blob/main/research/'
     panels = []
     if totals:
@@ -889,9 +890,50 @@ def _experiments(state):
             + '<details data-view-key="replacement-sources"><summary>Captured roster and depth sources</summary>'
             + _sources(depth.get('sources',[])) + '</details>'
             f'<p><a href="{base}pgo_replacement_depth_20260910/README.md">Admission audit, missing information and capture history</a>.</p>'
-            '<p><strong>September 11 usage check:</strong> Pregame roles are preserved. The captured postgame playing-time file '
-            'does not yet contain a matching game with eligible pregame records. Missing player rows stay unknown, not zero. '
-            f'<a href="{base}pgo_injury_usage_20260911/README.md">Injury and replacement-usage study</a>.</p></details>')
+            f'<p><a href="{base}pgo_injury_usage_20260911/README.md">Injury and replacement-usage study</a>.</p></details>')
+    validation = (
+        '<details class="model-update-evidence" id="season-injury-validation" data-view-key="injury-validation">'
+        '<summary>Do injury adjustments improve PGO yet?</summary>'
+        '<p><strong>Not established. Injury news is shown, but non-QB point adjustments have not qualified for the picks.</strong> '
+        'The earlier test covered 2,127 games. Its average margin error was 10.099 points with the old availability terms '
+        'and 10.097 without them: essentially unchanged. That test also included quarterback absences, so it cannot settle the non-QB question.</p>'
+        '<p>The September 12 source audit found that the saved 2025 injury records lack update times. '
+        'We cannot establish which version of those reports was known before each prediction. '
+        'The fresh playing-time file covers both opening games, but none of the 14 unavailable defenders saved before SF–LAR '
+        'has a matching row. A player missing from that file is unknown, not automatically zero plays.</p>'
+        '<p>We are checking original pregame defender lists against later playing-time reports. '
+        'This tells us whether the data can support a fair test; it does not yet tell us how many points an injury costs. '
+        'Offensive player coverage and a separate test of forecast accuracy are still required.</p>')
+    if usage:
+        if usage.get('forecast_adjustment') is not None or usage.get('predictive_status') != 'UNAVAILABLE':
+            raise ValueError('Defender usage is descriptive, not a forecast adjustment')
+        if usage.get('status') == 'BLOCKED':
+            validation += ('<p><strong>Playing-time check needs review.</strong> '
+                           + _text(usage.get('blocked_reason') or 'The latest check could not be verified.')
+                           + ' Earlier saved evidence is retained.</p>')
+        else:
+            metrics = usage.get('metrics') or {}
+            validation += (
+                f'<p>Automatic check saved {_time(usage.get("checked_at"))}. '
+                f'Eligible completed games: {_integer(metrics.get("games", 0))}. '
+                f'Games awaiting finals: {_integer(usage.get("pending_games", 0))}. '
+                f'Completed games without an eligible saved list: {_integer(len(usage.get("excluded_games", [])))}.</p>')
+            validation += (
+                f'<p>Matched playing-time rows: {_integer(metrics.get("joined", 0))} of '
+                f'{_integer(metrics.get("cohort_rows", 0))}; '
+                f'{_integer(metrics.get("observed_positive", 0))} recorded playing time, '
+                f'{_integer(metrics.get("observed_zero", 0))} explicitly recorded zero, '
+                f'{_integer(metrics.get("missing_target", 0))} have no matching row. '
+                'Repeated checks do not add extra games or players to the sample.</p>'
+                if metrics.get('cohort_rows') else '<p>No completed player records are eligible yet. '
+                'Playing-time coverage will appear when eligible games finish and their snap reports arrive.</p>')
+        validation += _sources([dict(href='evidence/season-2026/' + usage[key]['path'], label=label)
+                                for key, label in (('report', 'Last saved playing-time report'),
+                                                   ('source', 'Captured playing-time source receipt')) if usage.get(key)])
+    else:
+        validation += '<p>The automatic playing-time check has no saved result yet.</p>'
+    panels.append(validation + f'<p><a href="{base}pgo_nonqb_validation_20260912/README.md">'
+                  'Validation findings, data gaps and next test</a>.</p></details>')
     panels.append('<details class="model-update-evidence" data-view-key="score-range-study"><summary>How much could the score vary?</summary>'
         '<p><strong>Reliable outcome ranges are not available yet.</strong> The displayed score is an average estimate, '
         'not a narrow promise about the final score. We tested a fixed range method on historical games, using only earlier '
@@ -900,8 +942,9 @@ def _experiments(state):
         'Differences between model versions are not the same as a likely range of game outcomes.</p>'
         f'<p><a href="{base}pgo_score_ranges_20260911/README.md">Score-range study and validation requirements</a>.</p></details>')
     return ('<h3 id="season-model-tests">Model tests</h3><p>These fixed comparisons are separate from the main picks. '
-            'Original test forecasts are saved before lock and graded when verified finals arrive. The completed opener is excluded '
-            'from tests first created afterward. No experiment automatically replaces the main model.</p>' + ''.join(panels))
+            'Test forecasts are saved before lock and graded when verified finals arrive. Defender checks compare saved player lists '
+            'with later playing time. Games without eligible pregame evidence are excluded. '
+            'No experiment automatically replaces the main model.</p>' + ''.join(panels))
 
 
 def render_season(state, *, accuracy=None, mccabe=None, market=None):
@@ -933,6 +976,7 @@ def render_season(state, *, accuracy=None, mccabe=None, market=None):
         ('totals_shadow', 'season-totals-test', 'Score-total test'),
         ('weights_shadow', 'season-weights-test', 'Model-input tests'),
         ('replacement_depth', 'season-defender-info', 'Defender information'),
+        ('injury_usage', 'season-injury-validation', 'Injury validation checks'),
         ('ats', 'season-ats', 'Sportsbook comparisons')) if (state.get(key) or {}).get('status') == 'BLOCKED']
     update_note = ('<p class="season-caption">Separate updates needing review: ' + ', '.join(failed_updates)
                    + '. Earlier saved information is retained.</p>') if failed_updates else ''
@@ -946,7 +990,7 @@ def render_season(state, *, accuracy=None, mccabe=None, market=None):
     more = [('season-accuracy','Accuracy')]
     if state.get('ats'): more.append(('season-ats','Spreads & ATS'))
     if state.get('penalty_shadow'): more.append(('pgo-penalty-test','Penalty test'))
-    if any(state.get(k) for k in ('totals_shadow','weights_shadow','replacement_depth')):
+    if any(state.get(k) for k in ('totals_shadow','weights_shadow','replacement_depth','injury_usage')):
         more.append(('season-model-tests','Model tests'))
     navigation = '<nav class="season-nav" aria-label="PGO sections">' + ''.join(
         f'<a href="#{target}" data-view-key="nav-{target}">{label}</a>' for target,label in links)

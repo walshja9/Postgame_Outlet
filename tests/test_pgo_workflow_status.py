@@ -75,7 +75,7 @@ class WorkflowStatusTests(unittest.TestCase):
 
     def test_new_component_failures_do_not_change_main_health(self):
         for key, prefix in [('totals_shadow','totals'), ('weights_shadow','weights'),
-                            ('replacement_depth','replacement_depth'), ('ats','ats')]:
+                            ('replacement_depth','replacement_depth'), ('injury_usage','injury_usage'), ('ats','ats')]:
             with self.subTest(component=key):
                 payload, output = self.report(**{key:dict(status='BLOCKED', blocked_reason='Source missing')})
                 self.assertEqual(payload['status'],'READY')

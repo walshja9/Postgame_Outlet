@@ -28,7 +28,7 @@ class SeasonExperimentIntegrationTests(unittest.TestCase):
 
     def test_each_experiment_runs_and_failures_preserve_prior_pairs_without_main_mutation(self):
         self.assertTrue(hasattr(season,'refresh_experiments'),'Season experiment integration is missing')
-        import pgo_penalty_monitor,pgo_totals_monitor,pgo_weights_monitor,pgo_ats
+        import pgo_penalty_monitor,pgo_totals_monitor,pgo_weights_monitor,pgo_ats,pgo_injury_usage_monitor
         from research.pgo_replacement_depth_20260910 import capture
         state=self.fixture();before=copy.deepcopy(state)
         previous=dict(state,totals_shadow={'games':[{'game_id':'original'}],'status':'READY'})
@@ -39,6 +39,7 @@ class SeasonExperimentIntegrationTests(unittest.TestCase):
              patch.object(pgo_totals_monitor,'refresh_shadow',side_effect=failed_totals) as totals, \
              patch.object(pgo_weights_monitor,'refresh_shadow',return_value={'games':[],'status':'READY'}) as weights, \
              patch.object(capture,'capture',return_value=self.depth(state)) as replacement, \
+             patch.object(pgo_injury_usage_monitor,'refresh_shadow',side_effect=RuntimeError('Usage source unavailable')) as usage, \
              patch.object(pgo_ats,'refresh',return_value={'games':[],'status':'READY'}) as ats:
             season.refresh_experiments(state,previous,Path('fixture-root'))
         self.assertEqual(state['weeks'],before['weeks'])
@@ -47,7 +48,10 @@ class SeasonExperimentIntegrationTests(unittest.TestCase):
         self.assertIn('Totals source',state['totals_shadow']['blocked_reason'])
         self.assertEqual(state['weights_shadow']['status'],'READY')
         self.assertEqual(state['replacement_depth']['generated_at'],before['checked_at'])
-        for mocked in (penalty,totals,weights,replacement,ats):self.assertEqual(mocked.call_count,1)
+        self.assertEqual(state['injury_usage']['status'],'BLOCKED')
+        self.assertIsNone(state['injury_usage']['forecast_adjustment'])
+        self.assertEqual(state['injury_usage']['predictive_status'],'UNAVAILABLE')
+        for mocked in (penalty,totals,weights,replacement,usage,ats):self.assertEqual(mocked.call_count,1)
         self.assertEqual(totals.call_args.args[2],state['checked_at'])
         self.assertEqual(replacement.call_args.args[1],Path('fixture-root'))
         self.assertEqual(replacement.call_args.kwargs, {'inventory_version': 2})

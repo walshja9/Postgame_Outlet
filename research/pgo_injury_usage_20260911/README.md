@@ -1,5 +1,19 @@
 # Injury usage admission — September 11, 2026
 
+## September 12 follow-up
+
+The new `source02` capture at 16:49:24 UTC returned HTTP 200, 16,543 bytes and
+187 rows covering both NE–SEA and SF–LAR. `report03` repeats the original fixed
+capture03 cohort against this release: **0 of 14 eligible final-game player rows
+match**, and the other 122 cohort rows still await finals. The source now includes
+SF–LAR, but it omits the unavailable defenders in this cohort. Omitted rows remain
+unknown; this is not evidence that each player recorded zero defensive plays.
+
+The [September 12 validation work](../pgo_nonqb_validation_20260912/README.md)
+adds automatic checks of the separately captured full defender inventories.
+No numerical injury adjustment has been admitted. Earlier source01/report01/report02
+remain preserved; the original September 11 findings follow below.
+
 **UNAVAILABLE / NO ADMITTED USAGE LINKS. Historical admission remains BLOCKED FOR FITTING.**
 
 This extension replays the unchanged September 10 capture03 unavailable-defender cohort. It deliberately covers saved unavailable players (including reserve-list context), not every defender. Prior usage is preserved as prior usage; rookies and missing histories remain unknown. No numerical injury adjustment or automatic model adoption is implemented.

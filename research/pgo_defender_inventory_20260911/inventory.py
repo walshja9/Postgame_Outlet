@@ -112,7 +112,7 @@ def load_target(source):
 
 
 def run(pregame_pointer, source, output, root=ROOT / 'docs/evidence/season-2026'):
-    root, source, output = Path(root), Path(source), Path(output)
+    root, source, output = Path(root), Path(source).resolve(), Path(output)
     require(output.resolve().parent == HERE and not output.exists(), 'Use a new exclusive output directory in this study')
     selected = Path(pregame_pointer).read_bytes()
     snapshot, roster = load_inventory(root, json.loads(selected))

@@ -87,3 +87,6 @@ tests/test_pgo_market_benchmark.py -text whitespace=cr-at-eol
 research/pgo_defender_inventory_20260911/** -text whitespace=cr-at-eol
 tests/test_pgo_defender_inventory.py -text whitespace=cr-at-eol
 tests/test_pgo_replacement_refresh.py text eol=lf
+research/pgo_nonqb_validation_20260912/** -text whitespace=cr-at-eol
+pgo_injury_usage_monitor.py text eol=lf
+tests/test_pgo_injury_usage_monitor.py text eol=lf

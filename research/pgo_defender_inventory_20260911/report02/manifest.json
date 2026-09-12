@@ -1,0 +1,20 @@
+{
+  "files": {
+    "admission.json": {
+      "bytes": 1408667,
+      "sha256": "e4ecdc379ba99ffe96de8c668d71469c3cd0fedccc7e395c5a881df54242a053"
+    },
+    "final-state-pointer.json": {
+      "bytes": 497,
+      "sha256": "16d0d3538460811504991c608d2fa6db3c52be54e653cd8431c577443dccc780"
+    },
+    "pregame-pointer.json": {
+      "bytes": 497,
+      "sha256": "16d0d3538460811504991c608d2fa6db3c52be54e653cd8431c577443dccc780"
+    },
+    "receipt.json": {
+      "bytes": 1491,
+      "sha256": "567d654c0691229cbd439ab98cf7d69a96dd486ad43ad74e132fb2e169a27b9e"
+    }
+  }
+}

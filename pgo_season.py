@@ -741,6 +741,7 @@ def refresh_experiments(state, previous, root):
                 ('totals_shadow','pgo_totals_monitor','refresh_shadow',False),
                 ('weights_shadow','pgo_weights_monitor','refresh_shadow',False),
                 ('replacement_depth','research.pgo_replacement_depth_20260910.capture','capture',True),
+                ('injury_usage','pgo_injury_usage_monitor','refresh_shadow',True),
                 ('ats','pgo_ats','refresh',True))
     for key,module_name,method,needs_root in operations:
         old=(previous or {}).get(key,{})
@@ -763,6 +764,8 @@ def refresh_experiments(state, previous, root):
             state[key]=dict(copy.deepcopy(old),status='BLOCKED',blocked_reason=str(error),checked_at=state['checked_at'])
             if key=='replacement_depth' and not old:
                 state[key].update(generated_at=state['checked_at'],games=[],teams=[],sources=[],forecast_adjustment=None)
+            if key=='injury_usage':
+                state[key].update(forecast_adjustment=None,predictive_status='UNAVAILABLE')
 
 
 def refresh(root=DEFAULT_ROOT):

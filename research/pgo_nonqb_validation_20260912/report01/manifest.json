@@ -1,0 +1,20 @@
+{
+  "files": {
+    "audit_sources.used.py.txt": {
+      "bytes": 14843,
+      "sha256": "8b9bb0e379fb159be332e2f54509a37f00ea6cd7badd63d3700b78d0fc86f6f8"
+    },
+    "charter.used.md": {
+      "bytes": 5952,
+      "sha256": "0e8ec999e1eda5a0788232525306b0e95fbf188441222b149cc6d8659f36c163"
+    },
+    "receipt.json": {
+      "bytes": 16696,
+      "sha256": "9af7e6b62deb06dd5be4add74c60826c7d8e2460343b2b2b3b7ad3365a292608"
+    },
+    "source-admission.json": {
+      "bytes": 54112,
+      "sha256": "7cf9a305d193c174d6f106e9061034e3b7d322f396370f3cc886b69bed0f0702"
+    }
+  }
+}
