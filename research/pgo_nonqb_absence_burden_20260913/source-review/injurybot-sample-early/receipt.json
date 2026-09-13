@@ -1,0 +1,185 @@
+{
+  "requested_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_12_ARI_SEA.rds",
+  "started_at": "2026-09-13T05:03:40.412492+00:00",
+  "status": 200,
+  "headers": [
+    [
+      "Connection",
+      "close"
+    ],
+    [
+      "Content-Length",
+      "720"
+    ],
+    [
+      "Last-Modified",
+      "Sun, 24 Nov 2024 17:04:07 GMT"
+    ],
+    [
+      "ETag",
+      "\"0x8DD0CAA01CC340B\""
+    ],
+    [
+      "Server",
+      "Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0"
+    ],
+    [
+      "x-ms-request-id",
+      "1fcbbcd0-701e-0020-623d-439af2000000"
+    ],
+    [
+      "x-ms-version",
+      "2018-11-09"
+    ],
+    [
+      "x-ms-creation-time",
+      "Sun, 24 Nov 2024 17:04:07 GMT"
+    ],
+    [
+      "x-ms-blob-content-md5",
+      "RUwQcKvrOWC/506TCklbjw=="
+    ],
+    [
+      "x-ms-lease-status",
+      "unlocked"
+    ],
+    [
+      "x-ms-lease-state",
+      "available"
+    ],
+    [
+      "x-ms-blob-type",
+      "BlockBlob"
+    ],
+    [
+      "x-ms-server-encrypted",
+      "true"
+    ],
+    [
+      "x-ms-access-tier",
+      "Hot"
+    ],
+    [
+      "x-ms-access-tier-inferred",
+      "true"
+    ],
+    [
+      "Via",
+      "1.1 varnish, 1.1 varnish"
+    ],
+    [
+      "Accept-Ranges",
+      "bytes"
+    ],
+    [
+      "Age",
+      "0"
+    ],
+    [
+      "Date",
+      "Sun, 13 Sep 2026 05:03:40 GMT"
+    ],
+    [
+      "X-Served-By",
+      "cache-iad-kcgs7200128-IAD, cache-bos-kbos510051-BOS"
+    ],
+    [
+      "X-Cache",
+      "MISS, MISS"
+    ],
+    [
+      "X-Cache-Hits",
+      "0, 0"
+    ],
+    [
+      "X-Timer",
+      "S1789275821.694018,VS0,VE78"
+    ],
+    [
+      "Content-Disposition",
+      "attachment; filename=2024_12_ARI_SEA.rds"
+    ],
+    [
+      "Content-Type",
+      "application/octet-stream"
+    ]
+  ],
+  "redirects": [
+    {
+      "url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_12_ARI_SEA.rds",
+      "status": 302,
+      "headers": [
+        [
+          "Date",
+          "Sun, 13 Sep 2026 05:03:40 GMT"
+        ],
+        [
+          "Content-Type",
+          "text/html; charset=utf-8"
+        ],
+        [
+          "Location",
+          "https://release-assets.githubusercontent.com/github-production-release-asset/892631793/9925fc07-da5b-4c04-9305-7a279d2c7133?sp=r&sv=2018-11-09&sr=b&spr=https&se=2026-09-13T05%3A59%3A54Z&rscd=attachment%3B+filename%3D2024_12_ARI_SEA.rds&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2026-09-13T04%3A58%3A57Z&ske=2026-09-13T05%3A59%3A54Z&sks=b&skv=2018-11-09&sig=TGbsmNFI7OWjbWa4RvYkSmo8PhrhgzuUBSg33yRY2b0%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc4OTI3NjEyMCwibmJmIjoxNzg5Mjc1ODIwLCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.MUzDhYeaFuvdru131XCo701cY2rmoNeMduYXOaBYTXU&response-content-disposition=attachment%3B%20filename%3D2024_12_ARI_SEA.rds&response-content-type=application%2Foctet-stream"
+        ],
+        [
+          "Vary",
+          "X-PJAX, X-PJAX-Container, Turbo-Visit, Turbo-Frame, X-Requested-With, X-GitHub-Client-Version, Sec-Fetch-Site,Accept-Encoding, Accept, X-Requested-With"
+        ],
+        [
+          "Cache-Control",
+          "no-cache"
+        ],
+        [
+          "Strict-Transport-Security",
+          "max-age=31536000; includeSubdomains; preload"
+        ],
+        [
+          "X-Frame-Options",
+          "deny"
+        ],
+        [
+          "X-Content-Type-Options",
+          "nosniff"
+        ],
+        [
+          "X-XSS-Protection",
+          "0"
+        ],
+        [
+          "Referrer-Policy",
+          "no-referrer-when-downgrade"
+        ],
+        [
+          "Content-Security-Policy",
+          "default-src 'none'; base-uri 'self'; child-src github.githubassets.com github.com/assets-cdn/worker/ github.com/assets/ gist.github.com/assets-cdn/worker/; connect-src 'self' uploads.github.com www.githubstatus.com collector.github.com raw.githubusercontent.com api.github.com github-cloud.s3.amazonaws.com github-production-repository-file-5c1aeb.s3.amazonaws.com github-production-upload-manifest-file-7fdce7.s3.amazonaws.com github-production-user-asset-6210df.s3.amazonaws.com *.rel.tunnels.api.visualstudio.com wss://*.rel.tunnels.api.visualstudio.com github.githubassets.com objects-origin.githubusercontent.com copilot-proxy.githubusercontent.com proxy.individual.githubcopilot.com proxy.business.githubcopilot.com proxy.enterprise.githubcopilot.com *.actions.githubusercontent.com wss://*.actions.githubusercontent.com productionresultssa0.blob.core.windows.net productionresultssa1.blob.core.windows.net productionresultssa2.blob.core.windows.net productionresultssa3.blob.core.windows.net productionresultssa4.blob.core.windows.net productionresultssa5.blob.core.windows.net productionresultssa6.blob.core.windows.net productionresultssa7.blob.core.windows.net productionresultssa8.blob.core.windows.net productionresultssa9.blob.core.windows.net productionresultssa10.blob.core.windows.net productionresultssa11.blob.core.windows.net productionresultssa12.blob.core.windows.net productionresultssa13.blob.core.windows.net productionresultssa14.blob.core.windows.net productionresultssa15.blob.core.windows.net productionresultssa16.blob.core.windows.net productionresultssa17.blob.core.windows.net productionresultssa18.blob.core.windows.net productionresultssa19.blob.core.windows.net github-production-repository-image-32fea6.s3.amazonaws.com github-production-release-asset-2e65be.s3.amazonaws.com insights.github.com wss://alive.github.com wss://alive-staging.github.com api.githubcopilot.com api.individual.githubcopilot.com api.business.githubcopilot.com api.enterprise.githubcopilot.com wss://production-copilot-host.webpubsub.azure.com; font-src github.githubassets.com; form-action 'self' github.com gist.github.com copilot-workspace.githubnext.com objects-origin.githubusercontent.com; frame-ancestors 'none'; frame-src viewscreen.githubusercontent.com notebooks.githubusercontent.com; img-src 'self' data: blob: github.githubassets.com media.githubusercontent.com camo.githubusercontent.com identicons.github.com avatars.githubusercontent.com private-avatars.githubusercontent.com github-cloud.s3.amazonaws.com objects.githubusercontent.com release-assets.githubusercontent.com secured-user-images.githubusercontent.com user-images.githubusercontent.com private-user-images.githubusercontent.com opengraph.githubassets.com repository-images.githubusercontent.com marketplace-screenshots.githubusercontent.com copilotprodattachments.blob.core.windows.net/github-production-copilot-attachments/ github-production-user-asset-6210df.s3.amazonaws.com customer-stories-feed.github.com spotlights-feed.github.com explore-feed.github.com objects-origin.githubusercontent.com *.githubusercontent.com; manifest-src 'self'; media-src github.com user-images.githubusercontent.com secured-user-images.githubusercontent.com private-user-images.githubusercontent.com github-production-user-asset-6210df.s3.amazonaws.com gist.github.com github.githubassets.com; script-src github.githubassets.com; style-src 'unsafe-inline' github.githubassets.com; upgrade-insecure-requests; worker-src github.githubassets.com github.com/assets-cdn/worker/ github.com/assets/ gist.github.com/assets-cdn/worker/"
+        ],
+        [
+          "Server",
+          "github.com"
+        ],
+        [
+          "Content-Length",
+          "0"
+        ],
+        [
+          "X-GitHub-Request-Id",
+          "CA82:265824:A14CFE:D3F6C3:6AA62EAC"
+        ],
+        [
+          "x-github-edge-region",
+          "iad"
+        ],
+        [
+          "connection",
+          "close"
+        ]
+      ],
+      "target": "https://release-assets.githubusercontent.com/github-production-release-asset/892631793/9925fc07-da5b-4c04-9305-7a279d2c7133?sp=r&sv=2018-11-09&sr=b&spr=https&se=2026-09-13T05%3A59%3A54Z&rscd=attachment%3B+filename%3D2024_12_ARI_SEA.rds&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2026-09-13T04%3A58%3A57Z&ske=2026-09-13T05%3A59%3A54Z&sks=b&skv=2018-11-09&sig=TGbsmNFI7OWjbWa4RvYkSmo8PhrhgzuUBSg33yRY2b0%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc4OTI3NjEyMCwibmJmIjoxNzg5Mjc1ODIwLCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.MUzDhYeaFuvdru131XCo701cY2rmoNeMduYXOaBYTXU&response-content-disposition=attachment%3B%20filename%3D2024_12_ARI_SEA.rds&response-content-type=application%2Foctet-stream"
+    }
+  ],
+  "error": null,
+  "final_url": "https://release-assets.githubusercontent.com/github-production-release-asset/892631793/9925fc07-da5b-4c04-9305-7a279d2c7133?sp=r&sv=2018-11-09&sr=b&spr=https&se=2026-09-13T05%3A59%3A54Z&rscd=attachment%3B+filename%3D2024_12_ARI_SEA.rds&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2026-09-13T04%3A58%3A57Z&ske=2026-09-13T05%3A59%3A54Z&sks=b&skv=2018-11-09&sig=TGbsmNFI7OWjbWa4RvYkSmo8PhrhgzuUBSg33yRY2b0%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc4OTI3NjEyMCwibmJmIjoxNzg5Mjc1ODIwLCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.MUzDhYeaFuvdru131XCo701cY2rmoNeMduYXOaBYTXU&response-content-disposition=attachment%3B%20filename%3D2024_12_ARI_SEA.rds&response-content-type=application%2Foctet-stream",
+  "completed_at": "2026-09-13T05:03:40.732600+00:00",
+  "bytes": 720,
+  "sha256": "c92968474006600af18e99d7655eec98387ac7d4aa9472f59d3504cbb3e320cc"
+}

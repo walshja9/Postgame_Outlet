@@ -1,0 +1,14 @@
+{
+  "status": "BLOCKED_DIRECT_PROVIDER_HISTORY_NOT_ADMITTED",
+  "future_games": 14,
+  "report_coverage": "26/28",
+  "offense_out": 9,
+  "defense_out": 13,
+  "documented_inactive": 0,
+  "admissible_numerical_rows": 0
+}
+PASS deterministic replay
+PASS pinned input hashes
+PASS 14 per-game records, OUT 9 offense/13 defense, INACTIVE 0
+PASS missing legacy hints: NO Oscar Delp; PHI Eli Stowers
+PASS direct provider feature values uncomputed; admissible rows 0

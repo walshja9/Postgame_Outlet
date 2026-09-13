@@ -1,0 +1,210 @@
+{
+  "checked_at": "2026-09-13T05:09:03.457746+00:00",
+  "feature_walks": 0,
+  "files": {
+    "audit01.json": {
+      "bytes": 138015,
+      "sha256": "1e3b76c2edf304b7092ca29220569755370858d0fe56ced75d32a55984052e7c"
+    },
+    "audit_review.py": {
+      "bytes": 6594,
+      "sha256": "1123e4f9690a866a04873a0b4e1f80302ab14c812558c0b78ca43df26c10a195"
+    },
+    "availability/receipt.json": {
+      "bytes": 1826,
+      "sha256": "02090eae478b9133562bfa95902cd583c6a5a91dfc5f6a4fc30ceb1ca99ee0f3"
+    },
+    "availability/response.bin": {
+      "bytes": 22664,
+      "sha256": "f59c125c418dbc44f77b58e0fe401e0b8014b174a219387aa14173b417ca0cad"
+    },
+    "capture.py": {
+      "bytes": 2860,
+      "sha256": "0c1c6dff4163d25ba9d05365a10de05262759b24be4878b37776a3a0dc1e3795"
+    },
+    "dictionary/receipt.json": {
+      "bytes": 1818,
+      "sha256": "e3fc89da7f286c1075fcc924bad9529ef3522b2625989458578dd214ad64360d"
+    },
+    "dictionary/response.bin": {
+      "bytes": 8442,
+      "sha256": "599bf1dd10e1269dcf863acea4024d2548e61c4241f7ca9a854dac9437d4435a"
+    },
+    "findings.md": {
+      "bytes": 9247,
+      "sha256": "fb17cf9e90fc85ff9e0d44d7387751ce9ebc5fcb71daed1c6221d17af52eb761"
+    },
+    "followup01.py": {
+      "bytes": 1106,
+      "sha256": "126e8a84a939fec311514d64d650a63394407e470591f98d59e120cfaaa5c9d4"
+    },
+    "github-assets-docs/receipt.json": {
+      "bytes": 3233,
+      "sha256": "378b1d815bb022da19d908adafd5443c9de2f8e23451cb7c97d88d23ccb35f49"
+    },
+    "github-assets-docs/response.bin": {
+      "bytes": 357971,
+      "sha256": "244d6dbb88fd626f46de145c684b306d8a429bae2081a083d5c3361d7398dcab"
+    },
+    "injuries-2025-current/receipt.json": {
+      "bytes": 10020,
+      "sha256": "4940a89623fab06f9b3df189878bdfd9de8b5ad6bbe061bd916d80d09e5f7119"
+    },
+    "injuries-2025-current/response.bin": {
+      "bytes": 696006,
+      "sha256": "873ca1606dd575bd01152508a243ef6b3a0f8f97b90b707217e62ee8c7ceb735"
+    },
+    "injuries-release/receipt.json": {
+      "bytes": 2677,
+      "sha256": "912a908ad501da3d7e7ada20c6b189750cc8cae2d722565a19ad45f52d487a8a"
+    },
+    "injuries-release/response.bin": {
+      "bytes": 114098,
+      "sha256": "781b957238db2c75f84967dda66f693f62418721738b8acd9d0c73330ea439d5"
+    },
+    "injurybot-auto/receipt.json": {
+      "bytes": 2283,
+      "sha256": "f4d592bc892bec5b43a9e0686a8c1f7f2c01a5a21144a39ee5285dc2800f6b18"
+    },
+    "injurybot-auto/response.bin": {
+      "bytes": 2971,
+      "sha256": "25c69744bf649157005bf1498a4d8c21f66a9f4b2e93d0ffcab48ac84969dd53"
+    },
+    "injurybot-fetch/receipt.json": {
+      "bytes": 2253,
+      "sha256": "6e4bffd76ef683536df7d667876498981684f4549b84b972a8776c5617c1ac83"
+    },
+    "injurybot-fetch/response.bin": {
+      "bytes": 1744,
+      "sha256": "3a78f7ae653af7fc0b8a078c04d833971ba9f0b442e3efde53e5cdb8b9edcbb9"
+    },
+    "injurybot-game/receipt.json": {
+      "bytes": 2255,
+      "sha256": "63dae851eafa0d38d77543aa7bcf8873c2ed0cedb69eac1bc01680c6533079a8"
+    },
+    "injurybot-game/response.bin": {
+      "bytes": 3041,
+      "sha256": "258b2ae3374ba2fcc307c732e6dbe5a541a7f4dec5cef24fc551c85eb6ce1e31"
+    },
+    "injurybot-release/receipt.json": {
+      "bytes": 2698,
+      "sha256": "1fb7b06989c7d64be415d595c45b09f97419ee0f8680f0544c4e54aae1b1dadc"
+    },
+    "injurybot-release/response.bin": {
+      "bytes": 163057,
+      "sha256": "0d0a5a9712768464aab064d379b542fe953ab737e147da08ebfb20ad6b3cdd6a"
+    },
+    "injurybot-sample-early/receipt.json": {
+      "bytes": 10052,
+      "sha256": "ae1efd5d4d4e9a08d2e0365380f981f9ac4c73f1c4c1235a652cade34e2e82da"
+    },
+    "injurybot-sample-early/response.bin": {
+      "bytes": 720,
+      "sha256": "c92968474006600af18e99d7655eec98387ac7d4aa9472f59d3504cbb3e320cc"
+    },
+    "injurybot-sample-late/receipt.json": {
+      "bytes": 10058,
+      "sha256": "a132300b3a4924eb921eba6ca0744f90d6899788bcd77c2c25c8edacd52b3f6f"
+    },
+    "injurybot-sample-late/response.bin": {
+      "bytes": 652,
+      "sha256": "87d709dbfe0b57976cf523c68aa0b3a91d7f3335d77ff5c7f96936ecae6c8e1d"
+    },
+    "injurybot-tree/receipt.json": {
+      "bytes": 2688,
+      "sha256": "7365578b6fe309dbb564f089b9e42fb9c272590dfb58022aa90ef0cd95fe663f"
+    },
+    "injurybot-tree/response.bin": {
+      "bytes": 5206,
+      "sha256": "413fccaa5867c972d2f6d9f29f46bd9ed7123451f3e38b3463439c314cdd516d"
+    },
+    "loader/receipt.json": {
+      "bytes": 2182,
+      "sha256": "7c086528ef7db3245230904e2c9db975f8b7a848b80410274954cb8ccc92825e"
+    },
+    "loader/response.bin": {
+      "bytes": 1439,
+      "sha256": "abcb22de7eb3c258267e29245bfbf17e83de57c5fe6284042032c3053664a5a6"
+    },
+    "scope.md": {
+      "bytes": 1207,
+      "sha256": "4305048f1061d02fb04c2e850ac15eeb4646f723cd906d63c06459f2b03a5a36"
+    }
+  },
+  "forecast_writes": 0,
+  "freshly_rehashed_historical_raw_sources": 14,
+  "freshly_rehashed_report_members": 4,
+  "head": "70c54db3de2e4b31dfb4c3b498a7eb0250a84ebb",
+  "model_fits": 0,
+  "newly_admitted_historical_games": 0,
+  "prior_receipt_reported_verified_inputs": 63,
+  "receipts": [
+    {
+      "error": null,
+      "path": "availability/receipt.json",
+      "status": 200
+    },
+    {
+      "error": null,
+      "path": "dictionary/receipt.json",
+      "status": 200
+    },
+    {
+      "error": null,
+      "path": "github-assets-docs/receipt.json",
+      "status": 200
+    },
+    {
+      "error": null,
+      "path": "injuries-2025-current/receipt.json",
+      "status": 200
+    },
+    {
+      "error": null,
+      "path": "injuries-release/receipt.json",
+      "status": 200
+    },
+    {
+      "error": null,
+      "path": "injurybot-auto/receipt.json",
+      "status": 200
+    },
+    {
+      "error": null,
+      "path": "injurybot-fetch/receipt.json",
+      "status": 200
+    },
+    {
+      "error": null,
+      "path": "injurybot-game/receipt.json",
+      "status": 200
+    },
+    {
+      "error": null,
+      "path": "injurybot-release/receipt.json",
+      "status": 200
+    },
+    {
+      "error": null,
+      "path": "injurybot-sample-early/receipt.json",
+      "status": 200
+    },
+    {
+      "error": null,
+      "path": "injurybot-sample-late/receipt.json",
+      "status": 200
+    },
+    {
+      "error": null,
+      "path": "injurybot-tree/receipt.json",
+      "status": 200
+    },
+    {
+      "error": null,
+      "path": "loader/receipt.json",
+      "status": 200
+    }
+  ],
+  "source_requests": 13,
+  "status": "BLOCKED FOR FITTING; SOURCE REVIEW COMPLETE"
+}

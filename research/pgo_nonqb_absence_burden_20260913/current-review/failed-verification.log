@@ -1,0 +1,16 @@
+python : Traceback (most recent call last):
+At line:2 char:1
++ python research/pgo_nonqb_absence_burden_20260913/current-review/audi ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "D:\CodexWorktrees\Postgame_Outlet-publication-20260909\research\pgo_nonqb_absence_burden_20260913\current-revie
+w\audit.py", line 435, in <module>
+    main(**vars(parser.parse_args()))
+    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\CodexWorktrees\Postgame_Outlet-publication-20260909\research\pgo_nonqb_absence_burden_20260913\current-revie
+w\audit.py", line 346, in main
+    pending = max(len(offense_usage.get("pending_games", [])), len(defense_usage.get("pending_games", [])))
+                  ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: object of type 'int' has no len()

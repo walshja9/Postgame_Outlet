@@ -1,0 +1,2336 @@
+{
+  "availability": {
+    "archive_checked_at": [
+      "2026-09-13T04:54:51.142788+00:00"
+    ],
+    "archived_current_games": 13,
+    "final_inactives_status_counts": {
+      "UNKNOWN": 28
+    },
+    "future_games": 14,
+    "future_teams": 28,
+    "games_without_current_archive": [
+      "2026_01_DEN_KC"
+    ],
+    "http_status_counts": {
+      "200": 29
+    },
+    "source_captured_at_max": "2026-09-13T04:54:50.802041+00:00",
+    "source_kind_counts": {
+      "league_news": 1,
+      "official_inactives": 1,
+      "official_report": 1,
+      "team_news": 26
+    },
+    "source_started_at_min": "2026-09-13T04:54:47.131489+00:00",
+    "starter_announcements": [
+      {
+        "full_name": "Cooper Rush",
+        "game_id": "2026_01_ATL_PIT",
+        "gsis_id": "00-0033662",
+        "source": {
+          "bytes": 832676,
+          "captured_at": "2026-09-12T17:48:48.402488+00:00",
+          "path": "source-archive/08e9cb25040d8852f92854213db350cfef036763f4beaa2c3967bc4287367976.json",
+          "sha256": "08e9cb25040d8852f92854213db350cfef036763f4beaa2c3967bc4287367976",
+          "url": "https://www.atlantafalcons.com/news/tua-tagovailoa-cooper-rush-michael-penix-jr-state-of-qb-atlanta"
+        },
+        "team": "ATL"
+      }
+    ],
+    "team_report_status_counts": {
+      "UNKNOWN": 2,
+      "VERIFIED_REPORT": 26
+    },
+    "teams_with_current_archive": 26,
+    "teams_without_current_archive": [
+      "DEN",
+      "KC"
+    ]
+  },
+  "custody": {
+    "current": {
+      "bytes": 497,
+      "path": "docs/evidence/season-2026/current.json",
+      "sha256": "70b6431d119989f94ab9d96282a4e9d66b5c6ae5f3eccea6e428719a57b2457a"
+    },
+    "current_unchanged": true,
+    "manifest": {
+      "bytes": 840,
+      "path": "docs/evidence/season-2026/runs-v2/20260913T045508716190Z/manifest.json",
+      "sha256": "28cbc6758078377c701688570f0c1b86d11c1525195cbad597c4c821db7882e3"
+    },
+    "manifest_created_at": "2026-09-13T04:55:14.921048+00:00",
+    "pointer": {
+      "checked_at": "2026-09-13T04:55:08.716190+00:00",
+      "manifest_sha256": "28cbc6758078377c701688570f0c1b86d11c1525195cbad597c4c821db7882e3",
+      "manifest_url": "https://raw.githubusercontent.com/walshja9/Postgame_Outlet/main/docs/evidence/season-2026/runs-v2/20260913T045508716190Z/manifest.json",
+      "path": "runs-v2/20260913T045508716190Z",
+      "state_url": "https://raw.githubusercontent.com/walshja9/Postgame_Outlet/main/docs/evidence/season-2026/runs-v2/20260913T045508716190Z/state.json.gz"
+    },
+    "source_pins": [
+      {
+        "actual": {
+          "bytes": 362154,
+          "path": "docs/evidence/season-2026/source-archive/49de6434fb4ec3d13abb7de9906bf931fb35ea4fcb2e7ac357ca8e1d3e3d6e92.csv.gz",
+          "sha256": "49de6434fb4ec3d13abb7de9906bf931fb35ea4fcb2e7ac357ca8e1d3e3d6e92"
+        },
+        "ref": {
+          "bytes": 362154,
+          "captured_at": "2026-09-13T04:54:45.222585+00:00",
+          "path": "source-archive/49de6434fb4ec3d13abb7de9906bf931fb35ea4fcb2e7ac357ca8e1d3e3d6e92.csv.gz",
+          "sha256": "49de6434fb4ec3d13abb7de9906bf931fb35ea4fcb2e7ac357ca8e1d3e3d6e92",
+          "url": "https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv.gz"
+        }
+      },
+      {
+        "actual": {
+          "bytes": 10031927,
+          "path": "docs/evidence/season-2026/source-archive/ec813944a0d2c60ba9362bd066fc56ce135de0c2df793b170c5f22ea241bd744.csv.gz",
+          "sha256": "ec813944a0d2c60ba9362bd066fc56ce135de0c2df793b170c5f22ea241bd744"
+        },
+        "ref": {
+          "bytes": 10031927,
+          "captured_at": "2026-09-13T04:54:45.611770+00:00",
+          "path": "source-archive/ec813944a0d2c60ba9362bd066fc56ce135de0c2df793b170c5f22ea241bd744.csv.gz",
+          "sha256": "ec813944a0d2c60ba9362bd066fc56ce135de0c2df793b170c5f22ea241bd744",
+          "url": "https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv.gz"
+        }
+      },
+      {
+        "actual": {
+          "bytes": 7287370,
+          "path": "docs/evidence/season-2026/source-archive/b2fd8b7a384d6fc521c1832dba93878435554f1a4c4800d571edaa4ddd309134.csv",
+          "sha256": "b2fd8b7a384d6fc521c1832dba93878435554f1a4c4800d571edaa4ddd309134"
+        },
+        "ref": {
+          "bytes": 7287370,
+          "captured_at": "2026-09-13T02:48:01.562512+00:00",
+          "path": "source-archive/b2fd8b7a384d6fc521c1832dba93878435554f1a4c4800d571edaa4ddd309134.csv",
+          "sha256": "b2fd8b7a384d6fc521c1832dba93878435554f1a4c4800d571edaa4ddd309134",
+          "url": "https://github.com/nflverse/nflverse-data/releases/download/players/players.csv"
+        }
+      },
+      {
+        "actual": {
+          "bytes": 4930,
+          "path": "docs/evidence/season-2026/availability-v2/20260913T045444899565Z/manifest.json",
+          "sha256": "b344aeaaceb55b222f9713f970d35fa91ac139b5e8764cb2ce243689e1e89ef8"
+        },
+        "ref": {
+          "bytes": 4930,
+          "captured_at": "2026-09-13T04:54:51.142788+00:00",
+          "kind": "verified_official_availability",
+          "path": "availability-v2/20260913T045444899565Z/manifest.json",
+          "sha256": "b344aeaaceb55b222f9713f970d35fa91ac139b5e8764cb2ce243689e1e89ef8"
+        }
+      },
+      {
+        "actual": {
+          "bytes": 331,
+          "path": "docs/evidence/defensive-depth-2026/september-09/manifest.json",
+          "sha256": "f2859781dd2aaebe542c754ced1c89b518115087f9f4d7e3ce45db27d1b09aed"
+        },
+        "ref": {
+          "href": "https://raw.githubusercontent.com/walshja9/Postgame_Outlet/main/docs/evidence/defensive-depth-2026/september-09/manifest.json",
+          "kind": "pinned_2025_history",
+          "path": "docs/evidence/defensive-depth-2026/september-09/manifest.json",
+          "sha256": "f2859781dd2aaebe542c754ced1c89b518115087f9f4d7e3ce45db27d1b09aed"
+        }
+      }
+    ],
+    "state": {
+      "bytes": 192122,
+      "path": "docs/evidence/season-2026/runs-v2/20260913T045508716190Z/state.json.gz",
+      "sha256": "77f0fb467417ef9cb4b228bdfc91f6d1b55837623acaea8e530e23df5ef4e04f"
+    },
+    "state_checked_at": "2026-09-13T04:55:08.716190+00:00"
+  },
+  "decision": {
+    "admissible_numerical_rows": 0,
+    "blocking_gaps": [
+      "The direct provider offense_pct and defense_pct history required by the charter has not been built or replayed, so explicit zero games and the required denominator are unverified.",
+      "DEN and KC have no current versioned availability archive for 2026_01_DEN_KC; report completeness is 26 of 28 future teams.",
+      "All 28 future-team final-inactive statuses are UNKNOWN; documented game-day inactive absences are not yet observed.",
+      "The 14 prospective games have no final targets or postgame usage joins. The two existing finals predate eligible inventories.",
+      "The legacy positive-only role path lacks hints for NO TE Oscar Delp and PHI TE Eli Stowers. This is a coverage warning only and does not establish whether direct provider history exists.",
+      "The saved defensive confirmed_unavailable population mixes 121 reserve-roster rows with 13 documented OUT rows and cannot define the charter population.",
+      "Historical injury timing, identity, completeness, and source-vintage gates remain unadmitted; no historical substitution or fitting is allowed.",
+      "The prospective minimums of 200 games, 12 weeks, all 32 teams, 50 nonzero observations per unit difference, and a rank-two feature matrix are unmet."
+    ],
+    "direct_provider_feature_values_computed": false
+  },
+  "generated_at": "2026-09-13T05:27:40.974498+00:00",
+  "legacy_history_sources": {
+    "collision_inventory": {
+      "bytes": 1039497,
+      "path": "research/pgo_snap_identity_repair_20260909/source-conflict-inventory.json",
+      "sha256": "c3f721962886ba77fd1ff8d45637508d2050fd294c0f3185dff77f3561a66a29"
+    },
+    "identity_manifest": {
+      "bytes": 20356,
+      "path": "research/pgo_opening_night_20260909/identity/package-complete-20260909/source-manifest.json",
+      "sha256": "17f1dec348ad4992dbe32c6e5d54461ef8bd858e7e9d1775e37951385c492f2a"
+    },
+    "semantic_warning": "Coverage hint only. role_observations keeps positive observations and divides by a maximum-player unit-snap denominator. It does not supply direct provider offense_pct values and does not preserve explicit zero games.",
+    "snap_counts_2025": {
+      "bytes": 2401193,
+      "path": "D:\\Postgame_Outlet-pgo-model\\.cache\\pgo_v1\\80b02a6e511aa20283551cae622b29ba4d0a6f006c489a2d91591fcad33792e7.csv",
+      "sha256": "80b02a6e511aa20283551cae622b29ba4d0a6f006c489a2d91591fcad33792e7"
+    },
+    "weekly_rosters_2025": {
+      "bytes": 15384903,
+      "path": "D:\\CodexWorktrees\\Postgame_Outlet-opening-night-20260909\\research\\pgo_opening_night_20260909\\identity\\package-complete-20260909\\weekly_rosters-2025-c3376e135a7e62bb8b31631d7fe7501e8dd931929eaf1245a7dc6787486b0b24.csv",
+      "sha256": "c3376e135a7e62bb8b31631d7fe7501e8dd931929eaf1245a7dc6787486b0b24"
+    }
+  },
+  "per_game": [
+    {
+      "away": "ATL",
+      "current_availability_archive": true,
+      "defense": {
+        "depth_status_counts": {
+          "LISTED": 58,
+          "UNLISTED": 17
+        },
+        "direct_provider_feature_value": null,
+        "direct_provider_percentage_history_computed": false,
+        "documented_absence_players": [
+          {
+            "depth_status": "LISTED",
+            "gsis_id": "00-0040156",
+            "legacy_positive_only_role_hint": 0.7766233766233767,
+            "name": "Billy Bowman Jr.",
+            "observations": [
+              {
+                "captured_at": "2026-09-13T04:54:47.322110+00:00",
+                "gsis_id": "00-0040156",
+                "identity_status": "RESOLVED",
+                "injury": "Achilles",
+                "name": "Billy Bowman Jr.",
+                "position": "CB",
+                "practice_status": "Limited Participation in Practice",
+                "published_at": null,
+                "source_kind": "official_report",
+                "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+                "source_url": "https://www.nfl.com/injuries/",
+                "status": "OUT"
+              }
+            ],
+            "position": "DB",
+            "team": "ATL"
+          }
+        ],
+        "documented_injury_inactive": 0,
+        "documented_injury_out": 1,
+        "inventory_rows": 75,
+        "legacy_positive_only_role_hint_known_all_players": 53,
+        "legacy_positive_only_role_hint_known_documented_absences": 1,
+        "legacy_positive_only_role_hint_missing_all_players": 22,
+        "legacy_positive_only_role_hint_missing_documented_absences": 0,
+        "legacy_positive_only_role_hint_sum_for_diagnostic_only": 0.7766233766233767,
+        "missing_current_role": 17,
+        "missing_legacy_hint_players": [],
+        "raw_inactive_without_documented_injury": 0,
+        "reserve_roster_context": 10,
+        "uncertain_not_confirmed_absent": 2
+      },
+      "game_id": "2026_01_ATL_PIT",
+      "home": "PIT",
+      "kickoff": "2026-09-13T17:00:00+00:00",
+      "lock_at": "2026-09-13T16:00:00+00:00",
+      "offense": {
+        "depth_status_counts": {
+          "LISTED": 47,
+          "UNLISTED": 19
+        },
+        "direct_provider_feature_value": null,
+        "direct_provider_percentage_history_computed": false,
+        "documented_absence_players": [
+          {
+            "depth_status": "LISTED",
+            "gsis_id": "00-0040687",
+            "legacy_positive_only_role_hint": 0.796875,
+            "name": "Cameron Williams",
+            "observations": [
+              {
+                "captured_at": "2026-09-13T04:54:47.322110+00:00",
+                "gsis_id": "00-0040687",
+                "identity_status": "RESOLVED",
+                "injury": "Ankle",
+                "name": "Cameron Williams",
+                "position": "T",
+                "practice_status": "Did Not Participate In Practice",
+                "published_at": null,
+                "source_kind": "official_report",
+                "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+                "source_url": "https://www.nfl.com/injuries/",
+                "status": "OUT"
+              }
+            ],
+            "position": "OL",
+            "team": "ATL"
+          }
+        ],
+        "documented_injury_inactive": 0,
+        "documented_injury_out": 1,
+        "inventory_rows": 66,
+        "legacy_positive_only_role_hint_known_all_players": 40,
+        "legacy_positive_only_role_hint_known_documented_absences": 1,
+        "legacy_positive_only_role_hint_missing_all_players": 26,
+        "legacy_positive_only_role_hint_missing_documented_absences": 0,
+        "legacy_positive_only_role_hint_sum_for_diagnostic_only": 0.796875,
+        "missing_current_role": 19,
+        "missing_legacy_hint_players": [],
+        "raw_inactive_without_documented_injury": 0,
+        "reserve_roster_context": 5,
+        "uncertain_not_confirmed_absent": 0
+      },
+      "teams": {
+        "ATL": {
+          "final_inactives_status": "UNKNOWN",
+          "report_status": "VERIFIED_REPORT"
+        },
+        "PIT": {
+          "final_inactives_status": "UNKNOWN",
+          "report_status": "VERIFIED_REPORT"
+        }
+      }
+    },
+    {
+      "away": "BAL",
+      "current_availability_archive": true,
+      "defense": {
+        "depth_status_counts": {
+          "LISTED": 54,
+          "NAME_MISMATCH": 1,
+          "UNLISTED": 16
+        },
+        "direct_provider_feature_value": null,
+        "direct_provider_percentage_history_computed": false,
+        "documented_absence_players": [
+          {
+            "depth_status": "LISTED",
+            "gsis_id": "00-0036130",
+            "legacy_positive_only_role_hint": 0.6586530264279624,
+            "name": "Nnamdi Madubuike",
+            "observations": [
+              {
+                "captured_at": "2026-09-13T04:54:47.322110+00:00",
+                "gsis_id": "00-0036130",
+                "identity_status": "RESOLVED",
+                "injury": "Neck",
+                "name": "Nnamdi Madubuike",
+                "position": "DT",
+                "practice_status": "Limited Participation in Practice",
+                "published_at": null,
+                "source_kind": "official_report",
+                "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+                "source_url": "https://www.nfl.com/injuries/",
+                "status": "OUT"
+              }
+            ],
+            "position": "DL",
+            "team": "BAL"
+          },
+          {
+            "depth_status": "LISTED",
+            "gsis_id": "00-0040069",
+            "legacy_positive_only_role_hint": 0.7488258117214621,
+            "name": "Teddye Buchanan",
+            "observations": [
+              {
+                "captured_at": "2026-09-13T04:54:47.322110+00:00",
+                "gsis_id": "00-0040069",
+                "identity_status": "RESOLVED",
+                "injury": "Knee",
+                "name": "Teddye Buchanan",
+                "position": "LB",
+                "practice_status": "Limited Participation in Practice",
+                "published_at": null,
+                "source_kind": "official_report",
+                "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+                "source_url": "https://www.nfl.com/injuries/",
+                "status": "OUT"
+              }
+            ],
+            "position": "LB",
+            "team": "BAL"
+          },
+          {
+            "depth_status": "LISTED",
+            "gsis_id": "00-0039178",
+            "legacy_positive_only_role_hint": 0.03115942028985507,
+            "name": "Austin Ajiake",
+            "observations": [
+              {
+                "captured_at": "2026-09-13T04:54:47.322110+00:00",
+                "gsis_id": "00-0039178",
+                "identity_status": "RESOLVED",
+                "injury": "Hamstring",
+                "name": "Austin Ajiake",
+                "position": "LB",
+                "practice_status": "Did Not Participate In Practice",
+                "published_at": null,
+                "source_kind": "official_report",
+                "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+                "source_url": "https://www.nfl.com/injuries/",
+                "status": "OUT"
+              }
+            ],
+            "position": "LB",
+            "team": "IND"
+          }
+        ],
+        "documented_injury_inactive": 0,
+        "documented_injury_out": 3,
+        "inventory_rows": 71,
+        "legacy_positive_only_role_hint_known_all_players": 42,
+        "legacy_positive_only_role_hint_known_documented_absences": 3,
+        "legacy_positive_only_role_hint_missing_all_players": 29,
+        "legacy_positive_only_role_hint_missing_documented_absences": 0,
+        "legacy_positive_only_role_hint_sum_for_diagnostic_only": 1.4386382584392796,
+        "missing_current_role": 17,
+        "missing_legacy_hint_players": [],
+        "raw_inactive_without_documented_injury": 0,
+        "reserve_roster_context": 4,
+        "uncertain_not_confirmed_absent": 0
+      },
+      "game_id": "2026_01_BAL_IND",
+      "home": "IND",
+      "kickoff": "2026-09-13T17:00:00+00:00",
+      "lock_at": "2026-09-13T16:00:00+00:00",
+      "offense": {
+        "depth_status_counts": {
+          "LISTED": 47,
+          "NAME_MISMATCH": 1,
+          "UNLISTED": 20
+        },
+        "direct_provider_feature_value": null,
+        "direct_provider_percentage_history_computed": false,
+        "documented_absence_players": [],
+        "documented_injury_inactive": 0,
+        "documented_injury_out": 0,
+        "inventory_rows": 68,
+        "legacy_positive_only_role_hint_known_all_players": 45,
+        "legacy_positive_only_role_hint_known_documented_absences": 0,
+        "legacy_positive_only_role_hint_missing_all_players": 23,
+        "legacy_positive_only_role_hint_missing_documented_absences": 0,
+        "legacy_positive_only_role_hint_sum_for_diagnostic_only": 0.0,
+        "missing_current_role": 21,
+        "missing_legacy_hint_players": [],
+        "raw_inactive_without_documented_injury": 0,
+        "reserve_roster_context": 6,
+        "uncertain_not_confirmed_absent": 1
+      },
+      "teams": {
+        "BAL": {
+          "final_inactives_status": "UNKNOWN",
+          "report_status": "VERIFIED_REPORT"
+        },
+        "IND": {
+          "final_inactives_status": "UNKNOWN",
+          "report_status": "VERIFIED_REPORT"
+        }
+      }
+    },
+    {
+      "away": "BUF",
+      "current_availability_archive": true,
+      "defense": {
+        "depth_status_counts": {
+          "LISTED": 61,
+          "NAME_MISMATCH": 1,
+          "UNLISTED": 16
+        },
+        "direct_provider_feature_value": null,
+        "direct_provider_percentage_history_computed": false,
+        "documented_absence_players": [],
+        "documented_injury_inactive": 0,
+        "documented_injury_out": 0,
+        "inventory_rows": 78,
+        "legacy_positive_only_role_hint_known_all_players": 56,
+        "legacy_positive_only_role_hint_known_documented_absences": 0,
+        "legacy_positive_only_role_hint_missing_all_players": 22,
+        "legacy_positive_only_role_hint_missing_documented_absences": 0,
+        "legacy_positive_only_role_hint_sum_for_diagnostic_only": 0.0,
+        "missing_current_role": 17,
+        "missing_legacy_hint_players": [],
+        "raw_inactive_without_documented_injury": 0,
+        "reserve_roster_context": 12,
+        "uncertain_not_confirmed_absent": 2
+      },
+      "game_id": "2026_01_BUF_HOU",
+      "home": "HOU",
+      "kickoff": "2026-09-13T17:00:00+00:00",
+      "lock_at": "2026-09-13T16:00:00+00:00",
+      "offense": {
+        "depth_status_counts": {
+          "LISTED": 48,
+          "NAME_MISMATCH": 2,
+          "UNLISTED": 19
+        },
+        "direct_provider_feature_value": null,
+        "direct_provider_percentage_history_computed": false,
+        "documented_absence_players": [],
+        "documented_injury_inactive": 0,
+        "documented_injury_out": 0,
+        "inventory_rows": 69,
+        "legacy_positive_only_role_hint_known_all_players": 47,
+        "legacy_positive_only_role_hint_known_documented_absences": 0,
+        "legacy_positive_only_role_hint_missing_all_players": 22,
+        "legacy_positive_only_role_hint_missing_documented_absences": 0,
+        "legacy_positive_only_role_hint_sum_for_diagnostic_only": 0.0,
+        "missing_current_role": 21,
+        "missing_legacy_hint_players": [],
+        "raw_inactive_without_documented_injury": 0,
+        "reserve_roster_context": 5,
+        "uncertain_not_confirmed_absent": 1
+      },
+      "teams": {
+        "BUF": {
+          "final_inactives_status": "UNKNOWN",
+          "report_status": "VERIFIED_REPORT"
+        },
+        "HOU": {
+          "final_inactives_status": "UNKNOWN",
+          "report_status": "VERIFIED_REPORT"
+        }
+      }
+    },
+    {
+      "away": "CHI",
+      "current_availability_archive": true,
+      "defense": {
+        "depth_status_counts": {
+          "LISTED": 62,
+          "UNLISTED": 18
+        },
+        "direct_provider_feature_value": null,
+        "direct_provider_percentage_history_computed": false,
+        "documented_absence_players": [
+          {
+            "depth_status": "LISTED",
+            "gsis_id": "00-0037007",
+            "legacy_positive_only_role_hint": 0.656060606060606,
+            "name": "Patrick Jones II",
+            "observations": [
+              {
+                "captured_at": "2026-09-13T04:54:47.322110+00:00",
+                "gsis_id": "00-0037007",
+                "identity_status": "RESOLVED",
+                "injury": "Back",
+                "name": "Patrick Jones II",
+                "position": "LB",
+                "practice_status": "Did Not Participate In Practice",
+                "published_at": null,
+                "source_kind": "official_report",
+                "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+                "source_url": "https://www.nfl.com/injuries/",
+                "status": "OUT"
+              }
+            ],
+            "position": "LB",
+            "team": "CAR"
+          }
+        ],
+        "documented_injury_inactive": 0,
+        "documented_injury_out": 1,
+        "inventory_rows": 80,
+        "legacy_positive_only_role_hint_known_all_players": 53,
+        "legacy_positive_only_role_hint_known_documented_absences": 1,
+        "legacy_positive_only_role_hint_missing_all_players": 27,
+        "legacy_positive_only_role_hint_missing_documented_absences": 0,
+        "legacy_positive_only_role_hint_sum_for_diagnostic_only": 0.656060606060606,
+        "missing_current_role": 18,
+        "missing_legacy_hint_players": [],
+        "raw_inactive_without_documented_injury": 0,
+        "reserve_roster_context": 13,
+        "uncertain_not_confirmed_absent": 1
+      },
+      "game_id": "2026_01_CHI_CAR",
+      "home": "CAR",
+      "kickoff": "2026-09-13T17:00:00+00:00",
+      "lock_at": "2026-09-13T16:00:00+00:00",
+      "offense": {
+        "depth_status_counts": {
+          "LISTED": 52,
+          "UNLISTED": 21
+        },
+        "direct_provider_feature_value": null,
+        "direct_provider_percentage_history_computed": false,
+        "documented_absence_players": [],
+        "documented_injury_inactive": 0,
+        "documented_injury_out": 0,
+        "inventory_rows": 73,
+        "legacy_positive_only_role_hint_known_all_players": 52,
+        "legacy_positive_only_role_hint_known_documented_absences": 0,
+        "legacy_positive_only_role_hint_missing_all_players": 21,
+        "legacy_positive_only_role_hint_missing_documented_absences": 0,
+        "legacy_positive_only_role_hint_sum_for_diagnostic_only": 0.0,
+        "missing_current_role": 21,
+        "missing_legacy_hint_players": [],
+        "raw_inactive_without_documented_injury": 0,
+        "reserve_roster_context": 10,
+        "uncertain_not_confirmed_absent": 2
+      },
+      "teams": {
+        "CAR": {
+          "final_inactives_status": "UNKNOWN",
+          "report_status": "VERIFIED_REPORT"
+        },
+        "CHI": {
+          "final_inactives_status": "UNKNOWN",
+          "report_status": "VERIFIED_REPORT"
+        }
+      }
+    },
+    {
+      "away": "CLE",
+      "current_availability_archive": true,
+      "defense": {
+        "depth_status_counts": {
+          "LISTED": 58,
+          "UNLISTED": 18
+        },
+        "direct_provider_feature_value": null,
+        "direct_provider_percentage_history_computed": false,
+        "documented_absence_players": [],
+        "documented_injury_inactive": 0,
+        "documented_injury_out": 0,
+        "inventory_rows": 76,
+        "legacy_positive_only_role_hint_known_all_players": 51,
+        "legacy_positive_only_role_hint_known_documented_absences": 0,
+        "legacy_positive_only_role_hint_missing_all_players": 25,
+        "legacy_positive_only_role_hint_missing_documented_absences": 0,
+        "legacy_positive_only_role_hint_sum_for_diagnostic_only": 0.0,
+        "missing_current_role": 18,
+        "missing_legacy_hint_players": [],
+        "raw_inactive_without_documented_injury": 0,
+        "reserve_roster_context": 9,
+        "uncertain_not_confirmed_absent": 0
+      },
+      "game_id": "2026_01_CLE_JAX",
+      "home": "JAX",
+      "kickoff": "2026-09-13T17:00:00+00:00",
+      "lock_at": "2026-09-13T16:00:00+00:00",
+      "offense": {
+        "depth_status_counts": {
+          "LISTED": 50,
+          "NAME_MISMATCH": 1,
+          "UNLISTED": 15
+        },
+        "direct_provider_feature_value": null,
+        "direct_provider_percentage_history_computed": false,
+        "documented_absence_players": [
+          {
+            "depth_status": "LISTED",
+            "gsis_id": "00-0036953",
+            "legacy_positive_only_role_hint": 0.7980769230769231,
+            "name": "Teven Jenkins",
+            "observations": [
+              {
+                "captured_at": "2026-09-13T04:54:47.322110+00:00",
+                "gsis_id": "00-0036953",
+                "identity_status": "RESOLVED",
+                "injury": "Back",
+                "name": "Teven Jenkins",
+                "position": "G",
+                "practice_status": "Did Not Participate In Practice",
+                "published_at": null,
+                "source_kind": "official_report",
+                "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+                "source_url": "https://www.nfl.com/injuries/",
+                "status": "OUT"
+              }
+            ],
+            "position": "OL",
+            "team": "CLE"
+          }
+        ],
+        "documented_injury_inactive": 0,
+        "documented_injury_out": 1,
+        "inventory_rows": 66,
+        "legacy_positive_only_role_hint_known_all_players": 42,
+        "legacy_positive_only_role_hint_known_documented_absences": 1,
+        "legacy_positive_only_role_hint_missing_all_players": 24,
+        "legacy_positive_only_role_hint_missing_documented_absences": 0,
+        "legacy_positive_only_role_hint_sum_for_diagnostic_only": 0.7980769230769231,
+        "missing_current_role": 16,
+        "missing_legacy_hint_players": [],
+        "raw_inactive_without_documented_injury": 0,
+        "reserve_roster_context": 5,
+        "uncertain_not_confirmed_absent": 2
+      },
+      "teams": {
+        "CLE": {
+          "final_inactives_status": "UNKNOWN",
+          "report_status": "VERIFIED_REPORT"
+        },
+        "JAX": {
+          "final_inactives_status": "UNKNOWN",
+          "report_status": "VERIFIED_REPORT"
+        }
+      }
+    },
+    {
+      "away": "NO",
+      "current_availability_archive": true,
+      "defense": {
+        "depth_status_counts": {
+          "LISTED": 62,
+          "NAME_MISMATCH": 1,
+          "UNLISTED": 15
+        },
+        "direct_provider_feature_value": null,
+        "direct_provider_percentage_history_computed": false,
+        "documented_absence_players": [
+          {
+            "depth_status": "LISTED",
+            "gsis_id": "00-0027962",
+            "legacy_positive_only_role_hint": 0.5370597870597871,
+            "name": "Cameron Jordan",
+            "observations": [
+              {
+                "captured_at": "2026-09-13T04:54:47.322110+00:00",
+                "gsis_id": "00-0027962",
+                "identity_status": "RESOLVED",
+                "injury": "Hamstring",
+                "name": "Cameron Jordan",
+                "position": "LB",
+                "practice_status": "Limited Participation in Practice",
+                "published_at": null,
+                "source_kind": "official_report",
+                "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+                "source_url": "https://www.nfl.com/injuries/",
+                "status": "OUT"
+              }
+            ],
+            "position": "LB",
+            "team": "NO"
+          }
+        ],
+        "documented_injury_inactive": 0,
+        "documented_injury_out": 1,
+        "inventory_rows": 78,
+        "legacy_positive_only_role_hint_known_all_players": 53,
+        "legacy_positive_only_role_hint_known_documented_absences": 1,
+        "legacy_positive_only_role_hint_missing_all_players": 25,
+        "legacy_positive_only_role_hint_missing_documented_absences": 0,
+        "legacy_positive_only_role_hint_sum_for_diagnostic_only": 0.5370597870597871,
+        "missing_current_role": 16,
+        "missing_legacy_hint_players": [],
+        "raw_inactive_without_documented_injury": 0,
+        "reserve_roster_context": 10,
+        "uncertain_not_confirmed_absent": 1
+      },
+      "game_id": "2026_01_NO_DET",
+      "home": "DET",
+      "kickoff": "2026-09-13T17:00:00+00:00",
+      "lock_at": "2026-09-13T16:00:00+00:00",
+      "offense": {
+        "depth_status_counts": {
+          "LISTED": 49,
+          "UNLISTED": 23
+        },
+        "direct_provider_feature_value": null,
+        "direct_provider_percentage_history_computed": false,
+        "documented_absence_players": [
+          {
+            "depth_status": "LISTED",
+            "gsis_id": "00-0039373",
+            "legacy_positive_only_role_hint": 0.6680911680911681,
+            "name": "Audric Estim\u00e9",
+            "observations": [
+              {
+                "captured_at": "2026-09-13T04:54:47.322110+00:00",
+                "gsis_id": "00-0039373",
+                "identity_status": "RESOLVED",
+                "injury": "Thigh",
+                "name": "Audric Estim\u00e9",
+                "position": "RB",
+                "practice_status": "Did Not Participate In Practice",
+                "published_at": null,
+                "source_kind": "official_report",
+                "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+                "source_url": "https://www.nfl.com/injuries/",
+                "status": "OUT"
+              }
+            ],
+            "position": "RB",
+            "team": "NO"
+          },
+          {
+            "depth_status": "LISTED",
+            "gsis_id": "00-0041041",
+            "legacy_positive_only_role_hint": null,
+            "name": "Oscar Delp",
+            "observations": [
+              {
+                "captured_at": "2026-09-13T04:54:47.322110+00:00",
+                "gsis_id": "00-0041041",
+                "identity_status": "RESOLVED",
+                "injury": "Hamstring",
+                "name": "Oscar Delp",
+                "position": "TE",
+                "practice_status": "Did Not Participate In Practice",
+                "published_at": null,
+                "source_kind": "official_report",
+                "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+                "source_url": "https://www.nfl.com/injuries/",
+                "status": "OUT"
+              }
+            ],
+            "position": "TE",
+            "team": "NO"
+          }
+        ],
+        "documented_injury_inactive": 0,
+        "documented_injury_out": 2,
+        "inventory_rows": 72,
+        "legacy_positive_only_role_hint_known_all_players": 50,
+        "legacy_positive_only_role_hint_known_documented_absences": 1,
+        "legacy_positive_only_role_hint_missing_all_players": 22,
+        "legacy_positive_only_role_hint_missing_documented_absences": 1,
+        "legacy_positive_only_role_hint_sum_for_diagnostic_only": 0.6680911680911681,
+        "missing_current_role": 23,
+        "missing_legacy_hint_players": [
+          {
+            "gsis_id": "00-0041041",
+            "name": "Oscar Delp",
+            "position": "TE",
+            "team": "NO"
+          }
+        ],
+        "raw_inactive_without_documented_injury": 0,
+        "reserve_roster_context": 12,
+        "uncertain_not_confirmed_absent": 1
+      },
+      "teams": {
+        "DET": {
+          "final_inactives_status": "UNKNOWN",
+          "report_status": "VERIFIED_REPORT"
+        },
+        "NO": {
+          "final_inactives_status": "UNKNOWN",
+          "report_status": "VERIFIED_REPORT"
+        }
+      }
+    },
+    {
+      "away": "NYJ",
+      "current_availability_archive": true,
+      "defense": {
+        "depth_status_counts": {
+          "LISTED": 57,
+          "NAME_MISMATCH": 2,
+          "UNLISTED": 21
+        },
+        "direct_provider_feature_value": null,
+        "direct_provider_percentage_history_computed": false,
+        "documented_absence_players": [
+          {
+            "depth_status": "LISTED",
+            "gsis_id": "00-0036902",
+            "legacy_positive_only_role_hint": 0.7545114436619718,
+            "name": "Joseph Ossai",
+            "observations": [
+              {
+                "captured_at": "2026-09-13T04:54:47.322110+00:00",
+                "gsis_id": "00-0036902",
+                "identity_status": "RESOLVED",
+                "injury": "Foot",
+                "name": "Joseph Ossai",
+                "position": "DE",
+                "practice_status": "Did Not Participate In Practice",
+                "published_at": null,
+                "source_kind": "official_report",
+                "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+                "source_url": "https://www.nfl.com/injuries/",
+                "status": "OUT"
+              }
+            ],
+            "position": "LB",
+            "team": "NYJ"
+          },
+          {
+            "depth_status": "LISTED",
+            "gsis_id": "00-0039858",
+            "legacy_positive_only_role_hint": 0.9836065573770492,
+            "name": "Cedric Gray",
+            "observations": [
+              {
+                "captured_at": "2026-09-13T04:54:47.322110+00:00",
+                "gsis_id": "00-0039858",
+                "identity_status": "RESOLVED",
+                "injury": "Concussion",
+                "name": "Cedric Gray",
+                "position": "LB",
+                "practice_status": "Did Not Participate In Practice",
+                "published_at": null,
+                "source_kind": "official_report",
+                "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+                "source_url": "https://www.nfl.com/injuries/",
+                "status": "OUT"
+              }
+            ],
+            "position": "LB",
+            "team": "TEN"
+          }
+        ],
+        "documented_injury_inactive": 0,
+        "documented_injury_out": 2,
+        "inventory_rows": 80,
+        "legacy_positive_only_role_hint_known_all_players": 63,
+        "legacy_positive_only_role_hint_known_documented_absences": 2,
+        "legacy_positive_only_role_hint_missing_all_players": 17,
+        "legacy_positive_only_role_hint_missing_documented_absences": 0,
+        "legacy_positive_only_role_hint_sum_for_diagnostic_only": 1.738118001039021,
+        "missing_current_role": 23,
+        "missing_legacy_hint_players": [],
+        "raw_inactive_without_documented_injury": 0,
+        "reserve_roster_context": 12,
+        "uncertain_not_confirmed_absent": 1
+      },
+      "game_id": "2026_01_NYJ_TEN",
+      "home": "TEN",
+      "kickoff": "2026-09-13T17:00:00+00:00",
+      "lock_at": "2026-09-13T16:00:00+00:00",
+      "offense": {
+        "depth_status_counts": {
+          "LISTED": 49,
+          "UNLISTED": 16
+        },
+        "direct_provider_feature_value": null,
+        "direct_provider_percentage_history_computed": false,
+        "documented_absence_players": [
+          {
+            "depth_status": "LISTED",
+            "gsis_id": "00-0033375",
+            "legacy_positive_only_role_hint": 0.30889929742388755,
+            "name": "Tim Patrick",
+            "observations": [
+              {
+                "captured_at": "2026-09-13T04:54:47.322110+00:00",
+                "gsis_id": "00-0033375",
+                "identity_status": "RESOLVED",
+                "injury": "Groin",
+                "name": "Tim Patrick",
+                "position": "WR",
+                "practice_status": "Did Not Participate In Practice",
+                "published_at": null,
+                "source_kind": "official_report",
+                "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+                "source_url": "https://www.nfl.com/injuries/",
+                "status": "OUT"
+              }
+            ],
+            "position": "WR",
+            "team": "NYJ"
+          }
+        ],
+        "documented_injury_inactive": 0,
+        "documented_injury_out": 1,
+        "inventory_rows": 65,
+        "legacy_positive_only_role_hint_known_all_players": 43,
+        "legacy_positive_only_role_hint_known_documented_absences": 1,
+        "legacy_positive_only_role_hint_missing_all_players": 22,
+        "legacy_positive_only_role_hint_missing_documented_absences": 0,
+        "legacy_positive_only_role_hint_sum_for_diagnostic_only": 0.30889929742388755,
+        "missing_current_role": 16,
+        "missing_legacy_hint_players": [],
+        "raw_inactive_without_documented_injury": 0,
+        "reserve_roster_context": 5,
+        "uncertain_not_confirmed_absent": 1
+      },
+      "teams": {
+        "NYJ": {
+          "final_inactives_status": "UNKNOWN",
+          "report_status": "VERIFIED_REPORT"
+        },
+        "TEN": {
+          "final_inactives_status": "UNKNOWN",
+          "report_status": "VERIFIED_REPORT"
+        }
+      }
+    },
+    {
+      "away": "TB",
+      "current_availability_archive": true,
+      "defense": {
+        "depth_status_counts": {
+          "LISTED": 52,
+          "NAME_MISMATCH": 2,
+          "UNLISTED": 17
+        },
+        "direct_provider_feature_value": null,
+        "direct_provider_percentage_history_computed": false,
+        "documented_absence_players": [],
+        "documented_injury_inactive": 0,
+        "documented_injury_out": 0,
+        "inventory_rows": 71,
+        "legacy_positive_only_role_hint_known_all_players": 49,
+        "legacy_positive_only_role_hint_known_documented_absences": 0,
+        "legacy_positive_only_role_hint_missing_all_players": 22,
+        "legacy_positive_only_role_hint_missing_documented_absences": 0,
+        "legacy_positive_only_role_hint_sum_for_diagnostic_only": 0.0,
+        "missing_current_role": 19,
+        "missing_legacy_hint_players": [],
+        "raw_inactive_without_documented_injury": 0,
+        "reserve_roster_context": 5,
+        "uncertain_not_confirmed_absent": 2
+      },
+      "game_id": "2026_01_TB_CIN",
+      "home": "CIN",
+      "kickoff": "2026-09-13T17:00:00+00:00",
+      "lock_at": "2026-09-13T16:00:00+00:00",
+      "offense": {
+        "depth_status_counts": {
+          "LISTED": 48,
+          "UNLISTED": 14
+        },
+        "direct_provider_feature_value": null,
+        "direct_provider_percentage_history_computed": false,
+        "documented_absence_players": [],
+        "documented_injury_inactive": 0,
+        "documented_injury_out": 0,
+        "inventory_rows": 62,
+        "legacy_positive_only_role_hint_known_all_players": 40,
+        "legacy_positive_only_role_hint_known_documented_absences": 0,
+        "legacy_positive_only_role_hint_missing_all_players": 22,
+        "legacy_positive_only_role_hint_missing_documented_absences": 0,
+        "legacy_positive_only_role_hint_sum_for_diagnostic_only": 0.0,
+        "missing_current_role": 14,
+        "missing_legacy_hint_players": [],
+        "raw_inactive_without_documented_injury": 0,
+        "reserve_roster_context": 2,
+        "uncertain_not_confirmed_absent": 3
+      },
+      "teams": {
+        "CIN": {
+          "final_inactives_status": "UNKNOWN",
+          "report_status": "VERIFIED_REPORT"
+        },
+        "TB": {
+          "final_inactives_status": "UNKNOWN",
+          "report_status": "VERIFIED_REPORT"
+        }
+      }
+    },
+    {
+      "away": "ARI",
+      "current_availability_archive": true,
+      "defense": {
+        "depth_status_counts": {
+          "LISTED": 52,
+          "NAME_MISMATCH": 1,
+          "UNLISTED": 18
+        },
+        "direct_provider_feature_value": null,
+        "direct_provider_percentage_history_computed": false,
+        "documented_absence_players": [
+          {
+            "depth_status": "LISTED",
+            "gsis_id": "00-0039007",
+            "legacy_positive_only_role_hint": 1.0,
+            "name": "Garrett Williams",
+            "observations": [
+              {
+                "captured_at": "2026-09-13T04:54:47.322110+00:00",
+                "gsis_id": "00-0039007",
+                "identity_status": "RESOLVED",
+                "injury": "Achilles",
+                "name": "Garrett Williams",
+                "position": "CB",
+                "practice_status": "Limited Participation in Practice",
+                "published_at": null,
+                "source_kind": "official_report",
+                "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+                "source_url": "https://www.nfl.com/injuries/",
+                "status": "OUT"
+              }
+            ],
+            "position": "DB",
+            "team": "ARI"
+          },
+          {
+            "depth_status": "LISTED",
+            "gsis_id": "00-0039864",
+            "legacy_positive_only_role_hint": 0.6736796536796537,
+            "name": "Dadrion Taylor-Demerson",
+            "observations": [
+              {
+                "captured_at": "2026-09-13T04:54:47.322110+00:00",
+                "gsis_id": "00-0039864",
+                "identity_status": "RESOLVED",
+                "injury": "Ribs",
+                "name": "Dadrion Taylor-Demerson",
+                "position": "S",
+                "practice_status": "Did Not Participate In Practice",
+                "published_at": null,
+                "source_kind": "official_report",
+                "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+                "source_url": "https://www.nfl.com/injuries/",
+                "status": "OUT"
+              }
+            ],
+            "position": "DB",
+            "team": "ARI"
+          },
+          {
+            "depth_status": "LISTED",
+            "gsis_id": "00-0037320",
+            "legacy_positive_only_role_hint": 0.06960023008340523,
+            "name": "Deane Leonard",
+            "observations": [
+              {
+                "captured_at": "2026-09-13T04:54:47.322110+00:00",
+                "gsis_id": "00-0037320",
+                "identity_status": "RESOLVED",
+                "injury": "Abdomen",
+                "name": "Deane Leonard",
+                "position": "CB",
+                "practice_status": "Did Not Participate In Practice",
+                "published_at": null,
+                "source_kind": "official_report",
+                "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+                "source_url": "https://www.nfl.com/injuries/",
+                "status": "OUT"
+              }
+            ],
+            "position": "DB",
+            "team": "LAC"
+          }
+        ],
+        "documented_injury_inactive": 0,
+        "documented_injury_out": 3,
+        "inventory_rows": 71,
+        "legacy_positive_only_role_hint_known_all_players": 50,
+        "legacy_positive_only_role_hint_known_documented_absences": 3,
+        "legacy_positive_only_role_hint_missing_all_players": 21,
+        "legacy_positive_only_role_hint_missing_documented_absences": 0,
+        "legacy_positive_only_role_hint_sum_for_diagnostic_only": 1.743279883763059,
+        "missing_current_role": 19,
+        "missing_legacy_hint_players": [],
+        "raw_inactive_without_documented_injury": 0,
+        "reserve_roster_context": 5,
+        "uncertain_not_confirmed_absent": 1
+      },
+      "game_id": "2026_01_ARI_LAC",
+      "home": "LAC",
+      "kickoff": "2026-09-13T20:25:00+00:00",
+      "lock_at": "2026-09-13T19:25:00+00:00",
+      "offense": {
+        "depth_status_counts": {
+          "LISTED": 54,
+          "NAME_MISMATCH": 1,
+          "UNLISTED": 18
+        },
+        "direct_provider_feature_value": null,
+        "direct_provider_percentage_history_computed": false,
+        "documented_absence_players": [
+          {
+            "depth_status": "LISTED",
+            "gsis_id": "00-0039808",
+            "legacy_positive_only_role_hint": 1.0,
+            "name": "Isaiah Adams",
+            "observations": [
+              {
+                "captured_at": "2026-09-13T04:54:47.322110+00:00",
+                "gsis_id": "00-0039808",
+                "identity_status": "RESOLVED",
+                "injury": "Knee",
+                "name": "Isaiah Adams",
+                "position": "G",
+                "practice_status": "Did Not Participate In Practice",
+                "published_at": null,
+                "source_kind": "official_report",
+                "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+                "source_url": "https://www.nfl.com/injuries/",
+                "status": "OUT"
+              }
+            ],
+            "position": "OL",
+            "team": "ARI"
+          }
+        ],
+        "documented_injury_inactive": 0,
+        "documented_injury_out": 1,
+        "inventory_rows": 73,
+        "legacy_positive_only_role_hint_known_all_players": 48,
+        "legacy_positive_only_role_hint_known_documented_absences": 1,
+        "legacy_positive_only_role_hint_missing_all_players": 25,
+        "legacy_positive_only_role_hint_missing_documented_absences": 0,
+        "legacy_positive_only_role_hint_sum_for_diagnostic_only": 1.0,
+        "missing_current_role": 19,
+        "missing_legacy_hint_players": [],
+        "raw_inactive_without_documented_injury": 0,
+        "reserve_roster_context": 10,
+        "uncertain_not_confirmed_absent": 1
+      },
+      "teams": {
+        "ARI": {
+          "final_inactives_status": "UNKNOWN",
+          "report_status": "VERIFIED_REPORT"
+        },
+        "LAC": {
+          "final_inactives_status": "UNKNOWN",
+          "report_status": "VERIFIED_REPORT"
+        }
+      }
+    },
+    {
+      "away": "GB",
+      "current_availability_archive": true,
+      "defense": {
+        "depth_status_counts": {
+          "LISTED": 58,
+          "UNLISTED": 17
+        },
+        "direct_provider_feature_value": null,
+        "direct_provider_percentage_history_computed": false,
+        "documented_absence_players": [
+          {
+            "depth_status": "LISTED",
+            "gsis_id": "00-0040016",
+            "legacy_positive_only_role_hint": 0.3877467105263158,
+            "name": "Warren Brinson",
+            "observations": [
+              {
+                "captured_at": "2026-09-13T04:54:47.322110+00:00",
+                "gsis_id": "00-0040016",
+                "identity_status": "RESOLVED",
+                "injury": "Calf",
+                "name": "Warren Brinson",
+                "position": "DT",
+                "practice_status": "Did Not Participate In Practice",
+                "published_at": null,
+                "source_kind": "official_report",
+                "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+                "source_url": "https://www.nfl.com/injuries/",
+                "status": "OUT"
+              }
+            ],
+            "position": "DL",
+            "team": "GB"
+          }
+        ],
+        "documented_injury_inactive": 0,
+        "documented_injury_out": 1,
+        "inventory_rows": 75,
+        "legacy_positive_only_role_hint_known_all_players": 52,
+        "legacy_positive_only_role_hint_known_documented_absences": 1,
+        "legacy_positive_only_role_hint_missing_all_players": 23,
+        "legacy_positive_only_role_hint_missing_documented_absences": 0,
+        "legacy_positive_only_role_hint_sum_for_diagnostic_only": 0.3877467105263158,
+        "missing_current_role": 17,
+        "missing_legacy_hint_players": [],
+        "raw_inactive_without_documented_injury": 0,
+        "reserve_roster_context": 11,
+        "uncertain_not_confirmed_absent": 1
+      },
+      "game_id": "2026_01_GB_MIN",
+      "home": "MIN",
+      "kickoff": "2026-09-13T20:25:00+00:00",
+      "lock_at": "2026-09-13T19:25:00+00:00",
+      "offense": {
+        "depth_status_counts": {
+          "LISTED": 51,
+          "UNLISTED": 19
+        },
+        "direct_provider_feature_value": null,
+        "direct_provider_percentage_history_computed": false,
+        "documented_absence_players": [],
+        "documented_injury_inactive": 0,
+        "documented_injury_out": 0,
+        "inventory_rows": 70,
+        "legacy_positive_only_role_hint_known_all_players": 43,
+        "legacy_positive_only_role_hint_known_documented_absences": 0,
+        "legacy_positive_only_role_hint_missing_all_players": 27,
+        "legacy_positive_only_role_hint_missing_documented_absences": 0,
+        "legacy_positive_only_role_hint_sum_for_diagnostic_only": 0.0,
+        "missing_current_role": 19,
+        "missing_legacy_hint_players": [],
+        "raw_inactive_without_documented_injury": 0,
+        "reserve_roster_context": 9,
+        "uncertain_not_confirmed_absent": 2
+      },
+      "teams": {
+        "GB": {
+          "final_inactives_status": "UNKNOWN",
+          "report_status": "VERIFIED_REPORT"
+        },
+        "MIN": {
+          "final_inactives_status": "UNKNOWN",
+          "report_status": "VERIFIED_REPORT"
+        }
+      }
+    },
+    {
+      "away": "MIA",
+      "current_availability_archive": true,
+      "defense": {
+        "depth_status_counts": {
+          "LISTED": 54,
+          "NAME_MISMATCH": 2,
+          "UNLISTED": 20
+        },
+        "direct_provider_feature_value": null,
+        "direct_provider_percentage_history_computed": false,
+        "documented_absence_players": [],
+        "documented_injury_inactive": 0,
+        "documented_injury_out": 0,
+        "inventory_rows": 76,
+        "legacy_positive_only_role_hint_known_all_players": 47,
+        "legacy_positive_only_role_hint_known_documented_absences": 0,
+        "legacy_positive_only_role_hint_missing_all_players": 29,
+        "legacy_positive_only_role_hint_missing_documented_absences": 0,
+        "legacy_positive_only_role_hint_sum_for_diagnostic_only": 0.0,
+        "missing_current_role": 22,
+        "missing_legacy_hint_players": [],
+        "raw_inactive_without_documented_injury": 0,
+        "reserve_roster_context": 8,
+        "uncertain_not_confirmed_absent": 0
+      },
+      "game_id": "2026_01_MIA_LV",
+      "home": "LV",
+      "kickoff": "2026-09-13T20:25:00+00:00",
+      "lock_at": "2026-09-13T19:25:00+00:00",
+      "offense": {
+        "depth_status_counts": {
+          "LISTED": 50,
+          "UNLISTED": 21
+        },
+        "direct_provider_feature_value": null,
+        "direct_provider_percentage_history_computed": false,
+        "documented_absence_players": [
+          {
+            "depth_status": "LISTED",
+            "gsis_id": "00-0039338",
+            "legacy_positive_only_role_hint": 0.9803240740740741,
+            "name": "Brock Bowers",
+            "observations": [
+              {
+                "captured_at": "2026-09-13T04:54:47.322110+00:00",
+                "gsis_id": "00-0039338",
+                "identity_status": "RESOLVED",
+                "injury": "Knee",
+                "name": "Brock Bowers",
+                "position": "TE",
+                "practice_status": "Did Not Participate In Practice",
+                "published_at": null,
+                "source_kind": "official_report",
+                "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+                "source_url": "https://www.nfl.com/injuries/",
+                "status": "OUT"
+              }
+            ],
+            "position": "TE",
+            "team": "LV"
+          }
+        ],
+        "documented_injury_inactive": 0,
+        "documented_injury_out": 1,
+        "inventory_rows": 71,
+        "legacy_positive_only_role_hint_known_all_players": 41,
+        "legacy_positive_only_role_hint_known_documented_absences": 1,
+        "legacy_positive_only_role_hint_missing_all_players": 30,
+        "legacy_positive_only_role_hint_missing_documented_absences": 0,
+        "legacy_positive_only_role_hint_sum_for_diagnostic_only": 0.9803240740740741,
+        "missing_current_role": 21,
+        "missing_legacy_hint_players": [],
+        "raw_inactive_without_documented_injury": 0,
+        "reserve_roster_context": 9,
+        "uncertain_not_confirmed_absent": 0
+      },
+      "teams": {
+        "LV": {
+          "final_inactives_status": "UNKNOWN",
+          "report_status": "VERIFIED_REPORT"
+        },
+        "MIA": {
+          "final_inactives_status": "UNKNOWN",
+          "report_status": "VERIFIED_REPORT"
+        }
+      }
+    },
+    {
+      "away": "WAS",
+      "current_availability_archive": true,
+      "defense": {
+        "depth_status_counts": {
+          "LISTED": 52,
+          "NAME_MISMATCH": 1,
+          "UNLISTED": 21
+        },
+        "direct_provider_feature_value": null,
+        "direct_provider_percentage_history_computed": false,
+        "documented_absence_players": [
+          {
+            "depth_status": "LISTED",
+            "gsis_id": "00-0036224",
+            "legacy_positive_only_role_hint": 0.535989010989011,
+            "name": "Jonathan Greenard",
+            "observations": [
+              {
+                "captured_at": "2026-09-13T04:54:47.322110+00:00",
+                "gsis_id": "00-0036224",
+                "identity_status": "RESOLVED",
+                "injury": "Pectoral",
+                "name": "Jonathan Greenard",
+                "position": "LB",
+                "practice_status": "Limited Participation in Practice",
+                "published_at": null,
+                "source_kind": "official_report",
+                "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+                "source_url": "https://www.nfl.com/injuries/",
+                "status": "OUT"
+              }
+            ],
+            "position": "LB",
+            "team": "PHI"
+          }
+        ],
+        "documented_injury_inactive": 0,
+        "documented_injury_out": 1,
+        "inventory_rows": 74,
+        "legacy_positive_only_role_hint_known_all_players": 55,
+        "legacy_positive_only_role_hint_known_documented_absences": 1,
+        "legacy_positive_only_role_hint_missing_all_players": 19,
+        "legacy_positive_only_role_hint_missing_documented_absences": 0,
+        "legacy_positive_only_role_hint_sum_for_diagnostic_only": 0.535989010989011,
+        "missing_current_role": 22,
+        "missing_legacy_hint_players": [],
+        "raw_inactive_without_documented_injury": 0,
+        "reserve_roster_context": 10,
+        "uncertain_not_confirmed_absent": 0
+      },
+      "game_id": "2026_01_WAS_PHI",
+      "home": "PHI",
+      "kickoff": "2026-09-13T20:25:00+00:00",
+      "lock_at": "2026-09-13T19:25:00+00:00",
+      "offense": {
+        "depth_status_counts": {
+          "LISTED": 48,
+          "NAME_MISMATCH": 1,
+          "UNLISTED": 19
+        },
+        "direct_provider_feature_value": null,
+        "direct_provider_percentage_history_computed": false,
+        "documented_absence_players": [
+          {
+            "depth_status": "LISTED",
+            "gsis_id": "00-0041483",
+            "legacy_positive_only_role_hint": null,
+            "name": "Eli Stowers",
+            "observations": [
+              {
+                "captured_at": "2026-09-13T04:54:47.322110+00:00",
+                "gsis_id": "00-0041483",
+                "identity_status": "RESOLVED",
+                "injury": "Hamstring, Quadricep",
+                "name": "Eli Stowers",
+                "position": "TE",
+                "practice_status": "Limited Participation in Practice",
+                "published_at": null,
+                "source_kind": "official_report",
+                "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+                "source_url": "https://www.nfl.com/injuries/",
+                "status": "OUT"
+              }
+            ],
+            "position": "TE",
+            "team": "PHI"
+          }
+        ],
+        "documented_injury_inactive": 0,
+        "documented_injury_out": 1,
+        "inventory_rows": 68,
+        "legacy_positive_only_role_hint_known_all_players": 50,
+        "legacy_positive_only_role_hint_known_documented_absences": 0,
+        "legacy_positive_only_role_hint_missing_all_players": 18,
+        "legacy_positive_only_role_hint_missing_documented_absences": 1,
+        "legacy_positive_only_role_hint_sum_for_diagnostic_only": 0.0,
+        "missing_current_role": 20,
+        "missing_legacy_hint_players": [
+          {
+            "gsis_id": "00-0041483",
+            "name": "Eli Stowers",
+            "position": "TE",
+            "team": "PHI"
+          }
+        ],
+        "raw_inactive_without_documented_injury": 0,
+        "reserve_roster_context": 4,
+        "uncertain_not_confirmed_absent": 0
+      },
+      "teams": {
+        "PHI": {
+          "final_inactives_status": "UNKNOWN",
+          "report_status": "VERIFIED_REPORT"
+        },
+        "WAS": {
+          "final_inactives_status": "UNKNOWN",
+          "report_status": "VERIFIED_REPORT"
+        }
+      }
+    },
+    {
+      "away": "DAL",
+      "current_availability_archive": true,
+      "defense": {
+        "depth_status_counts": {
+          "LISTED": 57,
+          "NAME_MISMATCH": 2,
+          "UNLISTED": 15
+        },
+        "direct_provider_feature_value": null,
+        "direct_provider_percentage_history_computed": false,
+        "documented_absence_players": [],
+        "documented_injury_inactive": 0,
+        "documented_injury_out": 0,
+        "inventory_rows": 74,
+        "legacy_positive_only_role_hint_known_all_players": 55,
+        "legacy_positive_only_role_hint_known_documented_absences": 0,
+        "legacy_positive_only_role_hint_missing_all_players": 19,
+        "legacy_positive_only_role_hint_missing_documented_absences": 0,
+        "legacy_positive_only_role_hint_sum_for_diagnostic_only": 0.0,
+        "missing_current_role": 17,
+        "missing_legacy_hint_players": [],
+        "raw_inactive_without_documented_injury": 0,
+        "reserve_roster_context": 8,
+        "uncertain_not_confirmed_absent": 0
+      },
+      "game_id": "2026_01_DAL_NYG",
+      "home": "NYG",
+      "kickoff": "2026-09-14T00:20:00+00:00",
+      "lock_at": "2026-09-13T23:20:00+00:00",
+      "offense": {
+        "depth_status_counts": {
+          "LISTED": 49,
+          "UNLISTED": 21
+        },
+        "direct_provider_feature_value": null,
+        "direct_provider_percentage_history_computed": false,
+        "documented_absence_players": [
+          {
+            "depth_status": "LISTED",
+            "gsis_id": "00-0037563",
+            "legacy_positive_only_role_hint": 0.4224137931034483,
+            "name": "Malik Davis",
+            "observations": [
+              {
+                "captured_at": "2026-09-13T04:54:47.322110+00:00",
+                "gsis_id": "00-0037563",
+                "identity_status": "RESOLVED",
+                "injury": "Hip",
+                "name": "Malik Davis",
+                "position": "RB",
+                "practice_status": "Limited Participation in Practice",
+                "published_at": null,
+                "source_kind": "official_report",
+                "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+                "source_url": "https://www.nfl.com/injuries/",
+                "status": "OUT"
+              }
+            ],
+            "position": "RB",
+            "team": "DAL"
+          }
+        ],
+        "documented_injury_inactive": 0,
+        "documented_injury_out": 1,
+        "inventory_rows": 70,
+        "legacy_positive_only_role_hint_known_all_players": 50,
+        "legacy_positive_only_role_hint_known_documented_absences": 1,
+        "legacy_positive_only_role_hint_missing_all_players": 20,
+        "legacy_positive_only_role_hint_missing_documented_absences": 0,
+        "legacy_positive_only_role_hint_sum_for_diagnostic_only": 0.4224137931034483,
+        "missing_current_role": 21,
+        "missing_legacy_hint_players": [],
+        "raw_inactive_without_documented_injury": 0,
+        "reserve_roster_context": 6,
+        "uncertain_not_confirmed_absent": 1
+      },
+      "teams": {
+        "DAL": {
+          "final_inactives_status": "UNKNOWN",
+          "report_status": "VERIFIED_REPORT"
+        },
+        "NYG": {
+          "final_inactives_status": "UNKNOWN",
+          "report_status": "VERIFIED_REPORT"
+        }
+      }
+    },
+    {
+      "away": "DEN",
+      "current_availability_archive": false,
+      "defense": {
+        "depth_status_counts": {
+          "LISTED": 53,
+          "NAME_MISMATCH": 1,
+          "UNLISTED": 16
+        },
+        "direct_provider_feature_value": null,
+        "direct_provider_percentage_history_computed": false,
+        "documented_absence_players": [],
+        "documented_injury_inactive": 0,
+        "documented_injury_out": 0,
+        "inventory_rows": 70,
+        "legacy_positive_only_role_hint_known_all_players": 47,
+        "legacy_positive_only_role_hint_known_documented_absences": 0,
+        "legacy_positive_only_role_hint_missing_all_players": 23,
+        "legacy_positive_only_role_hint_missing_documented_absences": 0,
+        "legacy_positive_only_role_hint_sum_for_diagnostic_only": 0.0,
+        "missing_current_role": 17,
+        "missing_legacy_hint_players": [],
+        "raw_inactive_without_documented_injury": 0,
+        "reserve_roster_context": 4,
+        "uncertain_not_confirmed_absent": 0
+      },
+      "game_id": "2026_01_DEN_KC",
+      "home": "KC",
+      "kickoff": "2026-09-15T00:15:00+00:00",
+      "lock_at": "2026-09-14T23:15:00+00:00",
+      "offense": {
+        "depth_status_counts": {
+          "LISTED": 54,
+          "UNLISTED": 19
+        },
+        "direct_provider_feature_value": null,
+        "direct_provider_percentage_history_computed": false,
+        "documented_absence_players": [],
+        "documented_injury_inactive": 0,
+        "documented_injury_out": 0,
+        "inventory_rows": 73,
+        "legacy_positive_only_role_hint_known_all_players": 44,
+        "legacy_positive_only_role_hint_known_documented_absences": 0,
+        "legacy_positive_only_role_hint_missing_all_players": 29,
+        "legacy_positive_only_role_hint_missing_documented_absences": 0,
+        "legacy_positive_only_role_hint_sum_for_diagnostic_only": 0.0,
+        "missing_current_role": 19,
+        "missing_legacy_hint_players": [],
+        "raw_inactive_without_documented_injury": 0,
+        "reserve_roster_context": 10,
+        "uncertain_not_confirmed_absent": 0
+      },
+      "teams": {
+        "DEN": {
+          "final_inactives_status": "UNKNOWN",
+          "report_status": "UNKNOWN"
+        },
+        "KC": {
+          "final_inactives_status": "UNKNOWN",
+          "report_status": "UNKNOWN"
+        }
+      }
+    }
+  ],
+  "replay": {
+    "defensive_inventory": {
+      "games": 14,
+      "roster_rows": 2963,
+      "status": "PASS",
+      "teams": 32,
+      "version": 2
+    },
+    "offensive_inventory": {
+      "games": 14,
+      "roster_rows": 2963,
+      "status": "PASS",
+      "teams": 32,
+      "version": 2
+    }
+  },
+  "repo_head": "70c54db3de2e4b31dfb4c3b498a7eb0250a84ebb",
+  "slate": {
+    "defensive_usage": {
+      "blocked_reason": null,
+      "checked_at": "2026-09-13T04:55:08.716190+00:00",
+      "coverage_scope": "Defenders only",
+      "excluded_games": [
+        {
+          "game_id": "2026_01_NE_SEA",
+          "reason": "MISSING_PREGAME_INVENTORY"
+        },
+        {
+          "game_id": "2026_01_SF_LA",
+          "reason": "MISSING_PREGAME_INVENTORY"
+        }
+      ],
+      "forecast_adjustment": null,
+      "games": [],
+      "metrics": {
+        "cohort_rows": 0,
+        "eligible_final_rows": 0,
+        "games": 0,
+        "joined": 0,
+        "missing_target": 0,
+        "observed_positive": 0,
+        "observed_zero": 0,
+        "pending": 0
+      },
+      "pending_games": 14,
+      "predictive_status": "UNAVAILABLE",
+      "selected_games": {},
+      "status": "WAITING"
+    },
+    "final_game_ids": [
+      "2026_01_NE_SEA",
+      "2026_01_SF_LA"
+    ],
+    "future_games": 14,
+    "future_teams": 28,
+    "issued_games": 16,
+    "offensive_usage": {
+      "blocked_reason": null,
+      "checked_at": "2026-09-13T04:55:08.716190+00:00",
+      "coverage_scope": "Offensive non-QB players",
+      "excluded_games": [
+        {
+          "game_id": "2026_01_NE_SEA",
+          "reason": "MISSING_PREGAME_INVENTORY"
+        },
+        {
+          "game_id": "2026_01_SF_LA",
+          "reason": "MISSING_PREGAME_INVENTORY"
+        }
+      ],
+      "forecast_adjustment": null,
+      "games": [],
+      "metrics": {
+        "cohort_rows": 0,
+        "eligible_final_rows": 0,
+        "games": 0,
+        "joined": 0,
+        "missing_target": 0,
+        "observed_positive": 0,
+        "observed_zero": 0,
+        "pending": 0
+      },
+      "pending_games": 14,
+      "predictive_status": "UNAVAILABLE",
+      "selected_games": {},
+      "status": "WAITING"
+    },
+    "pending_games": 14,
+    "usage_joined_games": 0,
+    "verified_finals": 2
+  },
+  "status": "BLOCKED_DIRECT_PROVIDER_HISTORY_NOT_ADMITTED",
+  "timeline": {
+    "defensive_generated_at": "2026-09-13T04:55:08.716190+00:00",
+    "depth_snapshot_at_counts": {
+      "2026-09-12T11:36:06+00:00": 28
+    },
+    "durable_to_first_lock_seconds": 39885.078952,
+    "first_future_kickoff": "2026-09-13T17:00:00+00:00",
+    "first_future_lock": "2026-09-13T16:00:00+00:00",
+    "offensive_generated_at": "2026-09-13T04:55:08.716190+00:00",
+    "state_check_to_first_lock_seconds": 39891.28381
+  },
+  "units": {
+    "defense": {
+      "depth_status_counts": {
+        "LISTED": 790,
+        "NAME_MISMATCH": 14,
+        "UNLISTED": 245
+      },
+      "direct_provider_feature_value": null,
+      "direct_provider_percentage_history_computed": false,
+      "documented_absence_players": [
+        {
+          "depth_status": "LISTED",
+          "gsis_id": "00-0039007",
+          "legacy_positive_only_role_hint": 1.0,
+          "name": "Garrett Williams",
+          "observations": [
+            {
+              "captured_at": "2026-09-13T04:54:47.322110+00:00",
+              "gsis_id": "00-0039007",
+              "identity_status": "RESOLVED",
+              "injury": "Achilles",
+              "name": "Garrett Williams",
+              "position": "CB",
+              "practice_status": "Limited Participation in Practice",
+              "published_at": null,
+              "source_kind": "official_report",
+              "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+              "source_url": "https://www.nfl.com/injuries/",
+              "status": "OUT"
+            }
+          ],
+          "position": "DB",
+          "team": "ARI"
+        },
+        {
+          "depth_status": "LISTED",
+          "gsis_id": "00-0039864",
+          "legacy_positive_only_role_hint": 0.6736796536796537,
+          "name": "Dadrion Taylor-Demerson",
+          "observations": [
+            {
+              "captured_at": "2026-09-13T04:54:47.322110+00:00",
+              "gsis_id": "00-0039864",
+              "identity_status": "RESOLVED",
+              "injury": "Ribs",
+              "name": "Dadrion Taylor-Demerson",
+              "position": "S",
+              "practice_status": "Did Not Participate In Practice",
+              "published_at": null,
+              "source_kind": "official_report",
+              "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+              "source_url": "https://www.nfl.com/injuries/",
+              "status": "OUT"
+            }
+          ],
+          "position": "DB",
+          "team": "ARI"
+        },
+        {
+          "depth_status": "LISTED",
+          "gsis_id": "00-0040156",
+          "legacy_positive_only_role_hint": 0.7766233766233767,
+          "name": "Billy Bowman Jr.",
+          "observations": [
+            {
+              "captured_at": "2026-09-13T04:54:47.322110+00:00",
+              "gsis_id": "00-0040156",
+              "identity_status": "RESOLVED",
+              "injury": "Achilles",
+              "name": "Billy Bowman Jr.",
+              "position": "CB",
+              "practice_status": "Limited Participation in Practice",
+              "published_at": null,
+              "source_kind": "official_report",
+              "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+              "source_url": "https://www.nfl.com/injuries/",
+              "status": "OUT"
+            }
+          ],
+          "position": "DB",
+          "team": "ATL"
+        },
+        {
+          "depth_status": "LISTED",
+          "gsis_id": "00-0036130",
+          "legacy_positive_only_role_hint": 0.6586530264279624,
+          "name": "Nnamdi Madubuike",
+          "observations": [
+            {
+              "captured_at": "2026-09-13T04:54:47.322110+00:00",
+              "gsis_id": "00-0036130",
+              "identity_status": "RESOLVED",
+              "injury": "Neck",
+              "name": "Nnamdi Madubuike",
+              "position": "DT",
+              "practice_status": "Limited Participation in Practice",
+              "published_at": null,
+              "source_kind": "official_report",
+              "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+              "source_url": "https://www.nfl.com/injuries/",
+              "status": "OUT"
+            }
+          ],
+          "position": "DL",
+          "team": "BAL"
+        },
+        {
+          "depth_status": "LISTED",
+          "gsis_id": "00-0040069",
+          "legacy_positive_only_role_hint": 0.7488258117214621,
+          "name": "Teddye Buchanan",
+          "observations": [
+            {
+              "captured_at": "2026-09-13T04:54:47.322110+00:00",
+              "gsis_id": "00-0040069",
+              "identity_status": "RESOLVED",
+              "injury": "Knee",
+              "name": "Teddye Buchanan",
+              "position": "LB",
+              "practice_status": "Limited Participation in Practice",
+              "published_at": null,
+              "source_kind": "official_report",
+              "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+              "source_url": "https://www.nfl.com/injuries/",
+              "status": "OUT"
+            }
+          ],
+          "position": "LB",
+          "team": "BAL"
+        },
+        {
+          "depth_status": "LISTED",
+          "gsis_id": "00-0037007",
+          "legacy_positive_only_role_hint": 0.656060606060606,
+          "name": "Patrick Jones II",
+          "observations": [
+            {
+              "captured_at": "2026-09-13T04:54:47.322110+00:00",
+              "gsis_id": "00-0037007",
+              "identity_status": "RESOLVED",
+              "injury": "Back",
+              "name": "Patrick Jones II",
+              "position": "LB",
+              "practice_status": "Did Not Participate In Practice",
+              "published_at": null,
+              "source_kind": "official_report",
+              "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+              "source_url": "https://www.nfl.com/injuries/",
+              "status": "OUT"
+            }
+          ],
+          "position": "LB",
+          "team": "CAR"
+        },
+        {
+          "depth_status": "LISTED",
+          "gsis_id": "00-0040016",
+          "legacy_positive_only_role_hint": 0.3877467105263158,
+          "name": "Warren Brinson",
+          "observations": [
+            {
+              "captured_at": "2026-09-13T04:54:47.322110+00:00",
+              "gsis_id": "00-0040016",
+              "identity_status": "RESOLVED",
+              "injury": "Calf",
+              "name": "Warren Brinson",
+              "position": "DT",
+              "practice_status": "Did Not Participate In Practice",
+              "published_at": null,
+              "source_kind": "official_report",
+              "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+              "source_url": "https://www.nfl.com/injuries/",
+              "status": "OUT"
+            }
+          ],
+          "position": "DL",
+          "team": "GB"
+        },
+        {
+          "depth_status": "LISTED",
+          "gsis_id": "00-0039178",
+          "legacy_positive_only_role_hint": 0.03115942028985507,
+          "name": "Austin Ajiake",
+          "observations": [
+            {
+              "captured_at": "2026-09-13T04:54:47.322110+00:00",
+              "gsis_id": "00-0039178",
+              "identity_status": "RESOLVED",
+              "injury": "Hamstring",
+              "name": "Austin Ajiake",
+              "position": "LB",
+              "practice_status": "Did Not Participate In Practice",
+              "published_at": null,
+              "source_kind": "official_report",
+              "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+              "source_url": "https://www.nfl.com/injuries/",
+              "status": "OUT"
+            }
+          ],
+          "position": "LB",
+          "team": "IND"
+        },
+        {
+          "depth_status": "LISTED",
+          "gsis_id": "00-0037320",
+          "legacy_positive_only_role_hint": 0.06960023008340523,
+          "name": "Deane Leonard",
+          "observations": [
+            {
+              "captured_at": "2026-09-13T04:54:47.322110+00:00",
+              "gsis_id": "00-0037320",
+              "identity_status": "RESOLVED",
+              "injury": "Abdomen",
+              "name": "Deane Leonard",
+              "position": "CB",
+              "practice_status": "Did Not Participate In Practice",
+              "published_at": null,
+              "source_kind": "official_report",
+              "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+              "source_url": "https://www.nfl.com/injuries/",
+              "status": "OUT"
+            }
+          ],
+          "position": "DB",
+          "team": "LAC"
+        },
+        {
+          "depth_status": "LISTED",
+          "gsis_id": "00-0027962",
+          "legacy_positive_only_role_hint": 0.5370597870597871,
+          "name": "Cameron Jordan",
+          "observations": [
+            {
+              "captured_at": "2026-09-13T04:54:47.322110+00:00",
+              "gsis_id": "00-0027962",
+              "identity_status": "RESOLVED",
+              "injury": "Hamstring",
+              "name": "Cameron Jordan",
+              "position": "LB",
+              "practice_status": "Limited Participation in Practice",
+              "published_at": null,
+              "source_kind": "official_report",
+              "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+              "source_url": "https://www.nfl.com/injuries/",
+              "status": "OUT"
+            }
+          ],
+          "position": "LB",
+          "team": "NO"
+        },
+        {
+          "depth_status": "LISTED",
+          "gsis_id": "00-0036902",
+          "legacy_positive_only_role_hint": 0.7545114436619718,
+          "name": "Joseph Ossai",
+          "observations": [
+            {
+              "captured_at": "2026-09-13T04:54:47.322110+00:00",
+              "gsis_id": "00-0036902",
+              "identity_status": "RESOLVED",
+              "injury": "Foot",
+              "name": "Joseph Ossai",
+              "position": "DE",
+              "practice_status": "Did Not Participate In Practice",
+              "published_at": null,
+              "source_kind": "official_report",
+              "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+              "source_url": "https://www.nfl.com/injuries/",
+              "status": "OUT"
+            }
+          ],
+          "position": "LB",
+          "team": "NYJ"
+        },
+        {
+          "depth_status": "LISTED",
+          "gsis_id": "00-0036224",
+          "legacy_positive_only_role_hint": 0.535989010989011,
+          "name": "Jonathan Greenard",
+          "observations": [
+            {
+              "captured_at": "2026-09-13T04:54:47.322110+00:00",
+              "gsis_id": "00-0036224",
+              "identity_status": "RESOLVED",
+              "injury": "Pectoral",
+              "name": "Jonathan Greenard",
+              "position": "LB",
+              "practice_status": "Limited Participation in Practice",
+              "published_at": null,
+              "source_kind": "official_report",
+              "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+              "source_url": "https://www.nfl.com/injuries/",
+              "status": "OUT"
+            }
+          ],
+          "position": "LB",
+          "team": "PHI"
+        },
+        {
+          "depth_status": "LISTED",
+          "gsis_id": "00-0039858",
+          "legacy_positive_only_role_hint": 0.9836065573770492,
+          "name": "Cedric Gray",
+          "observations": [
+            {
+              "captured_at": "2026-09-13T04:54:47.322110+00:00",
+              "gsis_id": "00-0039858",
+              "identity_status": "RESOLVED",
+              "injury": "Concussion",
+              "name": "Cedric Gray",
+              "position": "LB",
+              "practice_status": "Did Not Participate In Practice",
+              "published_at": null,
+              "source_kind": "official_report",
+              "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+              "source_url": "https://www.nfl.com/injuries/",
+              "status": "OUT"
+            }
+          ],
+          "position": "LB",
+          "team": "TEN"
+        }
+      ],
+      "documented_injury_inactive": 0,
+      "documented_injury_out": 13,
+      "inventory_rows": 1049,
+      "legacy_positive_only_role_hint_known_all_players": 726,
+      "legacy_positive_only_role_hint_known_documented_absences": 13,
+      "legacy_positive_only_role_hint_missing_all_players": 323,
+      "legacy_positive_only_role_hint_missing_documented_absences": 0,
+      "legacy_positive_only_role_hint_sum_for_diagnostic_only": 7.813515634500456,
+      "missing_current_role": 259,
+      "missing_legacy_hint_players": [],
+      "raw_inactive_without_documented_injury": 0,
+      "reserve_roster_context": 121,
+      "saved_confirmed_unavailable_count": 134,
+      "saved_confirmed_unavailable_roster_statuses": {
+        "ACT": 13,
+        "RES": 121
+      },
+      "saved_field_semantic_warning": "confirmed_unavailable includes reserve-roster context and is not the charter's documented injury OUT/INACTIVE population.",
+      "uncertain_not_confirmed_absent": 11
+    },
+    "offense": {
+      "depth_status_counts": {
+        "LISTED": 696,
+        "NAME_MISMATCH": 6,
+        "UNLISTED": 264
+      },
+      "direct_provider_feature_value": null,
+      "direct_provider_percentage_history_computed": false,
+      "documented_absence_players": [
+        {
+          "depth_status": "LISTED",
+          "gsis_id": "00-0039808",
+          "legacy_positive_only_role_hint": 1.0,
+          "name": "Isaiah Adams",
+          "observations": [
+            {
+              "captured_at": "2026-09-13T04:54:47.322110+00:00",
+              "gsis_id": "00-0039808",
+              "identity_status": "RESOLVED",
+              "injury": "Knee",
+              "name": "Isaiah Adams",
+              "position": "G",
+              "practice_status": "Did Not Participate In Practice",
+              "published_at": null,
+              "source_kind": "official_report",
+              "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+              "source_url": "https://www.nfl.com/injuries/",
+              "status": "OUT"
+            }
+          ],
+          "position": "OL",
+          "team": "ARI"
+        },
+        {
+          "depth_status": "LISTED",
+          "gsis_id": "00-0040687",
+          "legacy_positive_only_role_hint": 0.796875,
+          "name": "Cameron Williams",
+          "observations": [
+            {
+              "captured_at": "2026-09-13T04:54:47.322110+00:00",
+              "gsis_id": "00-0040687",
+              "identity_status": "RESOLVED",
+              "injury": "Ankle",
+              "name": "Cameron Williams",
+              "position": "T",
+              "practice_status": "Did Not Participate In Practice",
+              "published_at": null,
+              "source_kind": "official_report",
+              "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+              "source_url": "https://www.nfl.com/injuries/",
+              "status": "OUT"
+            }
+          ],
+          "position": "OL",
+          "team": "ATL"
+        },
+        {
+          "depth_status": "LISTED",
+          "gsis_id": "00-0036953",
+          "legacy_positive_only_role_hint": 0.7980769230769231,
+          "name": "Teven Jenkins",
+          "observations": [
+            {
+              "captured_at": "2026-09-13T04:54:47.322110+00:00",
+              "gsis_id": "00-0036953",
+              "identity_status": "RESOLVED",
+              "injury": "Back",
+              "name": "Teven Jenkins",
+              "position": "G",
+              "practice_status": "Did Not Participate In Practice",
+              "published_at": null,
+              "source_kind": "official_report",
+              "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+              "source_url": "https://www.nfl.com/injuries/",
+              "status": "OUT"
+            }
+          ],
+          "position": "OL",
+          "team": "CLE"
+        },
+        {
+          "depth_status": "LISTED",
+          "gsis_id": "00-0037563",
+          "legacy_positive_only_role_hint": 0.4224137931034483,
+          "name": "Malik Davis",
+          "observations": [
+            {
+              "captured_at": "2026-09-13T04:54:47.322110+00:00",
+              "gsis_id": "00-0037563",
+              "identity_status": "RESOLVED",
+              "injury": "Hip",
+              "name": "Malik Davis",
+              "position": "RB",
+              "practice_status": "Limited Participation in Practice",
+              "published_at": null,
+              "source_kind": "official_report",
+              "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+              "source_url": "https://www.nfl.com/injuries/",
+              "status": "OUT"
+            }
+          ],
+          "position": "RB",
+          "team": "DAL"
+        },
+        {
+          "depth_status": "LISTED",
+          "gsis_id": "00-0039338",
+          "legacy_positive_only_role_hint": 0.9803240740740741,
+          "name": "Brock Bowers",
+          "observations": [
+            {
+              "captured_at": "2026-09-13T04:54:47.322110+00:00",
+              "gsis_id": "00-0039338",
+              "identity_status": "RESOLVED",
+              "injury": "Knee",
+              "name": "Brock Bowers",
+              "position": "TE",
+              "practice_status": "Did Not Participate In Practice",
+              "published_at": null,
+              "source_kind": "official_report",
+              "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+              "source_url": "https://www.nfl.com/injuries/",
+              "status": "OUT"
+            }
+          ],
+          "position": "TE",
+          "team": "LV"
+        },
+        {
+          "depth_status": "LISTED",
+          "gsis_id": "00-0039373",
+          "legacy_positive_only_role_hint": 0.6680911680911681,
+          "name": "Audric Estim\u00e9",
+          "observations": [
+            {
+              "captured_at": "2026-09-13T04:54:47.322110+00:00",
+              "gsis_id": "00-0039373",
+              "identity_status": "RESOLVED",
+              "injury": "Thigh",
+              "name": "Audric Estim\u00e9",
+              "position": "RB",
+              "practice_status": "Did Not Participate In Practice",
+              "published_at": null,
+              "source_kind": "official_report",
+              "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+              "source_url": "https://www.nfl.com/injuries/",
+              "status": "OUT"
+            }
+          ],
+          "position": "RB",
+          "team": "NO"
+        },
+        {
+          "depth_status": "LISTED",
+          "gsis_id": "00-0041041",
+          "legacy_positive_only_role_hint": null,
+          "name": "Oscar Delp",
+          "observations": [
+            {
+              "captured_at": "2026-09-13T04:54:47.322110+00:00",
+              "gsis_id": "00-0041041",
+              "identity_status": "RESOLVED",
+              "injury": "Hamstring",
+              "name": "Oscar Delp",
+              "position": "TE",
+              "practice_status": "Did Not Participate In Practice",
+              "published_at": null,
+              "source_kind": "official_report",
+              "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+              "source_url": "https://www.nfl.com/injuries/",
+              "status": "OUT"
+            }
+          ],
+          "position": "TE",
+          "team": "NO"
+        },
+        {
+          "depth_status": "LISTED",
+          "gsis_id": "00-0033375",
+          "legacy_positive_only_role_hint": 0.30889929742388755,
+          "name": "Tim Patrick",
+          "observations": [
+            {
+              "captured_at": "2026-09-13T04:54:47.322110+00:00",
+              "gsis_id": "00-0033375",
+              "identity_status": "RESOLVED",
+              "injury": "Groin",
+              "name": "Tim Patrick",
+              "position": "WR",
+              "practice_status": "Did Not Participate In Practice",
+              "published_at": null,
+              "source_kind": "official_report",
+              "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+              "source_url": "https://www.nfl.com/injuries/",
+              "status": "OUT"
+            }
+          ],
+          "position": "WR",
+          "team": "NYJ"
+        },
+        {
+          "depth_status": "LISTED",
+          "gsis_id": "00-0041483",
+          "legacy_positive_only_role_hint": null,
+          "name": "Eli Stowers",
+          "observations": [
+            {
+              "captured_at": "2026-09-13T04:54:47.322110+00:00",
+              "gsis_id": "00-0041483",
+              "identity_status": "RESOLVED",
+              "injury": "Hamstring, Quadricep",
+              "name": "Eli Stowers",
+              "position": "TE",
+              "practice_status": "Limited Participation in Practice",
+              "published_at": null,
+              "source_kind": "official_report",
+              "source_sha256": "f59d2e5c4d058673db31df9066542d00a6fcf67320e87638e8f891ea70ac4c9e",
+              "source_url": "https://www.nfl.com/injuries/",
+              "status": "OUT"
+            }
+          ],
+          "position": "TE",
+          "team": "PHI"
+        }
+      ],
+      "documented_injury_inactive": 0,
+      "documented_injury_out": 9,
+      "inventory_rows": 966,
+      "legacy_positive_only_role_hint_known_all_players": 635,
+      "legacy_positive_only_role_hint_known_documented_absences": 7,
+      "legacy_positive_only_role_hint_missing_all_players": 331,
+      "legacy_positive_only_role_hint_missing_documented_absences": 2,
+      "legacy_positive_only_role_hint_sum_for_diagnostic_only": 4.974680255769501,
+      "missing_current_role": 270,
+      "missing_legacy_hint_players": [
+        {
+          "gsis_id": "00-0041041",
+          "name": "Oscar Delp",
+          "position": "TE",
+          "team": "NO"
+        },
+        {
+          "gsis_id": "00-0041483",
+          "name": "Eli Stowers",
+          "position": "TE",
+          "team": "PHI"
+        }
+      ],
+      "raw_inactive_without_documented_injury": 0,
+      "reserve_roster_context": 98,
+      "uncertain_not_confirmed_absent": 15,
+      "usage_identity_status_counts": {
+        "CONFLICT": 1,
+        "MISSING": 19,
+        "PROVIDER": 424,
+        "ROSTER": 522
+      }
+    }
+  }
+}

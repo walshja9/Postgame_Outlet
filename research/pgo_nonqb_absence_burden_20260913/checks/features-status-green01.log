@@ -1,0 +1,15 @@
+test_burden_can_exceed_one_and_explicit_no_absences_is_zero (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_burden_can_exceed_one_and_explicit_no_absences_is_zero) ... ok
+test_duplicate_eligible_identity_and_invalid_fractions_fail (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_duplicate_eligible_identity_and_invalid_fractions_fail) ... ok
+test_duplicate_history_rejected_and_clock_ties_order_by_game_id (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_duplicate_history_rejected_and_clock_ties_order_by_game_id) ... ok
+test_excludes_noninjury_uncertain_roster_context_qbs_and_specialists (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_excludes_noninjury_uncertain_roster_context_qbs_and_specialists) ... ok
+test_last_four_include_zero_follow_identity_and_leave_input_unchanged (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_last_four_include_zero_follow_identity_and_leave_input_unchanged) ... ok
+test_margin_inputs_have_home_margin_sign_and_unknown_propagates (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_margin_inputs_have_home_margin_sign_and_unknown_propagates) ... ok
+test_missing_history_is_unknown_and_unrelated_observations_do_not_enter (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_missing_history_is_unknown_and_unrelated_observations_do_not_enter) ... ok
+test_missing_or_unrecognized_status_cannot_become_known_zero (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_missing_or_unrecognized_status_cannot_become_known_zero) ... ok
+test_missing_reports_identity_usage_or_injury_membership_keep_subtotal (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_missing_reports_identity_usage_or_injury_membership_keep_subtotal) ... ok
+test_selected_bad_values_and_clocks_block_without_older_fallback (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_selected_bad_values_and_clocks_block_without_older_fallback) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.020s
+
+OK

@@ -1,0 +1,121 @@
+{
+  "requested_url": "https://api.github.com/repos/nflverse/nflverse-injurybot/releases/tags/injuries_2024",
+  "started_at": "2026-09-13T05:02:50.820614+00:00",
+  "status": 200,
+  "headers": [
+    [
+      "Date",
+      "Sun, 13 Sep 2026 05:02:51 GMT"
+    ],
+    [
+      "Content-Type",
+      "application/json; charset=utf-8"
+    ],
+    [
+      "Cache-Control",
+      "public, max-age=60, s-maxage=60"
+    ],
+    [
+      "Vary",
+      "Accept,Accept-Encoding, Accept, X-Requested-With"
+    ],
+    [
+      "ETag",
+      "W/\"0d0a5a9712768464aab064d379b542fe953ab737e147da08ebfb20ad6b3cdd6a\""
+    ],
+    [
+      "Last-Modified",
+      "Sat, 08 Feb 2025 02:30:19 GMT"
+    ],
+    [
+      "X-GitHub-Media-Type",
+      "github.v3; format=json"
+    ],
+    [
+      "x-github-api-version-selected",
+      "2022-11-28"
+    ],
+    [
+      "Access-Control-Expose-Headers",
+      "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset, Warning"
+    ],
+    [
+      "Access-Control-Allow-Origin",
+      "*"
+    ],
+    [
+      "Strict-Transport-Security",
+      "max-age=31536000; includeSubdomains; preload"
+    ],
+    [
+      "X-Frame-Options",
+      "deny"
+    ],
+    [
+      "X-Content-Type-Options",
+      "nosniff"
+    ],
+    [
+      "X-XSS-Protection",
+      "0"
+    ],
+    [
+      "Referrer-Policy",
+      "origin-when-cross-origin, strict-origin-when-cross-origin"
+    ],
+    [
+      "Content-Security-Policy",
+      "default-src 'none'"
+    ],
+    [
+      "Server",
+      "github.com"
+    ],
+    [
+      "Accept-Ranges",
+      "bytes"
+    ],
+    [
+      "X-RateLimit-Limit",
+      "60"
+    ],
+    [
+      "X-RateLimit-Remaining",
+      "58"
+    ],
+    [
+      "X-RateLimit-Used",
+      "2"
+    ],
+    [
+      "X-RateLimit-Resource",
+      "core"
+    ],
+    [
+      "X-RateLimit-Reset",
+      "1789279370"
+    ],
+    [
+      "Transfer-Encoding",
+      "chunked"
+    ],
+    [
+      "X-GitHub-Request-Id",
+      "DAE1:3742BE:12B460B:3C6130E:6AA62E7A"
+    ],
+    [
+      "x-github-edge-region",
+      "iad"
+    ],
+    [
+      "connection",
+      "close"
+    ]
+  ],
+  "redirects": [],
+  "error": null,
+  "final_url": "https://api.github.com/repos/nflverse/nflverse-injurybot/releases/tags/injuries_2024",
+  "completed_at": "2026-09-13T05:02:51.141427+00:00",
+  "bytes": 163057,
+  "sha256": "0d0a5a9712768464aab064d379b542fe953ab737e147da08ebfb20ad6b3cdd6a"
+}

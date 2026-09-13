@@ -1,0 +1,121 @@
+{
+  "requested_url": "https://api.github.com/repos/nflverse/nflverse-injurybot/git/trees/main?recursive=1",
+  "started_at": "2026-09-13T05:02:50.820938+00:00",
+  "status": 200,
+  "headers": [
+    [
+      "Date",
+      "Sun, 13 Sep 2026 05:02:51 GMT"
+    ],
+    [
+      "Content-Type",
+      "application/json; charset=utf-8"
+    ],
+    [
+      "Cache-Control",
+      "public, max-age=60, s-maxage=60"
+    ],
+    [
+      "Vary",
+      "Accept,Accept-Encoding, Accept, X-Requested-With"
+    ],
+    [
+      "ETag",
+      "W/\"413fccaa5867c972d2f6d9f29f46bd9ed7123451f3e38b3463439c314cdd516d\""
+    ],
+    [
+      "Last-Modified",
+      "Mon, 30 Jun 2025 21:42:39 GMT"
+    ],
+    [
+      "X-GitHub-Media-Type",
+      "github.v3; format=json"
+    ],
+    [
+      "x-github-api-version-selected",
+      "2022-11-28"
+    ],
+    [
+      "Access-Control-Expose-Headers",
+      "ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset, Warning"
+    ],
+    [
+      "Access-Control-Allow-Origin",
+      "*"
+    ],
+    [
+      "Strict-Transport-Security",
+      "max-age=31536000; includeSubdomains; preload"
+    ],
+    [
+      "X-Frame-Options",
+      "deny"
+    ],
+    [
+      "X-Content-Type-Options",
+      "nosniff"
+    ],
+    [
+      "X-XSS-Protection",
+      "0"
+    ],
+    [
+      "Referrer-Policy",
+      "origin-when-cross-origin, strict-origin-when-cross-origin"
+    ],
+    [
+      "Content-Security-Policy",
+      "default-src 'none'"
+    ],
+    [
+      "Server",
+      "github.com"
+    ],
+    [
+      "Accept-Ranges",
+      "bytes"
+    ],
+    [
+      "X-RateLimit-Limit",
+      "60"
+    ],
+    [
+      "X-RateLimit-Remaining",
+      "57"
+    ],
+    [
+      "X-RateLimit-Used",
+      "3"
+    ],
+    [
+      "X-RateLimit-Resource",
+      "core"
+    ],
+    [
+      "X-RateLimit-Reset",
+      "1789279370"
+    ],
+    [
+      "Content-Length",
+      "5206"
+    ],
+    [
+      "X-GitHub-Request-Id",
+      "DAE0:2A2A95:129C35B:3C47AA5:6AA62E7A"
+    ],
+    [
+      "x-github-edge-region",
+      "iad"
+    ],
+    [
+      "connection",
+      "close"
+    ]
+  ],
+  "redirects": [],
+  "error": null,
+  "final_url": "https://api.github.com/repos/nflverse/nflverse-injurybot/git/trees/main?recursive=1",
+  "completed_at": "2026-09-13T05:02:51.082900+00:00",
+  "bytes": 5206,
+  "sha256": "413fccaa5867c972d2f6d9f29f46bd9ed7123451f3e38b3463439c314cdd516d"
+}

@@ -1,0 +1,113 @@
+{
+  "requested_url": "https://raw.githubusercontent.com/nflverse/nflverse-injurybot/a6ea8d1586012185d1eb79b4b1cb4667a5ed63d0/R/fetch.R",
+  "started_at": "2026-09-13T05:03:40.211733+00:00",
+  "status": 200,
+  "headers": [
+    [
+      "Connection",
+      "close"
+    ],
+    [
+      "Content-Length",
+      "1744"
+    ],
+    [
+      "Cache-Control",
+      "max-age=300"
+    ],
+    [
+      "Content-Security-Policy",
+      "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+    ],
+    [
+      "Content-Type",
+      "text/plain; charset=utf-8"
+    ],
+    [
+      "ETag",
+      "\"6dd1fbe501f74d96b6f107917dad971c9d00251fe8f204b72ecde0ea77018579\""
+    ],
+    [
+      "Strict-Transport-Security",
+      "max-age=31536000"
+    ],
+    [
+      "X-Content-Type-Options",
+      "nosniff"
+    ],
+    [
+      "X-Frame-Options",
+      "deny"
+    ],
+    [
+      "X-XSS-Protection",
+      "1; mode=block"
+    ],
+    [
+      "X-GitHub-Request-Id",
+      "6230:3194:8F342:F27D0:6AA62EAB"
+    ],
+    [
+      "x-github-edge-region",
+      "iad"
+    ],
+    [
+      "Accept-Ranges",
+      "bytes"
+    ],
+    [
+      "Date",
+      "Sun, 13 Sep 2026 05:03:40 GMT"
+    ],
+    [
+      "Via",
+      "1.1 varnish"
+    ],
+    [
+      "X-Served-By",
+      "cache-bos-kbos510033-BOS"
+    ],
+    [
+      "X-Cache",
+      "MISS"
+    ],
+    [
+      "X-Cache-Hits",
+      "0"
+    ],
+    [
+      "X-Timer",
+      "S1789275820.366902,VS0,VE75"
+    ],
+    [
+      "Vary",
+      "Authorization,Accept-Encoding"
+    ],
+    [
+      "Access-Control-Allow-Origin",
+      "*"
+    ],
+    [
+      "Cross-Origin-Resource-Policy",
+      "cross-origin"
+    ],
+    [
+      "X-Fastly-Request-ID",
+      "fca7f4b80e3419383e4d69050348de1428a218bf"
+    ],
+    [
+      "Expires",
+      "Sun, 13 Sep 2026 05:08:40 GMT"
+    ],
+    [
+      "Source-Age",
+      "0"
+    ]
+  ],
+  "redirects": [],
+  "error": null,
+  "final_url": "https://raw.githubusercontent.com/nflverse/nflverse-injurybot/a6ea8d1586012185d1eb79b4b1cb4667a5ed63d0/R/fetch.R",
+  "completed_at": "2026-09-13T05:03:40.411310+00:00",
+  "bytes": 1744,
+  "sha256": "3a78f7ae653af7fc0b8a078c04d833971ba9f0b442e3efde53e5cdb8b9edcbb9"
+}

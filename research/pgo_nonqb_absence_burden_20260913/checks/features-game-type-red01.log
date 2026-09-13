@@ -1,0 +1,86 @@
+test_invalid_newest_game_type_cannot_fall_back_to_older_history (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_invalid_newest_game_type_cannot_fall_back_to_older_history) ... 
+  test_invalid_newest_game_type_cannot_fall_back_to_older_history (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_invalid_newest_game_type_cannot_fall_back_to_older_history) (game_type=None) ... FAIL
+  test_invalid_newest_game_type_cannot_fall_back_to_older_history (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_invalid_newest_game_type_cannot_fall_back_to_older_history) (game_type='') ... FAIL
+  test_invalid_newest_game_type_cannot_fall_back_to_older_history (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_invalid_newest_game_type_cannot_fall_back_to_older_history) (game_type='Reg') ... FAIL
+  test_invalid_newest_game_type_cannot_fall_back_to_older_history (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_invalid_newest_game_type_cannot_fall_back_to_older_history) (game_type='REG ') ... FAIL
+  test_invalid_newest_game_type_cannot_fall_back_to_older_history (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_invalid_newest_game_type_cannot_fall_back_to_older_history) (game_type='WC') ... FAIL
+  test_invalid_newest_game_type_cannot_fall_back_to_older_history (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_invalid_newest_game_type_cannot_fall_back_to_older_history) (game_type=True) ... FAIL
+  test_invalid_newest_game_type_cannot_fall_back_to_older_history (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_invalid_newest_game_type_cannot_fall_back_to_older_history) (game_type=[]) ... FAIL
+test_invalid_newest_game_type_cannot_fall_back_to_older_history (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_invalid_newest_game_type_cannot_fall_back_to_older_history) ... FAIL
+
+======================================================================
+FAIL: test_invalid_newest_game_type_cannot_fall_back_to_older_history (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_invalid_newest_game_type_cannot_fall_back_to_older_history) (game_type=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\CodexWorktrees\Postgame_Outlet-publication-20260909\research\pgo_nonqb_absence_burden_20260913\test_features.py", line 78, in test_invalid_newest_game_type_cannot_fall_back_to_older_history
+    with self.subTest(game_type=game_type), self.assertRaises(ValueError):
+                                            ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_invalid_newest_game_type_cannot_fall_back_to_older_history (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_invalid_newest_game_type_cannot_fall_back_to_older_history) (game_type='')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\CodexWorktrees\Postgame_Outlet-publication-20260909\research\pgo_nonqb_absence_burden_20260913\test_features.py", line 78, in test_invalid_newest_game_type_cannot_fall_back_to_older_history
+    with self.subTest(game_type=game_type), self.assertRaises(ValueError):
+                                            ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_invalid_newest_game_type_cannot_fall_back_to_older_history (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_invalid_newest_game_type_cannot_fall_back_to_older_history) (game_type='Reg')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\CodexWorktrees\Postgame_Outlet-publication-20260909\research\pgo_nonqb_absence_burden_20260913\test_features.py", line 78, in test_invalid_newest_game_type_cannot_fall_back_to_older_history
+    with self.subTest(game_type=game_type), self.assertRaises(ValueError):
+                                            ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_invalid_newest_game_type_cannot_fall_back_to_older_history (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_invalid_newest_game_type_cannot_fall_back_to_older_history) (game_type='REG ')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\CodexWorktrees\Postgame_Outlet-publication-20260909\research\pgo_nonqb_absence_burden_20260913\test_features.py", line 78, in test_invalid_newest_game_type_cannot_fall_back_to_older_history
+    with self.subTest(game_type=game_type), self.assertRaises(ValueError):
+                                            ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_invalid_newest_game_type_cannot_fall_back_to_older_history (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_invalid_newest_game_type_cannot_fall_back_to_older_history) (game_type='WC')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\CodexWorktrees\Postgame_Outlet-publication-20260909\research\pgo_nonqb_absence_burden_20260913\test_features.py", line 78, in test_invalid_newest_game_type_cannot_fall_back_to_older_history
+    with self.subTest(game_type=game_type), self.assertRaises(ValueError):
+                                            ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_invalid_newest_game_type_cannot_fall_back_to_older_history (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_invalid_newest_game_type_cannot_fall_back_to_older_history) (game_type=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\CodexWorktrees\Postgame_Outlet-publication-20260909\research\pgo_nonqb_absence_burden_20260913\test_features.py", line 78, in test_invalid_newest_game_type_cannot_fall_back_to_older_history
+    with self.subTest(game_type=game_type), self.assertRaises(ValueError):
+                                            ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_invalid_newest_game_type_cannot_fall_back_to_older_history (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_invalid_newest_game_type_cannot_fall_back_to_older_history) (game_type=[])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\CodexWorktrees\Postgame_Outlet-publication-20260909\research\pgo_nonqb_absence_burden_20260913\test_features.py", line 78, in test_invalid_newest_game_type_cannot_fall_back_to_older_history
+    with self.subTest(game_type=game_type), self.assertRaises(ValueError):
+                                            ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_invalid_newest_game_type_cannot_fall_back_to_older_history (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_invalid_newest_game_type_cannot_fall_back_to_older_history)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\CodexWorktrees\Postgame_Outlet-publication-20260909\research\pgo_nonqb_absence_burden_20260913\test_features.py", line 82, in test_invalid_newest_game_type_cannot_fall_back_to_older_history
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.020s
+
+FAILED (failures=8)

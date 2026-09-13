@@ -1,0 +1,50 @@
+{
+  "artifacts": {
+    "audit.json": {
+      "bytes": 89675,
+      "sha256": "a74fcb7c622357010d57d9bdd3217cbfdf75512f2b94e5ab4eb61c2dfdb37491"
+    },
+    "audit.py": {
+      "bytes": 25526,
+      "sha256": "c3eec381abe6fd30a05f3257208c873aae09f880519f0b9b8ce850986d02e8c6"
+    },
+    "failed-verification.log": {
+      "bytes": 981,
+      "sha256": "569d98e76da07a1809e1f5fb0f94934b4c31b6f54476c4e86fcee2c4842ab8ca"
+    },
+    "prospective-review.md": {
+      "bytes": 5286,
+      "sha256": "fb22fc27ae3a0191315995b4faf57e7d38bcc96f462289b9083af109a918f41b"
+    },
+    "verification.log": {
+      "bytes": 468,
+      "sha256": "0392b2e5672602456e28a5aa42d88d11e2c6ddc2b26d66345c6557c4c060db3a"
+    }
+  },
+  "context": {
+    "charter": {
+      "bytes": 9428,
+      "path": "research/pgo_nonqb_absence_burden_20260913/charter.md",
+      "sha256": "f0445ab444773f72cf0b82bdf078809df91795e2d663a4bfb5d6ccf6a44a14d6"
+    },
+    "current": {
+      "bytes": 497,
+      "path": "docs/evidence/season-2026/current.json",
+      "sha256": "70b6431d119989f94ab9d96282a4e9d66b5c6ae5f3eccea6e428719a57b2457a"
+    },
+    "selected_archive_manifest": {
+      "bytes": 840,
+      "path": "docs/evidence/season-2026/runs-v2/20260913T045508716190Z/manifest.json",
+      "sha256": "28cbc6758078377c701688570f0c1b86d11c1525195cbad597c4c821db7882e3"
+    },
+    "selected_archive_state": {
+      "bytes": 192122,
+      "path": "docs/evidence/season-2026/runs-v2/20260913T045508716190Z/state.json.gz",
+      "sha256": "77f0fb467417ef9cb4b228bdfc91f6d1b55837623acaea8e530e23df5ef4e04f"
+    }
+  },
+  "generated_at": "2026-09-13T05:27:40.974498+00:00",
+  "repo_head": "70c54db3de2e4b31dfb4c3b498a7eb0250a84ebb",
+  "schema_version": 1,
+  "status": "BLOCKED_DIRECT_PROVIDER_HISTORY_NOT_ADMITTED"
+}

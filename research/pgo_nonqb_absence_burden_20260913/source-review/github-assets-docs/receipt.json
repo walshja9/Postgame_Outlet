@@ -1,0 +1,133 @@
+{
+  "requested_url": "https://docs.github.com/en/rest/releases/assets?apiVersion=2022-11-28",
+  "started_at": "2026-09-13T05:08:03.516437+00:00",
+  "status": 200,
+  "headers": [
+    [
+      "Connection",
+      "close"
+    ],
+    [
+      "Content-Length",
+      "357971"
+    ],
+    [
+      "Access-Control-Allow-Origin",
+      "*"
+    ],
+    [
+      "Content-Security-Policy",
+      "default-src 'none';prefetch-src 'self';connect-src 'self' https://collector.githubapp.com;font-src 'self' data:;img-src 'self' github.com *.github.com *.githubusercontent.com *.githubassets.com data: placehold.it;object-src 'self';script-src 'self' github.com *.github.com *.githubusercontent.com *.githubassets.com 'self' data: 'sha256-dspnkRAwFNI4G3CK/poQ1CoGlM1rtnGvq1TX7FlQtM4=';script-src-attr 'self';frame-src 'self' github.com *.github.com *.githubusercontent.com *.githubassets.com https://support.github.com;frame-ancestors 'self' github.com *.github.com *.githubusercontent.com *.githubassets.com;style-src 'self' github.com *.github.com *.githubusercontent.com *.githubassets.com 'self' 'unsafe-inline' data:;child-src 'self';manifest-src 'self';upgrade-insecure-requests;base-uri 'self';form-action 'self'"
+    ],
+    [
+      "cross-origin-opener-policy",
+      "same-origin"
+    ],
+    [
+      "cross-origin-resource-policy",
+      "same-origin"
+    ],
+    [
+      "origin-agent-cluster",
+      "?1"
+    ],
+    [
+      "Referrer-Policy",
+      "no-referrer-when-downgrade"
+    ],
+    [
+      "X-Content-Type-Options",
+      "nosniff"
+    ],
+    [
+      "x-dns-prefetch-control",
+      "off"
+    ],
+    [
+      "x-download-options",
+      "noopen"
+    ],
+    [
+      "X-Frame-Options",
+      "SAMEORIGIN"
+    ],
+    [
+      "x-permitted-cross-domain-policies",
+      "none"
+    ],
+    [
+      "X-XSS-Protection",
+      "0"
+    ],
+    [
+      "Cache-Control",
+      "public, max-age=60"
+    ],
+    [
+      "x-powered-by",
+      "Next.js"
+    ],
+    [
+      "Content-Type",
+      "text/html; charset=utf-8"
+    ],
+    [
+      "x-github-backend",
+      "Kubernetes"
+    ],
+    [
+      "X-GitHub-Request-Id",
+      "F8BC:1FE8AD:3A8F84:5DD3C9:6AA62FB1"
+    ],
+    [
+      "x-github-edge-region",
+      "iad"
+    ],
+    [
+      "Via",
+      "1.1 varnish, 1.1 varnish"
+    ],
+    [
+      "Accept-Ranges",
+      "bytes"
+    ],
+    [
+      "Age",
+      "0"
+    ],
+    [
+      "Date",
+      "Sun, 13 Sep 2026 05:08:03 GMT"
+    ],
+    [
+      "X-Served-By",
+      "cache-iad-kiad7000135-IAD, cache-bos-kbos510051-BOS"
+    ],
+    [
+      "X-Cache",
+      "MISS, MISS"
+    ],
+    [
+      "X-Cache-Hits",
+      "0, 0"
+    ],
+    [
+      "X-Timer",
+      "S1789276084.641424,VS0,VE90"
+    ],
+    [
+      "Vary",
+      "x-user-version, accept, Accept-Encoding"
+    ],
+    [
+      "Strict-Transport-Security",
+      "max-age=31557600"
+    ]
+  ],
+  "redirects": [],
+  "error": null,
+  "final_url": "https://docs.github.com/en/rest/releases/assets?apiVersion=2022-11-28",
+  "completed_at": "2026-09-13T05:08:03.727934+00:00",
+  "bytes": 357971,
+  "sha256": "244d6dbb88fd626f46de145c684b306d8a429bae2081a083d5c3361d7398dcab"
+}

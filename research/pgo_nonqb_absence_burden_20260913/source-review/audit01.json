@@ -1,0 +1,3737 @@
+{
+  "conclusions": [
+    "Current standard season releases do not preserve the required pregame source versions.",
+    "The actual 2025 release exists despite stale availability documentation, but has no date_modified column and was released retrospectively in September 2026.",
+    "Some injurybot 2024 per-game assets have pre-T60 repository timestamps; current mutable assets lack historical digest/source receipt and retained revision chain.",
+    "Sample injurybot tables omit stable player IDs, exact dates/update clocks and report-completeness attestations; absent game designations remain unknown.",
+    "A bounded historical subset might be investigated only with independent original-byte publication proof, complete official team reports and stable-identity resolution; it is not admitted by this review."
+  ],
+  "current_2025": {
+    "bytes": 696006,
+    "date_modified_column_present": false,
+    "fields": [
+      "season",
+      "season_type",
+      "game_type",
+      "team",
+      "week",
+      "gsis_id",
+      "position",
+      "full_name",
+      "first_name",
+      "last_name",
+      "report_primary_injury",
+      "report_secondary_injury",
+      "report_status",
+      "practice_primary_injury",
+      "practice_secondary_injury",
+      "practice_status"
+    ],
+    "identity_with_pinned_source": false,
+    "regular_populations": {
+      "non_qb": 5477,
+      "qb": 224,
+      "special_teams": 82
+    },
+    "regular_rows": 5783,
+    "sha256": "873ca1606dd575bd01152508a243ef6b3a0f8f97b90b707217e62ee8c7ceb735",
+    "total_rows": 6068
+  },
+  "feature_walks": 0,
+  "forecast_writes": 0,
+  "historical_raw_sources_reverified": 14,
+  "historical_sources": {
+    "injury_reports:2013": {
+      "bytes": 689228,
+      "path": "D:\\Postgame_Outlet-pgo-model\\.cache\\pgo_v1\\b84c71cf23be81375bbca62f7d2c51d53fa75330fbcf9f598ec4ac17fea7d8be.csv",
+      "sha256": "b84c71cf23be81375bbca62f7d2c51d53fa75330fbcf9f598ec4ac17fea7d8be"
+    },
+    "injury_reports:2014": {
+      "bytes": 692574,
+      "path": "D:\\Postgame_Outlet-pgo-model\\.cache\\pgo_v1\\e675fd5d86c3451d76e7c5d530095db1641347eb3f9796c9a30dd7a75e3ba634.csv",
+      "sha256": "e675fd5d86c3451d76e7c5d530095db1641347eb3f9796c9a30dd7a75e3ba634"
+    },
+    "injury_reports:2015": {
+      "bytes": 715948,
+      "path": "D:\\Postgame_Outlet-pgo-model\\.cache\\pgo_v1\\fbca54ef42594cc52facc0d8c8dd74802b812771b9e33032e44ae8c7e21b0360.csv",
+      "sha256": "fbca54ef42594cc52facc0d8c8dd74802b812771b9e33032e44ae8c7e21b0360"
+    },
+    "injury_reports:2016": {
+      "bytes": 674980,
+      "path": "D:\\Postgame_Outlet-pgo-model\\.cache\\pgo_v1\\504e05968cb9c54ddc730fd9b6e7d1dd16a62db8029cc784d3d7bafcea7ff7cb.csv",
+      "sha256": "504e05968cb9c54ddc730fd9b6e7d1dd16a62db8029cc784d3d7bafcea7ff7cb"
+    },
+    "injury_reports:2017": {
+      "bytes": 665280,
+      "path": "D:\\Postgame_Outlet-pgo-model\\.cache\\pgo_v1\\0d5139fbf41b0866517bd2bd5fd85bb20dbd4dd9bc36a706fed030a88731de6f.csv",
+      "sha256": "0d5139fbf41b0866517bd2bd5fd85bb20dbd4dd9bc36a706fed030a88731de6f"
+    },
+    "injury_reports:2018": {
+      "bytes": 665119,
+      "path": "D:\\Postgame_Outlet-pgo-model\\.cache\\pgo_v1\\4724e1f37cc3076f564e997fbf269190e7dbe795a39315b903788e0a9c40065e.csv",
+      "sha256": "4724e1f37cc3076f564e997fbf269190e7dbe795a39315b903788e0a9c40065e"
+    },
+    "injury_reports:2019": {
+      "bytes": 700757,
+      "path": "D:\\Postgame_Outlet-pgo-model\\.cache\\pgo_v1\\daddfe8e04ddc3a29bce14f362e774fbadfb274c807f1f0fde7b5bf32aaf6cdf.csv",
+      "sha256": "daddfe8e04ddc3a29bce14f362e774fbadfb274c807f1f0fde7b5bf32aaf6cdf"
+    },
+    "injury_reports:2020": {
+      "bytes": 737474,
+      "path": "D:\\Postgame_Outlet-pgo-model\\.cache\\pgo_v1\\706cca82824214f6b73ba0c6e537d3ee39766a50c644b8974b9fc28d7518de90.csv",
+      "sha256": "706cca82824214f6b73ba0c6e537d3ee39766a50c644b8974b9fc28d7518de90"
+    },
+    "injury_reports:2021": {
+      "bytes": 737083,
+      "path": "D:\\Postgame_Outlet-pgo-model\\.cache\\pgo_v1\\1049fb9ff0fe7cfcf3ba8bfe1f5a35d3aba985c461c8fb7bf5201735b6d34254.csv",
+      "sha256": "1049fb9ff0fe7cfcf3ba8bfe1f5a35d3aba985c461c8fb7bf5201735b6d34254"
+    },
+    "injury_reports:2022": {
+      "bytes": 752433,
+      "path": "D:\\Postgame_Outlet-pgo-model\\.cache\\pgo_v1\\5f0d60324e597edd1a2ced8540b04e40b51dd440591dd1df11b8d96343387c9e.csv",
+      "sha256": "5f0d60324e597edd1a2ced8540b04e40b51dd440591dd1df11b8d96343387c9e"
+    },
+    "injury_reports:2023": {
+      "bytes": 738501,
+      "path": "D:\\Postgame_Outlet-pgo-model\\.cache\\pgo_v1\\16b04e21da5aa3944cfa9c22cafcc84ed7e6d9866eaddf0344e9b8cbf2f63afe.csv",
+      "sha256": "16b04e21da5aa3944cfa9c22cafcc84ed7e6d9866eaddf0344e9b8cbf2f63afe"
+    },
+    "injury_reports:2024": {
+      "bytes": 816989,
+      "path": "D:\\Postgame_Outlet-pgo-model\\.cache\\pgo_v1\\498bce8e13cb64b2ab9bb0ad6cb81d0a63c2ddb24016c9fc90c2de2126fae449.csv",
+      "sha256": "498bce8e13cb64b2ab9bb0ad6cb81d0a63c2ddb24016c9fc90c2de2126fae449"
+    },
+    "injury_reports:2025": {
+      "bytes": 695623,
+      "path": "D:\\Postgame_Outlet-pgo-model\\.cache\\pgo_v1\\15ee790fef634caea988e7b6562fc393a63739dd7ee38229d1b42161427709df.csv",
+      "sha256": "15ee790fef634caea988e7b6562fc393a63739dd7ee38229d1b42161427709df"
+    },
+    "schedule_results": {
+      "bytes": 2173367,
+      "path": "D:\\Postgame_Outlet-pgo-model\\.cache\\pgo_v1\\cfb9c79a28ac1187a44be0bcfa0d8ff2f5a7ca201c5183a1dbf1e6d227d72f39.csv",
+      "sha256": "cfb9c79a28ac1187a44be0bcfa0d8ff2f5a7ca201c5183a1dbf1e6d227d72f39"
+    }
+  },
+  "injurybot": {
+    "asset_metadata": [
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_12_ARI_SEA.rds",
+        "created_at": "2024-11-24T17:04:07Z",
+        "digest": null,
+        "id": 208738661,
+        "kickoff": "2024-11-24T21:25:00+00:00",
+        "lock_at": "2024-11-24T20:25:00+00:00",
+        "name": "2024_12_ARI_SEA.rds",
+        "size": 720,
+        "updated_at": "2024-11-24T17:04:07Z"
+      },
+      {
+        "asset_updated_after_kickoff": true,
+        "asset_updated_pre_t60": false,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_12_BAL_LAC.rds",
+        "created_at": "2024-11-26T02:43:55Z",
+        "digest": null,
+        "id": 209081885,
+        "kickoff": "2024-11-26T01:15:00+00:00",
+        "lock_at": "2024-11-26T00:15:00+00:00",
+        "name": "2024_12_BAL_LAC.rds",
+        "size": 760,
+        "updated_at": "2024-11-26T02:43:56Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_12_DAL_WAS.rds",
+        "created_at": "2024-11-24T14:31:03Z",
+        "digest": null,
+        "id": 208725243,
+        "kickoff": "2024-11-24T18:00:00+00:00",
+        "lock_at": "2024-11-24T17:00:00+00:00",
+        "name": "2024_12_DAL_WAS.rds",
+        "size": 864,
+        "updated_at": "2024-11-24T14:31:03Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_12_DEN_LV.rds",
+        "created_at": "2024-11-24T14:31:11Z",
+        "digest": null,
+        "id": 208725248,
+        "kickoff": "2024-11-24T21:05:00+00:00",
+        "lock_at": "2024-11-24T20:05:00+00:00",
+        "name": "2024_12_DEN_LV.rds",
+        "size": 588,
+        "updated_at": "2024-11-24T14:31:11Z"
+      },
+      {
+        "asset_updated_after_kickoff": true,
+        "asset_updated_pre_t60": false,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_12_DET_IND.rds",
+        "created_at": "2024-11-24T20:37:30Z",
+        "digest": null,
+        "id": 208767149,
+        "kickoff": "2024-11-24T18:00:00+00:00",
+        "lock_at": "2024-11-24T17:00:00+00:00",
+        "name": "2024_12_DET_IND.rds",
+        "size": 652,
+        "updated_at": "2024-11-24T20:37:31Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_12_KC_CAR.rds",
+        "created_at": "2024-11-24T14:30:12Z",
+        "digest": null,
+        "id": 208725176,
+        "kickoff": "2024-11-24T18:00:00+00:00",
+        "lock_at": "2024-11-24T17:00:00+00:00",
+        "name": "2024_12_KC_CAR.rds",
+        "size": 717,
+        "updated_at": "2024-11-24T14:30:12Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_12_MIN_CHI.rds",
+        "created_at": "2024-11-24T14:30:20Z",
+        "digest": null,
+        "id": 208725187,
+        "kickoff": "2024-11-24T18:00:00+00:00",
+        "lock_at": "2024-11-24T17:00:00+00:00",
+        "name": "2024_12_MIN_CHI.rds",
+        "size": 585,
+        "updated_at": "2024-11-24T14:30:20Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_12_NE_MIA.rds",
+        "created_at": "2024-11-24T14:30:45Z",
+        "digest": null,
+        "id": 208725230,
+        "kickoff": "2024-11-24T18:00:00+00:00",
+        "lock_at": "2024-11-24T17:00:00+00:00",
+        "name": "2024_12_NE_MIA.rds",
+        "size": 897,
+        "updated_at": "2024-11-24T14:30:45Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_12_PHI_LA.rds",
+        "created_at": "2024-11-24T14:31:38Z",
+        "digest": null,
+        "id": 208725279,
+        "kickoff": "2024-11-25T01:20:00+00:00",
+        "lock_at": "2024-11-25T00:20:00+00:00",
+        "name": "2024_12_PHI_LA.rds",
+        "size": 536,
+        "updated_at": "2024-11-24T14:31:38Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_12_SF_GB.rds",
+        "created_at": "2024-11-24T14:31:19Z",
+        "digest": null,
+        "id": 208725257,
+        "kickoff": "2024-11-24T21:25:00+00:00",
+        "lock_at": "2024-11-24T20:25:00+00:00",
+        "name": "2024_12_SF_GB.rds",
+        "size": 700,
+        "updated_at": "2024-11-24T14:31:20Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_12_TB_NYG.rds",
+        "created_at": "2024-11-24T14:30:54Z",
+        "digest": null,
+        "id": 208725234,
+        "kickoff": "2024-11-24T18:00:00+00:00",
+        "lock_at": "2024-11-24T17:00:00+00:00",
+        "name": "2024_12_TB_NYG.rds",
+        "size": 776,
+        "updated_at": "2024-11-24T14:30:54Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_12_TEN_HOU.rds",
+        "created_at": "2024-11-24T14:30:28Z",
+        "digest": null,
+        "id": 208725201,
+        "kickoff": "2024-11-24T18:00:00+00:00",
+        "lock_at": "2024-11-24T17:00:00+00:00",
+        "name": "2024_12_TEN_HOU.rds",
+        "size": 652,
+        "updated_at": "2024-11-24T14:30:28Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_13_ARI_MIN.rds",
+        "created_at": "2024-11-30T02:40:35Z",
+        "digest": null,
+        "id": 209999109,
+        "kickoff": "2024-12-01T18:00:00+00:00",
+        "lock_at": "2024-12-01T17:00:00+00:00",
+        "name": "2024_13_ARI_MIN.rds",
+        "size": 709,
+        "updated_at": "2024-11-30T02:40:36Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_13_CHI_DET.rds",
+        "created_at": "2024-11-28T14:45:45Z",
+        "digest": null,
+        "id": 209678810,
+        "kickoff": "2024-11-28T17:30:00+00:00",
+        "lock_at": "2024-11-28T16:30:00+00:00",
+        "name": "2024_13_CHI_DET.rds",
+        "size": 446,
+        "updated_at": "2024-11-28T14:45:45Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_13_CLE_DEN.rds",
+        "created_at": "2024-12-01T03:00:25Z",
+        "digest": null,
+        "id": 210164108,
+        "kickoff": "2024-12-03T01:15:00+00:00",
+        "lock_at": "2024-12-03T00:15:00+00:00",
+        "name": "2024_13_CLE_DEN.rds",
+        "size": 711,
+        "updated_at": "2024-12-01T03:00:25Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_13_HOU_JAX.rds",
+        "created_at": "2024-11-30T02:40:29Z",
+        "digest": null,
+        "id": 209999102,
+        "kickoff": "2024-12-01T18:00:00+00:00",
+        "lock_at": "2024-12-01T17:00:00+00:00",
+        "name": "2024_13_HOU_JAX.rds",
+        "size": 697,
+        "updated_at": "2024-11-30T02:40:29Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_13_IND_NE.rds",
+        "created_at": "2024-11-30T02:40:42Z",
+        "digest": null,
+        "id": 209999131,
+        "kickoff": "2024-12-01T18:00:00+00:00",
+        "lock_at": "2024-12-01T17:00:00+00:00",
+        "name": "2024_13_IND_NE.rds",
+        "size": 914,
+        "updated_at": "2024-11-30T02:40:42Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_13_LAC_ATL.rds",
+        "created_at": "2024-11-30T02:40:16Z",
+        "digest": null,
+        "id": 209999088,
+        "kickoff": "2024-12-01T18:00:00+00:00",
+        "lock_at": "2024-12-01T17:00:00+00:00",
+        "name": "2024_13_LAC_ATL.rds",
+        "size": 955,
+        "updated_at": "2024-11-30T02:40:16Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_13_LA_NO.rds",
+        "created_at": "2024-11-30T02:41:08Z",
+        "digest": null,
+        "id": 209999181,
+        "kickoff": "2024-12-01T21:05:00+00:00",
+        "lock_at": "2024-12-01T20:05:00+00:00",
+        "name": "2024_13_LA_NO.rds",
+        "size": 602,
+        "updated_at": "2024-11-30T02:41:08Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_13_LV_KC.rds",
+        "created_at": "2024-11-29T17:39:22Z",
+        "digest": null,
+        "id": 209920327,
+        "kickoff": "2024-11-29T20:00:00+00:00",
+        "lock_at": "2024-11-29T19:00:00+00:00",
+        "name": "2024_13_LV_KC.rds",
+        "size": 811,
+        "updated_at": "2024-11-29T17:39:22Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_13_MIA_GB.rds",
+        "created_at": "2024-11-28T23:36:57Z",
+        "digest": null,
+        "id": 209760709,
+        "kickoff": "2024-11-29T01:20:00+00:00",
+        "lock_at": "2024-11-29T00:20:00+00:00",
+        "name": "2024_13_MIA_GB.rds",
+        "size": 843,
+        "updated_at": "2024-11-28T23:36:57Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": false,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_13_NYG_DAL.rds",
+        "created_at": "2024-11-28T20:38:49Z",
+        "digest": null,
+        "id": 209733669,
+        "kickoff": "2024-11-28T21:30:00+00:00",
+        "lock_at": "2024-11-28T20:30:00+00:00",
+        "name": "2024_13_NYG_DAL.rds",
+        "size": 915,
+        "updated_at": "2024-11-28T20:38:50Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_13_PHI_BAL.rds",
+        "created_at": "2024-11-30T02:41:15Z",
+        "digest": null,
+        "id": 209999192,
+        "kickoff": "2024-12-01T21:25:00+00:00",
+        "lock_at": "2024-12-01T20:25:00+00:00",
+        "name": "2024_13_PHI_BAL.rds",
+        "size": 832,
+        "updated_at": "2024-11-30T02:41:15Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_13_PIT_CIN.rds",
+        "created_at": "2024-11-30T02:40:22Z",
+        "digest": null,
+        "id": 209999095,
+        "kickoff": "2024-12-01T18:00:00+00:00",
+        "lock_at": "2024-12-01T17:00:00+00:00",
+        "name": "2024_13_PIT_CIN.rds",
+        "size": 704,
+        "updated_at": "2024-11-30T02:40:22Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_13_SEA_NYJ.rds",
+        "created_at": "2024-11-30T02:40:49Z",
+        "digest": null,
+        "id": 209999143,
+        "kickoff": "2024-12-01T18:00:00+00:00",
+        "lock_at": "2024-12-01T17:00:00+00:00",
+        "name": "2024_13_SEA_NYJ.rds",
+        "size": 950,
+        "updated_at": "2024-11-30T02:40:49Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_13_SF_BUF.rds",
+        "created_at": "2024-11-30T02:41:21Z",
+        "digest": null,
+        "id": 209999196,
+        "kickoff": "2024-12-02T01:20:00+00:00",
+        "lock_at": "2024-12-02T00:20:00+00:00",
+        "name": "2024_13_SF_BUF.rds",
+        "size": 1048,
+        "updated_at": "2024-11-30T02:41:21Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_13_TB_CAR.rds",
+        "created_at": "2024-11-30T02:41:02Z",
+        "digest": null,
+        "id": 209999171,
+        "kickoff": "2024-12-01T21:05:00+00:00",
+        "lock_at": "2024-12-01T20:05:00+00:00",
+        "name": "2024_13_TB_CAR.rds",
+        "size": 828,
+        "updated_at": "2024-11-30T02:41:02Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_13_TEN_WAS.rds",
+        "created_at": "2024-11-30T02:40:55Z",
+        "digest": null,
+        "id": 209999156,
+        "kickoff": "2024-12-01T18:00:00+00:00",
+        "lock_at": "2024-12-01T17:00:00+00:00",
+        "name": "2024_13_TEN_WAS.rds",
+        "size": 829,
+        "updated_at": "2024-11-30T02:40:56Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_14_ATL_MIN.rds",
+        "created_at": "2024-12-07T02:45:05Z",
+        "digest": null,
+        "id": 211694027,
+        "kickoff": "2024-12-08T18:00:00+00:00",
+        "lock_at": "2024-12-08T17:00:00+00:00",
+        "name": "2024_14_ATL_MIN.rds",
+        "size": 932,
+        "updated_at": "2024-12-07T02:45:05Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_14_BUF_LA.rds",
+        "created_at": "2024-12-07T02:45:50Z",
+        "digest": null,
+        "id": 211694096,
+        "kickoff": "2024-12-08T21:25:00+00:00",
+        "lock_at": "2024-12-08T20:25:00+00:00",
+        "name": "2024_14_BUF_LA.rds",
+        "size": 776,
+        "updated_at": "2024-12-07T02:45:50Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_14_CAR_PHI.rds",
+        "created_at": "2024-12-07T02:45:18Z",
+        "digest": null,
+        "id": 211694056,
+        "kickoff": "2024-12-08T18:00:00+00:00",
+        "lock_at": "2024-12-08T17:00:00+00:00",
+        "name": "2024_14_CAR_PHI.rds",
+        "size": 794,
+        "updated_at": "2024-12-07T02:45:18Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_14_CHI_SF.rds",
+        "created_at": "2024-12-07T02:45:57Z",
+        "digest": null,
+        "id": 211694103,
+        "kickoff": "2024-12-08T21:25:00+00:00",
+        "lock_at": "2024-12-08T20:25:00+00:00",
+        "name": "2024_14_CHI_SF.rds",
+        "size": 909,
+        "updated_at": "2024-12-07T02:45:57Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_14_CIN_DAL.rds",
+        "created_at": "2024-12-08T02:53:28Z",
+        "digest": null,
+        "id": 211845914,
+        "kickoff": "2024-12-10T01:15:00+00:00",
+        "lock_at": "2024-12-10T00:15:00+00:00",
+        "name": "2024_14_CIN_DAL.rds",
+        "size": 939,
+        "updated_at": "2024-12-08T02:53:28Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_14_CLE_PIT.rds",
+        "created_at": "2024-12-07T02:45:24Z",
+        "digest": null,
+        "id": 211694064,
+        "kickoff": "2024-12-08T18:00:00+00:00",
+        "lock_at": "2024-12-08T17:00:00+00:00",
+        "name": "2024_14_CLE_PIT.rds",
+        "size": 829,
+        "updated_at": "2024-12-07T02:45:24Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_14_GB_DET.rds",
+        "created_at": "2024-12-05T02:48:38Z",
+        "digest": null,
+        "id": 211172804,
+        "kickoff": "2024-12-06T01:15:00+00:00",
+        "lock_at": "2024-12-06T00:15:00+00:00",
+        "name": "2024_14_GB_DET.rds",
+        "size": 682,
+        "updated_at": "2024-12-05T02:48:39Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_14_JAX_TEN.rds",
+        "created_at": "2024-12-07T02:45:37Z",
+        "digest": null,
+        "id": 211694082,
+        "kickoff": "2024-12-08T18:00:00+00:00",
+        "lock_at": "2024-12-08T17:00:00+00:00",
+        "name": "2024_14_JAX_TEN.rds",
+        "size": 796,
+        "updated_at": "2024-12-07T02:45:37Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_14_LAC_KC.rds",
+        "created_at": "2024-12-07T02:46:03Z",
+        "digest": null,
+        "id": 211694109,
+        "kickoff": "2024-12-09T01:20:00+00:00",
+        "lock_at": "2024-12-09T00:20:00+00:00",
+        "name": "2024_14_LAC_KC.rds",
+        "size": 602,
+        "updated_at": "2024-12-07T02:46:03Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_14_LV_TB.rds",
+        "created_at": "2024-12-08T14:38:25Z",
+        "digest": null,
+        "id": 211907602,
+        "kickoff": "2024-12-08T18:00:00+00:00",
+        "lock_at": "2024-12-08T17:00:00+00:00",
+        "name": "2024_14_LV_TB.rds",
+        "size": 898,
+        "updated_at": "2024-12-08T14:38:25Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_14_NO_NYG.rds",
+        "created_at": "2024-12-07T02:45:11Z",
+        "digest": null,
+        "id": 211694046,
+        "kickoff": "2024-12-08T18:00:00+00:00",
+        "lock_at": "2024-12-08T17:00:00+00:00",
+        "name": "2024_14_NO_NYG.rds",
+        "size": 989,
+        "updated_at": "2024-12-07T02:45:11Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_14_NYJ_MIA.rds",
+        "created_at": "2024-12-07T02:44:58Z",
+        "digest": null,
+        "id": 211694002,
+        "kickoff": "2024-12-08T18:00:00+00:00",
+        "lock_at": "2024-12-08T17:00:00+00:00",
+        "name": "2024_14_NYJ_MIA.rds",
+        "size": 974,
+        "updated_at": "2024-12-07T02:44:58Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_14_SEA_ARI.rds",
+        "created_at": "2024-12-07T20:37:50Z",
+        "digest": null,
+        "id": 211791624,
+        "kickoff": "2024-12-08T21:05:00+00:00",
+        "lock_at": "2024-12-08T20:05:00+00:00",
+        "name": "2024_14_SEA_ARI.rds",
+        "size": 888,
+        "updated_at": "2024-12-07T20:37:51Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_15_ATL_LV.rds",
+        "created_at": "2024-12-16T23:37:59Z",
+        "digest": null,
+        "id": 213806782,
+        "kickoff": "2024-12-17T01:30:00+00:00",
+        "lock_at": "2024-12-17T00:30:00+00:00",
+        "name": "2024_15_ATL_LV.rds",
+        "size": 818,
+        "updated_at": "2024-12-16T23:37:59Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_15_BAL_NYG.rds",
+        "created_at": "2024-12-15T11:00:23Z",
+        "digest": null,
+        "id": 213467928,
+        "kickoff": "2024-12-15T18:00:00+00:00",
+        "lock_at": "2024-12-15T17:00:00+00:00",
+        "name": "2024_15_BAL_NYG.rds",
+        "size": 945,
+        "updated_at": "2024-12-15T11:00:23Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_15_BUF_DET.rds",
+        "created_at": "2024-12-15T11:00:48Z",
+        "digest": null,
+        "id": 213468035,
+        "kickoff": "2024-12-15T21:25:00+00:00",
+        "lock_at": "2024-12-15T20:25:00+00:00",
+        "name": "2024_15_BUF_DET.rds",
+        "size": 803,
+        "updated_at": "2024-12-15T11:00:48Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_15_CHI_MIN.rds",
+        "created_at": "2024-12-15T11:01:14Z",
+        "digest": null,
+        "id": 213468057,
+        "kickoff": "2024-12-17T01:00:00+00:00",
+        "lock_at": "2024-12-17T00:00:00+00:00",
+        "name": "2024_15_CHI_MIN.rds",
+        "size": 690,
+        "updated_at": "2024-12-15T11:01:14Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_15_CIN_TEN.rds",
+        "created_at": "2024-12-15T11:00:29Z",
+        "digest": null,
+        "id": 213467931,
+        "kickoff": "2024-12-15T18:00:00+00:00",
+        "lock_at": "2024-12-15T17:00:00+00:00",
+        "name": "2024_15_CIN_TEN.rds",
+        "size": 932,
+        "updated_at": "2024-12-15T11:00:29Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_15_DAL_CAR.rds",
+        "created_at": "2024-12-15T10:59:51Z",
+        "digest": null,
+        "id": 213467904,
+        "kickoff": "2024-12-15T18:00:00+00:00",
+        "lock_at": "2024-12-15T17:00:00+00:00",
+        "name": "2024_15_DAL_CAR.rds",
+        "size": 1001,
+        "updated_at": "2024-12-15T10:59:51Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_15_GB_SEA.rds",
+        "created_at": "2024-12-15T11:01:07Z",
+        "digest": null,
+        "id": 213468048,
+        "kickoff": "2024-12-16T01:20:00+00:00",
+        "lock_at": "2024-12-16T00:20:00+00:00",
+        "name": "2024_15_GB_SEA.rds",
+        "size": 1101,
+        "updated_at": "2024-12-15T11:01:07Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_15_IND_DEN.rds",
+        "created_at": "2024-12-15T11:00:41Z",
+        "digest": null,
+        "id": 213468030,
+        "kickoff": "2024-12-15T21:25:00+00:00",
+        "lock_at": "2024-12-15T20:25:00+00:00",
+        "name": "2024_15_IND_DEN.rds",
+        "size": 679,
+        "updated_at": "2024-12-15T11:00:41Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_15_KC_CLE.rds",
+        "created_at": "2024-12-15T10:59:57Z",
+        "digest": null,
+        "id": 213467910,
+        "kickoff": "2024-12-15T18:00:00+00:00",
+        "lock_at": "2024-12-15T17:00:00+00:00",
+        "name": "2024_15_KC_CLE.rds",
+        "size": 887,
+        "updated_at": "2024-12-15T10:59:57Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_15_LA_SF.rds",
+        "created_at": "2024-12-12T02:47:40Z",
+        "digest": null,
+        "id": 212789615,
+        "kickoff": "2024-12-13T01:15:00+00:00",
+        "lock_at": "2024-12-13T00:15:00+00:00",
+        "name": "2024_15_LA_SF.rds",
+        "size": 795,
+        "updated_at": "2024-12-12T02:47:40Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_15_MIA_HOU.rds",
+        "created_at": "2024-12-15T11:00:04Z",
+        "digest": null,
+        "id": 213467915,
+        "kickoff": "2024-12-15T18:00:00+00:00",
+        "lock_at": "2024-12-15T17:00:00+00:00",
+        "name": "2024_15_MIA_HOU.rds",
+        "size": 1010,
+        "updated_at": "2024-12-15T11:00:04Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_15_NE_ARI.rds",
+        "created_at": "2024-12-15T11:00:35Z",
+        "digest": null,
+        "id": 213467988,
+        "kickoff": "2024-12-15T21:25:00+00:00",
+        "lock_at": "2024-12-15T20:25:00+00:00",
+        "name": "2024_15_NE_ARI.rds",
+        "size": 852,
+        "updated_at": "2024-12-15T11:00:36Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_15_NYJ_JAX.rds",
+        "created_at": "2024-12-15T11:00:10Z",
+        "digest": null,
+        "id": 213467922,
+        "kickoff": "2024-12-15T18:00:00+00:00",
+        "lock_at": "2024-12-15T17:00:00+00:00",
+        "name": "2024_15_NYJ_JAX.rds",
+        "size": 732,
+        "updated_at": "2024-12-15T11:00:10Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_15_PIT_PHI.rds",
+        "created_at": "2024-12-15T11:01:00Z",
+        "digest": null,
+        "id": 213468045,
+        "kickoff": "2024-12-15T21:25:00+00:00",
+        "lock_at": "2024-12-15T20:25:00+00:00",
+        "name": "2024_15_PIT_PHI.rds",
+        "size": 1006,
+        "updated_at": "2024-12-15T11:01:01Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_15_TB_LAC.rds",
+        "created_at": "2024-12-15T11:00:54Z",
+        "digest": null,
+        "id": 213468038,
+        "kickoff": "2024-12-15T21:25:00+00:00",
+        "lock_at": "2024-12-15T20:25:00+00:00",
+        "name": "2024_15_TB_LAC.rds",
+        "size": 1099,
+        "updated_at": "2024-12-15T11:00:54Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_15_WAS_NO.rds",
+        "created_at": "2024-12-15T11:00:16Z",
+        "digest": null,
+        "id": 213467924,
+        "kickoff": "2024-12-15T18:00:00+00:00",
+        "lock_at": "2024-12-15T17:00:00+00:00",
+        "name": "2024_15_WAS_NO.rds",
+        "size": 818,
+        "updated_at": "2024-12-15T11:00:16Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_16_ARI_CAR.rds",
+        "created_at": "2024-12-21T02:32:09Z",
+        "digest": null,
+        "id": 214861509,
+        "kickoff": "2024-12-22T18:00:00+00:00",
+        "lock_at": "2024-12-22T17:00:00+00:00",
+        "name": "2024_16_ARI_CAR.rds",
+        "size": 1116,
+        "updated_at": "2024-12-21T02:32:09Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_16_CLE_CIN.rds",
+        "created_at": "2024-12-21T02:32:42Z",
+        "digest": null,
+        "id": 214861551,
+        "kickoff": "2024-12-22T18:00:00+00:00",
+        "lock_at": "2024-12-22T17:00:00+00:00",
+        "name": "2024_16_CLE_CIN.rds",
+        "size": 865,
+        "updated_at": "2024-12-21T02:32:42Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_16_DEN_LAC.rds",
+        "created_at": "2024-12-19T02:42:44Z",
+        "digest": null,
+        "id": 214356407,
+        "kickoff": "2024-12-20T01:15:00+00:00",
+        "lock_at": "2024-12-20T00:15:00+00:00",
+        "name": "2024_16_DEN_LAC.rds",
+        "size": 675,
+        "updated_at": "2024-12-19T02:42:45Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_16_DET_CHI.rds",
+        "created_at": "2024-12-21T02:32:15Z",
+        "digest": null,
+        "id": 214861516,
+        "kickoff": "2024-12-22T18:00:00+00:00",
+        "lock_at": "2024-12-22T17:00:00+00:00",
+        "name": "2024_16_DET_CHI.rds",
+        "size": 822,
+        "updated_at": "2024-12-21T02:32:15Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_16_HOU_KC.rds",
+        "created_at": "2024-12-20T02:36:13Z",
+        "digest": null,
+        "id": 214616542,
+        "kickoff": "2024-12-21T18:00:00+00:00",
+        "lock_at": "2024-12-21T17:00:00+00:00",
+        "name": "2024_16_HOU_KC.rds",
+        "size": 722,
+        "updated_at": "2024-12-20T02:36:13Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_16_JAX_LV.rds",
+        "created_at": "2024-12-21T02:33:01Z",
+        "digest": null,
+        "id": 214861577,
+        "kickoff": "2024-12-22T21:25:00+00:00",
+        "lock_at": "2024-12-22T20:25:00+00:00",
+        "name": "2024_16_JAX_LV.rds",
+        "size": 596,
+        "updated_at": "2024-12-21T02:33:02Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_16_LA_NYJ.rds",
+        "created_at": "2024-12-21T02:32:29Z",
+        "digest": null,
+        "id": 214861528,
+        "kickoff": "2024-12-22T18:00:00+00:00",
+        "lock_at": "2024-12-22T17:00:00+00:00",
+        "name": "2024_16_LA_NYJ.rds",
+        "size": 754,
+        "updated_at": "2024-12-21T02:32:29Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_16_MIN_SEA.rds",
+        "created_at": "2024-12-21T02:32:49Z",
+        "digest": null,
+        "id": 214861559,
+        "kickoff": "2024-12-22T21:05:00+00:00",
+        "lock_at": "2024-12-22T20:05:00+00:00",
+        "name": "2024_16_MIN_SEA.rds",
+        "size": 1020,
+        "updated_at": "2024-12-21T02:32:49Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_16_NE_BUF.rds",
+        "created_at": "2024-12-21T02:32:55Z",
+        "digest": null,
+        "id": 214861564,
+        "kickoff": "2024-12-22T21:25:00+00:00",
+        "lock_at": "2024-12-22T20:25:00+00:00",
+        "name": "2024_16_NE_BUF.rds",
+        "size": 987,
+        "updated_at": "2024-12-21T02:32:55Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_16_NO_GB.rds",
+        "created_at": "2024-12-22T02:40:22Z",
+        "digest": null,
+        "id": 215043569,
+        "kickoff": "2024-12-24T01:15:00+00:00",
+        "lock_at": "2024-12-24T00:15:00+00:00",
+        "name": "2024_16_NO_GB.rds",
+        "size": 673,
+        "updated_at": "2024-12-22T02:40:22Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_16_NYG_ATL.rds",
+        "created_at": "2024-12-21T02:32:02Z",
+        "digest": null,
+        "id": 214861497,
+        "kickoff": "2024-12-22T18:00:00+00:00",
+        "lock_at": "2024-12-22T17:00:00+00:00",
+        "name": "2024_16_NYG_ATL.rds",
+        "size": 1214,
+        "updated_at": "2024-12-21T02:32:02Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_16_PHI_WAS.rds",
+        "created_at": "2024-12-21T02:32:36Z",
+        "digest": null,
+        "id": 214861541,
+        "kickoff": "2024-12-22T18:00:00+00:00",
+        "lock_at": "2024-12-22T17:00:00+00:00",
+        "name": "2024_16_PHI_WAS.rds",
+        "size": 930,
+        "updated_at": "2024-12-21T02:32:36Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_16_PIT_BAL.rds",
+        "created_at": "2024-12-20T02:36:19Z",
+        "digest": null,
+        "id": 214616550,
+        "kickoff": "2024-12-21T21:30:00+00:00",
+        "lock_at": "2024-12-21T20:30:00+00:00",
+        "name": "2024_16_PIT_BAL.rds",
+        "size": 839,
+        "updated_at": "2024-12-20T02:36:19Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_16_SF_MIA.rds",
+        "created_at": "2024-12-21T02:33:08Z",
+        "digest": null,
+        "id": 214861601,
+        "kickoff": "2024-12-22T21:25:00+00:00",
+        "lock_at": "2024-12-22T20:25:00+00:00",
+        "name": "2024_16_SF_MIA.rds",
+        "size": 986,
+        "updated_at": "2024-12-21T02:33:08Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_16_TB_DAL.rds",
+        "created_at": "2024-12-21T02:33:15Z",
+        "digest": null,
+        "id": 214861610,
+        "kickoff": "2024-12-23T01:20:00+00:00",
+        "lock_at": "2024-12-23T00:20:00+00:00",
+        "name": "2024_16_TB_DAL.rds",
+        "size": 1105,
+        "updated_at": "2024-12-21T02:33:15Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_16_TEN_IND.rds",
+        "created_at": "2024-12-21T23:35:32Z",
+        "digest": null,
+        "id": 215008939,
+        "kickoff": "2024-12-22T18:00:00+00:00",
+        "lock_at": "2024-12-22T17:00:00+00:00",
+        "name": "2024_16_TEN_IND.rds",
+        "size": 1030,
+        "updated_at": "2024-12-21T23:35:32Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_17_ARI_LA.rds",
+        "created_at": "2024-12-27T02:35:24Z",
+        "digest": null,
+        "id": 216090581,
+        "kickoff": "2024-12-29T01:15:00+00:00",
+        "lock_at": "2024-12-29T00:15:00+00:00",
+        "name": "2024_17_ARI_LA.rds",
+        "size": 642,
+        "updated_at": "2024-12-27T02:35:24Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_17_ATL_WAS.rds",
+        "created_at": "2024-12-28T02:32:09Z",
+        "digest": null,
+        "id": 216309233,
+        "kickoff": "2024-12-30T01:20:00+00:00",
+        "lock_at": "2024-12-30T00:20:00+00:00",
+        "name": "2024_17_ATL_WAS.rds",
+        "size": 865,
+        "updated_at": "2024-12-28T02:32:09Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_17_BAL_HOU.rds",
+        "created_at": "2024-12-25T02:33:36Z",
+        "digest": null,
+        "id": 215707967,
+        "kickoff": "2024-12-25T21:30:00+00:00",
+        "lock_at": "2024-12-25T20:30:00+00:00",
+        "name": "2024_17_BAL_HOU.rds",
+        "size": 696,
+        "updated_at": "2024-12-25T02:33:36Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_17_CAR_TB.rds",
+        "created_at": "2024-12-28T02:31:41Z",
+        "digest": null,
+        "id": 216309190,
+        "kickoff": "2024-12-29T18:00:00+00:00",
+        "lock_at": "2024-12-29T17:00:00+00:00",
+        "name": "2024_17_CAR_TB.rds",
+        "size": 1173,
+        "updated_at": "2024-12-28T02:31:41Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_17_DAL_PHI.rds",
+        "created_at": "2024-12-28T02:31:47Z",
+        "digest": null,
+        "id": 216309200,
+        "kickoff": "2024-12-29T18:00:00+00:00",
+        "lock_at": "2024-12-29T17:00:00+00:00",
+        "name": "2024_17_DAL_PHI.rds",
+        "size": 1061,
+        "updated_at": "2024-12-28T02:31:47Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_17_DEN_CIN.rds",
+        "created_at": "2024-12-27T02:35:17Z",
+        "digest": null,
+        "id": 216090575,
+        "kickoff": "2024-12-28T21:30:00+00:00",
+        "lock_at": "2024-12-28T20:30:00+00:00",
+        "name": "2024_17_DEN_CIN.rds",
+        "size": 678,
+        "updated_at": "2024-12-27T02:35:17Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_17_DET_SF.rds",
+        "created_at": "2024-12-29T02:41:07Z",
+        "digest": null,
+        "id": 216481355,
+        "kickoff": "2024-12-31T01:15:00+00:00",
+        "lock_at": "2024-12-31T00:15:00+00:00",
+        "name": "2024_17_DET_SF.rds",
+        "size": 829,
+        "updated_at": "2024-12-29T02:41:08Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_17_GB_MIN.rds",
+        "created_at": "2024-12-28T02:32:03Z",
+        "digest": null,
+        "id": 216309223,
+        "kickoff": "2024-12-29T21:25:00+00:00",
+        "lock_at": "2024-12-29T20:25:00+00:00",
+        "name": "2024_17_GB_MIN.rds",
+        "size": 800,
+        "updated_at": "2024-12-28T02:32:03Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_17_IND_NYG.rds",
+        "created_at": "2024-12-28T02:31:16Z",
+        "digest": null,
+        "id": 216309154,
+        "kickoff": "2024-12-29T18:00:00+00:00",
+        "lock_at": "2024-12-29T17:00:00+00:00",
+        "name": "2024_17_IND_NYG.rds",
+        "size": 1024,
+        "updated_at": "2024-12-28T02:31:16Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_17_KC_PIT.rds",
+        "created_at": "2024-12-25T02:33:29Z",
+        "digest": null,
+        "id": 215707954,
+        "kickoff": "2024-12-25T18:00:00+00:00",
+        "lock_at": "2024-12-25T17:00:00+00:00",
+        "name": "2024_17_KC_PIT.rds",
+        "size": 800,
+        "updated_at": "2024-12-25T02:33:29Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_17_LAC_NE.rds",
+        "created_at": "2024-12-27T02:35:09Z",
+        "digest": null,
+        "id": 216090566,
+        "kickoff": "2024-12-28T18:00:00+00:00",
+        "lock_at": "2024-12-28T17:00:00+00:00",
+        "name": "2024_17_LAC_NE.rds",
+        "size": 906,
+        "updated_at": "2024-12-27T02:35:09Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_17_LV_NO.rds",
+        "created_at": "2024-12-28T02:31:35Z",
+        "digest": null,
+        "id": 216309182,
+        "kickoff": "2024-12-29T18:00:00+00:00",
+        "lock_at": "2024-12-29T17:00:00+00:00",
+        "name": "2024_17_LV_NO.rds",
+        "size": 734,
+        "updated_at": "2024-12-28T02:31:35Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_17_MIA_CLE.rds",
+        "created_at": "2024-12-28T02:31:53Z",
+        "digest": null,
+        "id": 216309210,
+        "kickoff": "2024-12-29T21:05:00+00:00",
+        "lock_at": "2024-12-29T20:05:00+00:00",
+        "name": "2024_17_MIA_CLE.rds",
+        "size": 909,
+        "updated_at": "2024-12-28T02:31:54Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_17_NYJ_BUF.rds",
+        "created_at": "2024-12-28T02:31:22Z",
+        "digest": null,
+        "id": 216309169,
+        "kickoff": "2024-12-29T18:00:00+00:00",
+        "lock_at": "2024-12-29T17:00:00+00:00",
+        "name": "2024_17_NYJ_BUF.rds",
+        "size": 1005,
+        "updated_at": "2024-12-28T02:31:23Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_17_SEA_CHI.rds",
+        "created_at": "2024-12-26T02:34:00Z",
+        "digest": null,
+        "id": 215893340,
+        "kickoff": "2024-12-27T01:15:00+00:00",
+        "lock_at": "2024-12-27T00:15:00+00:00",
+        "name": "2024_17_SEA_CHI.rds",
+        "size": 805,
+        "updated_at": "2024-12-26T02:34:00Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_17_TEN_JAX.rds",
+        "created_at": "2024-12-28T02:31:29Z",
+        "digest": null,
+        "id": 216309175,
+        "kickoff": "2024-12-29T18:00:00+00:00",
+        "lock_at": "2024-12-29T17:00:00+00:00",
+        "name": "2024_17_TEN_JAX.rds",
+        "size": 749,
+        "updated_at": "2024-12-28T02:31:29Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_18_BUF_NE.rds",
+        "created_at": "2025-01-04T02:32:42Z",
+        "digest": null,
+        "id": 217831047,
+        "kickoff": "2025-01-05T18:00:00+00:00",
+        "lock_at": "2025-01-05T17:00:00+00:00",
+        "name": "2024_18_BUF_NE.rds",
+        "size": 1052,
+        "updated_at": "2025-01-04T02:32:43Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_18_CAR_ATL.rds",
+        "created_at": "2025-01-04T02:32:13Z",
+        "digest": null,
+        "id": 217831001,
+        "kickoff": "2025-01-05T18:00:00+00:00",
+        "lock_at": "2025-01-05T17:00:00+00:00",
+        "name": "2024_18_CAR_ATL.rds",
+        "size": 1121,
+        "updated_at": "2025-01-04T02:32:14Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_18_CHI_GB.rds",
+        "created_at": "2025-01-04T02:32:28Z",
+        "digest": null,
+        "id": 217831011,
+        "kickoff": "2025-01-05T18:00:00+00:00",
+        "lock_at": "2025-01-05T17:00:00+00:00",
+        "name": "2024_18_CHI_GB.rds",
+        "size": 853,
+        "updated_at": "2025-01-04T02:32:28Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_18_CIN_PIT.rds",
+        "created_at": "2025-01-03T02:35:26Z",
+        "digest": null,
+        "id": 217554368,
+        "kickoff": "2025-01-05T01:00:00+00:00",
+        "lock_at": "2025-01-05T00:00:00+00:00",
+        "name": "2024_18_CIN_PIT.rds",
+        "size": 900,
+        "updated_at": "2025-01-03T02:35:27Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": false,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_18_CLE_BAL.rds",
+        "created_at": "2025-01-04T20:35:36Z",
+        "digest": null,
+        "id": 217963400,
+        "kickoff": "2025-01-04T21:30:00+00:00",
+        "lock_at": "2025-01-04T20:30:00+00:00",
+        "name": "2024_18_CLE_BAL.rds",
+        "size": 979,
+        "updated_at": "2025-01-04T20:35:36Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_18_HOU_TEN.rds",
+        "created_at": "2025-01-04T02:33:05Z",
+        "digest": null,
+        "id": 217831086,
+        "kickoff": "2025-01-05T18:00:00+00:00",
+        "lock_at": "2025-01-05T17:00:00+00:00",
+        "name": "2024_18_HOU_TEN.rds",
+        "size": 905,
+        "updated_at": "2025-01-04T02:33:06Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_18_JAX_IND.rds",
+        "created_at": "2025-01-04T17:35:26Z",
+        "digest": null,
+        "id": 217931860,
+        "kickoff": "2025-01-05T18:00:00+00:00",
+        "lock_at": "2025-01-05T17:00:00+00:00",
+        "name": "2024_18_JAX_IND.rds",
+        "size": 616,
+        "updated_at": "2025-01-04T17:35:26Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_18_KC_DEN.rds",
+        "created_at": "2025-01-04T02:33:20Z",
+        "digest": null,
+        "id": 217831121,
+        "kickoff": "2025-01-05T21:25:00+00:00",
+        "lock_at": "2025-01-05T20:25:00+00:00",
+        "name": "2024_18_KC_DEN.rds",
+        "size": 914,
+        "updated_at": "2025-01-04T02:33:20Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_18_LAC_LV.rds",
+        "created_at": "2025-01-04T02:33:34Z",
+        "digest": null,
+        "id": 217831152,
+        "kickoff": "2025-01-05T21:25:00+00:00",
+        "lock_at": "2025-01-05T20:25:00+00:00",
+        "name": "2024_18_LAC_LV.rds",
+        "size": 711,
+        "updated_at": "2025-01-04T02:33:34Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_18_MIA_NYJ.rds",
+        "created_at": "2025-01-04T02:33:41Z",
+        "digest": null,
+        "id": 217831171,
+        "kickoff": "2025-01-05T21:25:00+00:00",
+        "lock_at": "2025-01-05T20:25:00+00:00",
+        "name": "2024_18_MIA_NYJ.rds",
+        "size": 862,
+        "updated_at": "2025-01-04T02:33:41Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_18_MIN_DET.rds",
+        "created_at": "2025-01-04T02:33:49Z",
+        "digest": null,
+        "id": 217831184,
+        "kickoff": "2025-01-06T01:20:00+00:00",
+        "lock_at": "2025-01-06T00:20:00+00:00",
+        "name": "2024_18_MIN_DET.rds",
+        "size": 760,
+        "updated_at": "2025-01-04T02:33:49Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_18_NO_TB.rds",
+        "created_at": "2025-01-04T02:32:58Z",
+        "digest": null,
+        "id": 217831072,
+        "kickoff": "2025-01-05T18:00:00+00:00",
+        "lock_at": "2025-01-05T17:00:00+00:00",
+        "name": "2024_18_NO_TB.rds",
+        "size": 839,
+        "updated_at": "2025-01-04T02:32:58Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_18_NYG_PHI.rds",
+        "created_at": "2025-01-04T02:32:51Z",
+        "digest": null,
+        "id": 217831058,
+        "kickoff": "2025-01-05T18:00:00+00:00",
+        "lock_at": "2025-01-05T17:00:00+00:00",
+        "name": "2024_18_NYG_PHI.rds",
+        "size": 1146,
+        "updated_at": "2025-01-04T02:32:51Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_18_SEA_LA.rds",
+        "created_at": "2025-01-04T02:33:27Z",
+        "digest": null,
+        "id": 217831136,
+        "kickoff": "2025-01-05T21:25:00+00:00",
+        "lock_at": "2025-01-05T20:25:00+00:00",
+        "name": "2024_18_SEA_LA.rds",
+        "size": 885,
+        "updated_at": "2025-01-04T02:33:27Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_18_SF_ARI.rds",
+        "created_at": "2025-01-04T02:33:13Z",
+        "digest": null,
+        "id": 217831109,
+        "kickoff": "2025-01-05T21:25:00+00:00",
+        "lock_at": "2025-01-05T20:25:00+00:00",
+        "name": "2024_18_SF_ARI.rds",
+        "size": 964,
+        "updated_at": "2025-01-04T02:33:13Z"
+      },
+      {
+        "asset_updated_after_kickoff": false,
+        "asset_updated_pre_t60": true,
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_18_WAS_DAL.rds",
+        "created_at": "2025-01-04T02:32:21Z",
+        "digest": null,
+        "id": 217831005,
+        "kickoff": "2025-01-05T18:00:00+00:00",
+        "lock_at": "2025-01-05T17:00:00+00:00",
+        "name": "2024_18_WAS_DAL.rds",
+        "size": 986,
+        "updated_at": "2025-01-04T02:32:21Z"
+      },
+      {
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_19_DEN_BUF.rds",
+        "created_at": "2025-01-11T02:36:10Z",
+        "digest": null,
+        "id": 219575998,
+        "name": "2024_19_DEN_BUF.rds",
+        "outside_pinned_REG_schedule": true,
+        "size": 784,
+        "updated_at": "2025-01-11T02:36:11Z"
+      },
+      {
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_19_GB_PHI.rds",
+        "created_at": "2025-01-11T02:36:18Z",
+        "digest": null,
+        "id": 219576014,
+        "name": "2024_19_GB_PHI.rds",
+        "outside_pinned_REG_schedule": true,
+        "size": 956,
+        "updated_at": "2025-01-11T02:36:18Z"
+      },
+      {
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_19_LAC_HOU.rds",
+        "created_at": "2025-01-10T02:39:07Z",
+        "digest": null,
+        "id": 219314279,
+        "name": "2024_19_LAC_HOU.rds",
+        "outside_pinned_REG_schedule": true,
+        "size": 894,
+        "updated_at": "2025-01-10T02:39:07Z"
+      },
+      {
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_19_MIN_LA.rds",
+        "created_at": "2025-01-12T02:43:24Z",
+        "digest": null,
+        "id": 219763794,
+        "name": "2024_19_MIN_LA.rds",
+        "outside_pinned_REG_schedule": true,
+        "size": 604,
+        "updated_at": "2025-01-12T02:43:25Z"
+      },
+      {
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_19_PIT_BAL.rds",
+        "created_at": "2025-01-10T02:39:13Z",
+        "digest": null,
+        "id": 219314298,
+        "name": "2024_19_PIT_BAL.rds",
+        "outside_pinned_REG_schedule": true,
+        "size": 691,
+        "updated_at": "2025-01-10T02:39:14Z"
+      },
+      {
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_19_WAS_TB.rds",
+        "created_at": "2025-01-11T02:36:26Z",
+        "digest": null,
+        "id": 219576021,
+        "name": "2024_19_WAS_TB.rds",
+        "outside_pinned_REG_schedule": true,
+        "size": 1086,
+        "updated_at": "2025-01-11T02:36:26Z"
+      },
+      {
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_21_BUF_KC.rds",
+        "created_at": "2025-01-25T20:35:41Z",
+        "digest": null,
+        "id": 223450366,
+        "name": "2024_21_BUF_KC.rds",
+        "outside_pinned_REG_schedule": true,
+        "size": 709,
+        "updated_at": "2025-01-25T20:35:41Z"
+      },
+      {
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_21_WAS_PHI.rds",
+        "created_at": "2025-01-25T20:35:35Z",
+        "digest": null,
+        "id": 223450356,
+        "name": "2024_21_WAS_PHI.rds",
+        "outside_pinned_REG_schedule": true,
+        "size": 1053,
+        "updated_at": "2025-01-25T20:35:36Z"
+      },
+      {
+        "browser_download_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_22_KC_PHI.rds",
+        "created_at": "2025-02-08T02:30:19Z",
+        "digest": null,
+        "id": 227334991,
+        "name": "2024_22_KC_PHI.rds",
+        "outside_pinned_REG_schedule": true,
+        "size": 669,
+        "updated_at": "2025-02-08T02:30:19Z"
+      }
+    ],
+    "assets": 114,
+    "immutable": false,
+    "pinned_REG_assets": 105,
+    "release_created_at": "2024-11-22T13:35:13Z",
+    "release_published_at": "2024-11-22T13:37:02Z",
+    "samples": {
+      "injurybot-sample-early": {
+        "columns": [
+          "team",
+          "position",
+          "full_name",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "gs"
+        ],
+        "records": [
+          {
+            "Friday": "FULL | Back",
+            "Thursday": "FULL | Back",
+            "Wednesday": "FULL | Back",
+            "full_name": "Isaiah Adams",
+            "gs": null,
+            "position": "G",
+            "team": "ARI"
+          },
+          {
+            "Friday": "FULL | Resting Player",
+            "Thursday": "FULL | Resting Player",
+            "Wednesday": "FULL | Resting Player",
+            "full_name": "Kelvin Beachum",
+            "gs": null,
+            "position": "T",
+            "team": "ARI"
+          },
+          {
+            "Friday": "FULL | Shoulder",
+            "Thursday": "FULL | Shoulder",
+            "Wednesday": "FULL | Shoulder",
+            "full_name": "Emari Demercado",
+            "gs": null,
+            "position": "RB",
+            "team": "ARI"
+          },
+          {
+            "Friday": "FULL | Illness",
+            "Thursday": "FULL | Illness",
+            "Wednesday": null,
+            "full_name": "Max Melton",
+            "gs": "QST | Illness",
+            "position": "CB",
+            "team": "ARI"
+          },
+          {
+            "Friday": "LTD | Calf",
+            "Thursday": "LTD | Calf",
+            "Wednesday": "LTD | Calf",
+            "full_name": "Darius Robinson",
+            "gs": "QST | Calf",
+            "position": "DT",
+            "team": "ARI"
+          },
+          {
+            "Friday": "FULL | Back",
+            "Thursday": "FULL | Back",
+            "Wednesday": "FULL | Back",
+            "full_name": "Dadrion Taylor-Demerson",
+            "gs": null,
+            "position": "S",
+            "team": "ARI"
+          },
+          {
+            "Friday": "LTD | Back",
+            "Thursday": null,
+            "Wednesday": null,
+            "full_name": "Xavier Thomas",
+            "gs": "QST | Back",
+            "position": "LB",
+            "team": "ARI"
+          },
+          {
+            "Friday": "DNP | Ankle",
+            "Thursday": "DNP | Ankle",
+            "Wednesday": "DNP | Ankle",
+            "full_name": "Jalen Thompson",
+            "gs": "OUT | Ankle",
+            "position": "S",
+            "team": "ARI"
+          },
+          {
+            "Friday": "LTD | Knee",
+            "Thursday": "LTD | Knee",
+            "Wednesday": "LTD | Knee",
+            "full_name": "Jonah Williams",
+            "gs": "QST | Knee",
+            "position": "T",
+            "team": "ARI"
+          },
+          {
+            "Friday": "FULL | Elbow",
+            "Thursday": "FULL | Elbow",
+            "Wednesday": "FULL | Elbow",
+            "full_name": "Pharaoh Brown",
+            "gs": null,
+            "position": "TE",
+            "team": "SEA"
+          },
+          {
+            "Friday": "FULL | Groin",
+            "Thursday": "FULL | Groin",
+            "Wednesday": "FULL | Groin",
+            "full_name": "Noah Fant",
+            "gs": "QST | Groin",
+            "position": "TE",
+            "team": "SEA"
+          },
+          {
+            "Friday": "FULL | Personal Matter",
+            "Thursday": "FULL | Personal Matter",
+            "Wednesday": "FULL | Personal Matter",
+            "full_name": "Johnathan Hankins",
+            "gs": null,
+            "position": "DT",
+            "team": "SEA"
+          },
+          {
+            "Friday": "FULL | Hand",
+            "Thursday": "FULL | Hand",
+            "Wednesday": "FULL | Hand",
+            "full_name": "Rayshawn Jenkins",
+            "gs": null,
+            "position": "S",
+            "team": "SEA"
+          },
+          {
+            "Friday": "FULL | Shoulder",
+            "Thursday": "FULL | Shoulder",
+            "Wednesday": "FULL | Shoulder",
+            "full_name": "Dre'Mont Jones",
+            "gs": null,
+            "position": "DE",
+            "team": "SEA"
+          },
+          {
+            "Friday": "LTD | Resting Player/Foot",
+            "Thursday": "LTD | Resting Player/Foot",
+            "Wednesday": "LTD | Resting Player/Foot",
+            "full_name": "Tyler Lockett",
+            "gs": null,
+            "position": "WR",
+            "team": "SEA"
+          },
+          {
+            "Friday": "FULL | Knee",
+            "Thursday": "FULL | Knee",
+            "Wednesday": "FULL | Knee",
+            "full_name": "Abraham Lucas",
+            "gs": null,
+            "position": "T",
+            "team": "SEA"
+          },
+          {
+            "Friday": "FULL | Resting Player",
+            "Thursday": "FULL | Resting Player",
+            "Wednesday": "FULL | Resting Player",
+            "full_name": "Jarran Reed",
+            "gs": null,
+            "position": "DT",
+            "team": "SEA"
+          },
+          {
+            "Friday": "DNP | Foot",
+            "Thursday": "DNP | Foot",
+            "Wednesday": "DNP | Foot",
+            "full_name": "Brady Russell",
+            "gs": "OUT | Foot",
+            "position": "TE",
+            "team": "SEA"
+          },
+          {
+            "Friday": "FULL | Back",
+            "Thursday": "FULL | Back",
+            "Wednesday": "FULL | Back",
+            "full_name": "Laviska Shenault",
+            "gs": "QST | Back",
+            "position": "WR",
+            "team": "SEA"
+          },
+          {
+            "Friday": "FULL | Resting Player",
+            "Thursday": "FULL | Resting Player",
+            "Wednesday": "FULL | Resting Player",
+            "full_name": "Laken Tomlinson",
+            "gs": null,
+            "position": "G",
+            "team": "SEA"
+          },
+          {
+            "Friday": "FULL | Ankle",
+            "Thursday": "FULL | Ankle",
+            "Wednesday": "FULL | Ankle",
+            "full_name": "Dee Williams",
+            "gs": null,
+            "position": "CB",
+            "team": "SEA"
+          },
+          {
+            "Friday": "FULL | Foot",
+            "Thursday": "FULL | Foot",
+            "Wednesday": "FULL | Foot",
+            "full_name": "Leonard Williams",
+            "gs": null,
+            "position": "DT",
+            "team": "SEA"
+          }
+        ],
+        "rows": 22,
+        "teams": [
+          "ARI",
+          "SEA"
+        ]
+      },
+      "injurybot-sample-late": {
+        "columns": [
+          "team",
+          "position",
+          "full_name",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "gs"
+        ],
+        "records": [
+          {
+            "Friday": "FULL | Groin",
+            "Thursday": "FULL | Groin",
+            "Wednesday": null,
+            "full_name": "Terrion Arnold",
+            "gs": "QST | Groin",
+            "position": "CB",
+            "team": "DET"
+          },
+          {
+            "Friday": "FULL | Thumb",
+            "Thursday": "FULL | Thumb",
+            "Wednesday": "FULL | Thumb",
+            "full_name": "Carlton Davis",
+            "gs": null,
+            "position": "CB",
+            "team": "DET"
+          },
+          {
+            "Friday": "FULL | Shoulder",
+            "Thursday": "FULL | Shoulder",
+            "Wednesday": "FULL | Shoulder",
+            "full_name": "Sam LaPorta",
+            "gs": null,
+            "position": "TE",
+            "team": "DET"
+          },
+          {
+            "Friday": "FULL | Pectoral",
+            "Thursday": "FULL | Pectoral",
+            "Wednesday": "FULL | Pectoral",
+            "full_name": "Emmanuel Moseley",
+            "gs": "QST | Pectoral",
+            "position": "CB",
+            "team": "DET"
+          },
+          {
+            "Friday": "DNP | Hamstring",
+            "Thursday": null,
+            "Wednesday": null,
+            "full_name": "Ennis Rakestraw",
+            "gs": "OUT | Hamstring",
+            "position": "CB",
+            "team": "DET"
+          },
+          {
+            "Friday": null,
+            "Thursday": null,
+            "Wednesday": "FULL | Gameday Concussion<br>Protocol Evaluation",
+            "full_name": "Allen Robinson",
+            "gs": null,
+            "position": "WR",
+            "team": "DET"
+          },
+          {
+            "Friday": "FULL | Neck",
+            "Thursday": "FULL | Neck",
+            "Wednesday": "FULL | Neck",
+            "full_name": "Shane Zylstra",
+            "gs": null,
+            "position": "TE",
+            "team": "DET"
+          },
+          {
+            "Friday": "DNP | Resting Player",
+            "Thursday": null,
+            "Wednesday": null,
+            "full_name": "DeForest Buckner",
+            "gs": null,
+            "position": "DT",
+            "team": "IND"
+          },
+          {
+            "Friday": "FULL | Calf",
+            "Thursday": "FULL | Calf",
+            "Wednesday": null,
+            "full_name": "Josh Downs",
+            "gs": "QST | Shoulder",
+            "position": "WR",
+            "team": "IND"
+          },
+          {
+            "Friday": "DNP | Resting Player",
+            "Thursday": null,
+            "Wednesday": null,
+            "full_name": "Zaire Franklin",
+            "gs": null,
+            "position": "LB",
+            "team": "IND"
+          },
+          {
+            "Friday": "FULL | Elbow",
+            "Thursday": "FULL | Elbow",
+            "Wednesday": "FULL | Elbow",
+            "full_name": "Tyquan Lewis",
+            "gs": "QST | Elbow",
+            "position": "DE",
+            "team": "IND"
+          },
+          {
+            "Friday": "FULL | Knee",
+            "Thursday": "FULL | Knee",
+            "Wednesday": null,
+            "full_name": "Kenny Moore",
+            "gs": null,
+            "position": "CB",
+            "team": "IND"
+          },
+          {
+            "Friday": "FULL | Back",
+            "Thursday": "FULL | Back",
+            "Wednesday": "FULL | Back",
+            "full_name": "Michael Pittman",
+            "gs": "QST | Shoulder",
+            "position": "WR",
+            "team": "IND"
+          },
+          {
+            "Friday": "DNP | Knee",
+            "Thursday": "DNP | Knee",
+            "Wednesday": "DNP | Knee",
+            "full_name": "Bernhard Raimann",
+            "gs": "OUT | Knee",
+            "position": "T",
+            "team": "IND"
+          },
+          {
+            "Friday": "DNP | Resting Player/Foot",
+            "Thursday": "DNP | Resting Player/Foot",
+            "Wednesday": "DNP | Resting Player/Foot",
+            "full_name": "Braden Smith",
+            "gs": null,
+            "position": "T",
+            "team": "IND"
+          },
+          {
+            "Friday": "DNP | Resting Player",
+            "Thursday": null,
+            "Wednesday": null,
+            "full_name": "Grover Stewart",
+            "gs": null,
+            "position": "DT",
+            "team": "IND"
+          }
+        ],
+        "rows": 16,
+        "teams": [
+          "DET",
+          "IND"
+        ]
+      }
+    },
+    "updated_after_kickoff": 2,
+    "updated_at_or_after_t60": 4,
+    "updated_pre_t60": 101
+  },
+  "model_fits": 0,
+  "newly_admitted_historical_games": 0,
+  "official_release": {
+    "assets": [
+      {
+        "browser_download_url": "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2009.csv",
+        "created_at": "2022-07-26T05:22:14Z",
+        "digest": null,
+        "id": 72691247,
+        "name": "injuries_2009.csv",
+        "size": 555769,
+        "updated_at": "2022-07-26T05:22:15Z"
+      },
+      {
+        "browser_download_url": "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2010.csv",
+        "created_at": "2022-07-26T05:22:21Z",
+        "digest": null,
+        "id": 72691254,
+        "name": "injuries_2010.csv",
+        "size": 606845,
+        "updated_at": "2022-07-26T05:22:22Z"
+      },
+      {
+        "browser_download_url": "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2011.csv",
+        "created_at": "2022-07-26T05:22:28Z",
+        "digest": null,
+        "id": 72691261,
+        "name": "injuries_2011.csv",
+        "size": 675650,
+        "updated_at": "2022-07-26T05:22:28Z"
+      },
+      {
+        "browser_download_url": "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2012.csv",
+        "created_at": "2022-07-26T05:22:35Z",
+        "digest": null,
+        "id": 72691268,
+        "name": "injuries_2012.csv",
+        "size": 752393,
+        "updated_at": "2022-07-26T05:22:35Z"
+      },
+      {
+        "browser_download_url": "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2013.csv",
+        "created_at": "2022-07-26T05:22:42Z",
+        "digest": null,
+        "id": 72691277,
+        "name": "injuries_2013.csv",
+        "size": 689228,
+        "updated_at": "2022-07-26T05:22:44Z"
+      },
+      {
+        "browser_download_url": "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2014.csv",
+        "created_at": "2022-07-26T05:22:50Z",
+        "digest": null,
+        "id": 72691285,
+        "name": "injuries_2014.csv",
+        "size": 692574,
+        "updated_at": "2022-07-26T05:22:50Z"
+      },
+      {
+        "browser_download_url": "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2015.csv",
+        "created_at": "2022-07-26T05:22:56Z",
+        "digest": null,
+        "id": 72691294,
+        "name": "injuries_2015.csv",
+        "size": 715948,
+        "updated_at": "2022-07-26T05:22:56Z"
+      },
+      {
+        "browser_download_url": "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2016.csv",
+        "created_at": "2022-07-26T05:23:02Z",
+        "digest": null,
+        "id": 72691302,
+        "name": "injuries_2016.csv",
+        "size": 674980,
+        "updated_at": "2022-07-26T05:23:03Z"
+      },
+      {
+        "browser_download_url": "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2017.csv",
+        "created_at": "2022-07-26T05:23:09Z",
+        "digest": null,
+        "id": 72691309,
+        "name": "injuries_2017.csv",
+        "size": 665280,
+        "updated_at": "2022-07-26T05:23:09Z"
+      },
+      {
+        "browser_download_url": "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2018.csv",
+        "created_at": "2022-07-26T05:23:16Z",
+        "digest": null,
+        "id": 72691318,
+        "name": "injuries_2018.csv",
+        "size": 665119,
+        "updated_at": "2022-07-26T05:23:16Z"
+      },
+      {
+        "browser_download_url": "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2019.csv",
+        "created_at": "2022-07-26T05:23:22Z",
+        "digest": null,
+        "id": 72691329,
+        "name": "injuries_2019.csv",
+        "size": 700757,
+        "updated_at": "2022-07-26T05:23:22Z"
+      },
+      {
+        "browser_download_url": "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2020.csv",
+        "created_at": "2022-07-26T05:23:28Z",
+        "digest": null,
+        "id": 72691338,
+        "name": "injuries_2020.csv",
+        "size": 737474,
+        "updated_at": "2022-07-26T05:23:28Z"
+      },
+      {
+        "browser_download_url": "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2021.csv",
+        "created_at": "2022-08-31T07:37:29Z",
+        "digest": null,
+        "id": 76393253,
+        "name": "injuries_2021.csv",
+        "size": 737083,
+        "updated_at": "2022-08-31T07:37:30Z"
+      },
+      {
+        "browser_download_url": "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2022.csv",
+        "created_at": "2023-08-31T07:14:24Z",
+        "digest": null,
+        "id": 123900172,
+        "name": "injuries_2022.csv",
+        "size": 752433,
+        "updated_at": "2023-08-31T07:14:24Z"
+      },
+      {
+        "browser_download_url": "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2023.csv",
+        "created_at": "2024-09-04T07:15:42Z",
+        "digest": null,
+        "id": 190301559,
+        "name": "injuries_2023.csv",
+        "size": 738501,
+        "updated_at": "2024-09-04T07:15:42Z"
+      },
+      {
+        "browser_download_url": "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2024.csv",
+        "created_at": "2025-02-13T07:16:35Z",
+        "digest": null,
+        "id": 228754161,
+        "name": "injuries_2024.csv",
+        "size": 816989,
+        "updated_at": "2025-02-13T07:16:36Z"
+      },
+      {
+        "browser_download_url": "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2025.csv",
+        "created_at": "2026-09-07T12:23:41Z",
+        "digest": "sha256:873ca1606dd575bd01152508a243ef6b3a0f8f97b90b707217e62ee8c7ceb735",
+        "id": 548747648,
+        "name": "injuries_2025.csv",
+        "size": 696006,
+        "updated_at": "2026-09-07T12:23:41Z"
+      },
+      {
+        "browser_download_url": "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.csv",
+        "created_at": "2026-09-12T11:35:55Z",
+        "digest": "sha256:6cd666be0ac79c6b24e8a918439dcdb39daeb38b07abe9dd117019b2283e8137",
+        "id": 559160148,
+        "name": "injuries_2026.csv",
+        "size": 20419,
+        "updated_at": "2026-09-12T11:35:55Z"
+      }
+    ],
+    "created_at": "2022-01-28T02:09:45Z",
+    "immutable": false,
+    "published_at": "2022-01-28T02:13:49Z",
+    "tag": "injuries"
+  },
+  "prior_identity_qualification": {
+    "ambiguous_CIN_rows": 16,
+    "compared_REG_snap_rows": 310475,
+    "corrected_package_status": "PASS",
+    "corrected_roster_rows": 219,
+    "historical_timing_qualified": false,
+    "original_package_status": "STOP",
+    "remaining_conflicts": 0,
+    "scope": "STRICT_HISTORICAL_IDENTITY_ONLY",
+    "unresolved_REG_snap_rows": 8461
+  },
+  "prior_report_manifest_sha256": "de737274a4ec06b53160e535e71d4a081ae899b6d3ce09fc9f20aa41da26f97e",
+  "prior_report_members_reverified": 4,
+  "prior_season_admission": [
+    {
+      "expected_team_games": 512,
+      "full_report_coverage": "UNKNOWN: individual rows do not certify a complete team injury report",
+      "non_qb_all_positions": 4768,
+      "other_game_type_rows": 157,
+      "populations": {
+        "non_qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 211,
+            "MISSING": 131,
+            "Out": 725,
+            "Probable": 2531,
+            "Questionable": 1100
+          },
+          "rows": 4698,
+          "team_games_with_any_row": 511,
+          "team_games_with_timed_row": 511,
+          "team_games_without_any_row": 1,
+          "team_games_without_timed_row": 1,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 4698
+          }
+        },
+        "qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 4,
+            "Out": 42,
+            "Probable": 82,
+            "Questionable": 17
+          },
+          "rows": 145,
+          "team_games_with_any_row": 128,
+          "team_games_with_timed_row": 128,
+          "team_games_without_any_row": 384,
+          "team_games_without_timed_row": 384,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 145
+          }
+        },
+        "special_teams": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 1,
+            "MISSING": 1,
+            "Out": 8,
+            "Probable": 54,
+            "Questionable": 6
+          },
+          "rows": 70,
+          "team_games_with_any_row": 68,
+          "team_games_with_timed_row": 68,
+          "team_games_without_any_row": 444,
+          "team_games_without_timed_row": 444,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 70
+          }
+        },
+        "unknown_position": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {},
+          "rows": 0,
+          "team_games_with_any_row": 0,
+          "team_games_with_timed_row": 0,
+          "team_games_without_any_row": 512,
+          "team_games_without_timed_row": 512,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 0
+          }
+        }
+      },
+      "regular_injury_rows": 4913,
+      "season": 2013
+    },
+    {
+      "expected_team_games": 512,
+      "full_report_coverage": "UNKNOWN: individual rows do not certify a complete team injury report",
+      "non_qb_all_positions": 4771,
+      "other_game_type_rows": 166,
+      "populations": {
+        "non_qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 215,
+            "MISSING": 206,
+            "Out": 869,
+            "Probable": 2357,
+            "Questionable": 1042
+          },
+          "rows": 4689,
+          "team_games_with_any_row": 511,
+          "team_games_with_timed_row": 511,
+          "team_games_without_any_row": 1,
+          "team_games_without_timed_row": 1,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 4689
+          }
+        },
+        "qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 5,
+            "MISSING": 5,
+            "Out": 25,
+            "Probable": 81,
+            "Questionable": 25
+          },
+          "rows": 141,
+          "team_games_with_any_row": 136,
+          "team_games_with_timed_row": 136,
+          "team_games_without_any_row": 376,
+          "team_games_without_timed_row": 376,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 141
+          }
+        },
+        "special_teams": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 1,
+            "MISSING": 4,
+            "Out": 6,
+            "Probable": 56,
+            "Questionable": 15
+          },
+          "rows": 82,
+          "team_games_with_any_row": 81,
+          "team_games_with_timed_row": 81,
+          "team_games_without_any_row": 431,
+          "team_games_without_timed_row": 431,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 82
+          }
+        },
+        "unknown_position": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {},
+          "rows": 0,
+          "team_games_with_any_row": 0,
+          "team_games_with_timed_row": 0,
+          "team_games_without_any_row": 512,
+          "team_games_without_timed_row": 512,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 0
+          }
+        }
+      },
+      "regular_injury_rows": 4912,
+      "season": 2014
+    },
+    {
+      "expected_team_games": 512,
+      "full_report_coverage": "UNKNOWN: individual rows do not certify a complete team injury report",
+      "non_qb_all_positions": 4836,
+      "other_game_type_rows": 223,
+      "populations": {
+        "non_qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 228,
+            "MISSING": 147,
+            "Out": 915,
+            "Probable": 2413,
+            "Questionable": 1089
+          },
+          "rows": 4792,
+          "team_games_with_any_row": 511,
+          "team_games_with_timed_row": 511,
+          "team_games_without_any_row": 1,
+          "team_games_without_timed_row": 1,
+          "timing": {
+            "at_or_after_T60": 1,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 4791
+          }
+        },
+        "qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Out": 43,
+            "Probable": 110,
+            "Questionable": 20
+          },
+          "rows": 173,
+          "team_games_with_any_row": 148,
+          "team_games_with_timed_row": 148,
+          "team_games_without_any_row": 364,
+          "team_games_without_timed_row": 364,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 173
+          }
+        },
+        "special_teams": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 1,
+            "MISSING": 4,
+            "Out": 5,
+            "Probable": 30,
+            "Questionable": 4
+          },
+          "rows": 44,
+          "team_games_with_any_row": 40,
+          "team_games_with_timed_row": 40,
+          "team_games_without_any_row": 472,
+          "team_games_without_timed_row": 472,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 44
+          }
+        },
+        "unknown_position": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {},
+          "rows": 0,
+          "team_games_with_any_row": 0,
+          "team_games_with_timed_row": 0,
+          "team_games_without_any_row": 512,
+          "team_games_without_timed_row": 512,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 0
+          }
+        }
+      },
+      "regular_injury_rows": 5009,
+      "season": 2015
+    },
+    {
+      "expected_team_games": 512,
+      "full_report_coverage": "UNKNOWN: individual rows do not certify a complete team injury report",
+      "non_qb_all_positions": 4747,
+      "other_game_type_rows": 187,
+      "populations": {
+        "non_qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 210,
+            "MISSING": 1798,
+            "Out": 985,
+            "Questionable": 1705
+          },
+          "rows": 4698,
+          "team_games_with_any_row": 512,
+          "team_games_with_timed_row": 512,
+          "team_games_without_any_row": 0,
+          "team_games_without_timed_row": 0,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 4698
+          }
+        },
+        "qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 7,
+            "MISSING": 108,
+            "Out": 34,
+            "Questionable": 32
+          },
+          "rows": 181,
+          "team_games_with_any_row": 172,
+          "team_games_with_timed_row": 172,
+          "team_games_without_any_row": 340,
+          "team_games_without_timed_row": 340,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 181
+          }
+        },
+        "special_teams": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 1,
+            "MISSING": 28,
+            "Out": 6,
+            "Questionable": 14
+          },
+          "rows": 49,
+          "team_games_with_any_row": 48,
+          "team_games_with_timed_row": 48,
+          "team_games_without_any_row": 464,
+          "team_games_without_timed_row": 464,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 49
+          }
+        },
+        "unknown_position": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {},
+          "rows": 0,
+          "team_games_with_any_row": 0,
+          "team_games_with_timed_row": 0,
+          "team_games_without_any_row": 512,
+          "team_games_without_timed_row": 512,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 0
+          }
+        }
+      },
+      "regular_injury_rows": 4928,
+      "season": 2016
+    },
+    {
+      "expected_team_games": 512,
+      "full_report_coverage": "UNKNOWN: individual rows do not certify a complete team injury report",
+      "non_qb_all_positions": 4789,
+      "other_game_type_rows": 155,
+      "populations": {
+        "non_qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 165,
+            "MISSING": 2283,
+            "Out": 855,
+            "Questionable": 1440
+          },
+          "rows": 4743,
+          "team_games_with_any_row": 511,
+          "team_games_with_timed_row": 511,
+          "team_games_without_any_row": 1,
+          "team_games_without_timed_row": 1,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 4743
+          }
+        },
+        "qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 4,
+            "MISSING": 101,
+            "Out": 32,
+            "Questionable": 23
+          },
+          "rows": 160,
+          "team_games_with_any_row": 150,
+          "team_games_with_timed_row": 150,
+          "team_games_without_any_row": 362,
+          "team_games_without_timed_row": 362,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 160
+          }
+        },
+        "special_teams": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "MISSING": 28,
+            "Out": 5,
+            "Questionable": 13
+          },
+          "rows": 46,
+          "team_games_with_any_row": 46,
+          "team_games_with_timed_row": 46,
+          "team_games_without_any_row": 466,
+          "team_games_without_timed_row": 466,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 46
+          }
+        },
+        "unknown_position": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {},
+          "rows": 0,
+          "team_games_with_any_row": 0,
+          "team_games_with_timed_row": 0,
+          "team_games_without_any_row": 512,
+          "team_games_without_timed_row": 512,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 0
+          }
+        }
+      },
+      "regular_injury_rows": 4949,
+      "season": 2017
+    },
+    {
+      "expected_team_games": 512,
+      "full_report_coverage": "UNKNOWN: individual rows do not certify a complete team injury report",
+      "non_qb_all_positions": 4792,
+      "other_game_type_rows": 172,
+      "populations": {
+        "non_qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 163,
+            "MISSING": 2437,
+            "Out": 871,
+            "Questionable": 1249
+          },
+          "rows": 4720,
+          "team_games_with_any_row": 512,
+          "team_games_with_timed_row": 512,
+          "team_games_without_any_row": 0,
+          "team_games_without_timed_row": 0,
+          "timing": {
+            "at_or_after_T60": 2,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 4718
+          }
+        },
+        "qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 6,
+            "MISSING": 118,
+            "Out": 23,
+            "Questionable": 22
+          },
+          "rows": 169,
+          "team_games_with_any_row": 155,
+          "team_games_with_timed_row": 155,
+          "team_games_without_any_row": 357,
+          "team_games_without_timed_row": 357,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 169
+          }
+        },
+        "special_teams": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 1,
+            "MISSING": 41,
+            "Out": 12,
+            "Questionable": 18
+          },
+          "rows": 72,
+          "team_games_with_any_row": 67,
+          "team_games_with_timed_row": 67,
+          "team_games_without_any_row": 445,
+          "team_games_without_timed_row": 445,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 72
+          }
+        },
+        "unknown_position": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {},
+          "rows": 0,
+          "team_games_with_any_row": 0,
+          "team_games_with_timed_row": 0,
+          "team_games_without_any_row": 512,
+          "team_games_without_timed_row": 512,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 0
+          }
+        }
+      },
+      "regular_injury_rows": 4961,
+      "season": 2018
+    },
+    {
+      "expected_team_games": 512,
+      "full_report_coverage": "UNKNOWN: individual rows do not certify a complete team injury report",
+      "non_qb_all_positions": 5038,
+      "other_game_type_rows": 190,
+      "populations": {
+        "non_qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 161,
+            "MISSING": 2595,
+            "Out": 983,
+            "Questionable": 1230
+          },
+          "rows": 4969,
+          "team_games_with_any_row": 512,
+          "team_games_with_timed_row": 512,
+          "team_games_without_any_row": 0,
+          "team_games_without_timed_row": 0,
+          "timing": {
+            "at_or_after_T60": 5,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 4964
+          }
+        },
+        "qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 1,
+            "MISSING": 108,
+            "Out": 33,
+            "Questionable": 22
+          },
+          "rows": 164,
+          "team_games_with_any_row": 154,
+          "team_games_with_timed_row": 154,
+          "team_games_without_any_row": 358,
+          "team_games_without_timed_row": 358,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 164
+          }
+        },
+        "special_teams": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 6,
+            "MISSING": 39,
+            "Out": 6,
+            "Questionable": 18
+          },
+          "rows": 69,
+          "team_games_with_any_row": 66,
+          "team_games_with_timed_row": 66,
+          "team_games_without_any_row": 446,
+          "team_games_without_timed_row": 446,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 69
+          }
+        },
+        "unknown_position": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {},
+          "rows": 0,
+          "team_games_with_any_row": 0,
+          "team_games_with_timed_row": 0,
+          "team_games_without_any_row": 512,
+          "team_games_without_timed_row": 512,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 0
+          }
+        }
+      },
+      "regular_injury_rows": 5202,
+      "season": 2019
+    },
+    {
+      "expected_team_games": 512,
+      "full_report_coverage": "UNKNOWN: individual rows do not certify a complete team injury report",
+      "non_qb_all_positions": 5260,
+      "other_game_type_rows": 247,
+      "populations": {
+        "non_qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 147,
+            "MISSING": 2828,
+            "Out": 850,
+            "Questionable": 1349
+          },
+          "rows": 5174,
+          "team_games_with_any_row": 511,
+          "team_games_with_timed_row": 510,
+          "team_games_without_any_row": 1,
+          "team_games_without_timed_row": 2,
+          "timing": {
+            "at_or_after_T60": 13,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 5161
+          }
+        },
+        "qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 5,
+            "MISSING": 92,
+            "Out": 24,
+            "Questionable": 33
+          },
+          "rows": 154,
+          "team_games_with_any_row": 140,
+          "team_games_with_timed_row": 140,
+          "team_games_without_any_row": 372,
+          "team_games_without_timed_row": 372,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 154
+          }
+        },
+        "special_teams": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 3,
+            "MISSING": 41,
+            "Out": 9,
+            "Questionable": 33
+          },
+          "rows": 86,
+          "team_games_with_any_row": 79,
+          "team_games_with_timed_row": 79,
+          "team_games_without_any_row": 433,
+          "team_games_without_timed_row": 433,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 86
+          }
+        },
+        "unknown_position": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {},
+          "rows": 0,
+          "team_games_with_any_row": 0,
+          "team_games_with_timed_row": 0,
+          "team_games_without_any_row": 512,
+          "team_games_without_timed_row": 512,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 0
+          }
+        }
+      },
+      "regular_injury_rows": 5414,
+      "season": 2020
+    },
+    {
+      "expected_team_games": 544,
+      "full_report_coverage": "UNKNOWN: individual rows do not certify a complete team injury report",
+      "non_qb_all_positions": 5141,
+      "other_game_type_rows": 239,
+      "populations": {
+        "non_qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 152,
+            "MISSING": 2679,
+            "Out": 833,
+            "Questionable": 1401
+          },
+          "rows": 5065,
+          "team_games_with_any_row": 544,
+          "team_games_with_timed_row": 544,
+          "team_games_without_any_row": 0,
+          "team_games_without_timed_row": 0,
+          "timing": {
+            "at_or_after_T60": 3,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 5062
+          }
+        },
+        "qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 7,
+            "MISSING": 130,
+            "Out": 39,
+            "Questionable": 31
+          },
+          "rows": 207,
+          "team_games_with_any_row": 185,
+          "team_games_with_timed_row": 185,
+          "team_games_without_any_row": 359,
+          "team_games_without_timed_row": 359,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 207
+          }
+        },
+        "special_teams": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "MISSING": 45,
+            "Out": 7,
+            "Questionable": 24
+          },
+          "rows": 76,
+          "team_games_with_any_row": 70,
+          "team_games_with_timed_row": 70,
+          "team_games_without_any_row": 474,
+          "team_games_without_timed_row": 474,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 76
+          }
+        },
+        "unknown_position": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {},
+          "rows": 0,
+          "team_games_with_any_row": 0,
+          "team_games_with_timed_row": 0,
+          "team_games_without_any_row": 544,
+          "team_games_without_timed_row": 544,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 0
+          }
+        }
+      },
+      "regular_injury_rows": 5348,
+      "season": 2021
+    },
+    {
+      "expected_team_games": 542,
+      "full_report_coverage": "UNKNOWN: individual rows do not certify a complete team injury report",
+      "non_qb_all_positions": 5253,
+      "other_game_type_rows": 232,
+      "populations": {
+        "non_qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 141,
+            "MISSING": 2627,
+            "Out": 1002,
+            "Questionable": 1401
+          },
+          "rows": 5171,
+          "team_games_with_any_row": 539,
+          "team_games_with_timed_row": 539,
+          "team_games_without_any_row": 3,
+          "team_games_without_timed_row": 3,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 16,
+            "valid_timestamp": 5155
+          }
+        },
+        "qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 9,
+            "MISSING": 102,
+            "Out": 43,
+            "Questionable": 43
+          },
+          "rows": 197,
+          "team_games_with_any_row": 171,
+          "team_games_with_timed_row": 171,
+          "team_games_without_any_row": 371,
+          "team_games_without_timed_row": 371,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 1,
+            "valid_timestamp": 196
+          }
+        },
+        "special_teams": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 2,
+            "MISSING": 48,
+            "Out": 13,
+            "Questionable": 19
+          },
+          "rows": 82,
+          "team_games_with_any_row": 76,
+          "team_games_with_timed_row": 76,
+          "team_games_without_any_row": 466,
+          "team_games_without_timed_row": 466,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 82
+          }
+        },
+        "unknown_position": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {},
+          "rows": 0,
+          "team_games_with_any_row": 0,
+          "team_games_with_timed_row": 0,
+          "team_games_without_any_row": 542,
+          "team_games_without_timed_row": 542,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 0
+          }
+        }
+      },
+      "regular_injury_rows": 5450,
+      "season": 2022
+    },
+    {
+      "expected_team_games": 544,
+      "full_report_coverage": "UNKNOWN: individual rows do not certify a complete team injury report",
+      "non_qb_all_positions": 5260,
+      "other_game_type_rows": 148,
+      "populations": {
+        "non_qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 133,
+            "MISSING": 2624,
+            "Out": 939,
+            "Questionable": 1494
+          },
+          "rows": 5190,
+          "team_games_with_any_row": 543,
+          "team_games_with_timed_row": 543,
+          "team_games_without_any_row": 1,
+          "team_games_without_timed_row": 1,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 5190
+          }
+        },
+        "qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 6,
+            "MISSING": 110,
+            "Out": 35,
+            "Questionable": 40
+          },
+          "rows": 191,
+          "team_games_with_any_row": 167,
+          "team_games_with_timed_row": 167,
+          "team_games_without_any_row": 377,
+          "team_games_without_timed_row": 377,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 191
+          }
+        },
+        "special_teams": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 2,
+            "MISSING": 47,
+            "Out": 6,
+            "Questionable": 15
+          },
+          "rows": 70,
+          "team_games_with_any_row": 65,
+          "team_games_with_timed_row": 65,
+          "team_games_without_any_row": 479,
+          "team_games_without_timed_row": 479,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 70
+          }
+        },
+        "unknown_position": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {},
+          "rows": 0,
+          "team_games_with_any_row": 0,
+          "team_games_with_timed_row": 0,
+          "team_games_without_any_row": 544,
+          "team_games_without_timed_row": 544,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 0
+          }
+        }
+      },
+      "regular_injury_rows": 5451,
+      "season": 2023
+    },
+    {
+      "expected_team_games": 544,
+      "full_report_coverage": "UNKNOWN: individual rows do not certify a complete team injury report",
+      "non_qb_all_positions": 5766,
+      "other_game_type_rows": 261,
+      "populations": {
+        "non_qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 2
+          },
+          "report_status_counts": {
+            "Doubtful": 182,
+            "MISSING": 3025,
+            "Note": 5,
+            "Out": 1057,
+            "Questionable": 1398
+          },
+          "rows": 5667,
+          "team_games_with_any_row": 543,
+          "team_games_with_timed_row": 543,
+          "team_games_without_any_row": 1,
+          "team_games_without_timed_row": 1,
+          "timing": {
+            "at_or_after_T60": 1,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 5666
+          }
+        },
+        "qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 8,
+            "MISSING": 126,
+            "Note": 1,
+            "Out": 14,
+            "Questionable": 39
+          },
+          "rows": 188,
+          "team_games_with_any_row": 170,
+          "team_games_with_timed_row": 170,
+          "team_games_without_any_row": 374,
+          "team_games_without_timed_row": 374,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 188
+          }
+        },
+        "special_teams": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "MISSING": 40,
+            "Out": 20,
+            "Questionable": 27
+          },
+          "rows": 87,
+          "team_games_with_any_row": 79,
+          "team_games_with_timed_row": 79,
+          "team_games_without_any_row": 465,
+          "team_games_without_timed_row": 465,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 87
+          }
+        },
+        "unknown_position": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "MISSING": 12
+          },
+          "rows": 12,
+          "team_games_with_any_row": 9,
+          "team_games_with_timed_row": 9,
+          "team_games_without_any_row": 535,
+          "team_games_without_timed_row": 535,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 12
+          }
+        }
+      },
+      "regular_injury_rows": 5954,
+      "season": 2024
+    },
+    {
+      "expected_team_games": 544,
+      "full_report_coverage": "UNKNOWN: individual rows do not certify a complete team injury report",
+      "non_qb_all_positions": 5559,
+      "other_game_type_rows": 285,
+      "populations": {
+        "non_qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 101,
+            "MISSING": 2926,
+            "Out": 1284,
+            "Questionable": 1166
+          },
+          "rows": 5477,
+          "team_games_with_any_row": 544,
+          "team_games_with_timed_row": 0,
+          "team_games_without_any_row": 0,
+          "team_games_without_timed_row": 544,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 5477,
+            "unmatched_game": 0,
+            "valid_timestamp": 0
+          }
+        },
+        "qb": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 2,
+            "MISSING": 134,
+            "Out": 54,
+            "Questionable": 34
+          },
+          "rows": 224,
+          "team_games_with_any_row": 193,
+          "team_games_with_timed_row": 0,
+          "team_games_without_any_row": 351,
+          "team_games_without_timed_row": 544,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 224,
+            "unmatched_game": 0,
+            "valid_timestamp": 0
+          }
+        },
+        "special_teams": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {
+            "Doubtful": 2,
+            "MISSING": 47,
+            "Out": 18,
+            "Questionable": 15
+          },
+          "rows": 82,
+          "team_games_with_any_row": 76,
+          "team_games_with_timed_row": 0,
+          "team_games_without_any_row": 468,
+          "team_games_without_timed_row": 544,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 82,
+            "unmatched_game": 0,
+            "valid_timestamp": 0
+          }
+        },
+        "unknown_position": {
+          "keys": {
+            "conflicting_same_timestamp_keys": 0,
+            "conflicts": [],
+            "duplicate_exact_rows": 0,
+            "missing_gsis_rows": 0,
+            "multiple_revision_keys": 0
+          },
+          "report_status_counts": {},
+          "rows": 0,
+          "team_games_with_any_row": 0,
+          "team_games_with_timed_row": 0,
+          "team_games_without_any_row": 544,
+          "team_games_without_timed_row": 544,
+          "timing": {
+            "at_or_after_T60": 0,
+            "invalid_date_modified": 0,
+            "missing_date_modified": 0,
+            "unmatched_game": 0,
+            "valid_timestamp": 0
+          }
+        }
+      },
+      "regular_injury_rows": 5783,
+      "season": 2025
+    }
+  ],
+  "prior_verified_inputs_reused": 63,
+  "source_receipts": {
+    "availability": {
+      "bytes": 22664,
+      "completed_at": "2026-09-13T05:02:50.819055+00:00",
+      "error": null,
+      "requested_url": "https://nflreadr.nflverse.com/articles/nflverse_data_schedule.html",
+      "sha256": "f59c125c418dbc44f77b58e0fe401e0b8014b174a219387aa14173b417ca0cad",
+      "started_at": "2026-09-13T05:02:50.644793+00:00",
+      "status": 200
+    },
+    "dictionary": {
+      "bytes": 8442,
+      "completed_at": "2026-09-13T05:02:50.802549+00:00",
+      "error": null,
+      "requested_url": "https://nflreadr.nflverse.com/articles/dictionary_injuries.html",
+      "sha256": "599bf1dd10e1269dcf863acea4024d2548e61c4241f7ca9a854dac9437d4435a",
+      "started_at": "2026-09-13T05:02:50.644463+00:00",
+      "status": 200
+    },
+    "injuries-2025-current": {
+      "bytes": 696006,
+      "completed_at": "2026-09-13T05:03:40.539722+00:00",
+      "error": null,
+      "requested_url": "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2025.csv",
+      "sha256": "873ca1606dd575bd01152508a243ef6b3a0f8f97b90b707217e62ee8c7ceb735",
+      "started_at": "2026-09-13T05:03:40.211371+00:00",
+      "status": 200
+    },
+    "injuries-release": {
+      "bytes": 114098,
+      "completed_at": "2026-09-13T05:02:51.095758+00:00",
+      "error": null,
+      "requested_url": "https://api.github.com/repos/nflverse/nflverse-data/releases/tags/injuries",
+      "sha256": "781b957238db2c75f84967dda66f693f62418721738b8acd9d0c73330ea439d5",
+      "started_at": "2026-09-13T05:02:50.803602+00:00",
+      "status": 200
+    },
+    "injurybot-auto": {
+      "bytes": 2971,
+      "completed_at": "2026-09-13T05:03:40.521611+00:00",
+      "error": null,
+      "requested_url": "https://raw.githubusercontent.com/nflverse/nflverse-injurybot/a6ea8d1586012185d1eb79b4b1cb4667a5ed63d0/auto/update_injuries.R",
+      "sha256": "25c69744bf649157005bf1498a4d8c21f66a9f4b2e93d0ffcab48ac84969dd53",
+      "started_at": "2026-09-13T05:03:40.396898+00:00",
+      "status": 200
+    },
+    "injurybot-fetch": {
+      "bytes": 1744,
+      "completed_at": "2026-09-13T05:03:40.411310+00:00",
+      "error": null,
+      "requested_url": "https://raw.githubusercontent.com/nflverse/nflverse-injurybot/a6ea8d1586012185d1eb79b4b1cb4667a5ed63d0/R/fetch.R",
+      "sha256": "3a78f7ae653af7fc0b8a078c04d833971ba9f0b442e3efde53e5cdb8b9edcbb9",
+      "started_at": "2026-09-13T05:03:40.211733+00:00",
+      "status": 200
+    },
+    "injurybot-game": {
+      "bytes": 3041,
+      "completed_at": "2026-09-13T05:03:40.395832+00:00",
+      "error": null,
+      "requested_url": "https://raw.githubusercontent.com/nflverse/nflverse-injurybot/a6ea8d1586012185d1eb79b4b1cb4667a5ed63d0/R/game.R",
+      "sha256": "258b2ae3374ba2fcc307c732e6dbe5a541a7f4dec5cef24fc551c85eb6ce1e31",
+      "started_at": "2026-09-13T05:03:40.212348+00:00",
+      "status": 200
+    },
+    "injurybot-release": {
+      "bytes": 163057,
+      "completed_at": "2026-09-13T05:02:51.141427+00:00",
+      "error": null,
+      "requested_url": "https://api.github.com/repos/nflverse/nflverse-injurybot/releases/tags/injuries_2024",
+      "sha256": "0d0a5a9712768464aab064d379b542fe953ab737e147da08ebfb20ad6b3cdd6a",
+      "started_at": "2026-09-13T05:02:50.820614+00:00",
+      "status": 200
+    },
+    "injurybot-sample-early": {
+      "bytes": 720,
+      "completed_at": "2026-09-13T05:03:40.732600+00:00",
+      "error": null,
+      "requested_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_12_ARI_SEA.rds",
+      "sha256": "c92968474006600af18e99d7655eec98387ac7d4aa9472f59d3504cbb3e320cc",
+      "started_at": "2026-09-13T05:03:40.412492+00:00",
+      "status": 200
+    },
+    "injurybot-sample-late": {
+      "bytes": 652,
+      "completed_at": "2026-09-13T05:03:40.772885+00:00",
+      "error": null,
+      "requested_url": "https://github.com/nflverse/nflverse-injurybot/releases/download/injuries_2024/2024_12_DET_IND.rds",
+      "sha256": "87d709dbfe0b57976cf523c68aa0b3a91d7f3335d77ff5c7f96936ecae6c8e1d",
+      "started_at": "2026-09-13T05:03:40.522679+00:00",
+      "status": 200
+    },
+    "injurybot-tree": {
+      "bytes": 5206,
+      "completed_at": "2026-09-13T05:02:51.082900+00:00",
+      "error": null,
+      "requested_url": "https://api.github.com/repos/nflverse/nflverse-injurybot/git/trees/main?recursive=1",
+      "sha256": "413fccaa5867c972d2f6d9f29f46bd9ed7123451f3e38b3463439c314cdd516d",
+      "started_at": "2026-09-13T05:02:50.820938+00:00",
+      "status": 200
+    },
+    "loader": {
+      "bytes": 1439,
+      "completed_at": "2026-09-13T05:02:50.818985+00:00",
+      "error": null,
+      "requested_url": "https://raw.githubusercontent.com/nflverse/nflreadr/main/R/load_injuries.R",
+      "sha256": "abcb22de7eb3c258267e29245bfbf17e83de57c5fe6284042032c3053664a5a6",
+      "started_at": "2026-09-13T05:02:50.645356+00:00",
+      "status": 200
+    }
+  },
+  "status": "BLOCKED FOR FITTING; HISTORICAL SOURCE ADMISSION NOT ESTABLISHED"
+}

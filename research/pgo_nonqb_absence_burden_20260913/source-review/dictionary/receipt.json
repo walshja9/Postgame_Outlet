@@ -1,0 +1,101 @@
+{
+  "requested_url": "https://nflreadr.nflverse.com/articles/dictionary_injuries.html",
+  "started_at": "2026-09-13T05:02:50.644463+00:00",
+  "status": 200,
+  "headers": [
+    [
+      "Connection",
+      "close"
+    ],
+    [
+      "Content-Length",
+      "8442"
+    ],
+    [
+      "Server",
+      "GitHub.com"
+    ],
+    [
+      "Content-Type",
+      "text/html; charset=utf-8"
+    ],
+    [
+      "Last-Modified",
+      "Mon, 07 Sep 2026 17:13:17 GMT"
+    ],
+    [
+      "Access-Control-Allow-Origin",
+      "*"
+    ],
+    [
+      "ETag",
+      "\"6a9ef0ad-20fa\""
+    ],
+    [
+      "expires",
+      "Sun, 13 Sep 2026 05:12:50 GMT"
+    ],
+    [
+      "Cache-Control",
+      "max-age=600"
+    ],
+    [
+      "x-proxy-cache",
+      "MISS"
+    ],
+    [
+      "X-GitHub-Request-Id",
+      "8AA0:3010BD:BF30D4:F60B49:6AA62E79"
+    ],
+    [
+      "x-github-edge-region",
+      "iad"
+    ],
+    [
+      "Accept-Ranges",
+      "bytes"
+    ],
+    [
+      "Age",
+      "0"
+    ],
+    [
+      "Date",
+      "Sun, 13 Sep 2026 05:02:50 GMT"
+    ],
+    [
+      "Via",
+      "1.1 varnish"
+    ],
+    [
+      "X-Served-By",
+      "cache-bos-kbos510047-BOS"
+    ],
+    [
+      "X-Cache",
+      "MISS"
+    ],
+    [
+      "X-Cache-Hits",
+      "0"
+    ],
+    [
+      "X-Timer",
+      "S1789275771.818488,VS0,VE25"
+    ],
+    [
+      "Vary",
+      "Accept-Encoding"
+    ],
+    [
+      "X-Fastly-Request-ID",
+      "ca83e5ca2c5b43ea284881d876e052a917a1667a"
+    ]
+  ],
+  "redirects": [],
+  "error": null,
+  "final_url": "https://nflreadr.nflverse.com/articles/dictionary_injuries.html",
+  "completed_at": "2026-09-13T05:02:50.802549+00:00",
+  "bytes": 8442,
+  "sha256": "599bf1dd10e1269dcf863acea4024d2548e61c4241f7ca9a854dac9437d4435a"
+}

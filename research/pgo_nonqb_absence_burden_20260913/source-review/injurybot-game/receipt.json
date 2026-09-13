@@ -1,0 +1,113 @@
+{
+  "requested_url": "https://raw.githubusercontent.com/nflverse/nflverse-injurybot/a6ea8d1586012185d1eb79b4b1cb4667a5ed63d0/R/game.R",
+  "started_at": "2026-09-13T05:03:40.212348+00:00",
+  "status": 200,
+  "headers": [
+    [
+      "Connection",
+      "close"
+    ],
+    [
+      "Content-Length",
+      "3041"
+    ],
+    [
+      "Cache-Control",
+      "max-age=300"
+    ],
+    [
+      "Content-Security-Policy",
+      "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+    ],
+    [
+      "Content-Type",
+      "text/plain; charset=utf-8"
+    ],
+    [
+      "ETag",
+      "\"5aa6606b5621cc6790e1fd5a08ed359377d29a47f939203cd54a344dbfc8a4c1\""
+    ],
+    [
+      "Strict-Transport-Security",
+      "max-age=31536000"
+    ],
+    [
+      "X-Content-Type-Options",
+      "nosniff"
+    ],
+    [
+      "X-Frame-Options",
+      "deny"
+    ],
+    [
+      "X-XSS-Protection",
+      "1; mode=block"
+    ],
+    [
+      "X-GitHub-Request-Id",
+      "5754:1D0768:17D0D3:23E4F8:6AA62EAB"
+    ],
+    [
+      "x-github-edge-region",
+      "iad"
+    ],
+    [
+      "Accept-Ranges",
+      "bytes"
+    ],
+    [
+      "Date",
+      "Sun, 13 Sep 2026 05:03:40 GMT"
+    ],
+    [
+      "Via",
+      "1.1 varnish"
+    ],
+    [
+      "X-Served-By",
+      "cache-bos-kbos510057-BOS"
+    ],
+    [
+      "X-Cache",
+      "MISS"
+    ],
+    [
+      "X-Cache-Hits",
+      "0"
+    ],
+    [
+      "X-Timer",
+      "S1789275820.340432,VS0,VE95"
+    ],
+    [
+      "Vary",
+      "Authorization,Accept-Encoding"
+    ],
+    [
+      "Access-Control-Allow-Origin",
+      "*"
+    ],
+    [
+      "Cross-Origin-Resource-Policy",
+      "cross-origin"
+    ],
+    [
+      "X-Fastly-Request-ID",
+      "7fcf86597f6f167f5cc63e568cc31629cabcec4a"
+    ],
+    [
+      "Expires",
+      "Sun, 13 Sep 2026 05:08:40 GMT"
+    ],
+    [
+      "Source-Age",
+      "0"
+    ]
+  ],
+  "redirects": [],
+  "error": null,
+  "final_url": "https://raw.githubusercontent.com/nflverse/nflverse-injurybot/a6ea8d1586012185d1eb79b4b1cb4667a5ed63d0/R/game.R",
+  "completed_at": "2026-09-13T05:03:40.395832+00:00",
+  "bytes": 3041,
+  "sha256": "258b2ae3374ba2fcc307c732e6dbe5a541a7f4dec5cef24fc551c85eb6ce1e31"
+}

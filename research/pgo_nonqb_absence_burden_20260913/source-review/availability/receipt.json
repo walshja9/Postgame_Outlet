@@ -1,0 +1,101 @@
+{
+  "requested_url": "https://nflreadr.nflverse.com/articles/nflverse_data_schedule.html",
+  "started_at": "2026-09-13T05:02:50.644793+00:00",
+  "status": 200,
+  "headers": [
+    [
+      "Connection",
+      "close"
+    ],
+    [
+      "Content-Length",
+      "22664"
+    ],
+    [
+      "Server",
+      "GitHub.com"
+    ],
+    [
+      "Content-Type",
+      "text/html; charset=utf-8"
+    ],
+    [
+      "Last-Modified",
+      "Mon, 07 Sep 2026 17:13:17 GMT"
+    ],
+    [
+      "Access-Control-Allow-Origin",
+      "*"
+    ],
+    [
+      "ETag",
+      "\"6a9ef0ad-5888\""
+    ],
+    [
+      "expires",
+      "Sun, 13 Sep 2026 05:12:50 GMT"
+    ],
+    [
+      "Cache-Control",
+      "max-age=600"
+    ],
+    [
+      "x-proxy-cache",
+      "MISS"
+    ],
+    [
+      "X-GitHub-Request-Id",
+      "D1E6:360FE3:C70886:FDE053:6AA62E79"
+    ],
+    [
+      "x-github-edge-region",
+      "iad"
+    ],
+    [
+      "Accept-Ranges",
+      "bytes"
+    ],
+    [
+      "Age",
+      "0"
+    ],
+    [
+      "Date",
+      "Sun, 13 Sep 2026 05:02:50 GMT"
+    ],
+    [
+      "Via",
+      "1.1 varnish"
+    ],
+    [
+      "X-Served-By",
+      "cache-bos-kbos510051-BOS"
+    ],
+    [
+      "X-Cache",
+      "MISS"
+    ],
+    [
+      "X-Cache-Hits",
+      "0"
+    ],
+    [
+      "X-Timer",
+      "S1789275771.817356,VS0,VE25"
+    ],
+    [
+      "Vary",
+      "Accept-Encoding"
+    ],
+    [
+      "X-Fastly-Request-ID",
+      "a73cedd4791c20b3a60c86324f8a2ccd97eee77c"
+    ]
+  ],
+  "redirects": [],
+  "error": null,
+  "final_url": "https://nflreadr.nflverse.com/articles/nflverse_data_schedule.html",
+  "completed_at": "2026-09-13T05:02:50.819055+00:00",
+  "bytes": 22664,
+  "sha256": "f59c125c418dbc44f77b58e0fe401e0b8014b174a219387aa14173b417ca0cad"
+}

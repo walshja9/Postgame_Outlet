@@ -1,0 +1,14 @@
+{
+  "checked_at": "2026-09-13T05:28:17.651751+00:00",
+  "baseline_commit": "70c54db3de2e4b31dfb4c3b498a7eb0250a84ebb",
+  "existing_tracked_paths": 3747,
+  "byte_pinned_existing_files_compared_to_exact_git_blob": 3441,
+  "byte_mismatches": 0,
+  "existing_tracked_changes": [
+    ".gitattributes"
+  ],
+  "change_explanation": "Only new study byte-preservation rule in .gitattributes. App sources, current state, old studies, forecasts and published files unchanged.",
+  "protected_path_digest_sha256": "52664e8ba89c48f76f1b877217bfe3cb0b4c37e7b573e43b453d6b235ef1b1da",
+  "source_fits": 0,
+  "production_writes": 0
+}

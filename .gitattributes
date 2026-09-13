@@ -106,3 +106,6 @@ pgo_player_identity.py text eol=lf
 tests/test_pgo_player_identity.py text eol=lf
 tests/test_pgo_season_experiments.py text eol=lf
 tests/test_pgo_experiment_view.py text eol=lf
+research/pgo_nonqb_absence_burden_20260913/** -text whitespace=cr-at-eol
+research/pgo_nonqb_absence_burden_20260913/**/*.log -whitespace
+research/pgo_nonqb_absence_burden_20260913/**/response.bin -whitespace

@@ -1,0 +1,96 @@
+test_missing_or_unrecognized_status_cannot_become_known_zero (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_missing_or_unrecognized_status_cannot_become_known_zero) ... 
+  test_missing_or_unrecognized_status_cannot_become_known_zero (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_missing_or_unrecognized_status_cannot_become_known_zero) (status=None) ... FAIL
+  test_missing_or_unrecognized_status_cannot_become_known_zero (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_missing_or_unrecognized_status_cannot_become_known_zero) (status='') ... FAIL
+  test_missing_or_unrecognized_status_cannot_become_known_zero (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_missing_or_unrecognized_status_cannot_become_known_zero) (status='Out') ... FAIL
+  test_missing_or_unrecognized_status_cannot_become_known_zero (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_missing_or_unrecognized_status_cannot_become_known_zero) (status=' OUT') ... FAIL
+  test_missing_or_unrecognized_status_cannot_become_known_zero (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_missing_or_unrecognized_status_cannot_become_known_zero) (status='OUT ') ... FAIL
+  test_missing_or_unrecognized_status_cannot_become_known_zero (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_missing_or_unrecognized_status_cannot_become_known_zero) (status='healthy') ... FAIL
+  test_missing_or_unrecognized_status_cannot_become_known_zero (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_missing_or_unrecognized_status_cannot_become_known_zero) (status=True) ... FAIL
+  test_missing_or_unrecognized_status_cannot_become_known_zero (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_missing_or_unrecognized_status_cannot_become_known_zero) (status=[]) ... FAIL
+test_missing_or_unrecognized_status_cannot_become_known_zero (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_missing_or_unrecognized_status_cannot_become_known_zero) ... FAIL
+
+======================================================================
+FAIL: test_missing_or_unrecognized_status_cannot_become_known_zero (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_missing_or_unrecognized_status_cannot_become_known_zero) (status=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\CodexWorktrees\Postgame_Outlet-publication-20260909\research\pgo_nonqb_absence_burden_20260913\test_features.py", line 122, in test_missing_or_unrecognized_status_cannot_become_known_zero
+    with self.subTest(status=status), self.assertRaises(ValueError):
+                                      ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_missing_or_unrecognized_status_cannot_become_known_zero (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_missing_or_unrecognized_status_cannot_become_known_zero) (status='')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\CodexWorktrees\Postgame_Outlet-publication-20260909\research\pgo_nonqb_absence_burden_20260913\test_features.py", line 122, in test_missing_or_unrecognized_status_cannot_become_known_zero
+    with self.subTest(status=status), self.assertRaises(ValueError):
+                                      ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_missing_or_unrecognized_status_cannot_become_known_zero (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_missing_or_unrecognized_status_cannot_become_known_zero) (status='Out')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\CodexWorktrees\Postgame_Outlet-publication-20260909\research\pgo_nonqb_absence_burden_20260913\test_features.py", line 122, in test_missing_or_unrecognized_status_cannot_become_known_zero
+    with self.subTest(status=status), self.assertRaises(ValueError):
+                                      ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_missing_or_unrecognized_status_cannot_become_known_zero (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_missing_or_unrecognized_status_cannot_become_known_zero) (status=' OUT')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\CodexWorktrees\Postgame_Outlet-publication-20260909\research\pgo_nonqb_absence_burden_20260913\test_features.py", line 122, in test_missing_or_unrecognized_status_cannot_become_known_zero
+    with self.subTest(status=status), self.assertRaises(ValueError):
+                                      ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_missing_or_unrecognized_status_cannot_become_known_zero (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_missing_or_unrecognized_status_cannot_become_known_zero) (status='OUT ')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\CodexWorktrees\Postgame_Outlet-publication-20260909\research\pgo_nonqb_absence_burden_20260913\test_features.py", line 122, in test_missing_or_unrecognized_status_cannot_become_known_zero
+    with self.subTest(status=status), self.assertRaises(ValueError):
+                                      ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_missing_or_unrecognized_status_cannot_become_known_zero (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_missing_or_unrecognized_status_cannot_become_known_zero) (status='healthy')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\CodexWorktrees\Postgame_Outlet-publication-20260909\research\pgo_nonqb_absence_burden_20260913\test_features.py", line 122, in test_missing_or_unrecognized_status_cannot_become_known_zero
+    with self.subTest(status=status), self.assertRaises(ValueError):
+                                      ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_missing_or_unrecognized_status_cannot_become_known_zero (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_missing_or_unrecognized_status_cannot_become_known_zero) (status=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\CodexWorktrees\Postgame_Outlet-publication-20260909\research\pgo_nonqb_absence_burden_20260913\test_features.py", line 122, in test_missing_or_unrecognized_status_cannot_become_known_zero
+    with self.subTest(status=status), self.assertRaises(ValueError):
+                                      ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_missing_or_unrecognized_status_cannot_become_known_zero (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_missing_or_unrecognized_status_cannot_become_known_zero) (status=[])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\CodexWorktrees\Postgame_Outlet-publication-20260909\research\pgo_nonqb_absence_burden_20260913\test_features.py", line 122, in test_missing_or_unrecognized_status_cannot_become_known_zero
+    with self.subTest(status=status), self.assertRaises(ValueError):
+                                      ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_missing_or_unrecognized_status_cannot_become_known_zero (research.pgo_nonqb_absence_burden_20260913.test_features.FeatureTests.test_missing_or_unrecognized_status_cannot_become_known_zero)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\CodexWorktrees\Postgame_Outlet-publication-20260909\research\pgo_nonqb_absence_burden_20260913\test_features.py", line 126, in test_missing_or_unrecognized_status_cannot_become_known_zero
+    with self.assertRaises(ValueError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.022s
+
+FAILED (failures=9)

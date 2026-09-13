@@ -1,0 +1,27 @@
+{
+  "checked_at": "2026-09-13T05:25:16.834130+00:00",
+  "status": "SCHEMA AND VALUES VERIFIED ONLY",
+  "source_path": "D:\\Postgame_Outlet-pgo-model\\.cache\\pgo_v1\\80b02a6e511aa20283551cae622b29ba4d0a6f006c489a2d91591fcad33792e7.csv",
+  "bytes": 2401193,
+  "sha256": "80b02a6e511aa20283551cae622b29ba4d0a6f006c489a2d91591fcad33792e7",
+  "total_rows": 26612,
+  "REG_rows": 25395,
+  "duplicate_REG_game_team_pfr_keys": 0,
+  "fields": {
+    "offense_pct": {
+      "valid": 25395,
+      "explicit_zeros": 15301,
+      "invalid_or_missing": 0
+    },
+    "defense_pct": {
+      "valid": 25395,
+      "explicit_zeros": 14856,
+      "invalid_or_missing": 0
+    }
+  },
+  "history_construction": false,
+  "source_admission": false,
+  "model_fitting": false,
+  "method": "Python csv.DictReader; filter game_type REG; assert unique nonempty game_id/team/pfr_player_id; finite float fractions in [0,1].",
+  "limitation": "Direct provider fractions include explicit zeros. Stable identity, selected prior rows, clocks and report completeness still require admission before a feature dataset."
+}
