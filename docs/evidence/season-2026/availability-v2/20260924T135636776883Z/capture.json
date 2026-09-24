@@ -1,0 +1,53 @@
+{
+  "checked_at": "2026-09-24T13:56:40.261037+00:00",
+  "sources": [
+    {
+      "bytes": 386504,
+      "captured_at": "2026-09-24T13:56:39.785899+00:00",
+      "file": "raw/000.html.gz",
+      "final_url": "https://www.nfl.com/injuries/",
+      "kind": "official_report",
+      "sha256": "d92c432ce6f0b9b356ce33830443bf605cee748d5e3060c5e1959d45a1197c2c",
+      "started_at": "2026-09-24T13:56:39.525645+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/injuries/"
+    },
+    {
+      "bytes": 538939,
+      "captured_at": "2026-09-24T13:56:39.798642+00:00",
+      "file": "raw/001.html.gz",
+      "final_url": "https://www.atlantafalcons.com/news/",
+      "kind": "team_news",
+      "sha256": "3f95a00649290a79484ae633a190ad3d35f6e6af965d6bbb4b3e18b9806277ec",
+      "started_at": "2026-09-24T13:56:39.525990+00:00",
+      "status": 200,
+      "team": "ATL",
+      "url": "https://www.atlantafalcons.com/news/"
+    },
+    {
+      "bytes": 700448,
+      "captured_at": "2026-09-24T13:56:39.804965+00:00",
+      "file": "raw/002.html.gz",
+      "final_url": "https://www.packers.com/news/",
+      "kind": "team_news",
+      "sha256": "a1b4cb89092e2b611a0564b6164f87a1cd324d5740709eed7f4d696418b1c0c3",
+      "started_at": "2026-09-24T13:56:39.526463+00:00",
+      "status": 200,
+      "team": "GB",
+      "url": "https://www.packers.com/news/"
+    },
+    {
+      "bytes": 1575614,
+      "captured_at": "2026-09-24T13:56:40.073081+00:00",
+      "file": "raw/003.html.gz",
+      "final_url": "https://www.nfl.com/news",
+      "kind": "league_news",
+      "sha256": "1c9e67077e1d179fc31c9ae3532a3ad11fd9aad3981c168db6498e3fe3c9370d",
+      "started_at": "2026-09-24T13:56:39.526781+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/news/"
+    }
+  ]
+}
