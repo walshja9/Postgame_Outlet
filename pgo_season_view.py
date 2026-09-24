@@ -220,7 +220,7 @@ def _game_day(state):
             + ('<div class="game-day-grid">' + ''.join(cards) + '</div>' if cards else empty+'</p>'))
 
 
-def _sources(sources):
+def _sources(sources, *, standalone=False):
     rows = []
     for source in sources:
         href = source['href']
@@ -231,7 +231,8 @@ def _sources(sources):
                 or (parsed.scheme and (parsed.scheme != 'https' or not parsed.netloc))
                 or (not parsed.scheme and parsed.netloc)):
             raise ValueError('Season sources require safe relative or HTTPS links')
-        rows.append(f'<li><a href="{_text(href)}">{_text(source.get("label", href))}</a></li>')
+        target = ' target="_top"' if standalone else ''
+        rows.append(f'<li><a href="{_text(href)}"{target}>{_text(source.get("label", href))}</a></li>')
     return '<ul>' + ''.join(rows) + '</ul>' if rows else ''
 
 
@@ -774,7 +775,7 @@ def _accuracy(summary, *, weekly_reviews=None):
     return ('<h3 id="season-accuracy">Season accuracy</h3><p>Original saved picks, verified finals. '
             'A correct winner can still come with a poor score estimate. Margin error is how far the predicted winning margin was from the actual margin; '
             'combined-score error is how far the predicted total was from both teams\' final points added together. Lower error is better.</p>'
-            + ('<p>Completed weekly reviews:</p>' + _sources(weekly_reviews) if weekly_reviews else '') +
+            + ('<p>Completed weekly reviews:</p>' + _sources(reversed(weekly_reviews), standalone=True) if weekly_reviews else '') +
             '<dl class="season-freshness">' + ''.join(cards) + '</dl>'
             + f'<p><strong>How the win chances are holding up:</strong> {probability_note}</p>'
             '<p class="season-caption">These are early results, not proof of accuracy. Confidence accounting includes marked late entries; '
@@ -1212,8 +1213,8 @@ def render_season(state, *, accuracy=None, mccabe=None, market=None, weekly_revi
     links = [('season-game-day','Game day')]
     if current_weeks: links.append((f'season-week-{current}',f'Week {current} picks'))
     if state.get('rankings'): links.append(('season-rankings','Rankings'))
-    links.append(('season-records','Winner records'))
-    more = [('season-accuracy','Accuracy')]
+    links.append(('season-accuracy','Accuracy'))
+    more = [('season-records','Winner records')]
     if state.get('ats'): more.append(('season-ats','Spreads & ATS'))
     if state.get('penalty_shadow'): more.append(('pgo-penalty-test','Penalty test'))
     if any(state.get(k) for k in ('totals_shadow','weights_shadow','replacement_depth','injury_usage','offensive_inventory','offensive_usage','score_range_collection')):
@@ -1226,7 +1227,9 @@ def render_season(state, *, accuracy=None, mccabe=None, market=None, weekly_revi
     return (f'<div class="pgo-model-updates" id="pgo-season" data-season-checked-at="{_text(state["checked_at"])}"><h2>PGO Power Rankings &mdash; Experimental</h2>'
             f'<p><strong>{season} &middot; Week {current} &middot; EXPERIMENTAL / HOLD.</strong> '
             'Accuracy is still being tested. The record below tracks saved forecasts.</p>'
-            + navigation + '<details class="model-update-evidence" data-view-key="numbers-guide"><summary>How the numbers connect</summary>'
+            + navigation
+            + ('<p>Latest completed weekly review:</p>' + _sources(weekly_reviews[-1:], standalone=True) if weekly_reviews else '')
+            + '<details class="model-update-evidence" data-view-key="numbers-guide"><summary>How the numbers connect</summary>'
             '<p>Team ratings measure model strength from recent results and team/quarterback history. '
             'The home rating minus the away rating is the projected home-team point advantage at a neutral site with equal rest. '
             'The saved venue and rest adjustments then give the game lead. Each individual rating is centered model strength, '

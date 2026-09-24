@@ -312,9 +312,9 @@ class SeasonViewTests(unittest.TestCase):
         self.assertIn('<details class="season-nav-more" data-view-key="nav-more">',nav)
         primary,more=nav.split('<details',1)
         self.assertEqual(primary.count('<a '),4)
-        for target in ('season-game-day','season-week-2','season-rankings','season-records'):
+        for target in ('season-game-day','season-week-2','season-rankings','season-accuracy'):
             self.assertIn(f'href="#{target}"',primary)
-        for target in ('season-accuracy','pgo-penalty-test'):
+        for target in ('season-records','pgo-penalty-test'):
             self.assertIn(f'href="#{target}"',more)
         self.assertIn('<summary>More</summary>',more)
         intro=page.split('<h3 id="season-game-day">')[0]
@@ -336,6 +336,29 @@ class SeasonViewTests(unittest.TestCase):
         self.assertIn('https://example.com/inactives',full)
         self.assertIn('It does not change the original prediction or its grade',full)
         self.assertEqual(data,before)
+
+    def test_latest_completed_review_is_visible_and_older_reviews_remain_available(self):
+        data=state()
+        reviews=[dict(href=f'analysis/weekly/2026-week{week}-final.html',
+                      label=f'Week {week}: completed <review>') for week in (1,2)]
+        before=copy.deepcopy((data,reviews))
+        page=view.render_season(data,weekly_reviews=reviews)
+        intro=page.split('data-view-key="numbers-guide"')[0]
+        self.assertIn('Latest completed weekly review:',intro)
+        self.assertIn(reviews[1]['href'],intro)
+        self.assertIn('Week 2: completed &lt;review&gt;',intro)
+        self.assertNotIn(reviews[0]['href'],intro)
+        accuracy=page.split('<h3 id="season-accuracy">')[1]
+        self.assertLess(accuracy.index(reviews[1]['href']),accuracy.index(reviews[0]['href']))
+        self.assertEqual(page.count(f'href="{reviews[1]["href"]}" target="_top"'),2)
+        self.assertEqual(page.count(f'href="{reviews[0]["href"]}" target="_top"'),1)
+        self.assertIn('href="evidence/season-2026/week2.json">Saved &lt;source&gt;</a>',page)
+        self.assertEqual((data,reviews),before)
+        for empty in (None,[]):
+            self.assertNotIn('Latest completed weekly review:',view.render_season(data,weekly_reviews=empty))
+        for href in ('javascript:alert(1)','//example.com','../secret'):
+            with self.subTest(href=href),self.assertRaisesRegex(ValueError,'safe relative or HTTPS'):
+                view.render_season(data,weekly_reviews=[dict(href=href,label='Unsafe')])
 
     def test_week_cells_keep_accessible_headers_and_card_labels(self):
         class Table(HTMLParser):
