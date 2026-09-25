@@ -52,6 +52,18 @@ Run `python -m unittest tests.test_pgo_season_rollover` for archive-tampering, s
 
 The preservation check uses the later archive's manifest `created_at` (durable-save time), falling back to its saved check time for legacy evidence without that field. A revision may change before T-60, but a write that crosses or reaches T-60 must retain the previous forecast, confidence allocation and sportsbook core. A pre-cutoff `issued_at` alone cannot excuse a write completed after the lock; this matches the production durable-write guard.
 
+### Prospective McCabe game-line collection
+
+The season updater has a separate optional `mccabe_forecasts` collection in its existing compressed state archives. After this code is deployed, it saves the first eligible human game line for each game, only for the current season week and a matching `Week N YYYY` McCabe edition. The snapshot must have been published by the observation time and match all 32 reviewed teams' quarterback identities, components and totals. Missing, incomplete or nonfinite inputs block this collection while preserving previous records and PGO operations. Games without a capture before T-60 remain unavailable; older weeks are never reconstructed from today's ratings. Later editorial changes do not replace the first saved game line.
+
+The existing Actions health summary reports McCabe status, block reason, total captured games and current-week captured games; a blocked collection warns independently of primary PGO health, while absent or waiting collections remain quiet.
+
+Each record retains issue time, kickoff and cutoff, edition, selected quarterbacks, components, totals, venue/HFA inputs, raw home margin and rounded home spread. Exact UTF-8 bytes, lengths and SHA-256 hashes of `ratings.csv`, `config.csv`, `hfa.csv` and `snapshots.json` are embedded once per input bundle in the compressed state. Read validation replays the saved bytes independently of current files. The writer rejects changes or removal of issued records. If a new capture finishes saving at or after T-60, only new optional captures are discarded and earlier evidence remains intact; the durable clock is checked again after rewriting.
+
+The formula deliberately preserves the existing McCabe `spreads.py` convention: rounded QB + offense + defense totals, per-team/default HFA, a 0.5-point addition for UTC kickoff hours 23 through 04, and Python's half-point rounding. This existing convention applies HFA even to nominal home teams at neutral venues. It is recorded explicitly rather than silently changed by collection. The `config.csv` workbook-only `home_field_adv` is not the per-team spread input.
+
+A market line is included only when the existing archived ESPN capture passes the established DraftKings identity, signed-line and freshness checks. Its timestamp is our response observation time; provider publication time and a true closing line are unavailable. Otherwise the market field explicitly says `UNAVAILABLE`. This collection does not fetch another feed, grade games, supply a new ATS record, alter private picks, or change PGO forecasts. There is no prospective accuracy claim until real post-deployment observations and separately verified outcome comparisons exist.
+
 ### Board publication and queued season updates
 
 The named-edition workflow follows the same tested-source admission and short writer lock as the board workflow. It validates the admitted source before snapshotting the McCabe edition, pushes without rebasing, and explicitly requests the canonical Pages build. A concurrent untested source change requires a new run.

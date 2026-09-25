@@ -2,8 +2,8 @@
 
 A weather-suppressed rock-fight the Bears couldn't finish — Chicago moved the ball (297 yards, 17
 first downs) but turned it over twice and scored just 3 in a 9–3 loss. The bigger blow came late:
-**Caleb Williams tore off a non-contact right hamstring in the fourth quarter** and is **out Week
-3 (week-to-week)**, with backup Tyson Bagent also in concussion protocol.
+**Caleb Williams suffered a right hamstring injury in the fourth quarter** and was ruled out for
+Week 3; Tyson Bagent also entered concussion protocol.
 
 **What moved:** **QB +3.0 → −4.5.** With Caleb out, the board shows the *active* starter — veteran
 **Case Keenum (−4.5)** — until Caleb returns (his +3.0 is held in the QB list as the injured
@@ -21,16 +21,17 @@ yards as a team. The one asterisk is the opponent — Carolina's defense allowed
 in its history — but a performance this complete moves the offense up hard. The flip side:
 the Bears' own defense gave up 37 and 361 passing to a Panthers team missing both tackles.
 
-## The case for above average
+## The current rating
 
-Chicago grades above the line behind a young franchise quarterback and an offense that just
-announced itself — balanced now by a defense that looks like the soft spot.
+Chicago's current number uses Case Keenum at quarterback, lowering the team despite the Week 1
+offensive showing. The defense remains below average.
 
 ## Quarterback
 
-Caleb Williams (+3.0) is a top-tier ascending grade and the engine of this rating. He held at
-3.0 — already priced as a riser, and the Week 1 clinic (four total touchdowns, full command)
-is exactly the arc the number bet on; the unit around him is where the jump landed.
+Case Keenum (−4.5) is the selected quarterback while Caleb Williams is unavailable. Williams's
+earlier +3.0 grade remains his own player value; it is not the quarterback component in the
+current Chicago team rating. Keenum is a bridge option, and the gap between the two drives the
+drop from the Week 1 team number.
 
 ## What moved the number
 
@@ -42,5 +43,5 @@ is exactly the arc the number bet on; the unit around him is where the jump land
 
 ## Risk
 
-The offense looks real, but the rating now leans on it outscoring problems — if the defense
-keeps leaking, this becomes a shootout team. Williams is the long-term reason for optimism.
+The current rating depends heavily on who starts at quarterback. The Week 1 offense showed
+upside, while the defense still needs to limit damage.

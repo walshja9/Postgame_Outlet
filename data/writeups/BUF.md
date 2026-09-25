@@ -29,7 +29,7 @@ Buffalo's rating is a quarterback story. Josh Allen at +6.5 is the model's ceili
 
 ## Quarterback
 
-Allen (+6.5) is the engine — an MVP-caliber dual threat and the top QB grade in the model. He props up the whole offense, which is exactly why the roster still rates near the top even after the non-QB units were marked down.
+Josh Allen (+6.5) is the engine — an MVP-caliber dual threat and the top QB grade in the model. He props up the whole offense, which is exactly why the roster still rates near the top even after the non-QB units were marked down.
 
 ## What moved the number
 

@@ -29,6 +29,10 @@ Cleveland grades poorly, and it is almost entirely the quarterback. The defense 
 
 ## Quarterback
 
+Deshaun Watson (-2.5) is the selected quarterback after improving from -3.0 in Week 2. His 24-of-30, 238-yard, two-touchdown game at Tampa Bay supported the increase; the Week 1 concern remains historical context.
+
+## Quarterback: through Week 1 2026 (historical)
+
 Deshaun Watson (-3.0) now sits below the worst-starter floor — a deliberate call after a Week 1 that graded out dead last among quarterbacks. His surface line flatters him: a 97.7 passer rating (15th of 30 qualified passers) and 9.3 yards per attempt (5th) on a couple of chunk throws. Underneath it was the week's worst QB game — a 37.0 PFF grade (30th of 30), a 34.2 QBR (25th), three turnover-worthy plays (tied third-most), a lost fumble, and five sacks taken (tied for the most) while holding the ball 3.4 seconds a throw and going down on a third of his pressures. This is his first game in roughly 23 months, back from two surgeries on a torn Achilles and layered on a pre-injury decline. He's the confirmed starter over Shedeur Sanders — but if this level of play continues, the calls for Sanders to take over will be deafening.
 
 ## What moved the number

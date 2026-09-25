@@ -1,0 +1,11 @@
+# Independent Task C review — 2026-09-25
+
+No remaining actionable finding after the two verified issues below were fixed in the shared worktree. This is a read-only review of `mccabe_forecasts.py`, the `pgo_season.py` integration, the capture tests, the operations note, and the workflow test addition against Task C of the approved plan. No network fetch, production refresh, published-page edit, or source edit was performed by the reviewer.
+
+1. **Important, fixed — equivalent kickoff instants produced different prime-time HFA.** `_forecast()` passed the source timestamp directly to `spreads.is_primetime()`, which slices the hour text. For `2026-09-27T20:20:00-04:00`, the forecast used HFA 2.0 although the equivalent UTC kickoff is 00:20 and the recorded legacy convention requires 2.5. The focused test `test_primetime_uses_utc_hour_for_an_equivalent_offset_kickoff` failed `2.0 != 2.5`. The implementer changed the call to pass a UTC-normalized timestamp. That test now passes.
+
+2. **Important, fixed — direct durable save accepted an ineligible new capture.** `check_durable()` originally accepted a new row when `state['status'] == 'BLOCKED'` or the game already appeared in `state['results']`. An offline probe with the existing temporary fixture printed `ACCEPTED` for both cases. The collector path blocked them, but the independent writer guard did not. The implementer added a new-row-only READY/no-final requirement. `test_writer_rejects_new_capture_with_blocked_schedule_or_accepted_final` now passes.
+
+After these fixes, `python -B -m unittest tests.test_mccabe_forecasts` passed all 16 tests. The reviewed flow captures only a matching current edition/week before T-60, keeps previous games and exact embedded input bundles, replays the spread and archived market evidence on read, and discards new records when the writer's durable clock reaches cutoff. Optional capture failures leave primary PGO state intact. The workflow diff only adds the capture test module; the operations note states first-capture and retrospective limits.
+
+Review limits: this review used offline fixture probes and source inspection; the parent reviewer and Task C owner are running the broader season/storage/workflow suites. No real post-deployment McCabe forecast observations exist yet, so this review makes no prospective accuracy claim.

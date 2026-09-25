@@ -23,6 +23,10 @@ confidence.
 
 ## Quarterback
 
+Brock Purdy (+3.2) is the selected quarterback after a small Week 2 increase from +3.0. He went 20-of-22 for 287 yards and two touchdowns against Miami; the earlier Week 1 increase from +2.5 remains historical context.
+
+## Quarterback: through Week 1 2026 (historical)
+
 Brock Purdy (+2.5 → **+3.0**) played up to the scheme and the win — 3 touchdowns and a
 105.6 rating, efficient and in control. The half-point bump reflects a settled, above-
 average starter running a machine.

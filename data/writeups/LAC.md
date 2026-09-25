@@ -36,6 +36,10 @@ but Week 1 pulled the offense back to the pack.
 
 ## Quarterback
 
+Justin Herbert (+1.5) is the selected quarterback after two difficult games. His grade fell from +3.0 following Week 2 against Las Vegas; the +4.0 to +3.0 move was the earlier Week 1 assessment.
+
+## Quarterback: through Week 1 2026 (historical)
+
 Justin Herbert (+4.0 → +3.0) drops a full point. He remains a clearly-above-average passer,
 but a flat home performance (an interception, three sacks, no rhythm) means the model won't
 keep him graded above the tier of Drake Maye and Caleb Williams (both +3.0) or Trevor Lawrence

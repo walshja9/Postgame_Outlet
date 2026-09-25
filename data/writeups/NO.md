@@ -31,6 +31,10 @@ keeps thinning out, though the skill group keeps the offense afloat.
 
 ## Quarterback
 
+Tyler Shough (0.0) is the selected quarterback after another half-point increase in the Week 2 win at Baltimore. His 27-of-34, 252-yard performance followed the Week 1 comeback that moved him to -0.5.
+
+## Quarterback: through Week 1 2026 (historical)
+
 Tyler Shough (−0.5) is a below-average but **ascending second-year** grade (not a rookie).
 The Week 1 comeback — 21 points down, without Kamara or Tyson — showed more NFL capability
 than his prior replacement-level price implied, so the number ticks up. Still below the line,

@@ -30,6 +30,10 @@ Tampa Bay grades above the line as a genuinely balanced team — a proven quarte
 
 ## Quarterback
 
+Baker Mayfield (+1.5) is the selected quarterback after a half-point cut following the Week 2 loss to Cleveland. His earlier +2.0 grade preceded that game.
+
+## Quarterback: through Week 1 2026 (historical)
+
 Baker Mayfield (+2.0) is a solid above-average grade. He's coming off the best stretch of his career in Tampa — decisive, aggressive, and comfortable in this offense — and the number reflects a starter who elevates his surroundings rather than merely manages the game. It stops short of the elite tier because the pre-Tampa inconsistency is still on the résumé, but the current arrow points up.
 
 ## What moved the number

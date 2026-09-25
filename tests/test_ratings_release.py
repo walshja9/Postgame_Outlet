@@ -326,7 +326,7 @@ class GeneratedDocumentTests(unittest.TestCase):
             writeups.mkdir()
             qb_writeups.mkdir()
             (writeups / "MIN.md").write_text(
-                "## Quarterback\n\nStarter-only analysis.", encoding="utf-8"
+                "## Quarterback\n\nKyler Murray (−0.5): Starter-only analysis.", encoding="utf-8"
             )
             backup = {
                 "name": "J.J. McCarthy", "team": "Minnesota Vikings",

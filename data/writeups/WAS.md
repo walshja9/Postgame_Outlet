@@ -3,15 +3,14 @@
 A costly afternoon in Dallas that got worse than the box. Washington actually out-gained the
 Cowboys (389 yards to 332, 24 first downs to 20) and the process model even had the Commanders
 as the nominal winner — but they couldn't finish, stalling for a 20-point day while Dak Prescott
-carved them up. The bigger loss was at quarterback: **Jayden Daniels (+2.0) dislocated his left
-(non-throwing) elbow, was ruled out for Week 3, and is projected to miss multiple games with a
-possible IR stint.** The active starter is now **Marcus Mariota (−3.0)**, a steep drop from the
-franchise passer; Daniels gets restored to QB1 when he's healthy. On top of the QB hit, the
+carved them up. The bigger loss was at quarterback: **Jayden Daniels (+2.0) injured his left
+(non-throwing) elbow and was ruled out for Week 3.** The current rating selects **Marcus
+Mariota (−3.0)**, a steep drop from the franchise passer. On top of the QB hit, the
 defense was awful — and the note is explicit that it looked bad *even with Daniels still in the
 lineup*, so this isn't an injury alibi.
 
-- **QB: Jayden Daniels (+2.0) OUT (dislocated left elbow, multiple games, possible IR)** →
-  active starter **Marcus Mariota −3.0**. Restore Daniels when healthy.
+- **QB: Jayden Daniels (+2.0) out for Week 3** → selected quarterback **Marcus Mariota −3.0**.
+  Reassess the selected quarterback when availability changes.
 - **Defense −1.0 → −1.5 (−0.5):** awful, and it looked bad even before Daniels left — there's
   no unit-carrying strength here to slow anyone down.
 - **Offense held −1.0.**
@@ -25,13 +24,16 @@ touchdown before the tying two-point conversion failed. The defense did its part
 Jalen Hurts three times. A competitive, shorthanded road effort in a loss — the rating holds,
 with Daniels' rhythm and the Tunsil-less line the things to watch.
 
-## The case for a QB keeping it afloat
+## The current rating
 
-Washington nets out right at the waterline — an ascending franchise quarterback offsetting two units that both grade below average, one of them dragged down by a major injury.
+Washington's current number uses Mariota at quarterback alongside two below-average non-QB
+units. Daniels's earlier grade describes a different lineup.
 
 ## Quarterback
 
-Jayden Daniels (+2.0) is the reason this team stays at zero rather than sinking below it. Coming off a Rookie-of-the-Year-caliber season, he's a dynamic dual-threat with real command and rushing value — an above-average starter on a clearly upward arc. He is doing a lot of the lifting here on his own.
+Marcus Mariota (−3.0) is the selected quarterback for the current team rating while Jayden
+Daniels is unavailable. Daniels's +2.0 player grade remains separate; using Mariota changes the
+team's quarterback component by five points from that earlier lineup.
 
 ## What moved the number
 
@@ -40,4 +42,5 @@ Jayden Daniels (+2.0) is the reason this team stays at zero rather than sinking 
 
 ## Bottom line
 
-This is a one-man rating: Daniels is good enough to hold Washington at the waterline despite a banged-up offensive line and a below-average defense. Get Tunsil and Newton back healthy and there's clear room to climb — until then, the quarterback is the whole story.
+The quarterback selection is the largest change from the earlier waterline rating. Protection
+and defense remain concerns in the current grade.

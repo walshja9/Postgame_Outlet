@@ -220,21 +220,35 @@ def save_state(state, root=DEFAULT_ROOT):
     prior = None
     if (root/'current.json').exists():
         prior = load_current(root)
-    if 'score_range_collection' in state or 'score_range_collection' in (prior or {}):
-        from pgo_score_range_monitor import check_durable_shadow
-        try:
-            check_durable_shadow(state, prior, durable)
-        except ValueError as error:
-            # This file has no manifest or public pointer yet. Discard only the
-            # new optional observations, then recheck the actual rewritten clock.
-            state['score_range_collection'] = dict(copy.deepcopy((prior or {}).get('score_range_collection', {})),
-                status='BLOCKED', blocked_reason=str(error), checked_at=state['checked_at'],
-                forecast_adjustment=None, predictive_status='UNAVAILABLE', ranges=None)
-            payload = gzip.compress(canonical(state), mtime=0)
-            with (directory/'state.json.gz').open('wb') as handle:
-                handle.write(payload); handle.flush(); os.fsync(handle.fileno())
-            durable = now()
-            check_durable_shadow(state, prior, durable)
+    discarded = set()
+    while True:
+        rewritten = False
+        if 'score_range_collection' in state or 'score_range_collection' in (prior or {}):
+            from pgo_score_range_monitor import check_durable_shadow
+            try:
+                check_durable_shadow(state, prior, durable)
+            except ValueError as error:
+                require('score_range_collection' not in discarded, str(error))
+                state['score_range_collection'] = dict(copy.deepcopy((prior or {}).get('score_range_collection', {})),
+                    status='BLOCKED', blocked_reason=str(error), checked_at=state['checked_at'],
+                    forecast_adjustment=None, predictive_status='UNAVAILABLE', ranges=None)
+                discarded.add('score_range_collection'); rewritten = True
+        if 'mccabe_forecasts' in state or 'mccabe_forecasts' in (prior or {}):
+            from mccabe_forecasts import LateCapture, blocked, check_durable
+            try:
+                check_durable(state, prior, durable, root)
+            except LateCapture as error:
+                require('mccabe_forecasts' not in discarded, str(error))
+                state['mccabe_forecasts'] = blocked(prior, state['checked_at'], error)
+                discarded.add('mccabe_forecasts'); rewritten = True
+        if not rewritten:
+            break
+        # No manifest or pointer exists yet. Both optional collectors must pass
+        # again at the actual clock after any discarded capture is rewritten.
+        payload = gzip.compress(canonical(state), mtime=0)
+        with (directory/'state.json.gz').open('wb') as handle:
+            handle.write(payload); handle.flush(); os.fsync(handle.fileno())
+        durable = now()
     if prior:
         prior_games = {g['game_id']:g for w in prior['weeks'] for g in w['games']}
         for week in state['weeks']:
@@ -318,6 +332,9 @@ def load_current(root=DEFAULT_ROOT):
     if state.get('availability_context'):
         check_availability_context(state, root, manifest['created_at'])
     check_starter_announcements(state, root)
+    if 'mccabe_forecasts' in state:
+        from mccabe_forecasts import validate
+        validate(state, root)
     return state
 
 
@@ -828,7 +845,8 @@ def refresh_experiments(state, previous, root):
                 ('offensive_inventory','pgo_offensive_inventory','capture',True),
                 ('offensive_usage','pgo_offensive_usage_monitor','refresh_shadow',True),
                 ('score_range_collection','pgo_score_range_monitor','refresh_shadow',True),
-                ('ats','pgo_ats','refresh',True))
+                ('ats','pgo_ats','refresh',True),
+                ('mccabe_forecasts','mccabe_forecasts','refresh',True))
     for key,module_name,method,needs_root in operations:
         old=(previous or {}).get(key,{})
         try:

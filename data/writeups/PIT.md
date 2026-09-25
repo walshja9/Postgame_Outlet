@@ -26,6 +26,10 @@ Pittsburgh lands right at the waterline — a strong, veteran-laden defense bala
 
 ## Quarterback
 
+Aaron Rodgers (-1.5) is the selected quarterback after a half-point cut following the Week 2 loss at New England. The prior -1.0 value belonged to the Week 1 rating.
+
+## Quarterback: through Week 1 2026 (historical)
+
 Aaron Rodgers (−1.0) grades a shade below middling. At 42 he's clearly declined from his prime — the arm and the processing come and go — but he's still a capable veteran starter who can steer an offense and protect the ball. The number reflects a passer living on savvy rather than juice: enough to keep the unit functional, not enough to lift it.
 
 ## What moved the number

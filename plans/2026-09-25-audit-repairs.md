@@ -1,0 +1,39 @@
+# McCabe / PGO audit repairs
+
+Approved: user said "proceed" after the audit recommendation. Planned at `ae2dbdb14c3580208e26f83a0c5c2c999a4be3ee`, 2026-09-25. Worktree: `D:\CodexWorktrees\Postgame_Outlet-audit-repairs-20260925`, branch `codex/pgo-audit-repairs-20260925`.
+
+## Purpose and boundaries
+
+Correct current McCabe explanations, disclose different QB assumptions in the rank comparison, label historical McCabe regrading retrospective, and capture future McCabe forecasts before cutoff. Preserve every existing prediction, grade, numerical rating, snapshot, fitted parameter, and historical archive. No deployment, push, network refresh, model refit, or change to historical PGO feature construction. That timing reconstruction remains a separate research task.
+
+Use existing Python/unittest patterns and append-only season storage. No dependency additions. Never invoke a production refresh or regenerate tracked published pages; use temporary output for preview. Executors own disjoint files and leave changes uncommitted for review. Reviewer maintains this plan.
+
+## Task A: correct explanation identity and retrospective labeling
+
+Owner scope: `generate_site.py`, current QB paragraphs in `data/writeups/*.md`, relevant `data/qb_writeups` only if needed, `results.py`, and focused tests of these paths. Reports under `plans/`. Full-board review found MIN still described Wentz under Murray, and 13 further QB paragraphs retained prior values. Apply the same current-edition repair to every contradicted QB section using only existing current rating notes and retaining dated assessments. Expand BUF's opening to its full name for exact-player binding. Do not rewrite unrelated team sections.
+
+Current facts: `generate_site.extract_qb_section` reads the first literal `## Quarterback` section; `load_qb_writeup(name, abbr)` prefers player overrides but otherwise uses that section regardless of selected player. CHI selected Case Keenum -4.5 shows Caleb Williams +3; WAS Marcus Mariota -3 shows Daniels +2; NYG Jameis Winston -4 shows Dart -0.5; SEA Drew Lock 0 shows -1. SEA prose also describes a 13-10 loss, but the saved ESPN final records a Seattle win. Old injury prognosis conflicts with current ratings/depth notes; avoid claiming a new medical fact.
+
+Steps: trace all callers; add a regression for selected QB identity, value and fallback handling; repair the binding in the shared loader with the smallest robust rule; align current prose with current assumptions and correct SEA result. Pass the current value from the drawer so a stale same-player paragraph cannot silently override current notes in a future edition. Preserve historical passages explicitly as history where needed. `results.build_week` recomputes old games with current ratings; label its actual CLI and JSON outputs clearly retrospective without changing picks/grade math (inspection found no results HTML renderer). Verify `python -B -m unittest tests.test_ratings_release` plus the new focused tests. Do not alter ratings.csv or snapshots.json.
+
+## Task B: show QB assumption differences
+
+Owner scope: `pgo_comparison.py`, `pgo_season_view.py`, and corresponding tests. Reports under `plans/`.
+
+Current facts: `load_mccabe_rows` discards qb_name; `_rank_comparison(snapshot,mccabe)` shows team and rank only. SEA, CHI, NYG, WAS currently compare different QBs. Carry current McCabe qb_name into comparison input and show each board's QB assumptions and explicit mismatches alongside ranking differences. Explain that PGO availability checks run from T-24h through T-60 and an early-week edition is not a confirmed game-day lineup. Use actual source/availability context; don't imply checks are missing when they have occurred. Preserve numerical sorting, ratings, and distinct scales. Escape names. Keep mobile usability via existing table-shell/details patterns. Verify `python -B -m unittest tests.test_pgo_comparison tests.test_pgo_season_view tests.test_pgo_matchup_comparison` plus focused added cases and a temporary HTML preview.
+
+## Task C: future-only immutable McCabe forecast capture
+
+Owner scope: new `mccabe_forecasts.py`, `pgo_season.py`, tests for capture/storage integration, `docs/pgo-season-operations.md`, `.github/workflows/update-season.yml` only to add its test module. Reports under `plans/`. Final integration review approved adding the new track to existing `pgo_workflow_status.py` health reporting and its tests so a blocked capture is visible in Actions without changing main health or adding an alert channel.
+
+Existing architecture: `pgo_season.refresh` deep-copies previous state, gathers schedule/finals, restores locked PGO games, calls independent collectors, then `save_state`. `save_state` writes compressed state in a new runs-v2 directory, checks durable clock, preserves pointer on rejection, and stores hashed manifest. Reuse that lifecycle rather than building a second store. `pgo_ats` and shadow collectors demonstrate immutable independent tracks. `spreads.load_ratings/load_hfa/is_primetime/round_half` define McCabe spread inputs; determine actual forecast path and reuse its convention. The record must specify that convention and raw margin, rounded spread, selected QBs, rating components/totals, effective HFA, edition, source hashes, issue time, kickoff and cutoff. Optional market quote must retain observed/provider time and never be invented.
+
+Capture policy: first eligible capture for the current human edition/week before T-60, never replace an issued record; no backfill or issuance at/after cutoff, no capture for unrelated future weeks using stale current ratings. Require reviewed complete finite 32-team inputs, known unambiguous schedule identity and kickoff, and a matching published snapshot/edition with no future timestamp. Old weeks without captures remain unavailable. Keep this independent of PGO performance/forecasts and private picks. Input errors should preserve prior capture records and mark this track unavailable/blocked without disabling PGO publication. Durable writes must reject or discard late new captures with prior records intact, using existing optional-collector patterns. Document first-capture semantics and limitation: no prospective accuracy claim until real post-deployment observations exist. No new grading subsystem in this pass.
+
+Steps: trace current inputs and storage first; report any mismatch in policy before broadening scope. Write failing regressions, implement collector and validation/durable preservation hooks, integrate refresh and read validation, document operation. Tests must cover valid round trip/replay, repeated refresh/input change immutability, cutoff including crossing during write, invalid/missing/future/NaN inputs, current week versus old/future games, and error isolation. Verify `python -B -m unittest tests.test_mccabe_forecasts tests.test_pgo_season tests.test_pgo_season_storage tests.test_pgo_season_boundaries tests.test_pgo_publication_guard tests.test_pgo_workflow_status tests.test_public_board_workflow` (adapt new test name if needed).
+
+## Review and completion
+
+Status: A DONE; B DONE; C DONE. Final reviewer disposition: APPROVE for the isolated local branch. See `2026-09-25-repair-verification.md` for final evidence and deployment boundary.
+
+Each executor reports changed files, exact red/green checks, design decisions and remaining limits. Stop and report if a fit, historical mutation, publication, new feed, or another task's files seem necessary. Reviewer reads full diff, reruns all done criteria, checks a rendered local page at desktop/mobile widths, and obtains an independent final review. Final tracked diff must not include numerical ratings, fitted artifacts, archived forecasts or published pages. Commit only to this isolated branch after review, without pushing.

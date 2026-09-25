@@ -16,26 +16,32 @@ number to sign off on, but the tape backs it.
 
 ## Week 1 availability
 
-Checked September 9, 2026, 10:42–10:46 a.m. ET. The September 8 final injury report lists **Ty Okada OUT (hamstring)**; **Nick Emmanwori (ankle)** and **Tory Horton (hamstring) are QUESTIONABLE**. Tuesday participation was estimated for a walkthrough. [Seahawks report](https://www.seahawks.com/news/2026-week-1-injury-report-seahawks-vs-patriots). Final inactives are pending.
+Checked September 9, 2026, 10:42–10:46 a.m. ET. The September 8 final injury report listed **Ty Okada OUT (hamstring)**; **Nick Emmanwori (ankle)** and **Tory Horton (hamstring) as QUESTIONABLE**. Tuesday participation was estimated for a walkthrough. [Seahawks report](https://www.seahawks.com/news/2026-week-1-injury-report-seahawks-vs-patriots). Final inactives were pending at that check.
 
-## The case for a top-five grade
+## The current rating
 
-Seattle is elite on the flanks — a top receiver group and a top-tier defense — now dragged down at quarterback after a Week 1 injury to Sam Darnold hands the job to journeyman Drew Lock. The offense and defense still carry a strong overall number; the QB is the hole.
+Seattle's current rating pairs Drew Lock at a neutral QB value with a +1.5 offense and +3.0
+defense. Lock's Week 2 play lifted the quarterback component from its Week 1 value.
 
 ## Quarterback
 
-Drew Lock (-1.0) is QB1 after **Sam Darnold went down with a hip injury on a Week 1 sack — out at least four weeks and possibly the season.** Lock is priced about a point below an average starter: his Week 1 relief was genuinely good (16-of-22, 187 yards, a TD, no picks, a 113.3 rating), but that's a small sample from a career journeyman, not a bet the model makes. Seattle's roster still lifts whoever's under center — the elite receivers and scheme show up in the offense grade, not here — but losing Darnold's steadier hand lowers the ceiling.
+Drew Lock (0.0) is the selected quarterback with Sam Darnold unavailable. Lock's grade rose
+from −1.0 after his Week 2 start; his Week 1 relief line (16-of-22, 187 yards, a touchdown,
+no interceptions) is earlier context. Seattle's receivers and scheme remain in the offense
+component rather than Lock's grade.
 
-## What moved the number
+## Week 1 rating notes (historical)
 
 - **Offense (+1.5):** trimmed from +2.0. The **receiving corps is genuinely elite** — JSN as a true WR1 with Kupp and Shaheed alongside — but the **backfield is thin and unproven**. Seattle lost Walker, and **Zach Charbonnet is out at least the first four games** (torn ACL from January's divisional-round win, now on PUP). That leaves the run game leaning on rookie **Jadarian Price**, who profiles well but is being asked to carry a load right away in Week 1 — a lot to bank on out of the gate. The pass-catchers hold this up; the ground game is the discount.
-- **Defense (+2.0):** held. On healthy talent this is **a truly elite unit — a +2.5-caliber defense** — with Witherspoon, Julian Love, Byron Murphy II, Ernest Jones, and Nwosu, plus the Fowler addition. It stays at +2.0 rather than higher purely because the **safety room is banged up for the opener**: Ty Okada is out (hamstring), Nick Emmanwori is questionable (ankle, coming off July surgery), and Bud Clark is on IR, leaving Seattle thin at the position. Get the safeties back and this grade should climb toward its +2.5 ceiling.
+- **Defense (+2.0):** held for Week 1. On healthy talent this looked like **a +2.5-caliber defense** — with Witherspoon, Julian Love, Byron Murphy II, Ernest Jones, and Nwosu, plus the Fowler addition. The opener's safety-room concerns held that earlier grade down. The current defense value is +3.0 after Week 2.
 
 ## What changed — Week 1 2026
 
-- **QB 2.0 → -1.0 (Darnold → Lock):** Sam Darnold injured his hip on a first-drive sack and is out 4+ weeks, possibly the season; Drew Lock takes over about a point below average. Team total 5.5 → 2.5. Lock's Week 1 was strong (113.3 rating) — if he holds up behind this roster, there's room to nudge back.
-- **Offense (+1.5) and Defense (+2.0) held:** Seattle lost 13-10 but the units weren't the problem — they out-gained New England early (101→285 yards, 13 first downs) and simply left points early before the offense woke up in the second half.
+- **QB 2.0 → −1.0 (Darnold → Lock):** Darnold left after a Week 1 injury; Lock took over at the earlier −1.0 grade. Team total moved 5.5 → 2.5 then. Lock's strong Week 1 relief (113.3 passer rating) preceded the Week 2 upgrade to 0.0.
+- **Offense (+1.5) and Defense (+2.0) held in Week 1:** Seattle won 13–10 against New England; those unit values were held at the time. Defense subsequently rose to +3.0 after Week 2.
 
 ## Risk
 
-The floor here is very high and the ceiling is higher than the number shows — a +2.5 defense and an elite receiver group, temporarily held down by a rookie-led backfield and a short-handed safety room. The one enduring question is the QB ceiling: if a deep run needs Darnold to *win* a game rather than not lose it, that's the bet the market will fade.
+The current +3.0 defense and receiver group carry the rating, while a thin backfield remains a
+concern. Lock's neutral QB value reflects the current selection; future changes depend on play
+and availability, not an assumed recovery timeline.

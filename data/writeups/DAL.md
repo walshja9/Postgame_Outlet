@@ -30,6 +30,10 @@ defense has slipped below it.
 
 ## Quarterback
 
+Dak Prescott (+2.0) is the selected quarterback after a half-point Week 2 increase. He went 26-of-31 for 279 yards and four touchdowns against Washington; +1.5 was the earlier value.
+
+## Quarterback: through Week 1 2026 (historical)
+
 Dak Prescott (+1.5) is an above-average starter grade — a steady, high-floor passer.
 
 ## What moved the number

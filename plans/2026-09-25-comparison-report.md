@@ -1,0 +1,15 @@
+# Task B: QB assumptions in the current rank comparison
+
+Status: implementation and local checks complete; browser review and combined-suite review remain with the parent reviewer. Changes are uncommitted.
+
+`pgo_comparison.load_mccabe_rows()` now retains the selected `qb_name` from the reviewed ratings CSV. The current season rank comparison displays PGO and McCabe QB assumptions beside the existing rank difference, labels distinct names, escapes both names, and preserves the rank and rating calculations. Its note distinguishes an early-week assumption from a confirmed game-day lineup, explains the T-24h to T-60 forecast availability window, and shows the latest saved check for a current-week game alongside the number of current-week games with saved checks. The existing Game day section remains the source for per-game saved and later availability detail. A null or absent saved check renders as such.
+
+The saved Week 3 state and current McCabe CSV produce exactly four mismatches: SEA Sam Darnold / Drew Lock; CHI Caleb Williams / Case Keenum; NYG Jaxson Dart / Jameis Winston; WAS Jayden Daniels / Marcus Mariota. The latest saved current-week forecast availability check shown in the preview is the September 24, 2026 7:07 PM EDT observation; 1 of 16 games has a saved forecast availability check. This timestamp does not assert the other games were checked or confirm a starter.
+
+Red: the two new focused tests initially failed because McCabe `qb_name` was dropped and the season table omitted QB assumptions. A third regression failed with `AttributeError` for `availability=None` before the null-safe fix. A partial-week regression then failed because the note lacked a game count. The loader test uses synthetic QB names so future editorial changes do not break it.
+
+Green: `python -B -m unittest tests.test_pgo_season_view tests.test_pgo_matchup_comparison tests.test_pgo_comparison.ComparisonTests.test_mccabe_loader_keeps_selected_quarterbacks` (51 tests); `python -B -m unittest tests.test_pgo_current_board` (9 tests). `git diff --check` passed for this scope. The parent reviewer is running the full comparison and combined suites.
+
+Full local page preview: `output/audit-repairs-20260925/comparison.html` (Git ignored). Open it in a browser, choose the current PGO season board, open **Current PGO vs. McCabe rankings**, then inspect the four named rows at desktop and mobile widths. The generated HTML contains 32 rank rows and exactly four **Different QB assumptions** labels. It was generated from saved local state with `python -B pgo_comparison.py --output output\audit-repairs-20260925\comparison.html`; no refresh, network capture, publication, or source numerical change was run.
+
+Reviewer focus: confirm the expandable comparison and its horizontally scrollable table work with keyboard focus and a narrow viewport; check the four mismatch names and the time note. The archived July comparison panel remains a separate dated comparison and has no historical PGO QB-name field in its rating CSV.

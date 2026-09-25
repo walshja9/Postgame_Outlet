@@ -383,6 +383,15 @@ class ComparisonTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "full Git history"):
                 pgo_comparison.mccabe_source_timestamp(pgo_comparison.MCCABE_PATH)
 
+    def test_mccabe_loader_keeps_selected_quarterbacks(self):
+        source = pgo_comparison.load_release_rows(pgo_comparison.MCCABE_PATH)
+        for index, row in enumerate(source):
+            row['qb_name'] = f'QB <{index}>'
+        with patch.object(pgo_comparison, 'load_release_rows', return_value=source):
+            rows = pgo_comparison.load_mccabe_rows(pgo_comparison.MCCABE_PATH)
+        self.assertEqual({row['team']: row['qb_name'] for row in rows},
+                         {row['team']: row['qb_name'] for row in source})
+
     def test_comparison_calculates_both_model_ranks_and_disagreements(self):
         mccabe = [
             {"team": "Buffalo Bills", "abbr": "BUF", "rank": 1, "rating": 7.0},

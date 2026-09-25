@@ -68,6 +68,7 @@ def load_mccabe_rows(path):
             "team": team,
             "abbr": generate_site.TEAM[team][0],
             "rating": rating,
+            "qb_name": (row.get("qb_name") or "").strip(),
         })
     expected = set(pgo_model.CURRENT_TEAMS)
     if len(parsed) != 32 or {row["abbr"] for row in parsed} != expected:

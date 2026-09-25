@@ -31,6 +31,10 @@ Baltimore is a top-five roster: an elite quarterback, a strong skill group, and 
 
 ## Quarterback
 
+Lamar Jackson (+4.0) is the selected quarterback after a half-point cut following the Week 2 loss to New Orleans, including a late interception. The earlier +4.5 was the Week 1 value.
+
+## Quarterback: through Week 1 2026 (historical)
+
 Lamar Jackson (+4.5) is a top-tier, MVP-caliber grade — the dual-threat engine that makes every skill piece play up.
 
 ## What moved the number

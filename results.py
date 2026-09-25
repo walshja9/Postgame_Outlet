@@ -303,7 +303,8 @@ def _adjustment_signals(g, box, ratings):
 # ---- rendering --------------------------------------------------------------
 
 def print_week(games, week):
-    print(f"\n=== NFL Results — Week {week} ===\n")
+    print(f"\n=== NFL Results — Week {week} (RETROSPECTIVE) ===")
+    print("Regraded using current ratings and fetched market lines; not an issued forecast or contemporaneous ATS record.\n")
     grades = {"win": 0, "loss": 0, "push": 0}
     for g in games:
         line = f"{g['away']} @ {g['home']}"
@@ -341,7 +342,7 @@ def print_week(games, week):
         print()
     w, l, pu = grades.get("win", 0), grades.get("loss", 0), grades.get("push", 0)
     if w or l or pu:
-        print(f"McCabe Method ATS vs market: {w}-{l}" + (f"-{pu} push" if pu else ""))
+        print(f"Retrospective McCabe Method ATS vs market: {w}-{l}" + (f"-{pu} push" if pu else ""))
 
 
 def main():
@@ -357,7 +358,10 @@ def main():
     hfa, default_hfa = load_hfa()
     games = build_week(week, year, ratings, hfa, default_hfa, with_box=True)
     if as_json:
-        print(json.dumps({"week": week, "year": year, "games": games}, indent=2))
+        print(json.dumps({"week": week, "year": year,
+                          "grading_basis": "retrospective_current_ratings",
+                          "grading_note": "Regraded using current ratings and fetched market lines; not an issued forecast or contemporaneous ATS record.",
+                          "games": games}, indent=2))
     else:
         print_week(games, week)
 

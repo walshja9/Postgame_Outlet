@@ -22,16 +22,14 @@ grade to the worst-starter area until Murray clears protocol.
 
 ## The case for an above-average roster
 
-Minnesota grades right at the line — a loaded skill group and a scheme-lifted defense, now
-weighed down by a backup quarterback until Murray returns.
+Minnesota's current rating selects Kyler Murray at quarterback with a +1.0 offense and +0.7
+defense. Carson Wentz's Week 1–2 appearances remain historical context.
 
 ## Quarterback
 
-Carson Wentz (−1.0) draws in with Kyler Murray in concussion protocol — roughly a half-point
-below Murray's −0.5. Wentz managed the Week 1 comeback efficiently (three touchdowns, no
-turnovers), but as a stopgap starter he pins the QB grade near the floor. **The grade restores
-to Murray (−0.5) once he clears protocol**; the talent around the position is what keeps the
-team afloat in the meantime.
+Kyler Murray (−0.5) is the selected quarterback in the current edition after the Week 1–2
+Wentz fill-in. Wentz's −1.0 grade and his Week 1 comeback are earlier lineup context; the
+current team number already uses Murray's value.
 
 ## What moved the number
 

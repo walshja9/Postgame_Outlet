@@ -33,6 +33,10 @@ Las Vegas has two genuine stars — one on each side of the ball — dragged dow
 
 ## Quarterback
 
+Kirk Cousins (-1.5) is the selected quarterback after a one-point increase following the Week 2 road win over the Chargers. The earlier -2.5 value described the Week 1 edition.
+
+## Quarterback: through Week 1 2026 (historical)
+
 Kirk Cousins (-2.5) sits at the worst-starter floor. There's a mild argument up: the staff named the ~37-year-old the Week 1 starter over #1 overall pick Fernando Mendoza, which signals they see above-replacement value today. But the 2024 benching in Atlanta, the post-Achilles decline in arm strength and mobility, and a short leash with the rookie waiting all keep him pinned at the bottom. He caps everything above him.
 
 ## What moved the number

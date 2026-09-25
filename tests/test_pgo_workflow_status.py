@@ -92,6 +92,37 @@ class WorkflowStatusTests(unittest.TestCase):
         self.assertEqual(payload['replacement_depth_historical_admission'],'BLOCKED FOR FITTING')
         self.assertNotIn('::warning::',output)
 
+    def test_mccabe_block_is_visible_and_escaped_without_changing_primary_ready(self):
+        reason = 'Input % mismatch\n::error::forged\rline'
+        payload, output = self.report(mccabe_forecasts=dict(status='BLOCKED', blocked_reason=reason))
+        self.assertEqual((payload['status'], payload['condition']), ('READY', 'READY'))
+        self.assertEqual(payload.get('mccabe_forecasts_status'), 'BLOCKED')
+        self.assertEqual(payload['mccabe_forecasts_blocked_reason'], reason)
+        self.assertEqual(output.count('::warning::'), 1)
+        self.assertIn('Input %25 mismatch%0A::error::forged%0Dline', output)
+        self.assertNotIn('\n::error::', output)
+
+    def test_mccabe_waiting_or_absent_collection_is_quiet(self):
+        for components in ({}, {'mccabe_forecasts': {'status': 'UNKNOWN'}},
+                           {'mccabe_forecasts': {'status': 'WAITING'}}):
+            with self.subTest(components=components):
+                payload, output = self.report(**components)
+                self.assertIn(payload.get('mccabe_forecasts_status'), ('UNKNOWN', 'WAITING'))
+                self.assertEqual(payload['mccabe_forecasts_captured'], 0)
+                self.assertEqual(payload['mccabe_forecasts_current_week_captured'], 0)
+                self.assertNotIn('::warning::', output)
+
+    def test_mccabe_counts_distinguish_first_captures_from_current_week_coverage(self):
+        games = [{'game_id': 'old', 'week': 2}, {'game_id': 'current', 'week': 3}]
+        for week, expected in ((3, 1), (4, 0)):
+            with self.subTest(current_week=week):
+                payload, output = self.report(current_week=week,
+                    mccabe_forecasts=dict(status='READY', games=games))
+                self.assertEqual(payload.get('mccabe_forecasts_captured'), 2)
+                self.assertEqual(payload['mccabe_forecasts_current_week_captured'], expected)
+                self.assertEqual(payload['status'], 'READY')
+                self.assertNotIn('::warning::', output)
+
 
 if __name__ == '__main__':
     unittest.main()

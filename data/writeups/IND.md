@@ -30,6 +30,10 @@ skill group is above average, but Week 1 pulled the quarterback and defense belo
 
 ## Quarterback
 
+Daniel Jones (+0.5) is the selected quarterback after moving up from -0.5 in Week 2. Indianapolis scored 30 at Kansas City, a better showing than his Week 1 return.
+
+## Quarterback: through Week 1 2026 (historical)
+
 Daniel Jones (0.0 → −0.5) dips after a rough opener — rusty in his return from a torn
 Achilles, pressured, and inaccurate. Some slack for the elite competition and the layoff, but
 he simply didn't look good, so the number ticks down while the mobility and weapons keep it

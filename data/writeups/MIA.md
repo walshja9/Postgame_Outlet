@@ -27,6 +27,10 @@ Miami grades near the floor on all three lines — the aftermath of a roster tea
 
 ## Quarterback
 
+Malik Willis (-2.0) is the selected quarterback after his grade moved down from -1.5 following the Week 2 loss at San Francisco. The limited established passing record remains the caution in this rating.
+
+## Quarterback: through Week 1 2026 (historical)
+
 Malik Willis (-1.5) is a defensible-to-generous grade for one of the league's worst quarterback situations. Miami moved on from Tua and signed Willis (three years, $67M, named a captain) — but this is roughly his seventh career start, and the model is pricing projected reps, not an established body of work. The athleticism gives it a pulse; the lack of proven dropback play is why it sits well below the line.
 
 ## What moved the number

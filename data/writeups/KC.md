@@ -29,11 +29,10 @@ Mahomes' knee looks fine.
 
 ## Quarterback
 
-Mahomes (+3.5 → +4.0) climbs after a clean, effective return from the torn ACL/LCL that ended
-his 2025 (Week 15). He looked unaffected by the injury or the brace, so the rust haircut comes
-partway off — held at +4.0 rather than the full +4.5 only because it was one 184-yard game.
-Another sharp week or two and this is back to its ceiling; he's still the best insurance policy
-in football.
+Patrick Mahomes (+4.5) is the selected quarterback after his Week 2 performance (32-of-47,
+382 yards, three touchdowns, no interceptions) raised his grade from +4.0. The earlier Week 1
+return from injury moved him from +3.5 to +4.0; those were prior edition values. The current
+team rating also includes +0.5 offense and −0.5 defense.
 
 ## What moved the number
 
@@ -42,4 +41,5 @@ in football.
 
 ## Bottom line
 
-The whole rating hinges on Mahomes's knee. Priced at +3.5 for a rusty Week 1 return behind a banged-up line, Kansas City still projects as a playoff-caliber team — and the number rises the moment he looks like himself again.
+The current rating uses Mahomes at +4.5 after two games. Protection and the rest of the roster
+remain separate considerations in the offense and defense components.

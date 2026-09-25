@@ -22,6 +22,10 @@ structure are real even when the process is sloppy and the WR1 is gone.
 
 ## Quarterback
 
+Drake Maye (+2.5) is the selected quarterback after a half-point reduction following two uneven games. His Week 2 performance against Pittsburgh extended the concern already visible in Week 1.
+
+## Quarterback: through Week 1 2026 (historical)
+
 Drake Maye (+3.0, unchanged) remains a top-tier ascending starter in this model. Week 1
 was uneven and the poor decisions were on tape, but he kept an offense missing its No. 1
 receiver moving — so the grade holds.

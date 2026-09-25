@@ -234,15 +234,21 @@ def extract_qb_section(abbr):
     return ""
 
 
-def load_qb_writeup(name, abbr):
+def load_qb_writeup(name, abbr, value):
     """QB drawer prose (already HTML). Precedence: a dedicated per-QB override
-    at data/qb_writeups/<slug>.md wins; otherwise reuse the team write-up's
-    'Quarterback' section; otherwise ''. (Hybrid: reuse now, override later.)"""
+    at data/qb_writeups/<slug>.md wins; otherwise reuse a team 'Quarterback'
+    section only when its opening names and values the selected player."""
     override = os.path.join(QB_WRITEUPS, f"{qb_slug(name)}.md")
     if os.path.exists(override):
         with open(override, encoding="utf-8") as f:
             return md_to_html(f.read())
-    return md_to_html(extract_qb_section(abbr))
+    section = extract_qb_section(abbr)
+    lead = section.lstrip(" \n*\t")
+    opening = re.match(rf"^{re.escape(name)}\s*\(([^)]*)\)", lead, re.IGNORECASE) if name else None
+    values = re.findall(r"[+\-−]?\d+(?:\.\d+)?", opening[1]) if opening else []
+    if not values or float(values[-1].replace("−", "-")) != value:
+        return ""
+    return md_to_html(section)
 
 
 def qb_tier(v):
@@ -462,7 +468,7 @@ def build_qb_detail(q, kind, rank):
         rank_line = f'QB #{rank} of 32'
     subtitle = f'{team_full} &middot; {role} &middot; {rank_line}'
 
-    writeup = load_qb_writeup(name, abbr if kind == "starter" else None)
+    writeup = load_qb_writeup(name, abbr if kind == "starter" else None, val)
     if not writeup:  # backups usually have only a one-line note; starters a section
         note = (q.get("notes") or "").strip()
         if note:
