@@ -1,0 +1,89 @@
+{
+  "checked_at": "2026-09-25T00:10:27.406997+00:00",
+  "sources": [
+    {
+      "bytes": 393970,
+      "captured_at": "2026-09-25T00:10:26.730301+00:00",
+      "file": "raw/000.html.gz",
+      "final_url": "https://www.nfl.com/injuries/",
+      "kind": "official_report",
+      "sha256": "4948e8197e4207f982b9e8b8fa387d95d030b8572f2eb154e2f68897f092d04c",
+      "started_at": "2026-09-25T00:10:26.460436+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/injuries/"
+    },
+    {
+      "bytes": 539118,
+      "captured_at": "2026-09-25T00:10:26.749066+00:00",
+      "file": "raw/001.html.gz",
+      "final_url": "https://www.atlantafalcons.com/news/",
+      "kind": "team_news",
+      "sha256": "e8cff03d5e540d1ca48bcb5058ed9ed25a1aabdcda13d896ab359863ebc14c60",
+      "started_at": "2026-09-25T00:10:26.460789+00:00",
+      "status": 200,
+      "team": "ATL",
+      "url": "https://www.atlantafalcons.com/news/"
+    },
+    {
+      "bytes": 700433,
+      "captured_at": "2026-09-25T00:10:26.738873+00:00",
+      "file": "raw/002.html.gz",
+      "final_url": "https://www.packers.com/news/",
+      "kind": "team_news",
+      "sha256": "f2312c16effbb491e2a9f3f651f43c94953c5725b93d83c75657566a2422047c",
+      "started_at": "2026-09-25T00:10:26.461544+00:00",
+      "status": 200,
+      "team": "GB",
+      "url": "https://www.packers.com/news/"
+    },
+    {
+      "bytes": 1584944,
+      "captured_at": "2026-09-25T00:10:26.933911+00:00",
+      "file": "raw/003.html.gz",
+      "final_url": "https://www.nfl.com/news",
+      "kind": "league_news",
+      "sha256": "1fecb5539d6e86d1e48c1e42d070a7b728a2c62b663f47acfe4c034ebe37640c",
+      "started_at": "2026-09-25T00:10:26.461798+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/news/"
+    },
+    {
+      "bytes": 469799,
+      "captured_at": "2026-09-25T00:10:27.218092+00:00",
+      "file": "raw/004.html.gz",
+      "final_url": "https://www.atlantafalcons.com/news/atlanta-falcons-week-3-inactives-green-bay-packers",
+      "kind": "official_inactives",
+      "sha256": "32b8e4086601c1636e11547eb9645d15591cdaefd2cad0ff579307e3cf8130ab",
+      "started_at": "2026-09-25T00:10:27.070514+00:00",
+      "status": 200,
+      "team": "ATL",
+      "url": "https://www.atlantafalcons.com/news/atlanta-falcons-week-3-inactives-green-bay-packers"
+    },
+    {
+      "bytes": 317045,
+      "captured_at": "2026-09-25T00:10:27.279460+00:00",
+      "file": "raw/005.html.gz",
+      "final_url": "https://www.packers.com/news/packers-falcons-week-3-inactives-sept-24-2026",
+      "kind": "official_inactives",
+      "sha256": "6c2ea3e6b15635a4ac7a2f2a76e40def9896c0d4b14bfddfdfabede395be257d",
+      "started_at": "2026-09-25T00:10:27.070843+00:00",
+      "status": 200,
+      "team": "GB",
+      "url": "https://www.packers.com/news/packers-falcons-week-3-inactives-sept-24-2026"
+    },
+    {
+      "bytes": 698408,
+      "captured_at": "2026-09-25T00:10:27.288944+00:00",
+      "file": "raw/006.html.gz",
+      "final_url": "https://www.nfl.com/news/week-3-thursday-night-inactives-atlanta-falcons-at-green-bay-packers",
+      "kind": "official_inactives",
+      "sha256": "41b797012f7990f7377a8835e0f5aea79f0377b970aec5dc087aeb0c0301bac2",
+      "started_at": "2026-09-25T00:10:27.071180+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/news/week-3-thursday-night-inactives-atlanta-falcons-at-green-bay-packers"
+    }
+  ]
+}
