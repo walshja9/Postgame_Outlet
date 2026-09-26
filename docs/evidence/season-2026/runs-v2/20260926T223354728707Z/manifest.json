@@ -1,0 +1,18 @@
+{
+  "code_sha256": "0d1e53f901029113a7ccfe2e9a41b496390d082629b288066cf4d8a4b22c3fe5",
+  "created_at": "2026-09-26T22:35:56.800767+00:00",
+  "files": {
+    "state.json.gz": {
+      "bytes": 399987,
+      "sha256": "1b3ea75fbf6fdb0eda2b12adacf05f1d17385c2e373d158ab975da5fcb78448f"
+    }
+  },
+  "previous": {
+    "checked_at": "2026-09-26T22:21:40.056648+00:00",
+    "manifest_sha256": "88eb675c889e0f759c43d662bcee9ff128bb295406c3d94a3ffe0ddb51697607",
+    "manifest_url": "https://raw.githubusercontent.com/walshja9/Postgame_Outlet/main/docs/evidence/season-2026/runs-v2/20260926T222140056648Z/manifest.json",
+    "path": "runs-v2/20260926T222140056648Z",
+    "state_url": "https://raw.githubusercontent.com/walshja9/Postgame_Outlet/main/docs/evidence/season-2026/runs-v2/20260926T222140056648Z/state.json.gz"
+  },
+  "schema_version": 1
+}
