@@ -268,9 +268,10 @@ def _replay(state, game, root):
 
 
 
-def stamp_durable(state, previous, durable):
+def stamp_durable(state, previous, durable, *, stamped=None):
     """Bind a new current record to observed fsync time before admitting its manifest."""
     fields = {'durable_at', 'durable_after_lock', 'durable_after_kickoff'}
+    stamped = set() if stamped is None else stamped
     rewritten = False; saved = utc(durable)
     for key, game in state.get('current_projections', {}).items():
         before = (previous or {}).get('current_projections', {}).get(key)
@@ -282,7 +283,8 @@ def stamp_durable(state, previous, durable):
         require(utc(game['issued_at']) <= saved, 'Current projection issue follows durable write')
         flags = dict(durable_after_lock=saved >= utc(game['lock_at']),
                      durable_after_kickoff=saved >= utc(game['kickoff']))
-        # Stamp once; rewrite again only if a final fsync crossed a timing boundary.
-        if 'durable_at' not in game or any(game.get(field) != value for field,value in flags.items()):
-            game.update(durable_at=durable, **flags); rewritten = True
+        # Caller-supplied metadata is never an observation from this save.
+        # The writer's local set proves the first stamp; later fsyncs recheck boundaries.
+        if key not in stamped or 'durable_at' not in game or any(game.get(field) != value for field,value in flags.items()):
+            game.update(durable_at=durable, **flags); stamped.add(key); rewritten = True
     return rewritten

@@ -224,6 +224,7 @@ def save_state(state, root=DEFAULT_ROOT):
     if (root/'current.json').exists():
         prior = load_current(root)
     discarded = set()
+    current_stamped = set()
     while True:
         rewritten = False
         if 'score_range_collection' in state or 'score_range_collection' in (prior or {}):
@@ -246,7 +247,7 @@ def save_state(state, root=DEFAULT_ROOT):
                 discarded.add('mccabe_forecasts'); rewritten = True
         if state.get('current_projections'):
             from pgo_current_projection import stamp_durable
-            if stamp_durable(state, prior, durable):
+            if stamp_durable(state, prior, durable, stamped=current_stamped):
                 rewritten = True
         if not rewritten:
             break

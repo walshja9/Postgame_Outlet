@@ -190,6 +190,57 @@ class CurrentProjectionTests(unittest.TestCase):
         malformed = copy.deepcopy(self.state); malformed['current_projections'][GAME]['durable_after_kickoff'] = False
         with self.assertRaises(ValueError): api.validate(malformed, self.root)
 
+    def test_new_current_record_overwrites_supplied_stale_durable_metadata(self):
+        self.refresh()
+        game = self.state['current_projections'][GAME]
+        game.update(durable_at='2026-09-13T17:05:01Z', durable_after_lock=True, durable_after_kickoff=True)
+        self.clock = '2026-09-13T17:06:00Z'; self.state['checked_at'] = self.clock
+        clocks = iter([self.clock, '2026-09-13T17:06:01Z'])
+        with patch.object(season, 'now', side_effect=lambda: next(clocks)):
+            directory = season.save_state(self.state, self.root)
+        self.assertEqual(game['durable_at'], self.clock, 'A new record must use this save actual fsync')
+        self.assertTrue(game['durable_after_lock'])
+        self.assertTrue(game['durable_after_kickoff'])
+        self.assertEqual(season.read_json(directory/'manifest.json')['created_at'], '2026-09-13T17:06:01Z')
+        self.assertEqual(season.load_current(self.root), self.state)
+
+    def test_changed_current_record_overwrites_retained_old_durable_metadata(self):
+        self.refresh()
+        original_directory = season.save_state(self.state, self.root)
+        protected = {path:path.read_bytes() for path in original_directory.iterdir()}
+        game = self.state['current_projections'][GAME]
+        old_durable = game['durable_at']
+        # A second archived official receipt is valid model evidence and changes
+        # the core while preserving exactly one roster/depth/stats source each.
+        receipt = copy.deepcopy(game['starter_announcements'][0]['source'])
+        game['source_captures'].append(copy.deepcopy(receipt))
+        game['rankings']['source_captures'].append(copy.deepcopy(receipt))
+        self.clock = '2026-09-13T17:06:00Z'; self.state['checked_at'] = self.clock
+        clocks = iter([self.clock, '2026-09-13T17:06:01Z'])
+        with patch.object(season, 'now', side_effect=lambda: next(clocks)):
+            directory = season.save_state(self.state, self.root)
+        self.assertNotEqual(game['durable_at'], old_durable)
+        self.assertEqual(game['durable_at'], self.clock, 'Changed coherent core requires this save actual fsync')
+        self.assertEqual(season.read_json(directory/'manifest.json')['created_at'], '2026-09-13T17:06:01Z')
+        self.assertEqual(season.load_current(self.root), self.state)
+        for path, raw in protected.items():
+            self.assertEqual(path.read_bytes(), raw, 'Previously admitted archive must stay immutable')
+
+    def test_unchanged_current_record_preserves_exact_durable_metadata(self):
+        self.refresh()
+        original_directory = season.save_state(self.state, self.root)
+        protected = {path:path.read_bytes() for path in original_directory.iterdir()}
+        before = copy.deepcopy(self.state['current_projections'][GAME])
+        self.clock = '2026-09-13T17:06:00Z'; self.state['checked_at'] = self.clock
+        # One clock read proves an unchanged record needs no timestamp rewrite.
+        clocks = iter([self.clock])
+        with patch.object(season, 'now', side_effect=lambda: next(clocks)):
+            season.save_state(self.state, self.root)
+        self.assertEqual(self.state['current_projections'][GAME], before)
+        self.assertEqual(season.load_current(self.root), self.state)
+        for path, raw in protected.items():
+            self.assertEqual(path.read_bytes(), raw)
+
     def test_current_projection_requires_clock_before_durable_archive(self):
         api = self.module()
         self.assertIn('durable', inspect.signature(api.validate).parameters,
