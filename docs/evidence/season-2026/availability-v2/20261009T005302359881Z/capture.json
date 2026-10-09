@@ -1,0 +1,77 @@
+{
+  "checked_at": "2026-10-09T00:53:03.312726+00:00",
+  "sources": [
+    {
+      "bytes": 405336,
+      "captured_at": "2026-10-09T00:53:02.535769+00:00",
+      "file": "raw/000.html.gz",
+      "final_url": "https://www.nfl.com/injuries/",
+      "kind": "official_report",
+      "sha256": "650c15874894c9bb12f82d7d0695061504ef31e779cf5109552e20c7c7d14936",
+      "started_at": "2026-10-09T00:53:02.370327+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/injuries/"
+    },
+    {
+      "bytes": 506744,
+      "captured_at": "2026-10-09T00:53:02.607226+00:00",
+      "file": "raw/001.html.gz",
+      "final_url": "https://www.dallascowboys.com/news/",
+      "kind": "team_news",
+      "sha256": "a54486b3a8698b81f48b725d5ee1495b6952a92462a880ecf62e44648813cf81",
+      "started_at": "2026-10-09T00:53:02.370702+00:00",
+      "status": 200,
+      "team": "DAL",
+      "url": "https://www.dallascowboys.com/news/"
+    },
+    {
+      "bytes": 358736,
+      "captured_at": "2026-10-09T00:53:02.683500+00:00",
+      "file": "raw/002.html.gz",
+      "final_url": "https://www.buccaneers.com/news/",
+      "kind": "team_news",
+      "sha256": "d06eb30f0423153296949f3fb4f89fdc76697be987fe15e548fca52388be3a2a",
+      "started_at": "2026-10-09T00:53:02.371100+00:00",
+      "status": 200,
+      "team": "TB",
+      "url": "https://www.buccaneers.com/news/"
+    },
+    {
+      "bytes": 1603410,
+      "captured_at": "2026-10-09T00:53:02.587625+00:00",
+      "file": "raw/003.html.gz",
+      "final_url": "https://www.nfl.com/news",
+      "kind": "league_news",
+      "sha256": "6d4c1196ce5dfd4196e55d09f24f946a6cd47ae30e3468a4b1733fbb43830ade",
+      "started_at": "2026-10-09T00:53:02.371438+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/news/"
+    },
+    {
+      "bytes": 394946,
+      "captured_at": "2026-10-09T00:53:02.958051+00:00",
+      "file": "raw/004.html.gz",
+      "final_url": "https://www.buccaneers.com/news/bucs-cowboys-inactives-rueben-bain-jr-ko-kieft-return-action",
+      "kind": "official_inactives",
+      "sha256": "7211ae58faf746109892ab9b0fda114aa396c18037eac760c4b4b9b875592c94",
+      "started_at": "2026-10-09T00:53:02.797935+00:00",
+      "status": 200,
+      "team": "TB",
+      "url": "https://www.buccaneers.com/news/bucs-cowboys-inactives-rueben-bain-jr-ko-kieft-return-action"
+    },
+    {
+      "bytes": 704916,
+      "captured_at": "2026-10-09T00:53:03.208099+00:00",
+      "file": "raw/005.html.gz",
+      "final_url": "https://www.nfl.com/news/week-5-thursday-night-inactives-tampa-bay-buccaneers-at-dallas-cowboys",
+      "kind": "official_inactives",
+      "sha256": "22a07a04a8d00297843a1279a66c0a9e2684fa5ab006d14ec3de71d069b136bf",
+      "started_at": "2026-10-09T00:53:02.798318+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/news/week-5-thursday-night-inactives-tampa-bay-buccaneers-at-dallas-cowboys"
+    }
+  ]
+}
