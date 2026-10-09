@@ -1,0 +1,21 @@
+{
+  "capture": {
+    "bytes": 529600,
+    "path": "starter-drafts/2c689e71e069e896ed30e0431b1339980a31e183150bb565e77e3e47ef08a905.json",
+    "sha256": "2c689e71e069e896ed30e0431b1339980a31e183150bb565e77e3e47ef08a905"
+  },
+  "config": {
+    "exists": false
+  },
+  "kind": "official_starter_announcement_review",
+  "purpose": "current_projection",
+  "reviewed_at": "2026-10-09T00:00:09.985773+00:00",
+  "schema_version": 1,
+  "source": {
+    "bytes": 529295,
+    "captured_at": "2026-10-09T00:00:09.963680+00:00",
+    "path": "source-archive/639f439902a24326b7158fc7d1c6f3c0e99048b84a32539c1f448950fa642fe4.json",
+    "sha256": "639f439902a24326b7158fc7d1c6f3c0e99048b84a32539c1f448950fa642fe4",
+    "url": "https://www.buccaneers.com/news/bucs-cowboys-inactives-rueben-bain-jr-ko-kieft-return-action"
+  }
+}

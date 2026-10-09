@@ -154,6 +154,155 @@ def _latest_availability(game, context, *, compact=False):
             f'<p>Observed {_time(captured)}. <strong>{timing}</strong></p>' + body + '</div>')
 
 
+
+def _current_projection_info(game, projection):
+    """Present a separately issued late forecast without inheriting saved grades."""
+    from pgo_forecast_lab import _spread, _projected_score
+    identities = ('game_id', 'season', 'week', 'home', 'away', 'kickoff', 'lock_at')
+    if (not isinstance(projection, dict)
+            or any(projection.get(key) != game.get(key) for key in identities)
+            or projection.get('forecast_status') != 'CURRENT'
+            or projection.get('grade') != 'NOT_ELIGIBLE'
+            or projection.get('eligible_for_locked_record') is not False
+            or projection.get('confidence') is not None):
+        raise ValueError('Current projection must be separate from the matching locked record')
+    issued = utc(projection['issued_at'])
+    after_lock = issued >= utc(game['lock_at'])
+    after_kickoff = issued >= utc(game['kickoff'])
+    if (not after_lock or projection.get('after_lock') is not after_lock
+            or projection.get('after_kickoff') is not after_kickoff):
+        raise ValueError('Current projection timing does not match its issue time')
+    durable_at = projection.get('durable_at')
+    durable_html, durable_attribute = '', ''
+    if durable_at is not None:
+        saved = utc(durable_at)
+        saved_after_lock = saved >= utc(game['lock_at'])
+        saved_after_kickoff = saved >= utc(game['kickoff'])
+        if (saved < issued or projection.get('durable_after_lock') is not saved_after_lock
+                or projection.get('durable_after_kickoff') is not saved_after_kickoff):
+            raise ValueError('Current projection durable save timing does not reconcile')
+        saved_timing = ('Saved after kickoff; after T-60 lock' if saved_after_kickoff else
+                        'Saved after T-60 lock; before kickoff')
+        durable_html = f'Saved {_time(durable_at)}; <strong>{saved_timing}</strong>'
+        durable_attribute = f' data-current-projection-durable-at="{_text(durable_at)}"'
+    qbs = projection.get('expected_qbs') or {}
+    if any(not isinstance(qbs.get(team), str) or not qbs[team].strip()
+           for team in (game['away'], game['home'])):
+        raise ValueError('Current projection requires both expected quarterback identities')
+    reason = projection.get('blocked_reason')
+    available = not reason
+    if reason and not isinstance(reason, str):
+        raise ValueError('Current projection blocking reason must be text')
+    if not available:
+        if any(projection.get(name) is not None for name in
+               ('margin', 'total', 'home_points', 'away_points', 'pick')):
+            raise ValueError('Blocked current projection cannot publish a pick or numerical score')
+        pick = None
+    else:
+        margin, total, hp, ap = (_number(projection[name])
+                                 for name in ('margin', 'total', 'home_points', 'away_points'))
+        pick = game['home'] if margin > 0 else game['away'] if margin < 0 else None
+        if (projection.get('pick') != pick
+                or not math.isclose(hp, (total+margin)/2, abs_tol=1e-8)
+                or not math.isclose(ap, (total-margin)/2, abs_tol=1e-8)):
+            raise ValueError('Current projection scores and selected winner do not reconcile')
+        explanation = projection.get('explanation')
+        if explanation is not None:
+            neutral, venue, rest = (_number(explanation[name]) for name in
+                                    ('neutral_margin', 'home_adjustment', 'rest_adjustment'))
+            if not math.isclose(math.fsum((neutral, venue, rest)), margin, rel_tol=0, abs_tol=1e-8):
+                raise ValueError('Current projection explanation does not reconcile')
+            if 'home_rating' in explanation or 'away_rating' in explanation:
+                hr, ar = (_number(explanation[name]) for name in ('home_rating', 'away_rating'))
+                if not math.isclose(hr-ar, neutral, rel_tol=0, abs_tol=1e-8):
+                    raise ValueError('Current projection rating inputs do not reconcile')
+    announcements = projection.get('starter_announcements') or []
+    if not announcements:
+        raise ValueError('Current projection requires verified starter source evidence')
+    captures, sources = [], []
+    for announcement in announcements:
+        source = announcement['source']
+        if (announcement.get('team') not in qbs
+                or announcement.get('full_name') != qbs[announcement['team']]
+                or utc(source['captured_at']) > issued):
+            raise ValueError('Current projection starter evidence does not match its issue')
+        captures.append(source['captured_at'])
+        sources.extend([dict(href=source['url'], label='Official starter announcement'),
+                        dict(href=archive_href(source['path']), label='Saved starter source evidence')])
+    evidence = _sources(sources)
+    away, home = _text(game['away']), _text(game['home'])
+    summary, averages, spread = 'Unavailable', None, None
+    if available:
+        whole = [Decimal(str(value)).quantize(Decimal('1'), rounding=ROUND_HALF_UP) for value in (ap, hp)]
+        summary = (f'About {whole[0]} points each' if whole[0] == whole[1] else
+                   f'{away} {whole[0]}, {home} {whole[1]}')
+        averages = f'{away} {_projected_score(ap)}, {home} {_projected_score(hp)}'
+        spread = _spread(projection)
+    quarterbacks = '; '.join(f'{_text(team)}: {_text(qbs[team])}' for team in (game['away'], game['home']))
+    timing = 'After kickoff; after T-60 lock' if after_kickoff else 'After T-60 lock; before kickoff'
+    captured = ', '.join(_time(value) for value in sorted(set(captures), key=utc))
+    provenance = (f'<p>Issue timing: <strong>{timing}.</strong> Issued {_time(projection["issued_at"])}. '
+                  f'Starter source captured {captured}.</p>'
+                  + (f'<p>{durable_html}.</p>' if durable_html else '')
+                  + '<p>Excluded from locked records, on-time accuracy, ATS grading and confidence allocation. '
+                  'The original locked forecast keeps its saved issue time, availability and grade.</p>')
+    calculation = ('No current score or winner selection is available while this issue remains unresolved.' if not available else
+                   f'The current model favors {_spread(projection)}. Combined-points estimate: {total:.1f}. '
+                   f'Home average = (combined points + home lead) / 2 = {hp:.2f}; away average = '
+                   f'(combined points - home lead) / 2 = {ap:.2f}. '
+                   'Rounded scores are not literal final-score predictions.')
+    return dict(available=available, reason=_text(reason) if reason else '', score=summary, averages=averages,
+                winner=_text(pick) if pick else 'No model edge', margin=spread,
+                quarterbacks=quarterbacks, timing=timing, captured=captured,
+                durable_html=durable_html, durable_attribute=durable_attribute,
+                provenance=provenance, evidence=evidence, calculation=calculation)
+
+
+def _current_game(game, week, projection, comparison=None, availability_context=None):
+    info = _current_projection_info(game, projection)
+    key = _text(game['game_id'])
+    winner = (f'PGO current winner selection: {info["winner"]}<br><small>'
+              f'Expected quarterbacks: {info["quarterbacks"]}<br>Projected margin: {info["margin"]}</small>')
+    scores = (f'<strong>Current projection</strong><br>Predicted: {info["score"]}'
+              f'<details data-view-key="current-score-{key}"><summary>Model averages</summary>'
+              f'<p>{info["averages"]}</p></details>')
+    if not info['available']:
+        winner = f'Current selection unavailable<br><small>Expected quarterbacks: {info["quarterbacks"]}</small>'
+        scores = f'<strong>Current projection unavailable</strong><br>{info["reason"]}'
+    result = game.get('result')
+    actual = ('Pending' if result is None else
+              f'Final: {_text(game["away"])} {_integer(result["away_score"])}, '
+              f'{_text(game["home"])} {_integer(result["home_score"])}')
+    values = (winner, scores, 'Excluded from locked records; no current forecast grade.', actual,
+              'No confidence allocation for this current projection.',
+              f'Current projection<br>Issue timing: <strong>{info["timing"]}</strong><br>'
+              f'Issued {_time(projection["issued_at"])}'
+              + (f'<br>{info["durable_html"]}' if info['durable_html'] else '')
+              + f'<br>Starter source captured {info["captured"]}'
+              f'<br>Kickoff {_time(game["kickoff"])}')
+    cells = ''.join(f'<td role="cell"><span class="season-cell-label" aria-hidden="true">{label}</span>'
+                    f'<div class="season-cell-value">{value}</div></td>'
+                    for label, value in zip(SEASON_HEADERS[1:], values))
+    original = _game(game, week, comparison, availability_context, original=True)
+    return (f'<tr id="season-game-{key}" data-season-game-id="{key}" '
+            f'data-current-projection-issued-at="{_text(projection["issued_at"])}"{info["durable_attribute"]} '
+            'class="season-game-row" role="row">'
+            f'<th scope="row" role="rowheader">{_text(game["away"])} @ {_text(game["home"])}</th>{cells}</tr>'
+            '<tr class="forecast-reason-row" role="row"><td colspan="7" role="cell">'
+            f'<details class="forecast-reason" data-view-key="current-reason-{key}">'
+            '<summary>Current forecast calculation and starter evidence</summary>'
+            f'{info["provenance"]}<p>Expected quarterbacks: {info["quarterbacks"]}.</p>'
+            f'<p>{info["calculation"]}</p><p>Edition: {_text(projection["source_edition"])}.</p>'
+            f'{info["evidence"]}</details>'
+            f'<details id="season-original-{key}" class="forecast-reason" data-view-key="original-{key}">'
+            '<summary>Original locked forecast and saved grades</summary>'
+            '<p>This preserved record uses its original quarterback assumption and issue time. '
+            'Its conditional estimate remains withheld when the original pick was blocked.</p>'
+            f'<div class="table-shell" data-view-key="original-table-{key}"><table class="season-picks-table">'
+            '<thead><tr>' + ''.join(f'<th scope="col">{header}</th>' for header in SEASON_HEADERS) + '</tr></thead>'
+            f'<tbody>{original}</tbody></table></div></details></td></tr>')
+
+
 def _game_day(state):
     eastern = ZoneInfo('America/New_York')
     day = utc(state['checked_at']).astimezone(eastern).date()
@@ -164,6 +313,25 @@ def _game_day(state):
     for game in today:
         context = (state.get('availability_context') or {}).get(game['game_id'])
         key = _text(game['game_id']); confidence = game.get('confidence') or {}
+        projection = (state.get('current_projections') or {}).get(game['game_id'])
+        if projection is not None:
+            info = _current_projection_info(game, projection)
+            selection = f'PGO current winner selection: {info["winner"]}' if info['available'] else 'Current selection unavailable'
+            score = (f'<p>Predicted: {info["score"]}. Projected margin: {info["margin"]}.</p>' if info['available'] else
+                     f'<p><strong>Current projection unavailable:</strong> {info["reason"]}</p>')
+            cards.append(f'<article class="game-day-card"><div><h4>{_text(game["away"])} @ {_text(game["home"])}</h4>'
+                         '<p><strong>Current projection</strong></p>'
+                         f'<p class="game-day-pick">{selection}</p>' + score +
+                         f'<p>Expected quarterbacks: {info["quarterbacks"]}.</p>{info["provenance"]}'
+                         f'<dl class="game-day-times"><div><dt>Kickoff</dt><dd>{_time(game["kickoff"],clock_only=True)}</dd></div>'
+                         f'<div><dt>Original prediction lock</dt><dd>{_time(game["lock_at"],clock_only=True)}</dd></div></dl>'
+                         f'<p><a href="#season-original-{key}" data-view-key="game-day-original-{key}">Original locked forecast</a></p>'
+                         f'</div><div>{_latest_availability(game,context,compact=True) if context else _absences(projection,True)}'
+                         f'<details data-view-key="game-day-current-source-{key}"><summary>Current starter source evidence</summary>'
+                         f'{info["evidence"]}</details>'
+                         f'<a class="game-day-link" href="#season-game-{key}" data-view-key="game-day-link-{key}">'
+                         'Current score estimate and explanation</a></div></article>')
+            continue
         pick = ('Pick withheld' if game.get('blocked_reason') or game['forecast_status']=='BLOCKED' else
                 f'PGO winner pick: {_text(game["pick"])}' if game.get('pick') else 'No model edge')
         probability = confidence.get('win_probability')
@@ -490,7 +658,9 @@ def _postgame_card(game, comparison):
             'ATS uses the saved sportsbook line.</p></div>')
 
 
-def _game(game, week, comparison=None, availability_context=None):
+def _game(game, week, comparison=None, availability_context=None, current_projection=None, *, original=False):
+    if current_projection is not None:
+        return _current_game(game, week, current_projection, comparison, availability_context)
     from pgo_forecast_lab import _spread, _projected_score
     if game['grade'] not in GRADES or game['forecast_status'] not in FORECAST_STATES:
         raise ValueError('Unknown season forecast or grade status')
@@ -622,7 +792,9 @@ def _game(game, week, comparison=None, availability_context=None):
                          f'Announcement saved {_time(source["captured_at"])}.</p>'
                          + _sources([dict(href=source['url'],label='Official starter announcement'),
                                      dict(href=archive_href(source['path']),label='Saved announcement and source evidence')]))
-    return (f'<tr id="season-game-{game_id}" data-season-game-id="{game_id}" class="season-game-row" role="row">'
+    row_id = f'season-original-game-{game_id}' if original else f'season-game-{game_id}'
+    row_attribute = 'data-saved-season-game-id' if original else 'data-season-game-id'
+    return (f'<tr id="{row_id}" {row_attribute}="{game_id}" class="season-game-row" role="row">'
             f'<th scope="row" role="rowheader">{away} @ {home}{starter_badge}</th>' + ''.join(cells) + '</tr>'
             f'<tr class="forecast-reason-row" role="row"><td colspan="7" role="cell">' + _postgame_card(game,comparison) +
             f'<details id="season-reason-{game_id}" class="forecast-reason" data-view-key="reason-{game_id}">'
@@ -636,7 +808,7 @@ def _game(game, week, comparison=None, availability_context=None):
             + _latest_availability(game,availability_context) + '</div></details></td></tr>')
 
 
-def _week(week, current, comparisons=None, availability_context=None):
+def _week(week, current, comparisons=None, availability_context=None, current_projections=None):
     if week['status'] not in WEEK_STATES: raise ValueError('Unknown week status')
     games = week['games']
     _integer(week['week'])
@@ -647,7 +819,8 @@ def _week(week, current, comparisons=None, availability_context=None):
     if len(ids) != len(set(ids)) or len(points) != len(set(points)):
         raise ValueError('Duplicate game or confidence allocation in week')
     counts = Counter(game['grade'] for game in games)
-    rows = ''.join(_game(game,week,(comparisons or {}).get(game['game_id']),(availability_context or {}).get(game['game_id'])) for game in games)
+    rows = ''.join(_game(game,week,(comparisons or {}).get(game['game_id']),(availability_context or {}).get(game['game_id']),
+                          (current_projections or {}).get(game['game_id'])) for game in games)
     allocations = [game['confidence'] for game in games if game.get('confidence') is not None]
     pool_summary = ''
     if allocations:
@@ -1211,6 +1384,10 @@ def render_season(state, *, accuracy=None, mccabe=None, market=None, weekly_revi
     games = [game for week in weeks for game in week['games']]
     if len({game['game_id'] for game in games}) != len(games) or any(game.get('season') != season for game in games):
         raise ValueError('Season game identity is duplicated or belongs to another season')
+    projections = state.get('current_projections') or {}
+    if (not isinstance(projections, dict) or set(projections) - {g['game_id'] for g in games}
+            or any(utc(p['issued_at']) > utc(state['checked_at']) for p in projections.values())):
+        raise ValueError('Current projection identity or issue time differs from the validated state')
     records = []
     for row in state.get('model_records', []):
         counts = ''.join(f'<td>{_integer(row[key])}</td>' for key in ('wins','losses','ties','no_pick','pending'))
@@ -1226,12 +1403,22 @@ def render_season(state, *, accuracy=None, mccabe=None, market=None, weekly_revi
         ('offensive_usage', 'season-offensive-usage', 'Offensive playing-time checks'),
         ('score_range_collection', 'season-score-collection', 'Score-error collection'),
         ('statistics_review', 'season-statistics-review', 'Later statistical corrections'),
+        ('current_projection_check', 'season-current-projection-check', 'Current forecasts'),
         ('ats', 'season-ats', 'Sportsbook comparisons')) if (state.get(key) or {}).get('status') == 'BLOCKED']
     update_note = ('<p class="season-caption">Separate updates needing review: ' + ', '.join(failed_updates)
                    + '. Earlier saved information is retained.</p>') if failed_updates else ''
+    current_check = state.get('current_projection_check') or {}
+    current_update_note = ''
+    if current_check.get('status') == 'BLOCKED':
+        retained = ('Earlier current forecast is retained with its original issue time.' if projections else
+                    'No verified current forecast is available; original locked records are retained.')
+        current_update_note = ('<aside class="notice" id="season-current-projection-check">'
+            '<h3>Current forecast update needs review</h3>'
+            f'<p>{_text(current_check.get("blocked_reason") or "The latest current forecast check could not be verified.")}</p>'
+            f'<p>Checked {_time(current_check.get("checked_at"))}. {retained}</p></aside>')
     main_status = 'Latest refresh completed' if state['status'] == 'READY' else 'Update needs review'
-    current_weeks = ''.join(_week(w,True,comparisons,state.get('availability_context')) for w in weeks if w['week'] == current)
-    archives = ''.join(_week(w,False,comparisons,state.get('availability_context')) for w in sorted(weeks,key=lambda w:w['week'],reverse=True) if w['week'] != current)
+    current_weeks = ''.join(_week(w,True,comparisons,state.get('availability_context'),projections) for w in weeks if w['week'] == current)
+    archives = ''.join(_week(w,False,comparisons,state.get('availability_context'),projections) for w in sorted(weeks,key=lambda w:w['week'],reverse=True) if w['week'] != current)
     links = [('season-game-day','Game day')]
     if current_weeks: links.append((f'season-week-{current}',f'Week {current} picks'))
     if state.get('rankings'): links.append(('season-rankings','Rankings'))
@@ -1275,7 +1462,7 @@ def render_season(state, *, accuracy=None, mccabe=None, market=None, weekly_revi
             'Injury news is shown as context; current non-QB injuries and backup quality are not separately rated.</p></details>'
             f'<p class="season-caption"><strong>Main picks and grades:</strong> {main_status}. '
             'Non-QB injuries and backup quality are context, not fitted adjustments.</p>' + block + update_note
-            + _freshness(state) + _statistics_review(state) + _inactive_watch(state) + _game_day(state) + _rankings(state.get('rankings'),mccabe,state) +
+            + _freshness(state) + _statistics_review(state) + current_update_note + _inactive_watch(state) + _game_day(state) + _rankings(state.get('rankings'),mccabe,state) +
             '<h3 id="season-records">Winner records (straight-up)</h3>'
             '<p>W: the selected team won. L: the selected team lost. T: the game ended in a tie. '
             'Sportsbook spread records are tracked separately.</p>'

@@ -1,0 +1,15 @@
+{
+  "announcements": [
+    {
+      "game_id": "2026_05_TB_DAL",
+      "source": {
+        "bytes": 529295,
+        "captured_at": "2026-10-09T00:00:09.963680+00:00",
+        "path": "source-archive/639f439902a24326b7158fc7d1c6f3c0e99048b84a32539c1f448950fa642fe4.json",
+        "sha256": "639f439902a24326b7158fc7d1c6f3c0e99048b84a32539c1f448950fa642fe4",
+        "url": "https://www.buccaneers.com/news/bucs-cowboys-inactives-rueben-bain-jr-ko-kieft-return-action"
+      }
+    }
+  ],
+  "schema_version": 1
+}

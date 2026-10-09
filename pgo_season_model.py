@@ -299,7 +299,7 @@ def _validate_production(game, teams, players):
 
 def build_week(seed, fit, completed_games, team_rows, qb_rows, selected_roster, upcoming_games, *,
                season=2026, completed_week, generated_at, scoring_rates, league_mean_total,
-               inputs_as_of=None, corrected_fit=None):
+               inputs_as_of=None, corrected_fit=None, current_projection=False):
     """Replay from the original seed; caller verifies full completed-week inventory.
 
     qb_rows contains the full player feed for exposure reconciliation. Only QB
@@ -313,6 +313,7 @@ def build_week(seed, fit, completed_games, team_rows, qb_rows, selected_roster, 
     if corrected_fit is not None:
         _require(corrected_fit == _read_pinned(SOURCE_DIR.parent / 'september-08-corrected/final-fit.json', CORRECTED_FIT_SHA256), 'Frozen comparison fit changed')
     _require(season == 2026 and type(completed_week) is int and 0 <= completed_week <= 18, 'Unsupported season or completed week')
+    _require(type(current_projection) is bool, 'Invalid current projection mode')
     generated = _utc(generated_at); captured = _utc(inputs_as_of or generated_at)
     _require(captured <= generated and captured >= _utc(context['current_strength']['last_kickoff']), 'Input clock is invalid')
     games = sorted(deepcopy(completed_games), key=lambda g: (_utc(g['kickoff']), g['game_id']))
@@ -414,7 +415,8 @@ def build_week(seed, fit, completed_games, team_rows, qb_rows, selected_roster, 
     output = []
     for game in upcoming:
         _game_identity(game, season)
-        _require(game['week'] == completed_week + 1 and generated < _utc(game['kickoff']) - timedelta(minutes=60), 'Upcoming week or cutoff is invalid')
+        _require(game['week'] == completed_week + 1
+                 and (current_projection or generated < _utc(game['kickoff']) - timedelta(minutes=60)), 'Upcoming week or cutoff is invalid')
         _require(not any(game.get(k) is not None for k in ('home_score', 'away_score', 'actual_margin', 'finalized_at')), 'Upcoming game contains a result')
         matchup = {**game, 'neutral': game['location'] == 'Neutral'}
         vector = ch._matchup_features(features[game['home']], features[game['away']], matchup)
@@ -434,6 +436,7 @@ def build_week(seed, fit, completed_games, team_rows, qb_rows, selected_roster, 
                                             total_method='Frozen 2025 regular-season plus playoff points scored/allowed rates'),
                            **({'corrected_fit_margin': scoring.score(vector, corrected_fit)} if corrected_fit is not None else {})))
     return dict(schema_version=1, status=STATUS, season=season, week=min(18, completed_week + 1),
+                **({'purpose':'current_projection'} if current_projection else {}),
                 **({'unattributed_penalties': unattributed} if unattributed else {}),
                 season_complete=completed_week == 18,
                 generated_at=generated.isoformat(), inputs_as_of=captured.isoformat(), teams=ranked, games=output,

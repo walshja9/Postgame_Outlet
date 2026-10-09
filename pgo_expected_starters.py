@@ -13,6 +13,7 @@ from pgo_sources import CURRENT_TEAMS, normalize_team
 
 ROOT = Path(__file__).resolve().parent
 CONFIG = ROOT/'data/pgo_starter_announcements.json'
+CURRENT_CONFIG = ROOT/'data/pgo_current_starter_announcements.json'
 
 
 def _primary_article(raw):
@@ -27,7 +28,7 @@ def _primary_article(raw):
     return articles[0]
 
 
-def _announcement(game, source, root, checked_at):
+def _announcement(game, source, root, checked_at, *, purpose='locked_forecast'):
     require(type(game['season']) is int and game['season'] == 2026 and game['game_type'] == 'REG'
             and type(game['week']) is int and 1 <= game['week'] <= 18
             and game['home'] in CURRENT_TEAMS and game['away'] in CURRENT_TEAMS
@@ -38,14 +39,19 @@ def _announcement(game, source, root, checked_at):
             'Starter announcement game identity differs')
     checked, kickoff = utc(checked_at), utc(game['kickoff'])
     cutoff = kickoff-timedelta(minutes=60)
-    require(checked < cutoff and utc(game.get('lock_at', cutoff)) == cutoff,
-            'Starter announcement must be issued before T-60')
+    require(purpose in ('locked_forecast', 'current_projection'), 'Invalid starter evidence purpose')
+    require(utc(game.get('lock_at', cutoff)) == cutoff, 'Starter announcement cutoff differs')
+    if purpose == 'locked_forecast':
+        require(checked < cutoff, 'Starter announcement must be issued before T-60')
+    else:
+        require(checked < kickoff + timedelta(hours=6), 'Current starter evidence is outside the game window')
     require(isinstance(source, dict) and re.fullmatch(r'[0-9a-f]{64}', source['sha256'])
             and source['path'] == 'source-archive/'+source['sha256']+'.json', 'Invalid starter source reference')
     record = json.loads(source_bytes(root, source, checked_at))
     require(type(record['schema_version']) is int and record['schema_version'] == 1
             and record['kind'] == 'official_starter_announcement'
             and type(record['status']) is int and record['status'] == 200, 'Invalid starter source envelope')
+    require(record.get('purpose', 'locked_forecast') == purpose, 'Starter evidence purpose differs')
     decision = record['decision']; team = decision['team']
     require(team in (game['home'], game['away']) and set(decision['game']) == set(IDENTITY)
             and type(decision['game']['season']) is int and type(decision['game']['week']) is int
@@ -57,6 +63,8 @@ def _announcement(game, source, root, checked_at):
     require(source['captured_at'] == record['captured_at'], 'Starter source capture clock differs')
     published, modified, captured, reviewed = (utc(record[key]) for key in
                                               ('published_at','modified_at','captured_at','reviewed_at'))
+    if purpose == 'current_projection':
+        require(modified <= kickoff, 'Current starter article was modified after kickoff')
     require(kickoff-timedelta(days=7) <= published <= modified <= captured <= reviewed <= checked
             and utc(record['started_at']) <= captured, 'Starter source publication, capture or review clock differs')
     require(isinstance(record['body_base64'], str), 'Invalid starter HTML encoding')
@@ -183,3 +191,57 @@ def verify(game, annotations, root):
                     'Saved availability quarterback differs from announcement')
     except (KeyError, TypeError, AttributeError, OverflowError) as error:
         raise ValueError('Invalid saved starter announcement schema') from error
+
+
+def apply_current(selected, roster, games, root, checked_at, *, teams=None, depth=None):
+    """Resolve separately reviewed current authority; never change locked rules."""
+    requested = set(CURRENT_TEAMS if teams is None else teams)
+    require(requested and requested <= set(CURRENT_TEAMS), 'Invalid current starter team scope')
+    indexed = {g['game_id']:g for g in games}
+    require(len(indexed) == len(games), 'Duplicate current starter input game')
+    config = json.loads(CURRENT_CONFIG.read_bytes()) if CURRENT_CONFIG.exists() else dict(schema_version=1, announcements=[])
+    require(type(config.get('schema_version')) is int and config['schema_version'] == 1
+            and isinstance(config.get('announcements'), list), 'Invalid current starter configuration')
+    chosen = copy.deepcopy(selected); annotations = {}; seen = set(); chosen_teams = set()
+    if depth is not None:
+        require(not chosen, 'Current default-depth resolution requires an empty selection')
+    for rule in config['announcements']:
+        require(isinstance(rule, dict) and set(rule) == {'game_id', 'source'}, 'Invalid current starter rule')
+        if rule['game_id'] not in indexed:
+            continue
+        game = indexed[rule['game_id']]
+        decision = _announcement(game, rule['source'], root, checked_at, purpose='current_projection')
+        team = decision['team']; key = (game['game_id'], team)
+        require(key not in seen and team in requested, 'Duplicate or out-of-scope current starter')
+        require(team not in chosen_teams, 'Conflicting current starter games')
+        seen.add(key); chosen_teams.add(team)
+        chosen[team] = select_player(roster, decision, game)
+        annotations.setdefault(game['game_id'], []).append(dict(team=team, gsis_id=decision['gsis_id'],
+            full_name=decision['full_name'], source=copy.deepcopy(rule['source'])))
+    if depth is not None:
+        from pgo_season import select_roster
+        remaining = requested - set(chosen)
+        if remaining:
+            chosen.update(select_roster(roster, depth, checked_at, teams=remaining))
+    require(set(chosen) == requested, 'Current starters must cover requested teams')
+    ids = [r['gsis_id'] for r in chosen.values()]
+    require(all(isinstance(pid,str) and re.fullmatch(r'00-\d{7}',pid) for pid in ids)
+            and len(set(ids)) == len(requested)
+            and all(normalize_team(row['team']) == team for team,row in chosen.items()),
+            'Current starter identities differ or are duplicated')
+    return chosen, annotations
+
+
+def verify_current(game, annotations, root):
+    """Replay the original current-forecast evidence and its actual issue clock."""
+    require(isinstance(annotations, list), 'Invalid current starter annotations')
+    issued = utc(game['issued_at']); inputs = utc(game.get('inputs_as_of',game['issued_at']))
+    require(inputs <= issued, 'Current starter input clock follows issue')
+    seen = set()
+    for annotation in annotations:
+        decision = _announcement(game, annotation['source'], root, inputs, purpose='current_projection')
+        team = decision['team']
+        require(team not in seen and all(annotation[k] == decision[k] for k in ('team','gsis_id','full_name')),
+                'Current starter annotation identity differs or is duplicated')
+        seen.add(team)
+        require(game['expected_qbs'][team] == decision['full_name'], 'Current forecast quarterback differs')

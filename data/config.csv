@@ -2,7 +2,7 @@ key,value,description
 home_field_adv,2.0,Points added to the home team in a projection
 scheme_mode,additive,additive = scheme_value adds directly to rating; multiplier = scheme_value scales (off_value+def_value) by (1+scheme_value/10)
 season,2026,Season label for the output workbook
-edition,Week 4 2026,Public edition label
+edition,Week 5 2026,Public edition label
 author,Sean McCabe,Named Power Ratings author
 injury_checked_at,2026-09-09T23:15:18.707959+00:00,Official injury review; independent of rating snapshot time
 injury_status,Patriots final inactives rechecked at 7:15 PM ET: Behren Morton is the emergency quarterback; Ben Brown (knee) and TreVeyon Henderson (ankle) are inactive. Seattle final inactives were checked at 6:52 PM ET. Other teams retain earlier dated reports. These notes do not recalculate saved forecasts or grades.,Official injury review; independent of rating snapshot time

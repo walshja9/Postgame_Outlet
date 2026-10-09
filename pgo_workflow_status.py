@@ -24,6 +24,7 @@ def report_health(state, summary_path=None):
                   ('offensive_usage', 'offensive_usage', 'READY'),
                   ('score_range_collection', 'score_range_collection', 'READY'),
                   ('mccabe_forecasts', 'mccabe_forecasts', 'READY'),
+                  ('current_projection_check', 'current_projection', 'READY'),
                   ('statistics_review', 'statistics_review', 'CLEAR'),
                   ('ats','ats','READY')]
     for key, prefix, _ in components:
@@ -45,6 +46,8 @@ def report_health(state, summary_path=None):
     if status != 'READY':
         warnings.append(f'PGO {condition}: {reason or "Saved status is unavailable"}')
     for _, prefix, healthy in components:
+        if prefix == 'current_projection' and report[prefix + '_status'] in ('UNKNOWN', 'IDLE'):
+            continue
         if prefix in ('injury_usage','offensive_inventory','offensive_usage','score_range_collection','statistics_review','mccabe_forecasts') and report[prefix + '_status'] in ('UNKNOWN', 'WAITING'):
             continue
         if prefix=='statistics_review' and report[prefix+'_status']=='REVIEW':

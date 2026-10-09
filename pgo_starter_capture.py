@@ -22,6 +22,7 @@ from pgo_sources import normalize_team
 
 ROOT = Path(__file__).resolve().parent
 CONFIG = ROOT / 'data/pgo_starter_announcements.json'
+CURRENT_CONFIG = ROOT / 'data/pgo_current_starter_announcements.json'
 _RECEIPT = re.compile(r'[0-9a-f]{64}\.json')
 
 
@@ -117,7 +118,7 @@ def _player(roster, game, team, gsis_id):
 
 def _config_snapshot(config):
     path = Path(config)
-    require(path.name == 'pgo_starter_announcements.json' and not path.is_symlink()
+    require(path.name in ('pgo_starter_announcements.json', 'pgo_current_starter_announcements.json') and not path.is_symlink()
             and not path.parent.is_symlink(), 'Unsafe starter configuration path')
     if not path.exists():
         return {'exists':False}
@@ -130,8 +131,9 @@ def _fresh_roster(source, checked_at):
     require(timedelta(0) <= age <= timedelta(hours=24), 'Current roster source is future or stale')
 
 
-def capture(url, game_id, team, gsis_id, statement, *, root=DEFAULT_ROOT, fetch=None, clock=None):
+def capture(url, game_id, team, gsis_id, statement, *, root=DEFAULT_ROOT, fetch=None, clock=None, purpose='locked_forecast'):
     """Save one exclusive capture receipt; never mutate starter configuration."""
+    require(purpose in ('locked_forecast', 'current_projection'), 'Invalid starter capture purpose')
     fetch, clock = fetch or _request, clock or _clock
     game, roster, roster_ref, state_checked_at = _context(root, game_id)
     player = _player(roster, game, team, gsis_id)
@@ -141,8 +143,8 @@ def capture(url, game_id, team, gsis_id, statement, *, root=DEFAULT_ROOT, fetch=
     try:
         require(utc(state_checked_at) <= utc(started), 'Current season state is from the future')
         _fresh_roster(roster_ref, started)
-        require(utc(started) < utc(game['kickoff'])-timedelta(minutes=60),
-                'Starter capture must finish before T-60')
+        require(utc(started) < utc(game['kickoff']) + (timedelta(hours=6) if purpose == 'current_projection' else -timedelta(minutes=60)),
+                'Current starter capture is outside game window' if purpose == 'current_projection' else 'Starter capture must finish before T-60')
         _url(url, team, 'team_news')
         response = fetch(url)
         require(isinstance(response, dict) and type(response.get('status')) is int
@@ -156,8 +158,8 @@ def capture(url, game_id, team, gsis_id, statement, *, root=DEFAULT_ROOT, fetch=
     completed = clock()
     if error is None and utc(completed) < utc(started):
         error = 'Starter capture clock moved backwards'
-    if error is None and utc(completed) >= utc(game['kickoff'])-timedelta(minutes=60):
-        error = 'Starter capture must finish before T-60'
+    if error is None and utc(completed) >= utc(game['kickoff']) + (timedelta(hours=6) if purpose == 'current_projection' else -timedelta(minutes=60)):
+        error = 'Current starter capture is outside game window' if purpose == 'current_projection' else 'Starter capture must finish before T-60'
     status, final_url = response.get('status'), response.get('final_url')
     if error is None and status != 200:
         error = f'Starter source returned HTTP {status}'
@@ -172,16 +174,19 @@ def capture(url, game_id, team, gsis_id, statement, *, root=DEFAULT_ROOT, fetch=
                    gsis_id=gsis_id, full_name=player['full_name'], statement=statement,
                    body_base64=base64.b64encode(raw).decode(), raw_sha256=sha(raw), raw_bytes=len(raw),
                    error=error)
+    if purpose == 'current_projection': receipt['purpose'] = purpose
     return _write_hashed(root, 'starter-drafts', receipt)
 
 
-def review(draft, *, root=DEFAULT_ROOT, config=CONFIG, clock=None, historical_context=None):
+def review(draft, *, root=DEFAULT_ROOT, config=CONFIG, clock=None, historical_context=None, purpose='locked_forecast'):
     """Validate a successful capture and save an immutable reviewed source envelope."""
     clock = clock or _clock
     draft_path, draft_raw, captured = _read_receipt(root, 'starter-drafts', draft)
     require(captured.get('schema_version') == 1 and captured.get('kind') == 'official_starter_announcement_capture'
             and captured.get('successful') is True and captured.get('status') == 200
             and captured.get('final_url') == captured.get('url'), 'Starter capture was not successful')
+    require(captured.get('purpose', 'locked_forecast') == purpose, 'Starter capture purpose differs')
+    require(Path(config).name == ('pgo_current_starter_announcements.json' if purpose == 'current_projection' else 'pgo_starter_announcements.json'), 'Starter configuration purpose differs')
     reviewed_at = clock()
     game, roster, roster_ref, state_checked_at = _context(root, captured['game']['game_id'])
     require(identity(game, captured['game']), 'Current starter game differs from the capture')
@@ -205,6 +210,7 @@ def review(draft, *, root=DEFAULT_ROOT, config=CONFIG, clock=None, historical_co
                     modified_at=article.get('dateModified', article['datePublished']), decision=decision,
                     body_base64=captured['body_base64'], raw_sha256=captured['raw_sha256'],
                     raw_bytes=captured['raw_bytes'])
+    if purpose == 'current_projection': envelope['purpose'] = purpose
     source_raw = canonical(envelope); source_digest = sha(source_raw)
     source = dict(path=f'source-archive/{source_digest}.json', url=envelope['url'],
                   captured_at=envelope['captured_at'], sha256=source_digest, bytes=len(source_raw))
@@ -212,18 +218,19 @@ def review(draft, *, root=DEFAULT_ROOT, config=CONFIG, clock=None, historical_co
     with tempfile.TemporaryDirectory() as temporary:
         temporary_root = Path(temporary); path = temporary_root / source['path']
         path.parent.mkdir(parents=True); path.write_bytes(source_raw)
-        admitted = _announcement(game, source, temporary_root, reviewed_at)
+        admitted = _announcement(game, source, temporary_root, reviewed_at, purpose=purpose)
         select_player(roster, admitted, game)
     _write_hashed(root, 'source-archive', envelope, exclusive=False)
-    admitted = _announcement(game, source, root, reviewed_at)
+    admitted = _announcement(game, source, root, reviewed_at, purpose=purpose)
     select_player(roster, admitted, game)
     capture_ref = dict(path=draft_path.relative_to(root).as_posix(), sha256=sha(draft_raw), bytes=len(draft_raw))
     receipt = dict(schema_version=1, kind='official_starter_announcement_review', reviewed_at=reviewed_at,
                    capture=capture_ref, source=source, config=_config_snapshot(config))
+    if purpose == 'current_projection': receipt['purpose'] = purpose
     return _write_hashed(root, 'starter-reviews', receipt)
 
 
-def activate(reviewed, *, root=DEFAULT_ROOT, config=CONFIG, clock=None):
+def activate(reviewed, *, root=DEFAULT_ROOT, config=CONFIG, clock=None, purpose='locked_forecast'):
     """Atomically append one reviewed game/team rule after current-state revalidation."""
     clock = clock or _clock
     _, _, receipt = _read_receipt(root, 'starter-reviews', reviewed)
@@ -232,14 +239,16 @@ def activate(reviewed, *, root=DEFAULT_ROOT, config=CONFIG, clock=None):
     _, capture_raw, captured = _read_receipt(root, 'starter-drafts', receipt['capture']['path'])
     require((sha(capture_raw), len(capture_raw)) == (receipt['capture']['sha256'], receipt['capture']['bytes'])
             and captured.get('successful') is True, 'Reviewed starter capture differs')
+    require(receipt.get('purpose', 'locked_forecast') == captured.get('purpose', 'locked_forecast') == purpose, 'Starter activation purpose differs')
+    require(Path(config).name == ('pgo_current_starter_announcements.json' if purpose == 'current_projection' else 'pgo_starter_announcements.json'), 'Starter configuration purpose differs')
     activated_at = clock()
     game, roster, roster_ref, state_checked_at = _context(root, captured['game']['game_id'])
     require(identity(game, captured['game']), 'Current starter game differs from reviewed evidence')
     require(utc(state_checked_at) <= utc(activated_at), 'Current season state is from the future')
     _fresh_roster(roster_ref, activated_at)
-    require(utc(activated_at) < utc(game['kickoff']) - timedelta(minutes=60),
-            'Starter activation must finish before T-60')
-    decision = _announcement(game, receipt['source'], root, activated_at)
+    require(utc(activated_at) < utc(game['kickoff']) + (timedelta(hours=6) if purpose == 'current_projection' else -timedelta(minutes=60)),
+            'Current starter activation is outside game window' if purpose == 'current_projection' else 'Starter activation must finish before T-60')
+    decision = _announcement(game, receipt['source'], root, activated_at, purpose=purpose)
     select_player(roster, decision, game)
     path = Path(config)
     _config_snapshot(path)  # Validate the operator path before creating its parent or lock.
@@ -266,7 +275,7 @@ def activate(reviewed, *, root=DEFAULT_ROOT, config=CONFIG, clock=None):
             require(isinstance(rule, dict) and set(rule) == {'game_id','source'},
                     'Invalid starter announcement configuration')
             if rule['game_id'] == game['game_id']:
-                existing = _announcement(game, rule['source'], root, activated_at)
+                existing = _announcement(game, rule['source'], root, activated_at, purpose=purpose)
                 require(existing['team'] != decision['team'],
                         f"{game['game_id']} already has a starter announcement for {decision['team']}")
         rule = dict(game_id=game['game_id'], source=copy.deepcopy(receipt['source']))
@@ -278,8 +287,8 @@ def activate(reviewed, *, root=DEFAULT_ROOT, config=CONFIG, clock=None):
             require(_config_snapshot(path) == receipt['config'], 'Starter configuration drifted during activation')
             durable_at = clock()
             require(utc(activated_at) <= utc(durable_at), 'Starter activation clock moved backwards')
-            require(utc(durable_at) < utc(game['kickoff']) - timedelta(minutes=60),
-                    'Starter activation must finish before T-60')
+            require(utc(durable_at) < utc(game['kickoff']) + (timedelta(hours=6) if purpose == 'current_projection' else -timedelta(minutes=60)),
+                    'Current starter activation is outside game window' if purpose == 'current_projection' else 'Starter activation must finish before T-60')
             os.replace(temporary, path); temporary = None
         finally:
             if temporary is not None:
@@ -296,26 +305,29 @@ def _parser():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root', type=Path, default=DEFAULT_ROOT)
     commands = parser.add_subparsers(dest='command', required=True)
-    command = commands.add_parser('capture')
-    for name in ('url','game-id','team','gsis-id','statement'):
-        command.add_argument('--'+name, required=True)
-    command = commands.add_parser('review'); command.add_argument('--draft', required=True)
-    command.add_argument('--historical-context', action='append', help='Exact full sentence reviewed as earlier-week historical context; repeat as needed')
-    command = commands.add_parser('activate'); command.add_argument('--review', required=True)
+    for suffix in ('', '-current'):
+        command = commands.add_parser('capture'+suffix)
+        for name in ('url','game-id','team','gsis-id','statement'):
+            command.add_argument('--'+name, required=True)
+        command = commands.add_parser('review'+suffix); command.add_argument('--draft', required=True)
+        command.add_argument('--historical-context', action='append', help='Exact full sentence reviewed as earlier-week historical context; repeat as needed')
+        command = commands.add_parser('activate'+suffix); command.add_argument('--review', required=True)
     return parser
 
 
 def main(argv=None):
     args = _parser().parse_args(argv)
+    purpose = 'current_projection' if args.command.endswith('-current') else 'locked_forecast'
+    config = CURRENT_CONFIG if purpose == 'current_projection' else CONFIG
     try:
-        if args.command == 'capture':
-            path = capture(args.url, args.game_id, args.team, args.gsis_id, args.statement, root=args.root)
+        if args.command.startswith('capture'):
+            path = capture(args.url, args.game_id, args.team, args.gsis_id, args.statement, root=args.root, purpose=purpose)
             print(path)
             return 0 if json.loads(path.read_bytes())['successful'] else 1
-        if args.command == 'review':
-            print(review(args.draft, root=args.root, historical_context=args.historical_context))
+        if args.command.startswith('review'):
+            print(review(args.draft, root=args.root, config=config, historical_context=args.historical_context, purpose=purpose))
             return 0
-        print(activate(args.review, root=args.root))
+        print(activate(args.review, root=args.root, config=config, purpose=purpose))
         return 0
     except (KeyError, OSError, TypeError, ValueError) as error:
         print(f'error: {error}', file=sys.stderr)

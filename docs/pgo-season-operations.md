@@ -8,6 +8,10 @@ When all games in a week have verified finals and the required team/player stati
 
 Availability is checked for games within 24 hours of kickoff until their 60-minute pre-kickoff cutoff. Official injury reports and complete official inactive lists are distinct sources. Missing reports, unresolved identities and incomplete lists remain explicit. Non-QB injuries are context, not fitted numerical adjustments. If an expected QB is confirmed unavailable, the conditional pick is withheld; an unknown later report does not erase that finding. A newly sourced first-string QB may produce a new unlocked forecast. Every earlier revision stays archived. A delayed job cannot revise a locked game.
 
+### Separately timestamped current forecasts
+
+A reviewed official starter replacement may also produce a separate current projection after T-60. It uses the existing frozen statistical model and completed-week inputs, retains its actual issue/source times, and identifies issuance after lock or kickoff. The original locked forecast, QB assumption, confidence, saved market quote and on-time grading remain unchanged. Current projections are excluded from those records. Their archived roster, both QB identities, official source, statistics and numerical output are replayed before admission. Missing or ambiguous authority remains visible; a missing follow-up report cannot erase confirmed unavailability. See [current starter commands](pgo-starter-updates.md).
+
 ### Official inactive context after the prediction lock
 
 Official inactive monitoring watches official team sources and [NFL.com news](https://www.nfl.com/news/) from two hours before kickoff. It reads the saved pre-lock availability and stores later observations in a separate, archived `availability_context`. Complete official inactive lists are validated against the saved matchup, teams, game date and player identities. Injury reports are not substitutes for inactive lists. The context records its check time, source capture time, official publication/modification times, archive hashes and whether the observation arrived after the lock or after kickoff.

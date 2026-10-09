@@ -199,12 +199,15 @@ def archive_href(relative):
     return 'evidence/season-2026/' + relative
 
 
-def check_starter_announcements(state, root):
+def check_starter_announcements(state, root, durable=None):
     for week in state.get('weeks', []):
         for game in week['games']:
             if 'starter_announcements' in game:
                 from pgo_expected_starters import verify
                 verify(game, game['starter_announcements'], root)
+    if 'current_projections' in state:
+        from pgo_current_projection import validate
+        validate(state, root, durable=durable)
 
 
 def save_state(state, root=DEFAULT_ROOT):
@@ -241,6 +244,10 @@ def save_state(state, root=DEFAULT_ROOT):
                 require('mccabe_forecasts' not in discarded, str(error))
                 state['mccabe_forecasts'] = blocked(prior, state['checked_at'], error)
                 discarded.add('mccabe_forecasts'); rewritten = True
+        if state.get('current_projections'):
+            from pgo_current_projection import stamp_durable
+            if stamp_durable(state, prior, durable):
+                rewritten = True
         if not rewritten:
             break
         # No manifest or pointer exists yet. Both optional collectors must pass
@@ -274,7 +281,7 @@ def save_state(state, root=DEFAULT_ROOT):
         from pgo_ats import check_durable
         check_durable(state, prior, durable)
     check_availability_context(state, root, durable)
-    check_starter_announcements(state, root)
+    check_starter_announcements(state, root, durable=durable)
     manifest = dict(schema_version=1, created_at=durable, files={'state.json.gz': {'sha256':sha(payload),'bytes':len(payload)}},
                     code_sha256=sha(Path(__file__).read_bytes()))
     previous = root/'current.json'
@@ -331,7 +338,7 @@ def load_current(root=DEFAULT_ROOT):
         load_availability(root/path)
     if state.get('availability_context'):
         check_availability_context(state, root, manifest['created_at'])
-    check_starter_announcements(state, root)
+    check_starter_announcements(state, root, durable=manifest.get('created_at'))
     if 'mccabe_forecasts' in state:
         from mccabe_forecasts import validate
         validate(state, root)
@@ -494,10 +501,11 @@ def select_roster(roster, depth, captured_at, *, teams=None):
 
 
 def build_next(state, schedule, results, root, *, completed=None, selected=None, roster_sources=(),
-               captured_sources=None, starter_announcements=None):
+               captured_sources=None, starter_announcements=None, current_projection=False):
     from pgo_season_model import load_seed, build_week
     completed = completed_week(schedule, results) if completed is None else completed
     require(0 <= completed <= 18, 'Unsupported completed week')
+    require(type(current_projection) is bool, 'Invalid current projection mode')
     captured, sources = {'team': [], 'player': []}, list(roster_sources)
     kinds = (['team','player'] if completed else []) + ([] if selected is not None else ['roster','depth'])
     for kind in kinds:
@@ -521,8 +529,12 @@ def build_next(state, schedule, results, root, *, completed=None, selected=None,
         require(all(str(provider.get(k,'')) in {str(r[k]), str(float(r[k]))} for k in ('home_score','away_score')), 'Statistics schedule does not yet agree with verified final scores')
         completed_games.append(dict(g,home_score=r['home_score'],away_score=r['away_score'],finalized_at=r['finalized_at']))
     snapshot = initial_snapshot()
+    final_ids = {result['game_id'] for result in results}
+    upcoming = [g for g in schedule if g['week']==completed+1 and
+                (g['game_id'] not in final_ids if current_projection else
+                 utc(g['kickoff'])-timedelta(minutes=60)>utc(generated))]
     output = build_week(load_seed(),snapshot['fit'],completed_games,captured['team'],captured['player'],selected,
-                        [g for g in schedule if g['week']==completed+1 and utc(g['kickoff'])-timedelta(minutes=60)>utc(generated)],season=SEASON,completed_week=completed,
+                        upcoming,season=SEASON,completed_week=completed,current_projection=current_projection,
                         generated_at=generated,inputs_as_of=generated,scoring_rates=snapshot['scoring_rates'],league_mean_total=snapshot['league_mean_total'])
     edition=f'pgo-postseason-{SEASON}-'+('after-week18' if completed==18 else f'week{completed+1}')+'-'+utc(generated).strftime('%Y%m%dT%H%M%SZ')
     old = {r['team']:r['rank'] for r in state['rankings']['teams']}
@@ -532,14 +544,18 @@ def build_next(state, schedule, results, root, *, completed=None, selected=None,
         g=copy.deepcopy(g);g.update(issued_at=generated,source_edition=edition,inputs_as_of=generated,expected_qbs={t:selected[t]['full_name'] for t in (g['home'],g['away'])},lock_at=(utc(g['kickoff'])-timedelta(minutes=60)).isoformat(),blocked_reason=None)
         if announcements.get(g['game_id']):
             g['starter_announcements'] = copy.deepcopy(announcements[g['game_id']])
-        if utc(generated)>=utc(g['lock_at']):
+        if not current_projection and utc(generated)>=utc(g['lock_at']):
             for field in ('margin','total','home_points','away_points'): g[field]=None
             g.update(pick=None,confidence=None,blocked_reason='No forecast was issued before this game locked.')
         games.append(g)
     issued={g['game_id'] for g in games}
     for source_game in schedule:
-        if source_game['week']==completed+1 and source_game['game_id'] not in issued:
+        if not current_projection and source_game['week']==completed+1 and source_game['game_id'] not in issued:
             games.append(dict(source_game,margin=None,total=None,home_points=None,away_points=None,pick=None,confidence=None,issued_at=generated,source_edition=edition,inputs_as_of=generated,blocked_reason='No forecast was issued before this game locked.'))
+    if current_projection:
+        edition = 'pgo-current-' + edition.removeprefix('pgo-')
+        for game in games:
+            game['source_edition'] = edition
     games=allocate_confidence(games,state['calibration'])
     rankings=dict(edition=edition,generated_at=generated,inputs_as_of=generated,history_through=max((r['kickoff'] for r in completed_games),default=snapshot['history']['through']),
                   teams=output['teams'],completed_week=completed,source_captures=sources)
@@ -905,6 +921,8 @@ def refresh(root=DEFAULT_ROOT):
         try:state['sources']+=refresh_availability(state,root)
         except (ValueError,KeyError,OSError) as error:
             state.update(status='BLOCKED',blocked_reason='Availability refresh needs review: '+str(error))
+        from pgo_current_projection import refresh as refresh_current_projection
+        state['sources'] += refresh_current_projection(state, root)
         state['events']=events
         decorate(state,results)
     except (ValueError,KeyError,OSError) as error:

@@ -102,6 +102,18 @@ class WorkflowStatusTests(unittest.TestCase):
         self.assertIn('Input %25 mismatch%0A::error::forged%0Dline', output)
         self.assertNotIn('\n::error::', output)
 
+    def test_current_projection_block_is_visible_without_changing_original_health(self):
+        payload, output = self.report(current_projection_check=dict(status='BLOCKED', blocked_reason='Unverified current starter'))
+        self.assertEqual(payload['status'], 'READY')
+        self.assertEqual(payload.get('current_projection_status'), 'BLOCKED')
+        self.assertEqual(payload.get('current_projection_blocked_reason'), 'Unverified current starter')
+        self.assertIn('::warning::PGO current projection monitor: Unverified current starter', output)
+
+    def test_absent_idle_or_ready_current_projection_is_quiet(self):
+        for component in ({}, {'status':'IDLE'}, {'status':'READY'}):
+            _, output = self.report(current_projection_check=component)
+            self.assertNotIn('::warning::', output)
+
     def test_mccabe_waiting_or_absent_collection_is_quiet(self):
         for components in ({}, {'mccabe_forecasts': {'status': 'UNKNOWN'}},
                            {'mccabe_forecasts': {'status': 'WAITING'}}):

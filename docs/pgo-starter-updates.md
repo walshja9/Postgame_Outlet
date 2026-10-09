@@ -50,3 +50,10 @@ An announcement applies only to its verified matchup and week. A prior Atlanta a
 If the process is terminated while activating, inspect `.pgo_starter_announcements.json.activation.lock` and confirm that no activation is running before removing that stale lock and retrying.
 
 For an alternate evidence root used in offline testing, place `--root PATH` before the subcommand. Receipt arguments accept only their SHA-256 basename or their exact `starter-drafts/` or `starter-reviews/` relative path; absolute paths outside that root and symlinks are refused.
+
+
+## Separately timestamped current projections
+
+After T-60, the approved current projection uses `capture-current`, `review-current`, and `activate-current` with the same arguments as the original commands. The current commands retain actual capture, review and activation times, exact official bytes, matchup/week/active-roster identity checks, and the atomic configuration drift checks. They write only `data/pgo_current_starter_announcements.json`. Their evidence is marked `current_projection` and cannot be admitted by the original prelock commands or replayed as original forecast authority. Article publication and modification must precede kickoff; recovery is limited to the six-hour game window.
+
+The season updater uses the existing completed-week statistical feature and coefficient machinery to create a separate `current_projections` entry. It does not change the original locked game, confidence allocation, sportsbook quote, issue time or on-time record. The current projection shows its actual issue and source clocks and whether it was issued after T-60 or kickoff. It is excluded from original forecast grading. Unverified or ambiguous starters remain an explicit input block; human quarterback grades are not statistical inputs. Prior current projections and the source/state archives remain saved.
