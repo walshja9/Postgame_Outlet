@@ -1,4 +1,3 @@
-import csv
 import hashlib
 import json
 import unittest
@@ -8,6 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 THEME = ROOT / "shopify-theme"
 COMMERCE_MANIFEST = ROOT / "tests/fixtures/shopify-theme-commerce.sha256"
+CONTENT_REFRESH = json.loads((ROOT / "docs/shopify-outer-content-refresh-20261011.json").read_text(encoding="utf-8"))
 
 
 def text(relative):
@@ -66,7 +66,6 @@ class ShopifyThemeTests(unittest.TestCase):
         ]
         self.assertEqual(
             [
-                "postgame-featured-story",
                 "postgame-ratings-preview",
                 "postgame-tagged-articles",
                 "postgame-tagged-articles",
@@ -78,6 +77,8 @@ class ShopifyThemeTests(unittest.TestCase):
             types,
         )
         self.assertEqual("dynasty", template["sections"]["dynasty"]["settings"]["required_tag"])
+        self.assertNotIn("featured_story", template["sections"])
+        self.assertNotIn("Week 1", json.dumps(template))
         self.assertEqual("dfs", template["sections"]["dfs"]["settings"]["required_tag"])
         self.assertEqual("https://walshja9.github.io/Postgame_Outlet/forecast-lab.html", template["sections"]["accountability"]["settings"]["button_link"])
         self.assertEqual(4, template["sections"]["merch"]["settings"]["products_to_show"])
@@ -100,17 +101,17 @@ class ShopifyThemeTests(unittest.TestCase):
         ):
             self.assertIn(value, section)
 
-    def test_homepage_preview_matches_mccabes_current_top_five(self):
-        with (ROOT / "data/ratings.csv").open(encoding="utf-8", newline="") as handle:
-            rows = list(csv.DictReader(handle))
-        score = lambda row: round(sum(float(row[key] or 0) for key in ("qb_value", "off_value", "def_value")), 1)
-        expected = sorted(rows, key=lambda row: -score(row))[:5]
+    def test_homepage_preview_matches_verified_published_top_five(self):
+        ratings = CONTENT_REFRESH["ratings"]
+        expected = ratings["top_five"]
         preview = data("templates/index.json")["sections"]["ratings_preview"]
-        self.assertEqual("Sean McCabe", preview["settings"]["author"])
+        self.assertEqual(ratings["author"], preview["settings"]["author"])
+        self.assertEqual(ratings["edition"] + " - Human power ratings", preview["settings"]["edition"])
+        self.assertEqual(ratings["verified_date"], preview["settings"]["published_at"])
         actual = [preview["blocks"][key]["settings"] for key in preview["block_order"]]
         self.assertEqual(
-            [(str(i), row["team"], f"{score(row):+.1f}") for i, row in enumerate(expected, 1)],
-            [(row["ordinal"], row["team"], row["rating"]) for row in actual],
+            [(str(row["rank"]), row["team"], f"{row['rating']:+.1f}", row["movement"]) for row in expected],
+            [(row["ordinal"], row["team"], row["rating"], row["movement"]) for row in actual],
         )
 
     def test_preview_navigation_footer_and_email_are_isolated(self):
@@ -144,7 +145,7 @@ class ShopifyThemeTests(unittest.TestCase):
             setting = next(item for item in schema["settings"] if item["id"] == setting_id)
             self.assertNotIn("default", setting, setting_id)
         settings = template["sections"]["main"]["settings"]
-        self.assertEqual("https://walshja9.github.io/Postgame_Outlet/", settings["ratings_url"])
+        self.assertEqual("https://walshja9.github.io/Postgame_Outlet/index.html?release=05321b2", settings["ratings_url"])
         self.assertEqual("/pages/methodology", settings["methodology_link"])
         self.assertEqual("/pages/accountability", settings["accountability_link"])
         self.assertEqual("/blogs/poweratings", settings["archive_link"])
@@ -156,7 +157,7 @@ class ShopifyThemeTests(unittest.TestCase):
             "Choose PGO Model for the model’s rankings and team explanations",
             "McCabe and PGO ranks can be compared",
             "their rating numbers should not be subtracted to make a betting line",
-            "McCabe ratings dated",
+            "McCabe board verified",
             "Page updated",
             "section.settings.status_label",
             "data-postgame-ratings-frame",
@@ -164,11 +165,12 @@ class ShopifyThemeTests(unittest.TestCase):
             self.assertIn(value, native)
         self.assertNotIn("MAE", native)
         self.assertNotIn("backtest", native)
-        self.assertEqual("August 18, 2026", settings["published_at"])
-        self.assertEqual("September 8, 2026", settings["updated_at"])
+        self.assertEqual(CONTENT_REFRESH["ratings"]["verified_date"], settings["published_at"])
+        self.assertEqual(CONTENT_REFRESH["ratings"]["verified_date"], settings["updated_at"])
         self.assertIn("Accuracy is still being tested", settings["summary"])
-        self.assertIn("assume the listed quarterback plays and exclude other injuries", settings["summary"])
-        self.assertIn("the board shows when roster information was saved", settings["summary"])
+        self.assertIn("assume the listed quarterback plays; non-QB injuries are not included", settings["summary"])
+        self.assertIn("The board shows when inputs were saved and results were checked", settings["summary"])
+        self.assertNotIn("Fantasy Week 1", native + settings["summary"])
         self.assertNotIn("July 21", settings["summary"])
         self.assertNotIn("September 6", settings["summary"])
 

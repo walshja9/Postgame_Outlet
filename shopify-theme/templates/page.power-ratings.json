@@ -12,16 +12,16 @@
     "main": {
       "type": "postgame-ratings",
       "settings": {
-        "edition": "2026 preseason · Sean McCabe",
+        "edition": "Week 5 2026 · Sean McCabe",
         "author": "Sean McCabe",
-        "published_at": "August 18, 2026",
-        "updated_at": "September 8, 2026",
-        "summary": "<p>The current PGO edition and its team explanations are below; earlier editions stay in the archive. Accuracy is still being tested. Ratings assume the listed quarterback plays and exclude other injuries. Performance history ends with the 2025 regular season; the board shows when roster information was saved. Fantasy Week 1 is also experimental. Check the dated injury notes in that tab.</p>",
-        "ratings_url": "https://walshja9.github.io/Postgame_Outlet/",
+        "published_at": "October 11, 2026",
+        "updated_at": "October 11, 2026",
+        "status_label": "Human power ratings",
+        "summary": "<p><strong>PGO model.</strong> The primary PGO Power Rankings board is experimental. Accuracy is still being tested; historical tests have not demonstrated more accurate winning margins.</p><p><strong>Weekly updates.</strong> The weekly model starts with regular-season and playoff history through the 2025 season, then updates after each completed week when statistics are available. Each game explains how saved team ratings lead to its predicted margin, estimated score, win chance and confidence points. Verified finals update the model records; earlier picks remain archived in Compare previous models and saved weeks. Before each game, availability is refreshed until predictions lock 60 minutes before kickoff.</p><p><strong>Availability.</strong> Ratings assume the listed quarterback plays; non-QB injuries are not included in model scores. The board shows when inputs were saved and results were checked. The NE-Seattle confidence calculation remains marked as added after lock.</p>",
+        "ratings_url": "https://walshja9.github.io/Postgame_Outlet/index.html?release=05321b2",
         "methodology_link": "/pages/methodology",
         "accountability_link": "/pages/accountability",
-        "archive_link": "/blogs/poweratings",
-        "status_label": "Human power ratings"
+        "archive_link": "/blogs/poweratings"
       }
     }
   },

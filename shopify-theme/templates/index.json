@@ -9,15 +9,6 @@
  */
 {
   "sections": {
-    "featured_story": {
-      "type": "postgame-featured-story",
-      "settings": {
-        "article": "poweratings/week-1-fantasy-preview-official-practice-reports-are-in",
-        "status_label": "Experimental model — HOLD",
-        "status_body": "Official practice-report notes annotate frozen projections and do not establish game-day availability.",
-        "color_scheme": "scheme-1"
-      }
-    },
     "ratings_preview": {
       "type": "postgame-ratings-preview",
       "blocks": {
@@ -27,7 +18,7 @@
             "ordinal": "1",
             "team": "Los Angeles Rams",
             "rating": "+7.3",
-            "movement": "Not available"
+            "movement": "No change"
           }
         },
         "buffalo": {
@@ -35,8 +26,8 @@
           "settings": {
             "ordinal": "2",
             "team": "Buffalo Bills",
-            "rating": "+7.0",
-            "movement": "Not available"
+            "rating": "+6.6",
+            "movement": "No change"
           }
         },
         "seattle": {
@@ -44,26 +35,26 @@
           "settings": {
             "ordinal": "3",
             "team": "Seattle Seahawks",
-            "rating": "+6.0",
-            "movement": "Not available"
-          }
-        },
-        "baltimore": {
-          "type": "team",
-          "settings": {
-            "ordinal": "4",
-            "team": "Baltimore Ravens",
-            "rating": "+5.5",
-            "movement": "Not available"
+            "rating": "+6.3",
+            "movement": "No change"
           }
         },
         "cincinnati": {
           "type": "team",
           "settings": {
-            "ordinal": "5",
+            "ordinal": "4",
             "team": "Cincinnati Bengals",
+            "rating": "+5.4",
+            "movement": "Up 1"
+          }
+        },
+        "kansas_city": {
+          "type": "team",
+          "settings": {
+            "ordinal": "5",
+            "team": "Kansas City Chiefs",
             "rating": "+5.0",
-            "movement": "Not available"
+            "movement": "Up 1"
           }
         }
       },
@@ -71,13 +62,13 @@
         "los_angeles_rams",
         "buffalo",
         "seattle",
-        "baltimore",
-        "cincinnati"
+        "cincinnati",
+        "kansas_city"
       ],
       "settings": {
-        "edition": "2026 preseason · Human power ratings",
+        "edition": "Week 5 2026 - Human power ratings",
         "author": "Sean McCabe",
-        "published_at": "August 18, 2026",
+        "published_at": "October 11, 2026",
         "ratings_link": "/pages/power-ratings"
       }
     },
@@ -115,8 +106,8 @@
           "type": "column",
           "settings": {
             "title": "Forecast Lab - Experimental",
-            "text": "<p>All 272 forecasts are preserved in a dated record. Reviewed results will be added after games are final, alongside the baseline. McCabe ratings and editorial staff picks remain separate.</p>",
-            "link_label": "See the frozen 2026 forecasts",
+            "text": "<p>See this week's game forecasts and the full-season record. Results are added after games finish. McCabe ratings and editorial staff picks remain separate.</p>",
+            "link_label": "See this week's forecasts",
             "link": "https://walshja9.github.io/Postgame_Outlet/forecast-lab.html"
           }
         }
@@ -188,7 +179,6 @@
     }
   },
   "order": [
-    "featured_story",
     "ratings_preview",
     "latest_analysis",
     "dynasty",

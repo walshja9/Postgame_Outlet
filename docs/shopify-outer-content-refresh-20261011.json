@@ -1,0 +1,57 @@
+{
+  "status": "PASS",
+  "verified_at": "2026-10-11T17:24:11.843572+00:00",
+  "store": "qxfvhq-zn.myshopify.com",
+  "live_theme_id": 159107678440,
+  "ratings": {
+    "edition": "Week 5 2026",
+    "author": "Sean McCabe",
+    "verified_date": "October 11, 2026",
+    "board_url": "https://walshja9.github.io/Postgame_Outlet/index.html",
+    "date_meaning": "Board verification date, not a new model generation or ratings publication timestamp.",
+    "top_five": [
+      { "rank": 1, "team": "Los Angeles Rams", "rating": 7.3, "movement": "No change" },
+      { "rank": 2, "team": "Buffalo Bills", "rating": 6.6, "movement": "No change" },
+      { "rank": 3, "team": "Seattle Seahawks", "rating": 6.3, "movement": "No change" },
+      { "rank": 4, "team": "Cincinnati Bengals", "rating": 5.4, "movement": "Up 1" },
+      { "rank": 5, "team": "Kansas City Chiefs", "rating": 5.0, "movement": "Up 1" }
+    ],
+    "captured_source_sha256": {
+      "board-before.html": "ed55251fcf8eb3cbfd3309fd94ebb1e569de91ff6678940d3bdb0b60de07c59a",
+      "ratings.csv": "71d11010f4ebdcceec992dae81b99a66b2266452bfa01a20f8162584ad4b6db7",
+      "config.csv": "cd7bfc4a751d0a42aebefcbfbf45fd1da015af8f3c68c4b104641c216545ca87"
+    }
+  },
+  "native_content": {
+    "fantasy_page": {
+      "id": 133116756200,
+      "title": "Fantasy",
+      "handle": "fantasy",
+      "template_suffix": "fantasy",
+      "visibility": "Visible",
+      "body_html": "<p>Current fantasy projections are not available on this page.</p>\n<p><a href=\"/pages/power-ratings\">View the current NFL Power Ratings</a> for McCabe's rankings and the experimental PGO model.</p>",
+      "meta_description": "Current fantasy projections are not available. Visit Power Ratings for the latest McCabe rankings and experimental PGO model."
+    },
+    "week_1_article": {
+      "id": 598924296424,
+      "title": "Week 1 fantasy preview: official practice reports are in",
+      "visibility": "Hidden",
+      "deleted": false
+    }
+  },
+  "public_checks": {
+    "homepage_top_five_match_board": true,
+    "no_week_1_in_outer_homepage_fantasy_ratings_or_blog": true,
+    "hidden_article_http_status": 404,
+    "embedded_mccabe_tab_opens_first": true,
+    "embedded_ratings_rows": 32,
+    "desktop_horizontal_overflow": false
+  },
+  "scope": "Removed stale outer-page fantasy promotions and synchronized the four published theme files. Preserved the embedded historical Fantasy Week 1 tab, model data, forecasts, grades, sources, archives, and commerce.",
+  "rollback": "Restore previous Shopify theme file versions and Fantasy page content; the hidden article remains recoverable in Shopify.",
+  "evidence_directory": "output/pgo-outer-refresh-20261011",
+  "limitations": [
+    "No full Theme Check, mobile verification, or commerce transaction was run for this content refresh.",
+    "Shopify native page content and article visibility are recorded here; pushing theme source alone does not apply those admin settings."
+  ]
+}

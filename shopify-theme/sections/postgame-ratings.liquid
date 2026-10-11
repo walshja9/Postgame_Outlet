@@ -1,12 +1,17 @@
 <section class="postgame-shell postgame-ratings" aria-labelledby="ratings-title-{{ section.id }}">
   {%- if section.settings.edition != blank -%}<p class="postgame-kicker">NFL · {{ section.settings.edition | escape }}</p>{%- endif -%}
   <h1 id="ratings-title-{{ section.id }}">{{ page.title | escape }}</h1>
+  <p class="postgame-ratings__intro">Compare McCabe's current rankings with the experimental PGO model.</p>
+  <p class="postgame-ratings__notice"><strong>PGO is experimental.</strong> Accuracy is still being tested. Model scores assume the listed quarterback plays; non-QB injuries are not included.</p>
+  <details class="postgame-ratings__about">
+    <summary>How to read these ratings</summary>
+    <div class="postgame-ratings__guide">
   <div class="postgame-ratings__meta">
     {%- if section.settings.status_label != blank -%}<p class="postgame-status-badge">{{ section.settings.status_label | escape }}</p>{%- endif -%}
   {%- if section.settings.author != blank or section.settings.published_at != blank or section.settings.updated_at != blank -%}
     <p class="postgame-meta">
       {%- if section.settings.author != blank -%}By {{ section.settings.author | escape }}{%- endif -%}
-      {%- if section.settings.published_at != blank -%} · McCabe ratings dated {{ section.settings.published_at | escape }}{%- endif -%}
+      {%- if section.settings.published_at != blank -%} · McCabe board verified {{ section.settings.published_at | escape }}{%- endif -%}
       {%- if section.settings.updated_at != blank -%} · Page updated {{ section.settings.updated_at | escape }}{%- endif -%}
     </p>
   {%- else -%}
@@ -14,16 +19,17 @@
   {%- endif -%}
   </div>
   <p>Sean McCabe's human-set rating adds quarterback, non-QB offense, and defense values in neutral-field points. A +7.0 rating means he would favor that team by about a touchdown against a league-average opponent on a neutral field.</p>
-  <p>McCabe Ratings leads the board. Choose PGO Model for the model’s rankings and team explanations, or Fantasy Week 1 for player rankings and your league’s scoring. McCabe and PGO ranks can be compared, but their rating numbers should not be subtracted to make a betting line.</p>
+  <p>McCabe Ratings opens first. Choose PGO Model for the model’s rankings and team explanations. McCabe and PGO ranks can be compared, but their rating numbers should not be subtracted to make a betting line.</p>
+      {%- if section.settings.summary != blank -%}<div class="rte postgame-ratings__summary">{{ section.settings.summary }}</div>{%- endif -%}
+    </div>
+  </details>
   {%- if section.settings.methodology_link != blank or section.settings.accountability_link != blank or section.settings.archive_link != blank -%}
     <nav class="postgame-ratings__links" aria-label="Power Ratings links">
       {%- if section.settings.methodology_link != blank -%}<a href="{{ section.settings.methodology_link }}">Methodology</a>{%- endif -%}
-      {%- if section.settings.methodology_link != blank and section.settings.accountability_link != blank %} · {% endif -%}
-      {%- if section.settings.accountability_link != blank -%}<a href="{{ section.settings.accountability_link }}">Corrections and accountability</a>{%- endif -%}
-      {%- if section.settings.archive_link != blank -%}<a href="{{ section.settings.archive_link }}">Archived editions</a>{%- endif -%}
+      {%- if section.settings.accountability_link != blank -%}<a href="{{ section.settings.accountability_link }}">Accountability</a>{%- endif -%}
+      {%- if section.settings.archive_link != blank -%}<a href="{{ section.settings.archive_link }}">Archives</a>{%- endif -%}
     </nav>
   {%- endif -%}
-  {%- if section.settings.summary != blank -%}<div class="rte postgame-ratings__summary">{{ section.settings.summary }}</div>{%- endif -%}
   {%- if section.settings.ratings_url != blank -%}
     <!-- data-postgame-ratings-frame remains on the iframe for origin-checked resize messages. -->
     <iframe
@@ -42,7 +48,7 @@
   "settings": [
     { "type": "text", "id": "edition", "label": "Edition" },
     { "type": "text", "id": "author", "label": "Author" },
-    { "type": "text", "id": "published_at", "label": "Data as of" },
+    { "type": "text", "id": "published_at", "label": "Board verified on" },
     { "type": "text", "id": "updated_at", "label": "Updated time" },
     { "type": "text", "id": "status_label", "label": "Status label" },
     { "type": "richtext", "id": "summary", "label": "Current-edition summary" },
