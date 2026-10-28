@@ -748,5 +748,117 @@
     "open_note": "Draft Kings opening line (ESPN summary pickcenter)",
     "market": 1.5,
     "market_note": "DAL -1.5 (ESPN summary, frozen 2026-10-19T23:19Z)"
+  },
+  "401873010": {
+    "model_spread": -2.5,
+    "market_open": -1.5,
+    "open_source": "espn_open",
+    "open_note": "Draft Kings opening line (ESPN summary pickcenter)",
+    "market": -3.0,
+    "market_note": "CHI -3 (ESPN summary, frozen 2026-10-28T21:13Z)"
+  },
+  "401873011": {
+    "model_spread": 1.0,
+    "market_open": 2.5,
+    "open_source": "espn_open",
+    "open_note": "Draft Kings opening line (ESPN summary pickcenter)",
+    "market": 3.0,
+    "market_note": "PIT -3 (ESPN summary, frozen 2026-10-28T21:13Z)"
+  },
+  "401873017": {
+    "model_spread": 5.0,
+    "market_open": 4.5,
+    "open_source": "espn_open",
+    "open_note": "Draft Kings opening line (ESPN summary pickcenter)",
+    "market": 2.5,
+    "market_note": "SF -2.5 (ESPN summary, frozen 2026-10-28T21:13Z)"
+  },
+  "401873013": {
+    "model_spread": -1.0,
+    "market_open": -2.5,
+    "open_source": "espn_open",
+    "open_note": "Draft Kings opening line (ESPN summary pickcenter)",
+    "market": 2.5,
+    "market_note": "CLE -2.5 (ESPN summary, frozen 2026-10-28T21:13Z)"
+  },
+  "401873014": {
+    "model_spread": -4.0,
+    "market_open": -3.0,
+    "open_source": "espn_open",
+    "open_note": "Draft Kings opening line (ESPN summary pickcenter)",
+    "market": -6.5,
+    "market_note": "MIN -6.5 (ESPN summary, frozen 2026-10-28T21:13Z)"
+  },
+  "401873015": {
+    "model_spread": -5.0,
+    "market_open": -2.5,
+    "open_source": "espn_open",
+    "open_note": "Draft Kings opening line (ESPN summary pickcenter)",
+    "market": -3.5,
+    "market_note": "NYJ -3.5 (ESPN summary, frozen 2026-10-28T21:13Z)"
+  },
+  "401873018": {
+    "model_spread": -2.0,
+    "market_open": 1.5,
+    "open_source": "espn_open",
+    "open_note": "Draft Kings opening line (ESPN summary pickcenter)",
+    "market": -3.0,
+    "market_note": "CAR -3 (ESPN summary, frozen 2026-10-28T21:13Z)"
+  },
+  "401873012": {
+    "model_spread": 4.0,
+    "market_open": -3.5,
+    "open_source": "espn_open",
+    "open_note": "Draft Kings opening line (ESPN summary pickcenter)",
+    "market": 3.0,
+    "market_note": "CIN -3 (ESPN summary, frozen 2026-10-28T21:13Z)"
+  },
+  "401873016": {
+    "model_spread": -8.0,
+    "market_open": -5.5,
+    "open_source": "espn_open",
+    "open_note": "Draft Kings opening line (ESPN summary pickcenter)",
+    "market": -10.0,
+    "market_note": "HOU -10 (ESPN summary, frozen 2026-10-28T21:13Z)"
+  },
+  "401873019": {
+    "model_spread": 3.0,
+    "market_open": 7.5,
+    "open_source": "espn_open",
+    "open_note": "Draft Kings opening line (ESPN summary pickcenter)",
+    "market": 4.5,
+    "market_note": "DEN -4.5 (ESPN summary, frozen 2026-10-28T21:13Z)"
+  },
+  "401873020": {
+    "model_spread": -1.5,
+    "market_open": -1.5,
+    "open_source": "espn_open",
+    "open_note": "Draft Kings opening line (ESPN summary pickcenter)",
+    "market": -3.5,
+    "market_note": "DET -3.5 (ESPN summary, frozen 2026-10-28T21:13Z)"
+  },
+  "401873021": {
+    "model_spread": 6.0,
+    "market_open": 7.5,
+    "open_source": "espn_open",
+    "open_note": "Draft Kings opening line (ESPN summary pickcenter)",
+    "market": 3.5,
+    "market_note": "LAR -3.5 (ESPN summary, frozen 2026-10-28T21:13Z)"
+  },
+  "401873022": {
+    "model_spread": -1.5,
+    "market_open": -3.0,
+    "open_source": "espn_open",
+    "open_note": "Draft Kings opening line (ESPN summary pickcenter)",
+    "market": -3.0,
+    "market_note": "SEA -3 (ESPN summary, frozen 2026-10-28T21:13Z)"
+  },
+  "401873009": {
+    "model_spread": 4.5,
+    "market_open": -3.0,
+    "open_source": "espn_open",
+    "open_note": "Draft Kings opening line (ESPN summary pickcenter)",
+    "market": 4.5,
+    "market_note": "DAL -4.5 (ESPN summary, frozen 2026-10-28T21:13Z)"
   }
 }
