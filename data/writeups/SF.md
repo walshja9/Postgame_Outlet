@@ -1,3 +1,12 @@
+## Week 7: at Atlanta (L 20–29)
+
+Four turnovers sank San Francisco despite **400 yards**. Brock Purdy threw two interceptions (59.3 PFF), his third straight flat game. The 49ers added DT **DeForest Buckner** from Indianapolis, and they get a bye to heal before Mike Evans and Deebo Samuel are expected back.
+
+**What changed:**
+- **Defense +0.9 → +1.2.** Buckner.
+- **QB Purdy held** at +4.5, though we're watching the trend. **Offense held.** Christian McCaffrey (mild hamstring) should be fine after the bye.
+- **New total 5.8 → 6.1.**
+
 ## Week 7: at Atlanta (pre-game)
 
 **Mike Evans** is out (Achilles tendinitis and a rib injury) after he aggravated the Achilles against Washington. **Nick Bosa** (knee) and S **Marques Sigle** (ankle) remain out.

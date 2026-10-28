@@ -1,3 +1,13 @@
+## Week 7: at Tennessee (W 27–24)
+
+Cleveland's offense finally showed up: **491 yards**, with the box score at 33–21. Deshaun Watson graded 72.8. LT Spencer Fano (92.2), WR KC Concepcion (87.6) and TE Harold Fannin Jr. (84.5) led the way, with Concepcion and RBs Judkins and Sampson all back.
+
+**What changed:**
+- **QB Watson −2.5 → −2.0.**
+- **Offense −0.8 → −0.5.** The injured skill players are back and the unit produced.
+- **Defense held.** RT **Tytus Howard** (head), CB **Myles Harden** (hamstring) and DT **Mike Hall Jr.** (ankle) are questionable.
+- **New total −2.8 → −2.0.**
+
 ## Week 6: vs Baltimore (W 13–10)
 
 Cleveland won a defensive slugfest. Both teams gained about 235 yards, and the box score called it close to even. The Browns' defense
@@ -123,9 +133,7 @@ Cleveland grades poorly, and it is almost entirely the quarterback. The defense 
 
 ## Quarterback
 
-Deshaun Watson (−2.5) gives back last week's bump after taking 8 sacks in the loss at the Jets
-(15-of-33, 155 yards, 47.5 PFF, 27th of 30). His season has swung week to week (PFF 33.7, 69.1, 39.1,
-74.3, 47.5), and −2.5 is where that averages out. He was raised from −3.0 after Week 2.
+Deshaun Watson (−2.0) gets a half-point bump after his best game of the year at Tennessee (72.8 PFF) as Cleveland put up 491 yards. He's still a bridge-level starter, but the offense around him is finally producing.
 
 ## Quarterback: through Week 1 2026 (historical)
 

@@ -1,3 +1,12 @@
+## Week 7: vs San Francisco (W 29–20)
+
+**Michael Penix Jr.** looked like himself again (68.5 PFF, 3 TD, 0 INT) after two rough games following his rib injury. The box score was dead even (25–25); Atlanta won the turnover battle 4–0.
+
+**What changed:**
+- **QB Penix −1.3 → −1.0.** The healthy-form restore.
+- **Offense and defense held.** The defense's big day came against a banged-up 49ers team.
+- **New total −0.9 → −0.6.**
+
 ## Week 6: vs Chicago (L 23–31)
 
 Atlanta never had the ball long enough to matter. Chicago held it for **40 minutes**, and the Falcons ran only **50 plays**. **Bijan Robinson**
@@ -131,7 +140,7 @@ and the defense's pass rush is thinned through the first half.
 
 ## Quarterback
 
-Michael Penix Jr. (−1.3) is the starter, down three-tenths after his second straight game under 60 since hurting his ribs late in Week 5 (48.8 PFF passing, 33.0 QBR and five sacks against Chicago). He graded 73.0 and 81.0 in his two healthy starts, so this looks like the ribs. The grade comes back up if he does.
+Michael Penix Jr. (−1.0) gets back the healthy-form restore after looking like himself against San Francisco (68.5 PFF, 3 TD, 0 INT), following two rough games after his rib injury.
 
 ## What moved the number
 

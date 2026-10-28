@@ -1,3 +1,13 @@
+## Week 7: vs N.Y. Giants (L 21–27)
+
+Houston managed only **237 yards**. C.J. Stroud graded 49.4 behind a poor line (Keylan Rutledge 35.1). The defense gave up 420 yards and ranks 21st in EPA allowed. WR **Jaylin Noel** has turf toe.
+
+**What changed:**
+- **Offense +1.0 → +0.8.**
+- **Defense +1.0 → +0.7.** Rated better than it has played.
+- **QB Stroud held** after one bad game.
+- **New total 3.5 → 3.0.**
+
 ## Week 7: vs NY Giants (pre-game)
 
 Nickel CB **Jalen Pitre** (shoulder) and S **Reed Blankenship** (concussion) are out. **Nico Collins** is off the injury report and playing.

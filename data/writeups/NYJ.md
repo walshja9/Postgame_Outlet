@@ -1,3 +1,12 @@
+## Week 7: vs Miami (L 25–28)
+
+Geno Smith had his second good game in a row (77.3 PFF), and Mason Taylor was terrific (93.3). The defense let **Malik Willis** post a 99.5 QBR, with David Bailey (39.3) and Dane Belton (40.1) the weak spots.
+
+**What changed:**
+- **Defense +0.3 → +0.1.**
+- **QB and offense held.** RB **Breece Hall** (quad) returning would bump the offense.
+- **New total −2.0 → −2.2.**
+
 ## Week 6: at New England (L 19–26)
 
 The Jets were close to New England's equal in this one. The box score had it **24–23**, and they had the better success rate. They just

@@ -1,3 +1,13 @@
+## Week 7: vs New England (W 30–24)
+
+A legit win: the box score had it 30–26. **Caleb Williams** has been clean in both games since his hamstring injury (83.4 PFF). **Luther Burden III** was outstanding (89.3), and **Colston Loveland** (73.5, TD) steps in at TE after **Cole Kmet** suffered a season-ending knee injury. Edge **Montez Sweat** is back from his suspension.
+
+**What changed:**
+- **Offense +0.8 → +1.0.** The skill group is producing even without Kmet.
+- **Defense −0.1 → 0.0.** Sweat's return, on a defense that's fourth in EPA allowed. Rookie CB **Malik Muhammad II** (toe) is questionable.
+- **QB Caleb held** at +3.0.
+- **New total 3.7 → 4.0.**
+
 ## Week 6: at Atlanta (W 31–23)
 
 **Caleb Williams** came back from his right-hamstring injury and played like nothing happened: **30-of-36 for 305 yards**, a TD and no

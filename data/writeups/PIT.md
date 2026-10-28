@@ -1,3 +1,13 @@
+## Week 7: at New Orleans (W 16–10)
+
+Pittsburgh's front was dominant: Keeanu Benton (90.8), Payton Wilson (89.8), Patrick Queen (84.5) and T.J. Watt (81.5). S **DeShon Elliott** (knee) returned from IR.
+
+**What changed:**
+- **QB Rodgers −1.2 → −1.0.**
+- **Defense +0.9 → +1.0.** Elliott's return completes the secondary restore.
+- **Offense held.**
+- **New total −0.3 → 0.0.**
+
 ## Week 6: at Tampa Bay (W 26–19, OT)
 
 Pittsburgh trailed **13–3 at halftime**, then took over. The Steelers out-gained Tampa **206–122** after the break, scored 16 in the fourth quarter,
@@ -120,10 +130,7 @@ Pittsburgh lands right at the waterline — a strong, veteran-laden defense bala
 
 ## Quarterback
 
-Aaron Rodgers (−1.2) holds after a clean Week 5 win over Indianapolis (22-of-31, 235 yards, 3 TD, 0
-INT, 65.1 PFF). He also held after the Week 4 loss at Cleveland (two interceptions, five sacks). He
-was cut to −1.5 after Week 2 and moved back up after Week 3. At 42 the arm comes and goes, but he's
-protecting the ball.
+Aaron Rodgers (−1.0) ticks up slightly. He was steady and mistake-free at New Orleans (63.4 PFF, 0 INT) while the defense carried the game.
 
 ## Quarterback: through Week 1 2026 (historical)
 

@@ -1,3 +1,12 @@
+## Week 7: vs Dallas (L 21–38)
+
+Dallas scored 38, and the defense ranks 27th in EPA allowed. Tariq Woolen, Jihaad Campbell and Jordan Davis all graded around 36. **Saquon Barkley** returned from the hamstring, then hurt his back early. He says he won't miss time.
+
+**What changed:**
+- **Defense −0.5 → −0.8.**
+- **QB McKee and offense held.** Saquon played, so the offense number stands. WRs **DeVonta Smith** (hamstring/toe) and **Dontayvion Wicks** (ankle) each bring a piece back on their return. Jalen Hurts is out for the season.
+- **New total −5.2 → −5.5.**
+
 ## Week 7: vs Dallas (pre-game)
 
 Philadelphia will be without WRs **DeVonta Smith** (hamstring/toe) and **Dontayvion Wicks** (ankle), two of its top three receivers. **Saquon Barkley** (hamstring) practiced in full and is expected back after missing two games, and TE **Dallas Goedert** is off the injury report.

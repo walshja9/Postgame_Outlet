@@ -1,3 +1,13 @@
+## Week 7: at Houston (W 27–21)
+
+The Giants were better than the score. The box score had them at 31–19, with **420 yards**. **J.J. McCarthy** has now had two straight good games (80.0 PFF), and Abdul Carter (91.0) and DJ Reader (87.2) controlled the line. LB **Tremaine Edmunds** (chest) is out for the season.
+
+**What changed:**
+- **QB McCarthy −3.0 → −2.0.**
+- **Defense −0.3 → −0.4.** Edmunds, partly offset by a dominant front.
+- **Offense held.**
+- **New total −3.1 → −2.2.**
+
 ## Week 7: at Houston (pre-game)
 
 John Harbaugh named **J.J. McCarthy** the starter after he relieved the benched Jameis Winston against New Orleans. The secondary is down two more starters: CB **Greg Newsome** and S **Jevón Holland** are both out with concussions.
@@ -145,7 +155,7 @@ dangerous pass rush. Week 2 changed the quarterback component.
 
 ## Quarterback
 
-J.J. McCarthy (−3.0) is the selected quarterback after John Harbaugh named him the Week 7 starter. He threw for 243 yards in relief of the benched Jameis Winston against New Orleans, but most of it came against a defense protecting a lead, so he sits only half a point above Winston (−3.5) until he does it in a game that's still in doubt. Jaxson Dart (left knee) is out for the regular season.
+J.J. McCarthy (−2.0) moves up a full point after two straight good starts, including an 80.0 PFF grade in the win at Houston. He has played well enough to stay QB1 as the Giants head into their bye.
 
 ## What moved the number
 

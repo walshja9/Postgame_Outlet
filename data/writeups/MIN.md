@@ -1,3 +1,12 @@
+## Week 7: vs Indianapolis (W 16–10)
+
+Minnesota's defense is in a class of its own: first in EPA allowed by a wide margin, with **Blake Cashman (94.3)** and **Kyle Van Noy (89.7)** leading the way. The offense is moving the other way. It's 29th in EPA, and **Aaron Jones** re-aggravated his MCL.
+
+**What changed:**
+- **Defense +1.5 → +1.8.** Elite and getting better.
+- **Offense +0.6 → +0.3.** The production isn't there, and Jones is day-to-day.
+- **New total 1.6 → 1.6.**
+
 ## Week 5: at New Orleans (W 23–13)
 
 Minnesota is **5–0**, and the box says the game was more lopsided than 23–13. The model had it

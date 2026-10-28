@@ -1,3 +1,12 @@
+## Week 7: vs Green Bay (W 20–17)
+
+Detroit won a game the box score had closer to 29–22. The big news is S **Brian Branch**, back from his Achilles injury and immediately excellent (91.1 PFF) next to Aidan Hutchinson (91.5).
+
+**What changed:**
+- **Defense −2.0 → −1.7.** A partial restore of the safety cut, since Kerby Joseph is still on PUP.
+- **QB and offense held.** Amon-Ra St. Brown (ankle) is expected to be fine.
+- **New total 2.0 → 2.3.**
+
 ## Week 5: at Arizona (W 45–21)
 
 Detroit **scored 24 straight points in the second quarter** and was never threatened. After falling

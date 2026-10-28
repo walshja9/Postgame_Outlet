@@ -1,3 +1,13 @@
+## Week 7: bye
+
+Buffalo comes out of the bye getting two key pieces back. Coach Joe Brady said the "hope and intent" is for WR **DJ Moore** (shoulder) and DT **Ed Oliver** (knee) to return against Baltimore after each missed two games. S **C.J. Gardner-Johnson** is suspended for Week 8, but he isn't priced.
+
+**What changed:**
+- **Offense +1.1 → +1.3.** Moore's return, the pre-set +0.2.
+- **Defense −1.1 → −0.9.** Oliver back in the middle of a line that hasn't generated pressure without him.
+- **QB Allen held** at +6.5.
+- **New total 6.5 → 6.9.**
+
 ## Week 6: at Las Vegas (W 33–30)
 
 Buffalo won a shootout that the box score called a coin flip (28–27 Las Vegas). **Josh Allen** got back on track: 23-of-33 for 255 yards, 2 TD and no turnovers

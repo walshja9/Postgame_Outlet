@@ -1,3 +1,13 @@
+## Week 7: vs Tampa Bay (L 13–43)
+
+Carolina was blown out at home. Tampa led **33–6 by halftime**, and the Panthers turned it over **four times**. Bryce Young had his worst game of the season (56.5 PFF, 6.8 QBR, 2 INT). The bigger problem is the offensive line. RT **Taylor Moton** fractured his fibula and is out for the season, with LT **Ikem Ekwonu** already on PUP. LG **Damien Lewis** (knee) and G **Torricelli Simpkins** (ankle) both missed practice Monday and Tuesday before Thursday's game at Green Bay.
+
+**What changed:**
+- **Offense 0.0 → −0.6.** Up to four of the top six linemen are out or hurt. If Lewis is ruled out, it drops to −0.8.
+- **Defense −0.3 → −0.4.** OLB **Jaelan Phillips** (hamstring) is out again, and CB **Akayleb Evans** (triceps/knee) is questionable.
+- **QB Young held** at +1.5. One bad game.
+- **New total 1.2 → 0.5.**
+
 ## Week 6: at Philadelphia (W 25–14)
 
 Carolina came off its bye and controlled the game, beating a Hurts-less Eagles team by 11 in a game the box score said should have been

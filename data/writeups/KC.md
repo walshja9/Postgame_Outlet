@@ -1,3 +1,12 @@
+## Week 7: at Seattle (L 3–20)
+
+Kansas City was out-gained by **197 yards** and held to a field goal. Patrick Mahomes graded 50.2 with 165 passing yards, playing without both starting tackles. Xavier Worthy (50.4) gave him little.
+
+**What changed:**
+- **Offense +0.3 → 0.0.** This unit isn't giving Mahomes enough. RT **Jaylon Moore** (concussion) could clear this week.
+- **QB and defense held.**
+- **New total 5.8 → 5.5.**
+
 ## Week 7: at Seattle (pre-game)
 
 Kansas City will be without **both starting tackles**: RT **Jaylon Moore** is out with a concussion, and LT **Josh Simmons** (back) has gone on IR. WR **Rashee Rice** (hamstring/knee) misses another game.

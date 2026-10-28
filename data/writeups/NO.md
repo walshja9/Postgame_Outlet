@@ -1,3 +1,13 @@
+## Week 7: vs Pittsburgh (L 10–16)
+
+New Orleans couldn't block Pittsburgh's front. Taliese Fuaga (50.9) and Jeremiah Wright (39.2) struggled, and Tyler Shough was under siege. The defense ranks 24th in EPA allowed, and S **Justin Reid** is in the concussion protocol.
+
+**What changed:**
+- **Offense −0.2 → −0.5.** The offensive line is a real problem.
+- **Defense −0.6 → −1.0.** LB Kaden Elliss and Edge Anfernee Jennings are back, but the unit isn't good enough.
+- **QB Shough held.**
+- **New total −1.1 → −1.8.**
+
 ## Week 6: at N.Y. Giants (W 34–27)
 
 New Orleans won comfortably, leading by 21 before the Giants' late rally. It was out-gained, but it took care of the ball and finished: **3-for-3 in the red

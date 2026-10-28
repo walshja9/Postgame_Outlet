@@ -1,3 +1,12 @@
+## Week 7: vs L.A. Rams (L 21–35)
+
+The Rams moved it at will: 28 first downs, with Taron Johnson (31.5), Tommy Eichenberg (29.8) and Quay Walker (37.5) all struggling. This defense ranks 30th in EPA allowed.
+
+**What changed:**
+- **Defense −1.1 → −1.5.** A very bad defense, priced like one now.
+- **QB Cousins held** at 0.0. Klint Kubiak named Cousins the Week 8 starter but says rookie **Fernando Mendoza** "is gonna play at some point," so we're watching that.
+- **New total −1.2 → −1.6.**
+
 ## Week 6: vs Buffalo (L 30–33)
 
 Las Vegas went toe-to-toe with one of the league's best teams. **Kirk Cousins** had his best game of the season (23-of-41, **313 yards**, 2 TD, 1 INT, 75.1 PFF

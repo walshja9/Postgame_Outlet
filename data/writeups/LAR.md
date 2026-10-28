@@ -1,3 +1,12 @@
+## Week 7: at Las Vegas (W 35–21)
+
+Matthew Stafford was efficient (70.5 PFF, 3 TD), and Blake Corum (87.4) and Puka Nacua (86.8) did the damage. LT **Alaric Jackson** has served his two-game suspension and is back for Week 8.
+
+**What changed:**
+- **Offense +1.2 → +1.4.** Jackson's return at left tackle.
+- **QB and defense held.** LB **Nate Landman** (concussion) and CB **Trent McDuffie** (groin) could return. Myles Garrett is not back yet.
+- **New total 6.2 → 6.4.**
+
 ## Week 7: at Las Vegas (pre-game)
 
 LB **Nate Landman** is out (concussion), CB **Trent McDuffie** is questionable (groin), and **Puka Nacua** is a game-time decision with a calf injury that Ian Rapoport calls minor.

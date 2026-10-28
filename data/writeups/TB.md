@@ -1,3 +1,13 @@
+## Week 7: at Carolina (W 43–13)
+
+Baker Mayfield came back and barely had to throw (11 attempts through three quarters) as Tampa led 33–6 by halftime. The defense forced **four turnovers**. It's third in EPA allowed this season, led by Jacob Parrish (83.8).
+
+**What changed:**
+- **QB Baker +1.0 → +1.5.** A clean first game back restores the full number.
+- **Defense −0.5 → 0.0.** Better than we had it.
+- **Offense held.** WR **Emeka Egbuka** (concussion/foot) and RT **Luke Goedeke** (calf) come back on their return.
+- **New total 0.9 → 1.9.**
+
 ## Week 7: at Carolina (pre-game)
 
 **Baker Mayfield** is back. He practiced in full all week after dislocating his right thumb in Week 3, and he'll play in a reinforced glove. Todd Bowles called him "ready to go." Tampa will be without WR **Emeka Egbuka** (concussion), RT **Luke Goedeke** (calf) and S **Antoine Winfield Jr.** (rib fracture).
@@ -139,7 +149,7 @@ Tampa Bay grades above the line as a genuinely balanced team — a proven quarte
 
 ## Quarterback
 
-Baker Mayfield (+1.0) is the selected quarterback for Week 7, back from the dislocated right thumb he suffered in Week 3. He practiced in full all week and will play in a reinforced glove. That's half a point below his normal +1.5 for his first game back, and a clean game restores it. Rookie Jalon Daniels (−4.0) goes back to QB2 after going 1–2 as the starter.
+Baker Mayfield (+1.5) is back to his full grade after a clean first game back from the dislocated right thumb. He barely had to throw in the 43–13 rout of Carolina. Rookie Jalon Daniels (−4.0) is QB2.
 
 ## Quarterback: through Week 1 2026 (historical)
 

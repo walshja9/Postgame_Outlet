@@ -1,3 +1,12 @@
+## Week 7: at Detroit (L 17–20)
+
+Green Bay's offensive line is in trouble. Starting C **Sean Rhyan** suffered a high ankle sprain on the first series (typically 4–6 weeks), backup C **Jacob Monk** (quad) is on IR, and LG Aaron Banks and RT Anthony Bako-Bewele were already out. Second-year **John Williams** is in line to start at center. WR **Matthew Golden** (foot/shoulder) and LB **Zaire Franklin** (hairline fracture in his shin) are unlikely for Thursday.
+
+**What changed:**
+- **Offense +0.7 → +0.3.** The line cluster costs 0.3 and Golden another 0.1. Josh Jacobs is still not suspended.
+- **QB Love and defense held.** Franklin's absence is offset by a defense that ranks fifth in EPA allowed.
+- **New total 1.8 → 1.4.**
+
 ## Week 6: vs Dallas (W 23–13, SNF)
 
 Green Bay jumped out to a **17–0 halftime lead** and held on. **Jordan Love** was sharp again (23-of-41, 276 yards, a TD pass and a TD run, **80.9 PFF passing**),

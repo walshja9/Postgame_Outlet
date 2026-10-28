@@ -1,3 +1,12 @@
+## Week 7: at Arizona (W 30–16)
+
+Denver won comfortably on the scoreboard, but Arizona had more first downs and the box score made it close to even. CB **Pat Surtain II** (ankle) was inactive for the third straight game, so last week's pre-game bump for his return comes back off.
+
+**What changed:**
+- **Defense +1.8 → +1.5.** Surtain is practicing limited; it goes back up if he plays Kansas City. DE **Zach Allen** (hamstring) is questionable.
+- **QB and offense held.** RB Jonah Coleman did play. WR **Jaylen Waddle** (chest/shoulder) is questionable.
+- **New total 1.1 → 0.8.**
+
 ## Week 7: at Arizona (pre-game)
 
 CB **Pat Surtain II** is expected back from the ankle injury that cost him the last stretch, and RB **Jonah Coleman** returns from IR (ankle) after a full week of practice.

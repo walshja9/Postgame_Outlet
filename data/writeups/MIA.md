@@ -1,3 +1,13 @@
+## Week 7: at N.Y. Jets (W 28–25)
+
+**Malik Willis** had his best game of the year: 14 of 21 for 208 yards and 2 TD, a 99.5 QBR and a 77.3 PFF grade. TE Greg Dulcich (87.9) and the run game kept the chains moving for 24 first downs.
+
+**What changed:**
+- **QB Willis −2.5 → −2.2.**
+- **Offense −1.7 → −1.5.**
+- **Defense held.**
+- **New total −5.5 → −5.0.**
+
 ## Week 5: vs Cincinnati (L 24–31)
 
 Miami lost again but **covered the 7.5**, scoring 14 points in the 4th after trailing 28–10. The
@@ -111,9 +121,7 @@ Miami grades near the floor on all three lines — the aftermath of a roster tea
 
 ## Quarterback
 
-Malik Willis (−2.5) is now at the worst-starter floor. He has **2 passing touchdowns in five starts**,
-and his Week 5 pass grade (34.7) was 29th of 30. His running (8–74 and a TD against Cincinnati) is real
-and keeps the offense competitive, but the dropback passing game hasn't shown up.
+Malik Willis (−2.2) moves up after his best game of the season at the Jets: 14 of 21 for 208 yards and 2 TD, a 99.5 QBR and a 77.3 PFF grade. He's still a below-average starter, but this was the first sign the earlier floor was too low.
 
 ## Quarterback: through Week 1 2026 (historical)
 

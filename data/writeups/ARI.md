@@ -1,3 +1,12 @@
+## Week 7: vs Denver (L 16–30)
+
+The score flatters Denver. Arizona had **24 first downs** and the box score made it about 29–27 Cardinals, but they kept settling for field goals while Denver finished drives. WR **Jalen Brooks** (wrist) is out for the season.
+
+**What changed:**
+- **Offense −1.4 → −1.5.** That's for Brooks. Rookie RB **Jeremiyah Love** (high ankle) and S **Andrew Wingard** (knee) return to practice this week, and both would bring their pieces back.
+- **QB and defense held.**
+- **New total −3.4 → −3.5.**
+
 ## Week 7: vs Denver (pre-game)
 
 Rookie RB **Jeremiyah Love** misses a second straight game with a high-ankle sprain, and DT **Walter Nolen** (ankle) and S **Andrew Wingard** (knee) are also out. S **Budda Baker** is questionable (groin).

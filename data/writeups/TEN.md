@@ -1,3 +1,12 @@
+## Week 7: vs Cleveland (L 24–27)
+
+Tennessee hung around on the scoreboard, but Cleveland piled up **491 yards** and the box score had the Browns closer to 33–21. Cam Ward was solid (76.9 PFF) and Tony Pollard was excellent (85.7). The defense couldn't get off the field, and Jeffery Simmons graded just 42.9.
+
+**What changed:**
+- **Defense −0.4 → −0.8.** 26th in EPA allowed per play, and this was a bad offense moving at will.
+- **QB and offense held.** WR **Calvin Ridley** (hip) and RB **Tyjae Spears** (knee) both sat; their return is a possible bump.
+- **New total −3.5 → −3.9.**
+
 ## Week 6: at Indianapolis (W 26–20)
 
 Tennessee won a game it was badly out-played in. Indianapolis out-gained the Titans **399–186** and led **13–3 entering the fourth quarter**.

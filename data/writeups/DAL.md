@@ -1,3 +1,12 @@
+## Week 7: at Philadelphia (W 38–21)
+
+Dak Prescott was sharp (81.5 PFF, 3 TD) behind an offensive line that dominated (Tyler Booker 92.4). The defense finally had **Joey Porter Jr., Cobie Durant and DeMarvion Overshown** back together, though this was against a depleted Eagles team.
+
+**What changed:**
+- **Defense −1.8 → −1.6.** An injury restore for the three returning starters. It's kept small because of who they beat.
+- **QB and offense held.**
+- **New total 1.4 → 1.6.**
+
 ## Week 6: at Green Bay (L 13–23, SNF)
 
 Dallas fell behind **17–0 at halftime**, with two **Dak Prescott** interceptions in the second quarter doing most of the damage, then out-gained Green Bay

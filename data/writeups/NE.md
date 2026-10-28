@@ -1,3 +1,13 @@
+## Week 7: at Chicago (L 24–30)
+
+A fair result: the box score had it 26–30. **Drake Maye** played well again (78.3 PFF), and Hunter Henry was excellent (81.1). The Patriots came out healthy, and G **Ben Brown** (knee) is back at practice. But LG **Alijah Vera-Tucker** (hamstring) and WR **Romeo Doubs** (shoulder) are both on IR, and the defense missed **17 tackles**.
+
+**What changed:**
+- **Offense 0.0 → −0.2.** Vera-Tucker and Doubs, partly offset by Brown's return.
+- **Defense +0.5 → +0.3.** It allowed a 132.5 passer rating (Marcus Jones 40.2, Woodson 48.6) and ranks 19th in EPA.
+- **QB Maye held** at +2.5.
+- **New total 3.0 → 2.6.**
+
 ## Week 6: vs N.Y. Jets (W 26–19)
 
 New England led **17–3 at halftime** and held on. The box score was close to even (**24–23**), because the Jets moved the ball and then

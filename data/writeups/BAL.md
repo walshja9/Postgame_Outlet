@@ -1,3 +1,13 @@
+## Week 7: vs Cincinnati (L 13–35)
+
+Baltimore led **13–0** and then gave up **35 straight**. Tyler Huntley (55.0 PFF, 30.4 QBR) couldn't keep up, and the secondary was torched: Kyle Hamilton 43.7, Marlon Humphrey 41.8, Nate Wiggins 29.0. That's the pattern in every Ravens loss this year: a halftime lead blown. The good news is **Lamar Jackson** (high ankle) is trending toward playing at Buffalo.
+
+**What changed:**
+- **QB: Lamar back to QB1 at +4.0.** That's half a point below his normal +4.5 for his first game back, and a clean game restores it. Huntley goes back to QB2.
+- **Offense +0.8 → +0.7.** Rookie G **Vega Ioane** has an MCL sprain.
+- **Defense +0.3 → −0.3.** OLB **Tavius Robinson** (pectoral), the team's sack leader, is out for the season, and the coverage collapsed. Giving up 35 after leading 13–0 is not a disciplined defense.
+- **New total −0.4 → 4.4.**
+
 ## Week 7: vs Cincinnati (pre-game)
 
 **Lamar Jackson** (high-ankle sprain) has been **ruled out** for a third straight game. He hasn't practiced since Oct. 4. **Tyler Huntley** makes his third straight start.
@@ -143,7 +153,7 @@ Baltimore is a top-five roster: an elite quarterback, a strong skill group, and 
 
 ## Quarterback
 
-Tyler Huntley (−1.5) is the selected quarterback for Week 7 after **Lamar Jackson** (high-ankle sprain) was ruled out for a third straight game. Huntley was excellent in the Week 5 overtime win at Atlanta (79.9 PFF passing) and poor at Cleveland in Week 6 (50.9). Lamar (+4.5) goes back in at +4.0 for his first game back and returns to +4.5 after a clean game.
+Lamar Jackson (+4.0) returns as the selected quarterback for Week 8 at Buffalo after missing three games with a high ankle sprain. That's half a point below his healthy +4.5 for his first game back, and a clean game restores it. Tyler Huntley (−1.5) goes back to QB2.
 
 ## Quarterback: through Week 1 2026 (historical)
 

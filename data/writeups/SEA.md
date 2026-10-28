@@ -1,3 +1,13 @@
+## Week 7: vs Kansas City (W 20–3)
+
+Holding Patrick Mahomes to **3 points** and out-gaining Kansas City by 197 yards is as good as defense gets; Byron Murphy II graded 87.8. Sam Darnold had his best game (72.7 PFF), and Jaxon Smith-Njigba was dominant (92.3). Seattle also traded for All-Pro G **Quenton Nelson**, but LT **Charles Cross** has a high ankle sprain.
+
+**What changed:**
+- **Defense +3.0 → +3.2.** Past our usual +3.0 ceiling, on purpose. This defense earned it.
+- **Offense held at +0.5.** Nelson's upgrade (+0.3) offsets Cross missing one to two games (−0.3). RB **Zach Charbonnet** adds +0.2 when he plays.
+- **QB Darnold held** at +1.5.
+- **New total 5.0 → 5.2.**
+
 ## Week 6: at Denver (L 14–17, OT, TNF)
 
 The box score says Seattle should have won, and the game says Seattle was lucky to get to overtime. The Seahawks

@@ -1,3 +1,13 @@
+## Week 7: at Baltimore (W 35–13)
+
+Cincinnati fell behind 13–0, then scored 35 straight. **Joe Burrow** threw four touchdowns (93.7 PFF) and **Tee Higgins** graded 91.6. The defensive front (Boye Mafe 89.8, Dexter Lawrence 89.5) shut out Baltimore after the first quarter, though against backup QB Tyler Huntley.
+
+**What changed:**
+- **Offense +0.6 → +0.8.** A top-3 EPA offense with Higgins and Chase both rolling.
+- **Defense −0.5 → −0.4.** A small bump, tempered by the backup QB. TE **Erick All** (knee, likely ACL) went to IR in a backup role.
+- **QB Burrow held** at +5.0.
+- **New total 5.1 → 5.4.**
+
 ## Week 5: at Miami (W 31–24)
 
 **Joe Burrow** threw four touchdowns and Cincinnati led 28–10 late in the 3rd before Miami made it close

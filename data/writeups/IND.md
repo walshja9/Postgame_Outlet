@@ -1,3 +1,14 @@
+## Week 7: at Minnesota (L 10–16), then a sell-off
+
+Indianapolis managed 218 yards against the league's best defense. Then on Monday it traded two of its best players: DT **DeForest Buckner** to San Francisco and G **Quenton Nelson** to Seattle. Daniel Jones has now had five straight weeks with negative EPA.
+
+**What changed:**
+- **QB Jones −0.5 → −1.0.** A multi-week slide, not a one-game dip.
+- **Offense +0.6 → +0.1.** Nelson is gone, and TE **Tyler Warren** (groin) has missed two games.
+- **Defense −0.8 → −1.3.** Buckner is gone, CB **Cam Taylor-Britt** (groin) is on IR, and nickel **Justin Walley** (knee) got hurt with Sauce Gardner already out.
+- **Watch:** a team selling its veterans may play like it.
+- **New total −0.7 → −2.2.**
+
 ## Week 7: at Minnesota (pre-game)
 
 CB **Sauce Gardner** is out with a calf injury.
@@ -138,7 +149,7 @@ skill group is above average, but Week 1 pulled the quarterback and defense belo
 
 ## Quarterback
 
-Daniel Jones (−0.5) is the starter, down half a point after a 38.1 passing grade against Tennessee: two interceptions in scoring range and six sacks. That's three games under 51 in his last four, and his best grade this season is 63.1. The line and run game around him are good, which makes the turnovers harder to excuse.
+Daniel Jones (−1.0) drops half a point. He has posted negative EPA per dropback in five straight games (53.2 PFF at Minnesota), and the Colts just traded away Quenton Nelson in front of him.
 
 ## Quarterback: through Week 1 2026 (historical)
 
