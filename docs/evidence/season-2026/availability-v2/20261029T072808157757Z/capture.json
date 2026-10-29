@@ -1,0 +1,65 @@
+{
+  "checked_at": "2026-10-29T07:28:11.909161+00:00",
+  "sources": [
+    {
+      "bytes": 369131,
+      "captured_at": "2026-10-29T07:28:11.217226+00:00",
+      "file": "raw/000.html.gz",
+      "final_url": "https://www.nfl.com/injuries/",
+      "kind": "official_report",
+      "sha256": "bdd9d424b01e469e2865aab0cc03a7421155b787e60c0d2992ec1e9f7dddd5c2",
+      "started_at": "2026-10-29T07:28:11.184108+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/injuries/"
+    },
+    {
+      "bytes": 394150,
+      "captured_at": "2026-10-29T07:28:11.320314+00:00",
+      "file": "raw/001.html.gz",
+      "final_url": "https://www.panthers.com/news/",
+      "kind": "team_news",
+      "sha256": "dda5c8775f9feae33de460ed71f91537ae513597e1fbaf8ca2ea61e61e0a6a6a",
+      "started_at": "2026-10-29T07:28:11.184522+00:00",
+      "status": 200,
+      "team": "CAR",
+      "url": "https://www.panthers.com/news/"
+    },
+    {
+      "bytes": 698084,
+      "captured_at": "2026-10-29T07:28:11.509225+00:00",
+      "file": "raw/002.html.gz",
+      "final_url": "https://www.packers.com/news/",
+      "kind": "team_news",
+      "sha256": "dcb5fd6954a9fcb0ea6ff7a61b46754fe58c052cd932c7a34d2decae48a11a0e",
+      "started_at": "2026-10-29T07:28:11.184887+00:00",
+      "status": 200,
+      "team": "GB",
+      "url": "https://www.packers.com/news/"
+    },
+    {
+      "bytes": 1592666,
+      "captured_at": "2026-10-29T07:28:11.242391+00:00",
+      "file": "raw/003.html.gz",
+      "final_url": "https://www.nfl.com/news",
+      "kind": "league_news",
+      "sha256": "cbb1985e60c4ffa8e32014af6e16b9811671f15df853c6ab10b43f4c4129a281",
+      "started_at": "2026-10-29T07:28:11.185215+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/news/"
+    },
+    {
+      "bytes": 415100,
+      "captured_at": "2026-10-29T07:28:11.821041+00:00",
+      "file": "raw/004.html.gz",
+      "final_url": "https://www.panthers.com/news/panthers-waive-offensive-tackle-albert-reese",
+      "kind": "official_inactives",
+      "sha256": "72940df1d0f7a72b9c25b389f9a764dbd6b3981edb7a8a2ac3a10e6a40722e09",
+      "started_at": "2026-10-29T07:28:11.654694+00:00",
+      "status": 200,
+      "team": "CAR",
+      "url": "https://www.panthers.com/news/panthers-waive-offensive-tackle-albert-reese"
+    }
+  ]
+}
