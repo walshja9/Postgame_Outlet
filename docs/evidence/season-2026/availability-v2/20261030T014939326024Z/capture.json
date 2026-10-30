@@ -1,0 +1,101 @@
+{
+  "checked_at": "2026-10-30T01:49:40.009891+00:00",
+  "sources": [
+    {
+      "bytes": 382960,
+      "captured_at": "2026-10-30T01:49:39.484025+00:00",
+      "file": "raw/000.html.gz",
+      "final_url": "https://www.nfl.com/injuries/",
+      "kind": "official_report",
+      "sha256": "2171cc4521fd008da15a593f78082b685185b28240567b9bcfdf25ee8cbdaa00",
+      "started_at": "2026-10-30T01:49:39.337582+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/injuries/"
+    },
+    {
+      "bytes": 394852,
+      "captured_at": "2026-10-30T01:49:39.528184+00:00",
+      "file": "raw/001.html.gz",
+      "final_url": "https://www.panthers.com/news/",
+      "kind": "team_news",
+      "sha256": "e3c429435e7cd4a2260f4a567b82d5771b619bbe3e441d162618ea2aea83e1a6",
+      "started_at": "2026-10-30T01:49:39.338007+00:00",
+      "status": 200,
+      "team": "CAR",
+      "url": "https://www.panthers.com/news/"
+    },
+    {
+      "bytes": 697475,
+      "captured_at": "2026-10-30T01:49:39.504820+00:00",
+      "file": "raw/002.html.gz",
+      "final_url": "https://www.packers.com/news/",
+      "kind": "team_news",
+      "sha256": "14eb738147cf513aa514c3122e90a22190e6eae934963c6b4a299f452ea2e3f3",
+      "started_at": "2026-10-30T01:49:39.338381+00:00",
+      "status": 200,
+      "team": "GB",
+      "url": "https://www.packers.com/news/"
+    },
+    {
+      "bytes": 1605845,
+      "captured_at": "2026-10-30T01:49:39.427525+00:00",
+      "file": "raw/003.html.gz",
+      "final_url": "https://www.nfl.com/news",
+      "kind": "league_news",
+      "sha256": "36abcbb974073fd9a6c8099a9e1baee7eea1db0ee3c5c05daf5e11c76fe92f31",
+      "started_at": "2026-10-30T01:49:39.338787+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/news/"
+    },
+    {
+      "bytes": 500192,
+      "captured_at": "2026-10-30T01:49:39.880198+00:00",
+      "file": "raw/004.html.gz",
+      "final_url": "https://www.panthers.com/news/week-8-inactives-at-green-bay-panthers-down-three-starters-for-packers",
+      "kind": "official_inactives",
+      "sha256": "d4959c6ea9f2ddf950a9aa6155aa02e3fd19b98dba7624ed875b7d77e90e4b83",
+      "started_at": "2026-10-30T01:49:39.687808+00:00",
+      "status": 200,
+      "team": "CAR",
+      "url": "https://www.panthers.com/news/week-8-inactives-at-green-bay-panthers-down-three-starters-for-packers"
+    },
+    {
+      "bytes": 415557,
+      "captured_at": "2026-10-30T01:49:39.791415+00:00",
+      "file": "raw/005.html.gz",
+      "final_url": "https://www.panthers.com/news/panthers-waive-offensive-tackle-albert-reese",
+      "kind": "official_inactives",
+      "sha256": "146c0dfc2a90bf946355a126aee157eef2fca99f700d0667c8e4ad7764c0a060",
+      "started_at": "2026-10-30T01:49:39.688140+00:00",
+      "status": 200,
+      "team": "CAR",
+      "url": "https://www.panthers.com/news/panthers-waive-offensive-tackle-albert-reese"
+    },
+    {
+      "bytes": 316857,
+      "captured_at": "2026-10-30T01:49:39.843052+00:00",
+      "file": "raw/006.html.gz",
+      "final_url": "https://www.packers.com/news/packers-panthers-week-8-inactives-oct-29-2026",
+      "kind": "official_inactives",
+      "sha256": "3b3134f9a8ca3d1388349cf2e03f2738087e2b617eefe3b2ebd662a98e6f474a",
+      "started_at": "2026-10-30T01:49:39.688483+00:00",
+      "status": 200,
+      "team": "GB",
+      "url": "https://www.packers.com/news/packers-panthers-week-8-inactives-oct-29-2026"
+    },
+    {
+      "bytes": 696372,
+      "captured_at": "2026-10-30T01:49:39.758164+00:00",
+      "file": "raw/007.html.gz",
+      "final_url": "https://www.nfl.com/news/week-8-thursday-night-inactives-carolina-panthers-at-green-bay-packers",
+      "kind": "official_inactives",
+      "sha256": "eb95027a6c2b5adbeaaf641e0b0f8159d560a4c21a2732c564ccd307d9bcfcd2",
+      "started_at": "2026-10-30T01:49:39.688847+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/news/week-8-thursday-night-inactives-carolina-panthers-at-green-bay-packers"
+    }
+  ]
+}
