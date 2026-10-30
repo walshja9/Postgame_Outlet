@@ -1,0 +1,85 @@
+{
+  "checked_at": "2026-10-30T02:11:40.441945+00:00",
+  "sources": [
+    {
+      "bytes": 382960,
+      "captured_at": "2026-10-30T02:11:39.905971+00:00",
+      "file": "raw/000.html.gz",
+      "final_url": "https://www.nfl.com/injuries/",
+      "kind": "official_report",
+      "sha256": "f2de94cff742d42923db58495f17b319110c9d8bf1a3a81d43bb371649dc6c88",
+      "started_at": "2026-10-30T02:11:39.793905+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/injuries/"
+    },
+    {
+      "bytes": 394850,
+      "captured_at": "2026-10-30T02:11:39.949110+00:00",
+      "file": "raw/001.html.gz",
+      "final_url": "https://www.panthers.com/news/",
+      "kind": "team_news",
+      "sha256": "1ce72004574b3ec7fa609f7a7e4613e26f60da606a8849e888eb90e9e42beeea",
+      "started_at": "2026-10-30T02:11:39.794276+00:00",
+      "status": 200,
+      "team": "CAR",
+      "url": "https://www.panthers.com/news/"
+    },
+    {
+      "bytes": 697825,
+      "captured_at": "2026-10-30T02:11:40.152878+00:00",
+      "file": "raw/002.html.gz",
+      "final_url": "https://www.packers.com/news/",
+      "kind": "team_news",
+      "sha256": "d911b9ccd4205ba6242f0c55e77c3d24d3500b7a7fe3ba94cc8722ce60323fb8",
+      "started_at": "2026-10-30T02:11:39.794666+00:00",
+      "status": 200,
+      "team": "GB",
+      "url": "https://www.packers.com/news/"
+    },
+    {
+      "captured_at": "2026-10-30T02:11:40.122662+00:00",
+      "error": "ValueError: Availability source is not an allowed official HTTPS URL",
+      "kind": "league_news",
+      "started_at": "2026-10-30T02:11:39.794987+00:00",
+      "team": null,
+      "url": "https://www.nfl.com/news/"
+    },
+    {
+      "bytes": 500190,
+      "captured_at": "2026-10-30T02:11:40.338960+00:00",
+      "file": "raw/004.html.gz",
+      "final_url": "https://www.panthers.com/news/week-8-inactives-at-green-bay-panthers-down-three-starters-for-packers",
+      "kind": "official_inactives",
+      "sha256": "4204b2ff7b503fbcb890a6b33547e2c4dc22cffd33f544653dd396bd3a04abb7",
+      "started_at": "2026-10-30T02:11:40.245007+00:00",
+      "status": 200,
+      "team": "CAR",
+      "url": "https://www.panthers.com/news/week-8-inactives-at-green-bay-panthers-down-three-starters-for-packers"
+    },
+    {
+      "bytes": 415555,
+      "captured_at": "2026-10-30T02:11:40.337309+00:00",
+      "file": "raw/005.html.gz",
+      "final_url": "https://www.panthers.com/news/panthers-waive-offensive-tackle-albert-reese",
+      "kind": "official_inactives",
+      "sha256": "443c7409d580929ce8af887062b075ed4686b4e491c0456a46a0a27ce0e8bde8",
+      "started_at": "2026-10-30T02:11:40.245288+00:00",
+      "status": 200,
+      "team": "CAR",
+      "url": "https://www.panthers.com/news/panthers-waive-offensive-tackle-albert-reese"
+    },
+    {
+      "bytes": 316855,
+      "captured_at": "2026-10-30T02:11:40.369546+00:00",
+      "file": "raw/006.html.gz",
+      "final_url": "https://www.packers.com/news/packers-panthers-week-8-inactives-oct-29-2026",
+      "kind": "official_inactives",
+      "sha256": "6121a3d97e959daa53a68368ea4950352487a1c567401e1f9e33be0e0c8d6537",
+      "started_at": "2026-10-30T02:11:40.245623+00:00",
+      "status": 200,
+      "team": "GB",
+      "url": "https://www.packers.com/news/packers-panthers-week-8-inactives-oct-29-2026"
+    }
+  ]
+}
