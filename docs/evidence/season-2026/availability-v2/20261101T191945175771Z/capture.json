@@ -1,0 +1,77 @@
+{
+  "checked_at": "2026-11-01T19:19:45.760197+00:00",
+  "sources": [
+    {
+      "bytes": 387861,
+      "captured_at": "2026-11-01T19:19:45.281194+00:00",
+      "file": "raw/000.html.gz",
+      "final_url": "https://www.nfl.com/injuries/",
+      "kind": "official_report",
+      "sha256": "f3aebbf77776007c58bcc5453e36dc765ffdea9dda5885d657f1213f9456a889",
+      "started_at": "2026-11-01T19:19:45.183174+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/injuries/"
+    },
+    {
+      "bytes": 655369,
+      "captured_at": "2026-11-01T19:19:45.335677+00:00",
+      "file": "raw/001.html.gz",
+      "final_url": "https://www.baltimoreravens.com/news/",
+      "kind": "team_news",
+      "sha256": "2fb18f4f17bfc20d42adc3badc5c8b1ac1c69609f3a93c8e2cf7f12d45d1f73b",
+      "started_at": "2026-11-01T19:19:45.183387+00:00",
+      "status": 200,
+      "team": "BAL",
+      "url": "https://www.baltimoreravens.com/news/"
+    },
+    {
+      "bytes": 437394,
+      "captured_at": "2026-11-01T19:19:45.364393+00:00",
+      "file": "raw/002.html.gz",
+      "final_url": "https://www.buffalobills.com/news/",
+      "kind": "team_news",
+      "sha256": "78e1541195806fc5f3def3d6b1ede5be0b6486c2533372c7e3c74a17ff08a7cc",
+      "started_at": "2026-11-01T19:19:45.183586+00:00",
+      "status": 200,
+      "team": "BUF",
+      "url": "https://www.buffalobills.com/news/"
+    },
+    {
+      "bytes": 1577194,
+      "captured_at": "2026-11-01T19:19:45.379931+00:00",
+      "file": "raw/003.html.gz",
+      "final_url": "https://www.nfl.com/news",
+      "kind": "league_news",
+      "sha256": "14a395ae0d6b81da1a3b828b4c2f5862a7e21465ec51c599f93a3a85c32b1f43",
+      "started_at": "2026-11-01T19:19:45.183776+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/news/"
+    },
+    {
+      "bytes": 314068,
+      "captured_at": "2026-11-01T19:19:45.539386+00:00",
+      "file": "raw/004.html.gz",
+      "final_url": "https://www.baltimoreravens.com/news/ravens-bills-inactives-andrew-vorhees--start-right-guard-week-8",
+      "kind": "official_inactives",
+      "sha256": "d9868d7c98e7aeb7e9914e73d7db9da575a27f75e20156557033bff44becc7b8",
+      "started_at": "2026-11-01T19:19:45.445294+00:00",
+      "status": 200,
+      "team": "BAL",
+      "url": "https://www.baltimoreravens.com/news/ravens-bills-inactives-andrew-vorhees--start-right-guard-week-8"
+    },
+    {
+      "bytes": 611835,
+      "captured_at": "2026-11-01T19:19:45.702485+00:00",
+      "file": "raw/005.html.gz",
+      "final_url": "https://www.buffalobills.com/news/buffalo-bills-inactives-vs-ravens-week-8",
+      "kind": "official_inactives",
+      "sha256": "08b3f227e5f4603fcabb8dc2ff5718f56581e9e8b531e391ada70675f9c28193",
+      "started_at": "2026-11-01T19:19:45.445449+00:00",
+      "status": 200,
+      "team": "BUF",
+      "url": "https://www.buffalobills.com/news/buffalo-bills-inactives-vs-ravens-week-8"
+    }
+  ]
+}

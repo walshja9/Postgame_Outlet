@@ -1,0 +1,77 @@
+{
+  "checked_at": "2026-11-01T19:19:46.874297+00:00",
+  "sources": [
+    {
+      "bytes": 387861,
+      "captured_at": "2026-11-01T19:19:46.171406+00:00",
+      "file": "raw/000.html.gz",
+      "final_url": "https://www.nfl.com/injuries/",
+      "kind": "official_report",
+      "sha256": "f3aebbf77776007c58bcc5453e36dc765ffdea9dda5885d657f1213f9456a889",
+      "started_at": "2026-11-01T19:19:46.068291+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/injuries/"
+    },
+    {
+      "bytes": 415460,
+      "captured_at": "2026-11-01T19:19:46.278072+00:00",
+      "file": "raw/001.html.gz",
+      "final_url": "https://www.colts.com/news/",
+      "kind": "team_news",
+      "sha256": "d6c88ab8c78fc45eff8ed883bf0c5d4b1911df7370015a2dcf16813c6ee0ca3f",
+      "started_at": "2026-11-01T19:19:46.068511+00:00",
+      "status": 200,
+      "team": "IND",
+      "url": "https://www.colts.com/news/"
+    },
+    {
+      "bytes": 386819,
+      "captured_at": "2026-11-01T19:19:46.568957+00:00",
+      "file": "raw/002.html.gz",
+      "final_url": "https://www.jaguars.com/news/",
+      "kind": "team_news",
+      "sha256": "23c7c15a3491bbf1b766363568d859d698509889c5c1d7680d15367f3c563367",
+      "started_at": "2026-11-01T19:19:46.068720+00:00",
+      "status": 200,
+      "team": "JAX",
+      "url": "https://www.jaguars.com/news/"
+    },
+    {
+      "bytes": 1577194,
+      "captured_at": "2026-11-01T19:19:46.271992+00:00",
+      "file": "raw/003.html.gz",
+      "final_url": "https://www.nfl.com/news",
+      "kind": "league_news",
+      "sha256": "14a395ae0d6b81da1a3b828b4c2f5862a7e21465ec51c599f93a3a85c32b1f43",
+      "started_at": "2026-11-01T19:19:46.068908+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/news/"
+    },
+    {
+      "bytes": 310349,
+      "captured_at": "2026-11-01T19:19:46.820006+00:00",
+      "file": "raw/004.html.gz",
+      "final_url": "https://www.colts.com/news/colts-announce-7-inactive-players-for-week-8-game-at-jacksonville-jaguars",
+      "kind": "official_inactives",
+      "sha256": "4dd477278682eb963d060e67a1fd33ef1d30574ba3a0cbddc4ade3d2f772dd39",
+      "started_at": "2026-11-01T19:19:46.622793+00:00",
+      "status": 200,
+      "team": "IND",
+      "url": "https://www.colts.com/news/colts-announce-7-inactive-players-for-week-8-game-at-jacksonville-jaguars"
+    },
+    {
+      "bytes": 316000,
+      "captured_at": "2026-11-01T19:19:46.800440+00:00",
+      "file": "raw/005.html.gz",
+      "final_url": "https://www.jaguars.com/news/in-and-out-2026-week-8-johnson-inactive-brown-and-matiscik-active-for-colts-vs-jaguars",
+      "kind": "official_inactives",
+      "sha256": "a409c3184160bea639d3031a902dca81fa81b2c1203af3596b0aa7bb8db9d19f",
+      "started_at": "2026-11-01T19:19:46.622960+00:00",
+      "status": 200,
+      "team": "JAX",
+      "url": "https://www.jaguars.com/news/in-and-out-2026-week-8-johnson-inactive-brown-and-matiscik-active-for-colts-vs-jaguars"
+    }
+  ]
+}
