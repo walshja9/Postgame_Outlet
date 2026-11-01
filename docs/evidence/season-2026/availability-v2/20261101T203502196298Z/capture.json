@@ -1,0 +1,77 @@
+{
+  "checked_at": "2026-11-01T20:35:02.924695+00:00",
+  "sources": [
+    {
+      "bytes": 387841,
+      "captured_at": "2026-11-01T20:35:02.238491+00:00",
+      "file": "raw/000.html.gz",
+      "final_url": "https://www.nfl.com/injuries/",
+      "kind": "official_report",
+      "sha256": "3218aa1e6c69bb5b9234253621372ebd1d19d0eccf88fa7cab4bde1e947c4510",
+      "started_at": "2026-11-01T20:35:02.205033+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/injuries/"
+    },
+    {
+      "bytes": 635366,
+      "captured_at": "2026-11-01T20:35:02.468240+00:00",
+      "file": "raw/001.html.gz",
+      "final_url": "https://www.raiders.com/news/",
+      "kind": "team_news",
+      "sha256": "7990d9a3575e99e6a7455f8724dc69a9d4b5d2434cb2108192f88521a95b7af6",
+      "started_at": "2026-11-01T20:35:02.205296+00:00",
+      "status": 200,
+      "team": "LV",
+      "url": "https://www.raiders.com/news/"
+    },
+    {
+      "bytes": 387955,
+      "captured_at": "2026-11-01T20:35:02.541446+00:00",
+      "file": "raw/002.html.gz",
+      "final_url": "https://www.newyorkjets.com/news/",
+      "kind": "team_news",
+      "sha256": "8cd50e55898023313446eacca66d92f87c67b4fa4e8d3282a21fd04a4127e269",
+      "started_at": "2026-11-01T20:35:02.205517+00:00",
+      "status": 200,
+      "team": "NYJ",
+      "url": "https://www.newyorkjets.com/news/"
+    },
+    {
+      "bytes": 1578473,
+      "captured_at": "2026-11-01T20:35:02.260872+00:00",
+      "file": "raw/003.html.gz",
+      "final_url": "https://www.nfl.com/news",
+      "kind": "league_news",
+      "sha256": "498b9a1c0f7e1bc99b65f01f5c5e269946db6c81768b628fac49243796f7ee63",
+      "started_at": "2026-11-01T20:35:02.205723+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/news/"
+    },
+    {
+      "bytes": 335098,
+      "captured_at": "2026-11-01T20:35:02.758557+00:00",
+      "file": "raw/004.html.gz",
+      "final_url": "https://www.raiders.com/news/las-vegas-raiders-week-8-inactives-vs-new-york-jets",
+      "kind": "official_inactives",
+      "sha256": "d44c0871ccb9067d119347896fdb38edda04c691de5d84ceadfa25a8e4beb8a2",
+      "started_at": "2026-11-01T20:35:02.611808+00:00",
+      "status": 200,
+      "team": "LV",
+      "url": "https://www.raiders.com/news/las-vegas-raiders-week-8-inactives-vs-new-york-jets"
+    },
+    {
+      "bytes": 416222,
+      "captured_at": "2026-11-01T20:35:02.863013+00:00",
+      "file": "raw/005.html.gz",
+      "final_url": "https://www.newyorkjets.com/news/jets-vs-raiders-nfl-game-inactives-11-1-2026",
+      "kind": "official_inactives",
+      "sha256": "f4fd9af4914602ba5ac9554ca124458127e1b46a2d1ae59d836c3864560ed6d1",
+      "started_at": "2026-11-01T20:35:02.612025+00:00",
+      "status": 200,
+      "team": "NYJ",
+      "url": "https://www.newyorkjets.com/news/jets-vs-raiders-nfl-game-inactives-11-1-2026"
+    }
+  ]
+}
