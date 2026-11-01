@@ -1,0 +1,65 @@
+{
+  "checked_at": "2026-11-01T22:19:26.029181+00:00",
+  "sources": [
+    {
+      "bytes": 387125,
+      "captured_at": "2026-11-01T22:19:25.398087+00:00",
+      "file": "raw/000.html.gz",
+      "final_url": "https://www.nfl.com/injuries/",
+      "kind": "official_report",
+      "sha256": "9ec6289ca486c2faf2bac48bbbc6afa1bc81bafd732c40065d1ac9602b78cd95",
+      "started_at": "2026-11-01T22:19:25.336843+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/injuries/"
+    },
+    {
+      "bytes": 288292,
+      "captured_at": "2026-11-01T22:19:25.723718+00:00",
+      "file": "raw/001.html.gz",
+      "final_url": "https://www.denverbroncos.com/news/",
+      "kind": "team_news",
+      "sha256": "a19ad72b9464acb3d16606cc43c6faded387d1ff5e82324080e54be641891ae7",
+      "started_at": "2026-11-01T22:19:25.337085+00:00",
+      "status": 200,
+      "team": "DEN",
+      "url": "https://www.denverbroncos.com/news/"
+    },
+    {
+      "bytes": 501021,
+      "captured_at": "2026-11-01T22:19:25.742082+00:00",
+      "file": "raw/002.html.gz",
+      "final_url": "https://www.chiefs.com/news/",
+      "kind": "team_news",
+      "sha256": "146255eab318b6214c53d492693bf74c610f70eb9b93a3ce17f37188e48faadf",
+      "started_at": "2026-11-01T22:19:25.337347+00:00",
+      "status": 200,
+      "team": "KC",
+      "url": "https://www.chiefs.com/news/"
+    },
+    {
+      "bytes": 1578780,
+      "captured_at": "2026-11-01T22:19:25.570824+00:00",
+      "file": "raw/003.html.gz",
+      "final_url": "https://www.nfl.com/news",
+      "kind": "league_news",
+      "sha256": "9e8a2ad40560c347ae148055f71c018db374288acddaf6fb37dca88c300408bd",
+      "started_at": "2026-11-01T22:19:25.337582+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/news/"
+    },
+    {
+      "bytes": 420231,
+      "captured_at": "2026-11-01T22:19:25.961915+00:00",
+      "file": "raw/004.html.gz",
+      "final_url": "https://www.chiefs.com/news/week-8-inactive-players-chiefs-vs-broncos",
+      "kind": "official_inactives",
+      "sha256": "500a43d698fd425c5acd37f9afde8983bf0b21b387c9620d02f4452908f7cf0b",
+      "started_at": "2026-11-01T22:19:25.821663+00:00",
+      "status": 200,
+      "team": "KC",
+      "url": "https://www.chiefs.com/news/week-8-inactive-players-chiefs-vs-broncos"
+    }
+  ]
+}
