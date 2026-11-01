@@ -1,0 +1,77 @@
+{
+  "checked_at": "2026-11-01T20:53:31.831042+00:00",
+  "sources": [
+    {
+      "bytes": 387841,
+      "captured_at": "2026-11-01T20:53:31.219970+00:00",
+      "file": "raw/000.html.gz",
+      "final_url": "https://www.nfl.com/injuries/",
+      "kind": "official_report",
+      "sha256": "a506bef2c8875fe89d5c999c4b08f30a89777219281980aacd685fffc958cbe5",
+      "started_at": "2026-11-01T20:53:31.200148+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/injuries/"
+    },
+    {
+      "bytes": 391183,
+      "captured_at": "2026-11-01T20:53:31.450480+00:00",
+      "file": "raw/001.html.gz",
+      "final_url": "https://www.chargers.com/news/",
+      "kind": "team_news",
+      "sha256": "ad92e1cbe1f687bf79f89194998db4f4a0e47de1a1b0d27d973a4141742f3f18",
+      "started_at": "2026-11-01T20:53:31.200482+00:00",
+      "status": 200,
+      "team": "LAC",
+      "url": "https://www.chargers.com/news/"
+    },
+    {
+      "bytes": 365421,
+      "captured_at": "2026-11-01T20:53:31.329752+00:00",
+      "file": "raw/002.html.gz",
+      "final_url": "https://www.therams.com/news/",
+      "kind": "team_news",
+      "sha256": "880ed4e7bfd280bd1f3e9ddcacd0b5f536a733826663a159da6909f57bf8023d",
+      "started_at": "2026-11-01T20:53:31.200830+00:00",
+      "status": 200,
+      "team": "LAR",
+      "url": "https://www.therams.com/news/"
+    },
+    {
+      "bytes": 1581127,
+      "captured_at": "2026-11-01T20:53:31.341783+00:00",
+      "file": "raw/003.html.gz",
+      "final_url": "https://www.nfl.com/news",
+      "kind": "league_news",
+      "sha256": "1166f29901a95bd877604d5f644dd43c948aab61265660bb3d335b54d41913a5",
+      "started_at": "2026-11-01T20:53:31.201145+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/news/"
+    },
+    {
+      "bytes": 289798,
+      "captured_at": "2026-11-01T20:53:31.644512+00:00",
+      "file": "raw/004.html.gz",
+      "final_url": "https://www.chargers.com/news/rams-inactives-week-8-2026",
+      "kind": "official_inactives",
+      "sha256": "cfb47e9010da2372475478b2964d03d30a6cc82dd90c022ced73394cf30512f3",
+      "started_at": "2026-11-01T20:53:31.559612+00:00",
+      "status": 200,
+      "team": "LAC",
+      "url": "https://www.chargers.com/news/rams-inactives-week-8-2026"
+    },
+    {
+      "bytes": 584295,
+      "captured_at": "2026-11-01T20:53:31.741605+00:00",
+      "file": "raw/005.html.gz",
+      "final_url": "https://www.therams.com/news/joe-cardona-colby-parkinson-among-rams-inactives-for-week-8-2026-vs-chargers",
+      "kind": "official_inactives",
+      "sha256": "b85c3577ec52b2f82b9cb593b1577d14d1258d197de94540c20926963056dda3",
+      "started_at": "2026-11-01T20:53:31.559908+00:00",
+      "status": 200,
+      "team": "LAR",
+      "url": "https://www.therams.com/news/joe-cardona-colby-parkinson-among-rams-inactives-for-week-8-2026-vs-chargers"
+    }
+  ]
+}
