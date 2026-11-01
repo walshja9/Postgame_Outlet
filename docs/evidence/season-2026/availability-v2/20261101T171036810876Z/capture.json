@@ -1,0 +1,77 @@
+{
+  "checked_at": "2026-11-01T17:10:37.221338+00:00",
+  "sources": [
+    {
+      "bytes": 387845,
+      "captured_at": "2026-11-01T17:10:36.882506+00:00",
+      "file": "raw/000.html.gz",
+      "final_url": "https://www.nfl.com/injuries/",
+      "kind": "official_report",
+      "sha256": "f2a9b6941e638857e2c5ed2099561796c67b3a14d2907d2512f8a66485222e4b",
+      "started_at": "2026-11-01T17:10:36.819250+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/injuries/"
+    },
+    {
+      "bytes": 530494,
+      "captured_at": "2026-11-01T17:10:36.956270+00:00",
+      "file": "raw/001.html.gz",
+      "final_url": "https://www.atlantafalcons.com/news/",
+      "kind": "team_news",
+      "sha256": "9d4cf6dc1e26dc03f673680d692dfd15561db2082ff74fad3ec49bf1284e9203",
+      "started_at": "2026-11-01T17:10:36.819474+00:00",
+      "status": 200,
+      "team": "ATL",
+      "url": "https://www.atlantafalcons.com/news/"
+    },
+    {
+      "bytes": 348338,
+      "captured_at": "2026-11-01T17:10:36.969485+00:00",
+      "file": "raw/002.html.gz",
+      "final_url": "https://www.buccaneers.com/news/",
+      "kind": "team_news",
+      "sha256": "0124b5223b1f30aca765050b016c58c8f841e147aec92b81752fb51a5cfeb6e1",
+      "started_at": "2026-11-01T17:10:36.819724+00:00",
+      "status": 200,
+      "team": "TB",
+      "url": "https://www.buccaneers.com/news/"
+    },
+    {
+      "bytes": 1595041,
+      "captured_at": "2026-11-01T17:10:36.928885+00:00",
+      "file": "raw/003.html.gz",
+      "final_url": "https://www.nfl.com/news",
+      "kind": "league_news",
+      "sha256": "c592e5663ad43b19e47cff76d207cd147b7f42a2c331a0d0b6a15e9cb2dd460b",
+      "started_at": "2026-11-01T17:10:36.819916+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/news/"
+    },
+    {
+      "bytes": 463669,
+      "captured_at": "2026-11-01T17:10:37.140866+00:00",
+      "file": "raw/004.html.gz",
+      "final_url": "https://www.atlantafalcons.com/news/atlanta-falcons-week-8-inactives-vs-tampa-bay-buccaneers",
+      "kind": "official_inactives",
+      "sha256": "8063149b573cf3debd5026f29c104e2204448e9c4bd796e0c84b725ff4211dec",
+      "started_at": "2026-11-01T17:10:37.049370+00:00",
+      "status": 200,
+      "team": "ATL",
+      "url": "https://www.atlantafalcons.com/news/atlanta-falcons-week-8-inactives-vs-tampa-bay-buccaneers"
+    },
+    {
+      "bytes": 381506,
+      "captured_at": "2026-11-01T17:10:37.142806+00:00",
+      "file": "raw/005.html.gz",
+      "final_url": "https://www.buccaneers.com/news/falcons-bucs-inactives-antoine-winfield-jr-makes-his-return",
+      "kind": "official_inactives",
+      "sha256": "5cabbad3c846ab90576971c4a9f42f5d79cddfe966470ca5d51913bdc0ca87ca",
+      "started_at": "2026-11-01T17:10:37.049594+00:00",
+      "status": 200,
+      "team": "TB",
+      "url": "https://www.buccaneers.com/news/falcons-bucs-inactives-antoine-winfield-jr-makes-his-return"
+    }
+  ]
+}

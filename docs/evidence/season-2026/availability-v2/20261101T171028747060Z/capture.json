@@ -1,0 +1,125 @@
+{
+  "checked_at": "2026-11-01T17:10:32.963995+00:00",
+  "sources": [
+    {
+      "bytes": 387845,
+      "captured_at": "2026-11-01T17:10:32.002379+00:00",
+      "file": "raw/000.html.gz",
+      "final_url": "https://www.nfl.com/injuries/",
+      "kind": "official_report",
+      "sha256": "f2a9b6941e638857e2c5ed2099561796c67b3a14d2907d2512f8a66485222e4b",
+      "started_at": "2026-11-01T17:10:31.797321+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/injuries/"
+    },
+    {
+      "bytes": 289290,
+      "captured_at": "2026-11-01T17:10:32.029932+00:00",
+      "file": "raw/001.html.gz",
+      "final_url": "https://www.denverbroncos.com/news/",
+      "kind": "team_news",
+      "sha256": "22b23dbdb1326719f1e0d0648063e36318b1eb82b347f7c5a6fd94c4fe847dfb",
+      "started_at": "2026-11-01T17:10:31.797621+00:00",
+      "status": 200,
+      "team": "DEN",
+      "url": "https://www.denverbroncos.com/news/"
+    },
+    {
+      "bytes": 501476,
+      "captured_at": "2026-11-01T17:10:32.068256+00:00",
+      "file": "raw/002.html.gz",
+      "final_url": "https://www.chiefs.com/news/",
+      "kind": "team_news",
+      "sha256": "50c0217c672b14449fca4709d786f9b92b444f50fdb8d5278c2fed396e72451e",
+      "started_at": "2026-11-01T17:10:31.797897+00:00",
+      "status": 200,
+      "team": "KC",
+      "url": "https://www.chiefs.com/news/"
+    },
+    {
+      "bytes": 390740,
+      "captured_at": "2026-11-01T17:10:32.047589+00:00",
+      "file": "raw/003.html.gz",
+      "final_url": "https://www.chargers.com/news/",
+      "kind": "team_news",
+      "sha256": "9c7548e62ed56b177d717611eb877e3134d7cfc1eced770dadf1c5853300bbfa",
+      "started_at": "2026-11-01T17:10:31.798118+00:00",
+      "status": 200,
+      "team": "LAC",
+      "url": "https://www.chargers.com/news/"
+    },
+    {
+      "bytes": 365636,
+      "captured_at": "2026-11-01T17:10:32.366818+00:00",
+      "file": "raw/004.html.gz",
+      "final_url": "https://www.therams.com/news/",
+      "kind": "team_news",
+      "sha256": "2e643a4ba53ee90d1d2ef7b03907d285be8bc844550d95486ed0f7698db3b345",
+      "started_at": "2026-11-01T17:10:32.002425+00:00",
+      "status": 200,
+      "team": "LAR",
+      "url": "https://www.therams.com/news/"
+    },
+    {
+      "bytes": 529488,
+      "captured_at": "2026-11-01T17:10:32.240254+00:00",
+      "file": "raw/005.html.gz",
+      "final_url": "https://www.miamidolphins.com/news/",
+      "kind": "team_news",
+      "sha256": "50a90a28473450e1d2b9773f7c96b6fbe49b2d6ede0f2dc277a6a3bc583b9656",
+      "started_at": "2026-11-01T17:10:32.029961+00:00",
+      "status": 200,
+      "team": "MIA",
+      "url": "https://www.miamidolphins.com/news/"
+    },
+    {
+      "bytes": 1817199,
+      "captured_at": "2026-11-01T17:10:32.425869+00:00",
+      "file": "raw/006.html.gz",
+      "final_url": "https://www.patriots.com/news/",
+      "kind": "team_news",
+      "sha256": "98de60c775e6b69e59d1dc4f12d8711664ee2209f27b28fb66e865195fb50844",
+      "started_at": "2026-11-01T17:10:32.047606+00:00",
+      "status": 200,
+      "team": "NE",
+      "url": "https://www.patriots.com/news/"
+    },
+    {
+      "bytes": 529126,
+      "captured_at": "2026-11-01T17:10:32.366559+00:00",
+      "file": "raw/007.html.gz",
+      "final_url": "https://www.philadelphiaeagles.com/news/",
+      "kind": "team_news",
+      "sha256": "0e497e78bd049b42f684dcdb11d89530e053d9480bc2f4ba77be8d04b886c86b",
+      "started_at": "2026-11-01T17:10:32.068281+00:00",
+      "status": 200,
+      "team": "PHI",
+      "url": "https://www.philadelphiaeagles.com/news/"
+    },
+    {
+      "bytes": 488543,
+      "captured_at": "2026-11-01T17:10:32.541455+00:00",
+      "file": "raw/008.html.gz",
+      "final_url": "https://www.commanders.com/news/",
+      "kind": "team_news",
+      "sha256": "43ea70d7449818485e6e56e6dd1969c19d27ac6eda7e8ff18aa6b95573e420c1",
+      "started_at": "2026-11-01T17:10:32.240291+00:00",
+      "status": 200,
+      "team": "WAS",
+      "url": "https://www.commanders.com/news/"
+    },
+    {
+      "bytes": 1595041,
+      "captured_at": "2026-11-01T17:10:32.561478+00:00",
+      "file": "raw/009.html.gz",
+      "final_url": "https://www.nfl.com/news",
+      "kind": "league_news",
+      "sha256": "c592e5663ad43b19e47cff76d207cd147b7f42a2c331a0d0b6a15e9cb2dd460b",
+      "started_at": "2026-11-01T17:10:32.366592+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/news/"
+    }
+  ]
+}

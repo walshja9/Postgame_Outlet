@@ -1,0 +1,71 @@
+{
+  "checked_at": "2026-11-01T17:10:32.963995+00:00",
+  "members": [
+    {
+      "bytes": 73823,
+      "file": "availability.json",
+      "sha256": "f7d2843c934ef48a879ab031abf19cbebe4ffcc890abbeb77a41204bb30a1dcb"
+    },
+    {
+      "bytes": 4445,
+      "file": "capture.json",
+      "sha256": "a6d84011d129df78b4c4e01bb9e1ac031cd0ce8f97e2dac8abcc714cb1cc41e3"
+    },
+    {
+      "bytes": 19736,
+      "file": "inputs.json.gz",
+      "sha256": "25afa231eb7914b246feaac18cbd2a032fe70835bd0cf2d8c5a190626e889933"
+    },
+    {
+      "bytes": 64791,
+      "file": "raw/000.html.gz",
+      "sha256": "dc913ad2c0a31f0c75f2dfa7d2765b67b35f83002a473c439c9d258496fcc089"
+    },
+    {
+      "bytes": 59072,
+      "file": "raw/001.html.gz",
+      "sha256": "6b8df24fd691b3d3eee20bf7373932161e2865893cb66f8cafa9f758598c1f08"
+    },
+    {
+      "bytes": 77673,
+      "file": "raw/002.html.gz",
+      "sha256": "8362baefaf406148f9ca71a3a925957e26cad8e5b412eb0203ce85c978eab12a"
+    },
+    {
+      "bytes": 67306,
+      "file": "raw/003.html.gz",
+      "sha256": "d7768f6eb122dfda556e2e21ef0cfdcb61526e1b49a0f608853e4a4fdadf53db"
+    },
+    {
+      "bytes": 66893,
+      "file": "raw/004.html.gz",
+      "sha256": "f5c1ee89df91257c506f674c147cd4f366f75d8ebd2b8754e5e99fa3fbb13bb8"
+    },
+    {
+      "bytes": 76064,
+      "file": "raw/005.html.gz",
+      "sha256": "5ec757a43d35ec104b6198f8fd53bd37ebe76d426cb897e1a4155ea037502f5e"
+    },
+    {
+      "bytes": 164148,
+      "file": "raw/006.html.gz",
+      "sha256": "70de1a1c3bda069d4e01a5f27436d2ac7fc217154bd069a946eb275c13d3a565"
+    },
+    {
+      "bytes": 77108,
+      "file": "raw/007.html.gz",
+      "sha256": "2896d578973eb6f7c539a7e76a6b13f223e4b588b5f03d41b65dc41917ca9088"
+    },
+    {
+      "bytes": 75151,
+      "file": "raw/008.html.gz",
+      "sha256": "f508acd1bc9eb3801cc003cd49ad5a07c7cfdf868feb435e3e0d1646db8884a1"
+    },
+    {
+      "bytes": 177384,
+      "file": "raw/009.html.gz",
+      "sha256": "01bb5451038afc0019636202bc5ccff362616fa9d7f220a74c3bcfb718340dfd"
+    }
+  ],
+  "schema_version": 1
+}
