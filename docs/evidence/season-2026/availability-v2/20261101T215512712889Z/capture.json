@@ -1,0 +1,53 @@
+{
+  "checked_at": "2026-11-01T21:55:16.440787+00:00",
+  "sources": [
+    {
+      "bytes": 387125,
+      "captured_at": "2026-11-01T21:55:16.014743+00:00",
+      "file": "raw/000.html.gz",
+      "final_url": "https://www.nfl.com/injuries/",
+      "kind": "official_report",
+      "sha256": "75b0bf6d8b574e0d954e279c5a684bc10e18112da5a20e74ded5681846d31be8",
+      "started_at": "2026-11-01T21:55:15.715525+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/injuries/"
+    },
+    {
+      "bytes": 528410,
+      "captured_at": "2026-11-01T21:55:16.294702+00:00",
+      "file": "raw/001.html.gz",
+      "final_url": "https://www.philadelphiaeagles.com/news/",
+      "kind": "team_news",
+      "sha256": "c05860622d9ce5304057d7ae8dbebd9967bb6c7cfa546f1c3d2a1b8085cc1e2b",
+      "started_at": "2026-11-01T21:55:15.715830+00:00",
+      "status": 200,
+      "team": "PHI",
+      "url": "https://www.philadelphiaeagles.com/news/"
+    },
+    {
+      "bytes": 487568,
+      "captured_at": "2026-11-01T21:55:15.971356+00:00",
+      "file": "raw/002.html.gz",
+      "final_url": "https://www.commanders.com/news/",
+      "kind": "team_news",
+      "sha256": "90b1139bdb2837f1f526dd2360159fa4268dbd491fba2765c0caf03b72302188",
+      "started_at": "2026-11-01T21:55:15.716083+00:00",
+      "status": 200,
+      "team": "WAS",
+      "url": "https://www.commanders.com/news/"
+    },
+    {
+      "bytes": 1580163,
+      "captured_at": "2026-11-01T21:55:15.906366+00:00",
+      "file": "raw/003.html.gz",
+      "final_url": "https://www.nfl.com/news",
+      "kind": "league_news",
+      "sha256": "8ced6ed0cd8525bc41171fe803de834e994a0a38692416702f1cfca7bb1519ff",
+      "started_at": "2026-11-01T21:55:15.716323+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/news/"
+    }
+  ]
+}
