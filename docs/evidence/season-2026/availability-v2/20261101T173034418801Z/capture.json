@@ -1,0 +1,65 @@
+{
+  "checked_at": "2026-11-01T17:30:34.771394+00:00",
+  "sources": [
+    {
+      "bytes": 387845,
+      "captured_at": "2026-11-01T17:30:34.494887+00:00",
+      "file": "raw/000.html.gz",
+      "final_url": "https://www.nfl.com/injuries/",
+      "kind": "official_report",
+      "sha256": "27edaec7c280f34fba42d9d14d23774334ad50dbc3c14fa264d161641054cb8e",
+      "started_at": "2026-11-01T17:30:34.428232+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/injuries/"
+    },
+    {
+      "bytes": 703612,
+      "captured_at": "2026-11-01T17:30:34.495744+00:00",
+      "file": "raw/001.html.gz",
+      "final_url": "https://www.azcardinals.com/news/",
+      "kind": "team_news",
+      "sha256": "bbcf8af1da3109b1220dbb03a65833b47573d91cbc36acd4c4a1eb3f2d96ff7c",
+      "started_at": "2026-11-01T17:30:34.428484+00:00",
+      "status": 200,
+      "team": "ARI",
+      "url": "https://www.azcardinals.com/news/"
+    },
+    {
+      "bytes": 497666,
+      "captured_at": "2026-11-01T17:30:34.586036+00:00",
+      "file": "raw/002.html.gz",
+      "final_url": "https://www.dallascowboys.com/news/",
+      "kind": "team_news",
+      "sha256": "54cf6580fdef69a7e2ed6700eca9c1131df0ee02d39867e533d8a63003e7f3b8",
+      "started_at": "2026-11-01T17:30:34.428731+00:00",
+      "status": 200,
+      "team": "DAL",
+      "url": "https://www.dallascowboys.com/news/"
+    },
+    {
+      "bytes": 1591205,
+      "captured_at": "2026-11-01T17:30:34.481679+00:00",
+      "file": "raw/003.html.gz",
+      "final_url": "https://www.nfl.com/news",
+      "kind": "league_news",
+      "sha256": "e7675ec4c4dff66b08d61927b9b85ba9446ccede2235800e17fd3eae4bde9868",
+      "started_at": "2026-11-01T17:30:34.429001+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/news/"
+    },
+    {
+      "bytes": 531380,
+      "captured_at": "2026-11-01T17:30:34.698944+00:00",
+      "file": "raw/004.html.gz",
+      "final_url": "https://www.dallascowboys.com/news/updates-october-2026",
+      "kind": "official_inactives",
+      "sha256": "d6ebd1790c1ce10b25abc15244b8d8f6dc1321453a550c37c251fa43ae714f43",
+      "started_at": "2026-11-01T17:30:34.680021+00:00",
+      "status": 200,
+      "team": "DAL",
+      "url": "https://www.dallascowboys.com/news/updates-october-2026"
+    }
+  ]
+}

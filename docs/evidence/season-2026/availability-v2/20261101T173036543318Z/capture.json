@@ -1,0 +1,73 @@
+{
+  "checked_at": "2026-11-01T17:30:36.746004+00:00",
+  "sources": [
+    {
+      "bytes": 387845,
+      "captured_at": "2026-11-01T17:30:36.579743+00:00",
+      "file": "raw/000.html.gz",
+      "final_url": "https://www.nfl.com/injuries/",
+      "kind": "official_report",
+      "sha256": "ca8448780828fc9489bdc8a029985caf2af6863b0d05828b914c8bb109202a24",
+      "started_at": "2026-11-01T17:30:36.552727+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/injuries/"
+    },
+    {
+      "bytes": 567056,
+      "captured_at": "2026-11-01T17:30:36.634081+00:00",
+      "file": "raw/001.html.gz",
+      "final_url": "https://www.clevelandbrowns.com/news/",
+      "kind": "team_news",
+      "sha256": "d1d60bbfa9e0fd5d474776364b2a03ea38cf3e67f380874ab1e2b2f2daba3bff",
+      "started_at": "2026-11-01T17:30:36.552995+00:00",
+      "status": 200,
+      "team": "CLE",
+      "url": "https://www.clevelandbrowns.com/news/"
+    },
+    {
+      "bytes": 384305,
+      "captured_at": "2026-11-01T17:30:36.584514+00:00",
+      "file": "raw/002.html.gz",
+      "final_url": "https://www.steelers.com/news/",
+      "kind": "team_news",
+      "sha256": "3135b6b924b7cacd6d856639b93dcd7db04a84451417f0b3403d83914e67a0c5",
+      "started_at": "2026-11-01T17:30:36.553257+00:00",
+      "status": 200,
+      "team": "PIT",
+      "url": "https://www.steelers.com/news/"
+    },
+    {
+      "captured_at": "2026-11-01T17:30:36.602198+00:00",
+      "error": "ValueError: Availability source is not an allowed official HTTPS URL",
+      "kind": "league_news",
+      "started_at": "2026-11-01T17:30:36.553488+00:00",
+      "team": null,
+      "url": "https://www.nfl.com/news/"
+    },
+    {
+      "bytes": 303984,
+      "captured_at": "2026-11-01T17:30:36.700735+00:00",
+      "file": "raw/004.html.gz",
+      "final_url": "https://www.clevelandbrowns.com/news/browns-announce-inactives-for-week-8-vs-the-steelers",
+      "kind": "official_inactives",
+      "sha256": "6f2fb76c91e7645ea2224389cc8d84994b47fb8c2601d6d9a25e5e749369fb33",
+      "started_at": "2026-11-01T17:30:36.679973+00:00",
+      "status": 200,
+      "team": "CLE",
+      "url": "https://www.clevelandbrowns.com/news/browns-announce-inactives-for-week-8-vs-the-steelers"
+    },
+    {
+      "bytes": 327074,
+      "captured_at": "2026-11-01T17:30:36.696794+00:00",
+      "file": "raw/005.html.gz",
+      "final_url": "https://www.steelers.com/news/steelers-inactives-for-week-8-vs-browns-x8237",
+      "kind": "official_inactives",
+      "sha256": "07cf1b83ae8056284f4514527554a9938b3c721a4f4e1654968de468ada72270",
+      "started_at": "2026-11-01T17:30:36.680217+00:00",
+      "status": 200,
+      "team": "PIT",
+      "url": "https://www.steelers.com/news/steelers-inactives-for-week-8-vs-browns-x8237"
+    }
+  ]
+}

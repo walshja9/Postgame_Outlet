@@ -1,0 +1,73 @@
+{
+  "checked_at": "2026-11-01T17:30:39.255277+00:00",
+  "sources": [
+    {
+      "bytes": 387845,
+      "captured_at": "2026-11-01T17:30:39.016053+00:00",
+      "file": "raw/000.html.gz",
+      "final_url": "https://www.nfl.com/injuries/",
+      "kind": "official_report",
+      "sha256": "ca8448780828fc9489bdc8a029985caf2af6863b0d05828b914c8bb109202a24",
+      "started_at": "2026-11-01T17:30:38.982966+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/injuries/"
+    },
+    {
+      "bytes": 738013,
+      "captured_at": "2026-11-01T17:30:39.129741+00:00",
+      "file": "raw/001.html.gz",
+      "final_url": "https://www.bengals.com/news/",
+      "kind": "team_news",
+      "sha256": "48b499ba7773de64b5532d7ef23d1521d68dc771d2344f4b472bf3353fb1cdd7",
+      "started_at": "2026-11-01T17:30:38.983210+00:00",
+      "status": 200,
+      "team": "CIN",
+      "url": "https://www.bengals.com/news/"
+    },
+    {
+      "bytes": 481808,
+      "captured_at": "2026-11-01T17:30:39.067349+00:00",
+      "file": "raw/002.html.gz",
+      "final_url": "https://www.tennesseetitans.com/news/",
+      "kind": "team_news",
+      "sha256": "0c8a1a58d2b8d0a6e992355cac1c1527a8a6943707086026b71d4d398caba186",
+      "started_at": "2026-11-01T17:30:38.983452+00:00",
+      "status": 200,
+      "team": "TEN",
+      "url": "https://www.tennesseetitans.com/news/"
+    },
+    {
+      "captured_at": "2026-11-01T17:30:39.032417+00:00",
+      "error": "ValueError: Availability source is not an allowed official HTTPS URL",
+      "kind": "league_news",
+      "started_at": "2026-11-01T17:30:38.983695+00:00",
+      "team": null,
+      "url": "https://www.nfl.com/news/"
+    },
+    {
+      "bytes": 353763,
+      "captured_at": "2026-11-01T17:30:39.206224+00:00",
+      "file": "raw/004.html.gz",
+      "final_url": "https://www.bengals.com/news/bengals-titans-inactives-week-8-2026",
+      "kind": "official_inactives",
+      "sha256": "4e2c36a3c22e0167416cf9429a14c1896806439448d66ac4fe1036070d8fb032",
+      "started_at": "2026-11-01T17:30:39.185656+00:00",
+      "status": 200,
+      "team": "CIN",
+      "url": "https://www.bengals.com/news/bengals-titans-inactives-week-8-2026"
+    },
+    {
+      "bytes": 322242,
+      "captured_at": "2026-11-01T17:30:39.207206+00:00",
+      "file": "raw/005.html.gz",
+      "final_url": "https://www.tennesseetitans.com/news/game-inactives-week-8-titans-at-bengals",
+      "kind": "official_inactives",
+      "sha256": "335b56ceae16db8c47ca14421bb23da347df36cd987414b31617b829e32c124c",
+      "started_at": "2026-11-01T17:30:39.185906+00:00",
+      "status": 200,
+      "team": "TEN",
+      "url": "https://www.tennesseetitans.com/news/game-inactives-week-8-titans-at-bengals"
+    }
+  ]
+}

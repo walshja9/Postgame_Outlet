@@ -1,0 +1,71 @@
+{
+  "checked_at": "2026-11-01T17:30:31.641609+00:00",
+  "members": [
+    {
+      "bytes": 73823,
+      "file": "availability.json",
+      "sha256": "50f1e4971f6ac57467bec8ab285bb7ce4f98720e0227bb43b780169e8fdf03c2"
+    },
+    {
+      "bytes": 4445,
+      "file": "capture.json",
+      "sha256": "95d065b02f75dd6ee888165b0bda86fa7bfcf8a1ee181a0bb8ccef8614603b8f"
+    },
+    {
+      "bytes": 19736,
+      "file": "inputs.json.gz",
+      "sha256": "25afa231eb7914b246feaac18cbd2a032fe70835bd0cf2d8c5a190626e889933"
+    },
+    {
+      "bytes": 64792,
+      "file": "raw/000.html.gz",
+      "sha256": "38a71995f4adf2f5e1a232eedf3f7f8ca125cc4d242cbd0918d27eea0d9503f2"
+    },
+    {
+      "bytes": 59068,
+      "file": "raw/001.html.gz",
+      "sha256": "21467f7eacf90612307cdb00882a61c735dd5db3069fcdb5c1fc0d26e9bff02f"
+    },
+    {
+      "bytes": 77671,
+      "file": "raw/002.html.gz",
+      "sha256": "128012cf0e0e114d3f29483c4f6ba10a0cc53813182901bbf0c3b9ab4a1464a4"
+    },
+    {
+      "bytes": 67302,
+      "file": "raw/003.html.gz",
+      "sha256": "be3b4033261337cd12601abc75054323f6821eb885c52406c1ba7fae20e3c58c"
+    },
+    {
+      "bytes": 66891,
+      "file": "raw/004.html.gz",
+      "sha256": "dba3b86664a0cae9d064431421b0b9982064543c3daa57a79ea205327a3a39b2"
+    },
+    {
+      "bytes": 76113,
+      "file": "raw/005.html.gz",
+      "sha256": "e5e93cb511685ee1a9cf4e6238b1a6f66109dae9f772453974974aeb0194aa17"
+    },
+    {
+      "bytes": 164142,
+      "file": "raw/006.html.gz",
+      "sha256": "f20e9f577610783ac28bc1d9124a9beb9848cf5796159a61d203863b7ae40647"
+    },
+    {
+      "bytes": 77109,
+      "file": "raw/007.html.gz",
+      "sha256": "bfb658102bd3adc498fb91a5a79b0bbdbe2936f2950ef910660ec5098888ef9e"
+    },
+    {
+      "bytes": 75155,
+      "file": "raw/008.html.gz",
+      "sha256": "684ea6b7c29a692dc9a8e52c9bf9aac6a84b04273f4cfd5f2bcecb64acfa58c5"
+    },
+    {
+      "bytes": 173446,
+      "file": "raw/009.html.gz",
+      "sha256": "775ea2f5f244036060e57ced8292c43cf51f10b5cfd206bb850685dff40fc183"
+    }
+  ],
+  "schema_version": 1
+}
