@@ -1,0 +1,77 @@
+{
+  "checked_at": "2026-11-01T18:36:52.811109+00:00",
+  "sources": [
+    {
+      "bytes": 387845,
+      "captured_at": "2026-11-01T18:36:52.607138+00:00",
+      "file": "raw/000.html.gz",
+      "final_url": "https://www.nfl.com/injuries/",
+      "kind": "official_report",
+      "sha256": "ac56139696ae068dc13b16a3e96f39f3db70c8f62c8db50780084964cc7e46b8",
+      "started_at": "2026-11-01T18:36:52.360086+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/injuries/"
+    },
+    {
+      "bytes": 432745,
+      "captured_at": "2026-11-01T18:36:52.543124+00:00",
+      "file": "raw/001.html.gz",
+      "final_url": "https://www.detroitlions.com/news/",
+      "kind": "team_news",
+      "sha256": "086139b87dda734e708c9dec28e824a0e34a957dea79dae45643d7a6df6dd700",
+      "started_at": "2026-11-01T18:36:52.360339+00:00",
+      "status": 200,
+      "team": "DET",
+      "url": "https://www.detroitlions.com/news/"
+    },
+    {
+      "bytes": 542774,
+      "captured_at": "2026-11-01T18:36:52.553013+00:00",
+      "file": "raw/002.html.gz",
+      "final_url": "https://www.vikings.com/news/",
+      "kind": "team_news",
+      "sha256": "98a0eba0cab4a069d99e74e3327daa698bc64835c64120ce66d72849b092423e",
+      "started_at": "2026-11-01T18:36:52.360612+00:00",
+      "status": 200,
+      "team": "MIN",
+      "url": "https://www.vikings.com/news/"
+    },
+    {
+      "bytes": 1576515,
+      "captured_at": "2026-11-01T18:36:52.412747+00:00",
+      "file": "raw/003.html.gz",
+      "final_url": "https://www.nfl.com/news",
+      "kind": "league_news",
+      "sha256": "7565928b8e6753fd39fc7b8a68ccea771a546fec7ad4ad69b5ddd7eb957c4278",
+      "started_at": "2026-11-01T18:36:52.360875+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/news/"
+    },
+    {
+      "bytes": 301768,
+      "captured_at": "2026-11-01T18:36:52.718126+00:00",
+      "file": "raw/004.html.gz",
+      "final_url": "https://www.detroitlions.com/news/inactives-lions-vs-vikings-mccreary-branch-meeks",
+      "kind": "official_inactives",
+      "sha256": "d0ad4bec30ae15d8402d0a3abd96a3452ce1627c61f187066386e552e87391a3",
+      "started_at": "2026-11-01T18:36:52.690717+00:00",
+      "status": 200,
+      "team": "DET",
+      "url": "https://www.detroitlions.com/news/inactives-lions-vs-vikings-mccreary-branch-meeks"
+    },
+    {
+      "bytes": 462595,
+      "captured_at": "2026-11-01T18:36:52.734370+00:00",
+      "file": "raw/005.html.gz",
+      "final_url": "https://www.vikings.com/news/inactives-lions-week-8-2026",
+      "kind": "official_inactives",
+      "sha256": "3c306c74da5130eb98a1da358d857d5f9251492e1ba93fb05682296c07304431",
+      "started_at": "2026-11-01T18:36:52.690987+00:00",
+      "status": 200,
+      "team": "MIN",
+      "url": "https://www.vikings.com/news/inactives-lions-week-8-2026"
+    }
+  ]
+}

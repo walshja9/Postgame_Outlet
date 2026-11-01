@@ -1,0 +1,71 @@
+{
+  "checked_at": "2026-11-01T18:36:45.102665+00:00",
+  "members": [
+    {
+      "bytes": 73823,
+      "file": "availability.json",
+      "sha256": "147d7369f6bc935c69c7b968b8b689895f492f4e9aabd86316f0dabaee3f9bf3"
+    },
+    {
+      "bytes": 4445,
+      "file": "capture.json",
+      "sha256": "694772f31637876fee7f99f9505a94138f2519655b6a308de08b2d98158a6ff0"
+    },
+    {
+      "bytes": 19736,
+      "file": "inputs.json.gz",
+      "sha256": "25afa231eb7914b246feaac18cbd2a032fe70835bd0cf2d8c5a190626e889933"
+    },
+    {
+      "bytes": 64792,
+      "file": "raw/000.html.gz",
+      "sha256": "03c713e2f96dd10b19a1cf556a64e127ef5ef4fd5a826481a339987cd6adbfc0"
+    },
+    {
+      "bytes": 59072,
+      "file": "raw/001.html.gz",
+      "sha256": "9b696c718f31c6caf68f8c876b3d0c040df181f61db3aa181ce10b2a62ada889"
+    },
+    {
+      "bytes": 77670,
+      "file": "raw/002.html.gz",
+      "sha256": "97434fca685809ffe80e03d9b0266b2887d15db1fc57baae9756b720eda90f7c"
+    },
+    {
+      "bytes": 67349,
+      "file": "raw/003.html.gz",
+      "sha256": "82e0f30a0324d3c483abe6a67bedeeab84855861b14aebc3b057b243b0ba75b7"
+    },
+    {
+      "bytes": 66907,
+      "file": "raw/004.html.gz",
+      "sha256": "8dca2b3b4ff0fa702a7024f95e180948e133e7126b4e94202605c6cd5d6b8c4f"
+    },
+    {
+      "bytes": 76107,
+      "file": "raw/005.html.gz",
+      "sha256": "af59f897b5f0d9fcdfa17da2b01bfd263229833ee17a18a504d910de39625780"
+    },
+    {
+      "bytes": 164055,
+      "file": "raw/006.html.gz",
+      "sha256": "253b34b70d290e76c4f31f2ae09579f1fb89bce1267f78bc59e4656dac6b8c33"
+    },
+    {
+      "bytes": 77110,
+      "file": "raw/007.html.gz",
+      "sha256": "0046e3cd7e1c22cf848b73ddc3dbf5c5e238ff0e3d91813e3d6151032f18e67b"
+    },
+    {
+      "bytes": 75156,
+      "file": "raw/008.html.gz",
+      "sha256": "a30a8e7fb59e9ccadfb0203a3a9c041173c362c228374afb4b82b73e51809d8a"
+    },
+    {
+      "bytes": 175270,
+      "file": "raw/009.html.gz",
+      "sha256": "dcd6750249474488ca69883335d183ab9270e0cab561b6c28b2fa04cbfbc2775"
+    }
+  ],
+  "schema_version": 1
+}
