@@ -1,0 +1,77 @@
+{
+  "checked_at": "2026-11-02T00:05:28.710792+00:00",
+  "sources": [
+    {
+      "bytes": 387125,
+      "captured_at": "2026-11-02T00:05:28.181439+00:00",
+      "file": "raw/000.html.gz",
+      "final_url": "https://www.nfl.com/injuries/",
+      "kind": "official_report",
+      "sha256": "234b9d3b23fdfcf16fc87a1ace9bd7e5e4241a83f255c830677dde2b85f557e4",
+      "started_at": "2026-11-02T00:05:28.158868+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/injuries/"
+    },
+    {
+      "bytes": 528891,
+      "captured_at": "2026-11-02T00:05:28.248240+00:00",
+      "file": "raw/001.html.gz",
+      "final_url": "https://www.miamidolphins.com/news/",
+      "kind": "team_news",
+      "sha256": "2801fde813682f58f8e9ccf27fd0465383d12ccaf992a28933d8390871147d0e",
+      "started_at": "2026-11-02T00:05:28.159150+00:00",
+      "status": 200,
+      "team": "MIA",
+      "url": "https://www.miamidolphins.com/news/"
+    },
+    {
+      "bytes": 1816798,
+      "captured_at": "2026-11-02T00:05:28.256020+00:00",
+      "file": "raw/002.html.gz",
+      "final_url": "https://www.patriots.com/news/",
+      "kind": "team_news",
+      "sha256": "bbc1982347f145b14c10534cd47861d2a8f88eed4fe360f4af85d9a02b54987f",
+      "started_at": "2026-11-02T00:05:28.159483+00:00",
+      "status": 200,
+      "team": "NE",
+      "url": "https://www.patriots.com/news/"
+    },
+    {
+      "bytes": 1580787,
+      "captured_at": "2026-11-02T00:05:28.218682+00:00",
+      "file": "raw/003.html.gz",
+      "final_url": "https://www.nfl.com/news",
+      "kind": "league_news",
+      "sha256": "11b2a203bddea88d4ff7d6b4c8e64dfa23094d6d1d90575a97f6f449d13cf6b8",
+      "started_at": "2026-11-02T00:05:28.159763+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/news/"
+    },
+    {
+      "bytes": 435113,
+      "captured_at": "2026-11-02T00:05:28.504281+00:00",
+      "file": "raw/004.html.gz",
+      "final_url": "https://www.patriots.com/news/inactives-analysis-carlton-davis-iii-returns-a-j-brown-and-treveyon-henderson-inactive-for-week-8-vs-dolphins",
+      "kind": "official_inactives",
+      "sha256": "3015ba1971a9a757bb00acd645dcb97fa58d1685e1e52b99b834e105d8fea189",
+      "started_at": "2026-11-02T00:05:28.461015+00:00",
+      "status": 200,
+      "team": "NE",
+      "url": "https://www.patriots.com/news/inactives-analysis-carlton-davis-iii-returns-a-j-brown-and-treveyon-henderson-inactive-for-week-8-vs-dolphins"
+    },
+    {
+      "bytes": 414257,
+      "captured_at": "2026-11-02T00:05:28.606569+00:00",
+      "file": "raw/005.html.gz",
+      "final_url": "https://www.patriots.com/news/week-8-inactives-patriots-at-dolphins",
+      "kind": "official_inactives",
+      "sha256": "950a15bed88454fe326357f2cbfbddaa215ba2cfea587a66f857e1ecfa8ca858",
+      "started_at": "2026-11-02T00:05:28.461350+00:00",
+      "status": 200,
+      "team": "NE",
+      "url": "https://www.patriots.com/news/week-8-inactives-patriots-at-dolphins"
+    }
+  ]
+}
