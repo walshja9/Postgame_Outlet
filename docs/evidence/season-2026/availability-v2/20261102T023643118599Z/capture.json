@@ -1,0 +1,77 @@
+{
+  "checked_at": "2026-11-02T02:36:43.913724+00:00",
+  "sources": [
+    {
+      "bytes": 387126,
+      "captured_at": "2026-11-02T02:36:43.150005+00:00",
+      "file": "raw/000.html.gz",
+      "final_url": "https://www.nfl.com/injuries/",
+      "kind": "official_report",
+      "sha256": "0f04e333a6eae01827b91036916c2346fc0b11f37465348f8fb75d3ade94cb99",
+      "started_at": "2026-11-02T02:36:43.130391+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/injuries/"
+    },
+    {
+      "bytes": 528876,
+      "captured_at": "2026-11-02T02:36:43.560495+00:00",
+      "file": "raw/001.html.gz",
+      "final_url": "https://www.philadelphiaeagles.com/news/",
+      "kind": "team_news",
+      "sha256": "acab0f9404f713e5ef0aa581f65a6c3f51ae427222293c4485ec485b20a93700",
+      "started_at": "2026-11-02T02:36:43.130731+00:00",
+      "status": 200,
+      "team": "PHI",
+      "url": "https://www.philadelphiaeagles.com/news/"
+    },
+    {
+      "bytes": 487446,
+      "captured_at": "2026-11-02T02:36:43.314048+00:00",
+      "file": "raw/002.html.gz",
+      "final_url": "https://www.commanders.com/news/",
+      "kind": "team_news",
+      "sha256": "188917b9ef4262d31c9eedded701e46a5f9aed62adf2c8f612058a055302c308",
+      "started_at": "2026-11-02T02:36:43.131102+00:00",
+      "status": 200,
+      "team": "WAS",
+      "url": "https://www.commanders.com/news/"
+    },
+    {
+      "bytes": 1575527,
+      "captured_at": "2026-11-02T02:36:43.232206+00:00",
+      "file": "raw/003.html.gz",
+      "final_url": "https://www.nfl.com/news",
+      "kind": "league_news",
+      "sha256": "ffd15b21c2f7ed921834a9f289e571694a62b4dd8ac43f31f53fcca049b927b4",
+      "started_at": "2026-11-02T02:36:43.131429+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/news/"
+    },
+    {
+      "bytes": 389652,
+      "captured_at": "2026-11-02T02:36:43.822388+00:00",
+      "file": "raw/004.html.gz",
+      "final_url": "https://www.philadelphiaeagles.com/news/eagles-at-commanders-inactives-nfl-2026-week-8-sunday-night-football",
+      "kind": "official_inactives",
+      "sha256": "ad5bbddacf3f86591d6adad042b82747b01bb33c8906922bd43c8f195d4f3fcd",
+      "started_at": "2026-11-02T02:36:43.681053+00:00",
+      "status": 200,
+      "team": "PHI",
+      "url": "https://www.philadelphiaeagles.com/news/eagles-at-commanders-inactives-nfl-2026-week-8-sunday-night-football"
+    },
+    {
+      "bytes": 301954,
+      "captured_at": "2026-11-02T02:36:43.704074+00:00",
+      "file": "raw/005.html.gz",
+      "final_url": "https://www.commanders.com/news/inactives-commanders-vs-eagles-week-8-2026",
+      "kind": "official_inactives",
+      "sha256": "5bb599e1e7c2bf10adfb9432f11e2dc12f9667ee5575a3e73702c0da96490b0f",
+      "started_at": "2026-11-02T02:36:43.681406+00:00",
+      "status": 200,
+      "team": "WAS",
+      "url": "https://www.commanders.com/news/inactives-commanders-vs-eagles-week-8-2026"
+    }
+  ]
+}
