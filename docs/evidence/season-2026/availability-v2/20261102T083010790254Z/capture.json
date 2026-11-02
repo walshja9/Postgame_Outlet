@@ -1,0 +1,53 @@
+{
+  "checked_at": "2026-11-02T08:30:14.322485+00:00",
+  "sources": [
+    {
+      "bytes": 387126,
+      "captured_at": "2026-11-02T08:30:13.950051+00:00",
+      "file": "raw/000.html.gz",
+      "final_url": "https://www.nfl.com/injuries/",
+      "kind": "official_report",
+      "sha256": "389816f8e5f805ae45695a9fabf10071a451b01d85e31cf2dd77246a3f3a7550",
+      "started_at": "2026-11-02T08:30:13.893311+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/injuries/"
+    },
+    {
+      "bytes": 528837,
+      "captured_at": "2026-11-02T08:30:13.968870+00:00",
+      "file": "raw/001.html.gz",
+      "final_url": "https://www.chicagobears.com/news/",
+      "kind": "team_news",
+      "sha256": "6deb49cd33803d16d680a0fa544e444a19df1f9dcc3a2b3ef6584cc67c648fe8",
+      "started_at": "2026-11-02T08:30:13.893697+00:00",
+      "status": 200,
+      "team": "CHI",
+      "url": "https://www.chicagobears.com/news/"
+    },
+    {
+      "bytes": 672373,
+      "captured_at": "2026-11-02T08:30:14.114789+00:00",
+      "file": "raw/002.html.gz",
+      "final_url": "https://www.seahawks.com/news/",
+      "kind": "team_news",
+      "sha256": "4a1e358f1163e75ab088403d362f46a4651670be18d881e70f61946081354fa5",
+      "started_at": "2026-11-02T08:30:13.894480+00:00",
+      "status": 200,
+      "team": "SEA",
+      "url": "https://www.seahawks.com/news/"
+    },
+    {
+      "bytes": 1577124,
+      "captured_at": "2026-11-02T08:30:13.983245+00:00",
+      "file": "raw/003.html.gz",
+      "final_url": "https://www.nfl.com/news",
+      "kind": "league_news",
+      "sha256": "809175432558fc69303ce1ae4e626f2ab3c691e7d96afa1b53c4712a13b40be2",
+      "started_at": "2026-11-02T08:30:13.894782+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/news/"
+    }
+  ]
+}
