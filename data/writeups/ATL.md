@@ -148,7 +148,8 @@ and the defense's pass rush is thinned through the first half.
 
 ## Quarterback
 
-Michael Penix Jr. (−1.0) gets back the healthy-form restore after looking like himself against San Francisco (68.5 PFF, 3 TD, 0 INT), following two rough games after his rib injury.
+
+Michael Penix Jr. (−1.3) drops 0.3 after going 8/24 for 125 yards with 4 INTs (8.2 QBR) in the 16–0 loss at Tampa Bay. The cut is softened for the torrential rain, but this caps a rough stretch since his rib injury.
 
 ## What moved the number
 

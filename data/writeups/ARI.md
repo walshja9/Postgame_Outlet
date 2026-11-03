@@ -162,10 +162,8 @@ are better than a bottom-of-the-league read, even with a stopgap quarterback.
 
 ## Quarterback
 
-Jacoby Brissett (−1.0) is the selected quarterback, held after Week 5. He threw for 292 yards and
-three touchdowns against Detroit with no WR1 (Marvin Harrison Jr. was traded to Houston) and behind a
-backup left tackle. He's a steady, low-end starter who has graded as a better bridge than the floor
-assumed (PFF passing grade 10th of 30 in Week 5, 6th in Week 3).
+
+Gardner Minshew II (−1.5) is the new starter. He replaced the benched Jacoby Brissett at Dallas and led a 27-point second half and an overtime win (17/23, 188 yards, 3 TD, 0 INT). Mike LaFleur named him the starter on Monday. Rookie Carson Beck is the QB2, and Brissett (−1.0) drops to QB3.
 
 ## What moved the number
 

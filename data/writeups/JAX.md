@@ -152,11 +152,8 @@ Jacksonville grades as a clear riser led by its quarterback, with a receiver roo
 
 ## Quarterback
 
-Trevor Lawrence (+3.5, held) is the engine of this rating. In five games he has 10 TD and 3 INT: a
-career-best Week 1 (4 TD, 150.6 rating, 87.1 PFF), steady efficient games against New England and
-Cincinnati, and 331 yards with the winning drive in London (67.4 PFF). The ball security in London
-(two fumbles) and the red-zone stalls are the nitpicks. The Coen system has him playing like a
-top-10 quarterback, and the left tackle injury is the new test.
+
+Trevor Lawrence (+3.7) goes up 0.2 after a surgical game against Indianapolis: 10/14 for 210 yards, 3 TD and 0 INT, with the game decided by halftime. The Coen system has him playing like a top-10 quarterback.
 
 ## What moved the number
 

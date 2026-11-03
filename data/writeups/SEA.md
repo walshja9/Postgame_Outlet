@@ -168,7 +168,8 @@ into the season.
 
 ## Quarterback
 
-Sam Darnold (+1.5) is the starter, down half a point after two interceptions and no touchdowns on 51 attempts at Denver (48.2 PFF passing). That's three straight passing grades under 58 and seven interceptions in his last four games. Mike Macdonald says he's staying the starter. Drew Lock (0.0) is the QB2.
+
+Sam Darnold (+1.3) is the starter, down another 0.2 after a 17/34, 188-yard game (2 TD, 1 INT, 31.3 QBR) in the home loss to Chicago. The turnovers have been the issue for over a month. Mike Macdonald has said he's staying the starter. Drew Lock (0.0) is the QB2.
 
 ## Week 1 rating notes (historical)
 

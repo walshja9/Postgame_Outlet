@@ -157,7 +157,8 @@ Las Vegas has two genuine stars — one on each side of the ball — dragged dow
 
 ## Quarterback
 
-Kirk Cousins (0.0) is the starter, up half a point after his best game of the season: 313 yards and 2 TD against Buffalo (75.1 PFF passing) without being sacked. That's five starter-level games in six. He's playing like a league-average quarterback, and that's what the number now says.
+
+Kirk Cousins (+0.3) goes up 0.3 after his best game of the season: 19/26 for 247 yards, 3 TD and 0 INT (88.0 QBR) in the comeback win at the Jets. Rookie Fernando Mendoza is still expected to play at some point, and the rating resets if he takes over.
 
 ## Quarterback: through Week 1 2026 (historical)
 

@@ -162,7 +162,8 @@ Baltimore is a top-five roster: an elite quarterback, a strong skill group, and 
 
 ## Quarterback
 
-Lamar Jackson (+4.0) returns as the selected quarterback for Week 8 at Buffalo after missing three games with a high ankle sprain. That's half a point below his healthy +4.5 for his first game back, and a clean game restores it. Tyler Huntley (−1.5) goes back to QB2.
+
+Joe Fagnano (−5.0) is the selected quarterback for Thursday night against Jacksonville. Lamar Jackson suffered a **fracture-dislocation of his right (throwing) thumb** on the first play at Buffalo. He needs surgery, is on IR and is likely out for the season. Tyler Huntley (**turf toe**) is doubtful and could miss four-plus weeks. Fagnano, an undrafted rookie, went 10/21 for 91 yards in relief and is dealing with an ankle issue. Whoever starts Thursday, Fagnano or newly signed Kedon Slovis, carries the −5.0. Huntley returns at −1.5 once he's healthy.
 
 ## Quarterback: through Week 1 2026 (historical)
 

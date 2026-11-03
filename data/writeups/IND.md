@@ -158,7 +158,8 @@ skill group is above average, but Week 1 pulled the quarterback and defense belo
 
 ## Quarterback
 
-Daniel Jones (−1.0) drops half a point. He has posted negative EPA per dropback in five straight games (53.2 PFF at Minnesota), and the Colts just traded away Quenton Nelson in front of him.
+
+Daniel Jones (−1.5) drops another half-point after 144 yards and 2 INTs (31.8 QBR) in the 42–7 loss at Jacksonville, his sixth straight negative game. It's unclear whether Jones or Anthony Richardson starts Week 9. If Richardson gets the job, he takes over at −2.0.
 
 ## Quarterback: through Week 1 2026 (historical)
 

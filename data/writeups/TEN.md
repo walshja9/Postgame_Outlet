@@ -145,10 +145,8 @@ all read below the line.
 
 ## Quarterback
 
-Cam Ward (−1.5) is the 2025 No. 1 overall pick, now in his **second year**. After three
-below-average starts dropped him to −2.0, he played his best game in the Week 4 loss at Baltimore
-(81.3 PFF pass grade, 6th of 33 QBs; a late TD drive and 2-point pass), so half of that cut comes
-back. The arm talent is starting to show up. Consistency is the next test.
+
+Cam Ward (−1.2) goes up 0.3 after the best game of his second season: 26/40 for 304 yards, 2 TD and 0 INT (80.9 QBR) in the 43–36 shootout at Cincinnati. The 2025 No. 1 overall pick keeps trending up.
 
 ## What moved the number
 
