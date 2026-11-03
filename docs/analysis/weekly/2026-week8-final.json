@@ -1,0 +1,29 @@
+{
+  "checked_at": "2026-11-03T04:25:39.153558+00:00",
+  "html_bytes": 7934,
+  "html_sha256": "4825aa05003b44d462de1c2cfd5c28efdb6790995de194d0eddeb2b85bb32717",
+  "schema_version": 1,
+  "season": 2026,
+  "source_paths": [
+    "docs/evidence/season-2026/runs-v2/20261103T042539153558Z/manifest.json",
+    "docs/evidence/season-2026/runs-v2/20261103T042539153558Z/state.json.gz",
+    "docs/evidence/season-2026/source-archive/23ac96e0fefdd75f5c408a96d76a5df1a5fbfbc37202128a4e7bf5b3a452972a.json",
+    "docs/evidence/season-2026/source-archive/38d72d67d86f2306ed3c8ec613544618e109acf14b628e49276a123355b30d92.json",
+    "docs/evidence/season-2026/source-archive/4e6d1591431c8c2e9bc0573cfab31a257549b9d6b49ee9b42d901a3916c82901.json",
+    "docs/evidence/season-2026/source-archive/656d3d4096753dc40d14ff470317b9856a6ba257f2bcb3813bbff94b731bf52c.json",
+    "docs/evidence/season-2026/source-archive/75c9ef09b968b24a016adcab4cf7bf28a3554bf43adc32531951b82a15d94be4.json",
+    "docs/evidence/season-2026/source-archive/95ff1d498393201a92ca2f29a9b0e622a331186ac1f993c753f855f9c50094be.json",
+    "docs/evidence/season-2026/source-archive/a8bfd5ae2a619636e03c49a746132e766eea6955f34ef66d0b92881d70fcac4b.csv.gz",
+    "docs/evidence/season-2026/source-archive/b02d5d26697a57457d7afda9d203d5b95f9f2d228f8f9f24bebed6dfbf16fb93.json",
+    "docs/evidence/season-2026/source-archive/b519df55372c3e0bbd25387e53acbd908ec3812ed8a0e3d600673a2fdbd92e56.json",
+    "docs/evidence/season-2026/source-archive/b8fd9246845702100cb9a0f73c61da81780b405d7ed310fe5b9df21b7b53b5c7.json",
+    "docs/evidence/season-2026/source-archive/d3713b13dd95a6e8f320ad4c0c68e6ca12f3a52de094856d961552ab906243fb.json",
+    "docs/evidence/season-2026/source-archive/dcbf95eb3157dac6b6ac07f07a03df274916e8b845d38365b708c5be283dbbf8.json",
+    "docs/evidence/season-2026/source-archive/f55e0354c8e7f0585f2d3fae1a0eb60497921f3b7b309136daa2506b6cea00b3.json"
+  ],
+  "source_pointer": {
+    "manifest_sha256": "e2d50262ee8af2bd84120acfc46c940288c34dc417537fb9b3bf08a555706c98",
+    "path": "runs-v2/20261103T042539153558Z"
+  },
+  "week": 8
+}
