@@ -1,3 +1,11 @@
+## Week 8: at L.A. Rams (L 9–24)
+
+This was closer than the score. The Chargers out-gained the Rams by 144 yards in the first half but trailed 10–9, and the game model had it roughly even (16–18). Justin Herbert threw 2 INTs. The bigger problem is the secondary: S **Derwin James (hamstring, IR)**, CBs **Donte Jackson** and **Rodney Shelley (hamstrings)** and **Deane Leonard (concussion)** are all out.
+
+**What changed:**
+- **Defense −0.3 → −0.5 (−0.2):** four starting DBs out.
+- **QB and Offense held.** **New total −2.9 → −3.1.**
+
 ## Week 6: at Kansas City (L 6–22)
 
 The Chargers' offense hit bottom. It managed **6 points and 259 yards**, went **0-for-3 in the red zone and 0-for-3 on fourth down**, and Justin Herbert was

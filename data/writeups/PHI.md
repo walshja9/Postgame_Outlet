@@ -1,3 +1,11 @@
+## Week 8: at Washington (L 10–27)
+
+Philadelphia scored 10 points in the first quarter and none after. Washington is one of the league's worst defenses and was missing DTs Daron Payne and Javon Kinlaw and DL Jer'Zhan Newton, and the Eagles still couldn't move the ball. Tanner McKee went 23/34 for 212 yards with an INT and no TDs (32.9 QBR). WR **DeVonta Smith (hamstring)** is still out.
+
+**What changed:**
+- **Offense −1.7 → −2.2 (−0.5):** couldn't score against a short-handed, bottom-tier defense.
+- **QB McKee and Defense held.** **New total −5.5 → −6.0.**
+
 ## Week 7: vs Dallas (L 21–38)
 
 Dallas scored 38, and the defense ranks 27th in EPA allowed. Tariq Woolen, Jihaad Campbell and Jordan Davis all graded around 36. **Saquon Barkley** returned from the hamstring, then hurt his back early. He says he won't miss time.

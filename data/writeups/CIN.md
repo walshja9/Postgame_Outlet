@@ -1,3 +1,11 @@
+## Week 8: vs Tennessee (W 43–36)
+
+Cincinnati won, but the defense gave up 36 points and 440 yards to one of the league's weakest offenses. Joe Burrow threw for 462 yards and 5 TDs, along with 3 INTs. The offense can win shootouts, but the defense keeps forcing it to.
+
+**What changed:**
+- **Defense −0.4 → −0.7 (−0.3):** too many points against a bottom-tier attack.
+- **QB Burrow and Offense held.** **New total 5.4 → 5.1.**
+
 ## Week 7: at Baltimore (W 35–13)
 
 Cincinnati fell behind 13–0, then scored 35 straight. **Joe Burrow** threw four touchdowns (93.7 PFF) and **Tee Higgins** graded 91.6. The defensive front (Boye Mafe 89.8, Dexter Lawrence 89.5) shut out Baltimore after the first quarter, though against backup QB Tyler Huntley.

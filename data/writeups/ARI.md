@@ -1,3 +1,11 @@
+## Week 8: at Dallas (W 33–30, OT)
+
+Arizona benched **Jacoby Brissett** mid-game, and **Gardner Minshew** rallied the Cardinals for 27 second-half points and an overtime win (17/23, 188 yards, 3 TD, 0 INT). Arizona out-gained Dallas by 206 yards. On Monday, Mike LaFleur named Minshew the starter, made rookie Carson Beck the backup, and dropped Brissett to third string.
+
+**What changed:**
+- **QB Brissett −1.0 → Minshew −1.5 (−0.5):** Minshew is the new starter. The rating reflects his talent level, not the comeback.
+- **Offense and Defense held.** **New total −3.5 → −4.0.**
+
 ## Week 7: vs Denver (L 16–30)
 
 The score flatters Denver. Arizona had **24 first downs** and the box score made it about 29–27 Cardinals, but they kept settling for field goals while Denver finished drives. WR **Jalen Brooks** (wrist) is out for the season.

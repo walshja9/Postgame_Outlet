@@ -1,3 +1,12 @@
+## Week 8: vs Arizona (L 30–33, OT)
+
+Dallas was out-gained by 206 yards at home and gave up 27 second-half points plus the OT winner. Only some timely takeaways kept it close. TE **Jake Ferguson (ankle)** is out.
+
+**What changed:**
+- **Defense −1.6 → −1.8 (−0.2):** 467 yards allowed.
+- **Offense +1.2 → +1.1 (−0.1):** Ferguson's ankle.
+- **QB Dak held** at +2.0. **New total 1.6 → 1.3.**
+
 ## Week 7: at Philadelphia (W 38–21)
 
 Dak Prescott was sharp (81.5 PFF, 3 TD) behind an offensive line that dominated (Tyler Booker 92.4). The defense finally had **Joey Porter Jr., Cobie Durant and DeMarvion Overshown** back together, though this was against a depleted Eagles team.

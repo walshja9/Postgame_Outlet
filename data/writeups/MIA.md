@@ -1,3 +1,11 @@
+## Week 8: vs New England (L 19–24)
+
+Miami lost by five, but the defense held New England to 313 yards. Malik Willis was steady (21/32, 211 yards, 2 TD, 1 INT).
+
+**What changed:**
+- **Defense −1.3 → −1.2 (+0.1):** a competent effort.
+- **QB and Offense held.** **New total −5.0 → −4.9.**
+
 ## Week 7: at N.Y. Jets (W 28–25)
 
 **Malik Willis** had his best game of the year: 14 of 21 for 208 yards and 2 TD, a 99.5 QBR and a 77.3 PFF grade. TE Greg Dulcich (87.9) and the run game kept the chains moving for 24 first downs.

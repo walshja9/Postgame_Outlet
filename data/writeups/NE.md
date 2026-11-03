@@ -1,3 +1,20 @@
+## Week 8: at Miami (W 24–19)
+
+Without A.J. Brown or TreVeyon Henderson, Drake Maye was efficient (16/20, 199 yards, 2 TD, 0 INT), and New England won in Miami. A new injury adds to the pile: TE **Hunter Henry (foot)** is out.
+
+**What changed:**
+- **Offense −0.6 → −0.7 (−0.1):** Henry joins Brown, Doubs and Hollins on the sideline.
+- **QB Maye and Defense held.** **New total 2.2 → 2.1.**
+
+## Week 8: at Miami (pre-game)
+
+New England went to Miami without its top two skill additions. **A.J. Brown** was ruled out with a **knee flare-up** that cut short his Wednesday practice. He's still managing the **high-ankle sprain** that cost him four games on IR. RB2 **TreVeyon Henderson** is out with an illness. With **Romeo Doubs** and **Mack Hollins** already on IR, the receiver snaps go to DeMario Douglas, Kyle Williams and Efton Chism III.
+
+**What changed:**
+- **Offense −0.2 → −0.6 (−0.4):** Brown out (−0.3) and Henderson out (−0.1). It comes back when they return.
+- **QB Maye held** at +2.5. **Defense held** at +0.3.
+- **New total 2.6 → 2.2.**
+
 ## Week 7: at Chicago (L 24–30)
 
 A fair result: the box score had it 26–30. **Drake Maye** played well again (78.3 PFF), and Hunter Henry was excellent (81.1). The Patriots came out healthy, and G **Ben Brown** (knee) is back at practice. But LG **Alijah Vera-Tucker** (hamstring) and WR **Romeo Doubs** (shoulder) are both on IR, and the defense missed **17 tackles**.

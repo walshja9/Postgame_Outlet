@@ -1,3 +1,11 @@
+## Week 8: vs Atlanta (W 16–0)
+
+Tampa Bay won without completing a pass. In a monsoon, the Bucs ran 52 times for 310 yards, and **Baker Mayfield** went 0/3. That was the weather, not his thumb: he was off the injury report and played the whole game. The defense was the story, with a shutout, 4 takeaways and only 224 yards allowed. It did that without edge **Yaya Diaby (MCL sprain)**.
+
+**What changed:**
+- **Defense 0.0 → +0.3 (+0.3):** a dominant shutout, even without Diaby.
+- **QB Mayfield held** at +1.5, and **Offense held**. **New total 1.9 → 2.2.**
+
 ## Week 7: at Carolina (W 43–13)
 
 Baker Mayfield came back and barely had to throw (11 attempts through three quarters) as Tampa led 33–6 by halftime. The defense forced **four turnovers**. It's third in EPA allowed this season, led by Jacob Parrish (83.8).

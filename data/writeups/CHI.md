@@ -1,3 +1,12 @@
+## Week 8: at Seattle (W 34–17)
+
+Chicago went into Seattle and won by 17, the biggest statement of the season. Days earlier the Bears traded two first-round picks to Tennessee for All-Pro DT **Jeffery Simmons**. In his debut he had a sack, and per the ESPN broadcast Seattle averaged just 2.3 yards per play while he was on the field. Caleb Williams was clean (24/34, 247 yards, 1 TD, 0 INT), and the offense put up 363 yards against the league's top-rated defense.
+
+**What changed:**
+- **Defense 0.0 → +0.7 (+0.7):** +0.5 for adding Simmons, +0.2 for the performance.
+- **Offense +1.0 → +1.2 (+0.2):** moved the ball at will against an elite defense.
+- **QB Caleb held** at +3.0. **New total 4.0 → 4.9.**
+
 ## Week 7: vs New England (W 30–24)
 
 A legit win: the box score had it 30–26. **Caleb Williams** has been clean in both games since his hamstring injury (83.4 PFF). **Luther Burden III** was outstanding (89.3), and **Colston Loveland** (73.5, TD) steps in at TE after **Cole Kmet** suffered a season-ending knee injury. Edge **Montez Sweat** is back from his suspension.

@@ -1,3 +1,12 @@
+## Week 8: at N.Y. Jets (W 38–33)
+
+Kirk Cousins had his best game of the season: 19/26 for 247 yards, 3 TD, 0 INT and an 88.0 QBR. The offense scored 24 second-half points to come back and win.
+
+**What changed:**
+- **QB Cousins 0.0 → +0.3 (+0.3):** his best game of the year.
+- **Offense −0.1 → +0.1 (+0.2).**
+- **Defense held** at −1.5. **New total −1.6 → −1.1.**
+
 ## Week 7: vs L.A. Rams (L 21–35)
 
 The Rams moved it at will: 28 first downs, with Taron Johnson (31.5), Tommy Eichenberg (29.8) and Quay Walker (37.5) all struggling. This defense ranks 30th in EPA allowed.

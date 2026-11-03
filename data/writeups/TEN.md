@@ -1,3 +1,13 @@
+## Week 8: at Cincinnati (L 36–43)
+
+Tennessee lost a shootout, but Cam Ward was the best quarterback on the field: 26/40 for 304 yards, 2 TD, 0 INT and an 80.9 QBR. The offense piled up 440 yards and kept trading scores with Cincinnati. The bigger news came earlier in the week, when the Titans traded DT **Jeffery Simmons** to Chicago for two first-round picks.
+
+**What changed:**
+- **QB Ward −1.5 → −1.2 (+0.3):** clean, productive, keeps trending up.
+- **Offense −1.6 → −1.4 (+0.2):** 440 yards on the road.
+- **Defense −0.8 → −1.3 (−0.5):** the run defense loses its anchor, Jeffery Simmons, to Chicago.
+- **New total −3.9 → −3.9.** The gains on offense are cancelled out by the Simmons loss.
+
 ## Week 7: vs Cleveland (L 24–27)
 
 Tennessee hung around on the scoreboard, but Cleveland piled up **491 yards** and the box score had the Browns closer to 33–21. Cam Ward was solid (76.9 PFF) and Tony Pollard was excellent (85.7). The defense couldn't get off the field, and Jeffery Simmons graded just 42.9.

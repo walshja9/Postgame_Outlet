@@ -1,3 +1,12 @@
+## Week 8: at Denver (pre-game)
+
+Kansas City's secondary was gutted for the trip to Denver. CB **L'Jarius Sneed** went to IR Saturday with the **right knee** injury he'd been playing through for over a month; the earliest he can return is Week 12. Rookie CB **Mansoor Delane** was downgraded to out with a **shoulder** injury. That's both starting corners, so Kristian Fulton and Christian Roland-Wallace take on bigger roles. On offense, **Rashee Rice** (hamstring/knee) carried no game status and RT **Jaylon Moore** was trending back from his concussion, but neither return is priced in yet.
+
+**What changed:**
+- **Defense +0.5 → +0.2 (−0.3):** both starting corners are out.
+- **QB Mahomes held** at +5.0. **Offense held** at 0.0.
+- **New total 5.5 → 5.2.**
+
 ## Week 7: at Seattle (L 3–20)
 
 Kansas City was out-gained by **197 yards** and held to a field goal. Patrick Mahomes graded 50.2 with 165 passing yards, playing without both starting tackles. Xavier Worthy (50.4) gave him little.

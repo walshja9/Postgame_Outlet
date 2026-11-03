@@ -1,3 +1,12 @@
+## Week 8: vs Chicago (L 17–34)
+
+Seattle was out-gained by 111 yards at home. Sam Darnold went 17/34 for 188 yards with 2 TD and an INT (31.3 QBR), extending a stretch of turnover-prone play. The league's top-rated defense gave up 363 yards to a Bears offense that had just added Jeffery Simmons on the other side of the ball. LB **Uchenna Nwosu (ankle)** and WR **Rashid Shaheed (knee)** are both out.
+
+**What changed:**
+- **Defense +3.2 → +2.9 (−0.3):** gashed at home, and Nwosu is out. Still the best unit in the league.
+- **QB Darnold +1.5 → +1.3 (−0.2):** he was already on the turnover watch, and this was another poor game.
+- **Offense held** at +0.5. **New total 5.2 → 4.7.**
+
 ## Week 7: vs Kansas City (W 20–3)
 
 Holding Patrick Mahomes to **3 points** and out-gaining Kansas City by 197 yards is as good as defense gets; Byron Murphy II graded 87.8. Sam Darnold had his best game (72.7 PFF), and Jaxon Smith-Njigba was dominant (92.3). Seattle also traded for All-Pro G **Quenton Nelson**, but LT **Charles Cross** has a high ankle sprain.

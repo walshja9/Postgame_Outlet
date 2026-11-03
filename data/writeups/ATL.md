@@ -1,3 +1,11 @@
+## Week 8: at Tampa Bay (L 0–16)
+
+Atlanta was shut out in torrential rain. Michael Penix Jr. went 8/24 for 125 yards with **4 INTs** (8.2 QBR). The weather excuses some of that, but not all of it, especially since his ribs injury has already made this a rough stretch. The defense held Tampa to 16, even though it's missing edge **James Pearce Jr. (suspension)**, LB **Divine Deablo (forearm)**, S **Billy Bowman Jr. (hamstring)** and DE **Samson Ebukam (hamstring)**.
+
+**What changed:**
+- **QB Penix −1.0 → −1.3 (−0.3):** four interceptions, softened for the conditions.
+- **Offense and Defense held.** **New total −0.6 → −0.9.**
+
 ## Week 7: vs San Francisco (W 29–20)
 
 **Michael Penix Jr.** looked like himself again (68.5 PFF, 3 TD, 0 INT) after two rough games following his rib injury. The box score was dead even (25–25); Atlanta won the turnover battle 4–0.

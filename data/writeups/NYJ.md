@@ -1,3 +1,11 @@
+## Week 8: vs Las Vegas (L 33–38)
+
+The Jets out-gained Las Vegas (439–333) and lost anyway. Geno Smith was fine (290 yards, 2 TD, 1 INT), but the Jets blew a 23–14 halftime lead. The game model says the Raiders scored about 12 more points than their stats support. That's a pattern here: the coaching keeps giving games away.
+
+**What changed:**
+- **Defense +0.1 → −0.1 (−0.2):** a coaching discount that stays until the staff changes.
+- **Offense held** at −0.8 despite the yards. **New total −2.2 → −2.4.**
+
 ## Week 7: vs Miami (L 25–28)
 
 Geno Smith had his second good game in a row (77.3 PFF), and Mason Taylor was terrific (93.3). The defense let **Malik Willis** post a 99.5 QBR, with David Bailey (39.3) and Dane Belton (40.1) the weak spots.

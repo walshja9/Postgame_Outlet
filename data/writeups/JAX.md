@@ -1,3 +1,13 @@
+## Week 8: vs Indianapolis (W 42–7)
+
+Jacksonville led 28–0 at halftime, and the game was over before the break. Trevor Lawrence was surgical (10/14, 210 yards, 3 TD, 0 INT). The defense held the Colts scoreless until garbage time, but it's banged up: DT **DaVon Hamilton (quad strain)** is out, and the secondary is missing S **Eric Murray (elbow)**, **Antonio Johnson (ankle)** and **Caleb Ransaw (IR, knee)**.
+
+**What changed:**
+- **QB Lawrence +3.5 → +3.7 (+0.2):** an efficient, mistake-free game.
+- **Offense +0.3 → +0.5 (+0.2):** back up to its earlier level.
+- **Defense +0.5 → +0.4 (−0.1):** Hamilton's quad strain.
+- **New total 4.3 → 4.6.**
+
 ## Week 6: vs Houston at Wembley (L 31–34)
 
 In their second straight game in London, the Jaguars lost a game the box score called even (**29–29**). **Trevor Lawrence** threw

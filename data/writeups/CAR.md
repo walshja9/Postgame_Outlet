@@ -1,3 +1,11 @@
+## Week 8: at Green Bay (L 19–27)
+
+The depleted Carolina secondary couldn't hold up. With CBs Jaycee Horn, Mike Jackson and Akayleb Evans all out, Jordan Love threw for 288 yards and 3 TDs.
+
+**What changed:**
+- **Defense −0.5 → −0.7 (−0.2):** the CB room is down to backups.
+- **QB and Offense held.** **New total 0.2 → 0.0.**
+
 ## Week 7: vs Tampa Bay (L 13–43)
 
 Carolina was blown out at home. Tampa led **33–6 by halftime**, and the Panthers turned it over **four times**. Bryce Young had his worst game of the season (56.5 PFF, 6.8 QBR, 2 INT). The bigger problem is the offensive line. RT **Taylor Moton** fractured his fibula and is out for the season, with LT **Ikem Ekwonu** already on PUP. LG **Damien Lewis** (knee) and G **Torricelli Simpkins** (ankle) both missed practice Monday and Tuesday before Thursday's game at Green Bay.

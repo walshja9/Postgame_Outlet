@@ -1,3 +1,12 @@
+## Week 8: at Jacksonville (L 7–42)
+
+This looked like a team that had just sold off its best players. Indianapolis trailed 28–0 at halftime and didn't score until the second half. Daniel Jones threw 2 INTs for 144 yards (31.8 QBR), his sixth straight negative game. With Buckner and Nelson traded away the week before, the motivation concern we were watching showed up on the field. It's unclear whether Jones or **Anthony Richardson** starts Week 9.
+
+**What changed:**
+- **QB Jones −1.0 → −1.5 (−0.5):** six straight bad games. If Richardson is named the starter, he takes over at −2.0.
+- **Defense −1.3 → −1.5 (−0.2):** flat after the sell-off.
+- **Offense held** at +0.1. **New total −2.2 → −2.9.**
+
 ## Week 7: at Minnesota (L 10–16), then a sell-off
 
 Indianapolis managed 218 yards against the league's best defense. Then on Monday it traded two of its best players: DT **DeForest Buckner** to San Francisco and G **Quenton Nelson** to Seattle. Daniel Jones has now had five straight weeks with negative EPA.

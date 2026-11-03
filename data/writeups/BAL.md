@@ -1,3 +1,12 @@
+## Week 8: at Buffalo (L 10–36)
+
+Baltimore's season turned on the first snap. **Lamar Jackson** suffered a **fracture-dislocation of his right (throwing) thumb** when his hand hit Greg Rousseau on the opening play. He needs surgery, is headed to IR, and is likely out for the season. Backup **Tyler Huntley** then went down in the second quarter with **turf toe** and is doubtful for Thursday; reports say he could miss four-plus weeks. Undrafted rookie **Joe Fagnano** finished the game 10/21 for 91 yards with an INT, and Buffalo out-gained the Ravens by 282 yards. For Thursday night vs Jacksonville, Fagnano (ankle) is expected to start, with **Kedon Slovis** (signed 11/3) and Austin Reed as the other options.
+
+**What changed:**
+- **QB Lamar Jackson +4.0 → Joe Fagnano −5.0 (−9.0):** an emergency rookie starter. Whoever takes the snaps Thursday carries the −5.0. Huntley comes back at −1.5 once he's healthy.
+- **Offense held** at +0.7, **Defense held** at −0.3. It's hard to judge this roster when the QBs keep changing mid-game.
+- **New total 4.4 → −4.6.**
+
 ## Week 7: vs Cincinnati (L 13–35)
 
 Baltimore led **13–0** and then gave up **35 straight**. Tyler Huntley (55.0 PFF, 30.4 QBR) couldn't keep up, and the secondary was torched: Kyle Hamilton 43.7, Marlon Humphrey 41.8, Nate Wiggins 29.0. That's the pattern in every Ravens loss this year: a halftime lead blown. The good news is **Lamar Jackson** (high ankle) is trending toward playing at Buffalo.
