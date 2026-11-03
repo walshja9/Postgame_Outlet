@@ -1,0 +1,65 @@
+{
+  "checked_at": "2026-11-03T01:06:17.533920+00:00",
+  "sources": [
+    {
+      "bytes": 367658,
+      "captured_at": "2026-11-03T01:06:17.079167+00:00",
+      "file": "raw/000.html.gz",
+      "final_url": "https://www.nfl.com/injuries/",
+      "kind": "official_report",
+      "sha256": "88c15ed36bab07faaf65b154bbc0e9168322f1664a6079a554c11edbce41815d",
+      "started_at": "2026-11-03T01:06:16.970213+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/injuries/"
+    },
+    {
+      "bytes": 509741,
+      "captured_at": "2026-11-03T01:06:17.196792+00:00",
+      "file": "raw/001.html.gz",
+      "final_url": "https://www.chicagobears.com/news/",
+      "kind": "team_news",
+      "sha256": "0a50bdb6531ec50905f7d163f295e83a03abd259b3be89da56323b1826341676",
+      "started_at": "2026-11-03T01:06:16.970716+00:00",
+      "status": 200,
+      "team": "CHI",
+      "url": "https://www.chicagobears.com/news/"
+    },
+    {
+      "bytes": 653644,
+      "captured_at": "2026-11-03T01:06:17.173150+00:00",
+      "file": "raw/002.html.gz",
+      "final_url": "https://www.seahawks.com/news/",
+      "kind": "team_news",
+      "sha256": "74dcb170510f2bbc4053d7b4bb9df1ae94d487c5501123c74f76a07ea4df3265",
+      "started_at": "2026-11-03T01:06:16.971088+00:00",
+      "status": 200,
+      "team": "SEA",
+      "url": "https://www.seahawks.com/news/"
+    },
+    {
+      "bytes": 1611629,
+      "captured_at": "2026-11-03T01:06:17.188944+00:00",
+      "file": "raw/003.html.gz",
+      "final_url": "https://www.nfl.com/news",
+      "kind": "league_news",
+      "sha256": "6e46f7689da7b7086b39515946cae7047cbe7a0c424954269f0c9836864d1c0b",
+      "started_at": "2026-11-03T01:06:16.971497+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/news/"
+    },
+    {
+      "bytes": 706372,
+      "captured_at": "2026-11-03T01:06:17.441289+00:00",
+      "file": "raw/004.html.gz",
+      "final_url": "https://www.nfl.com/news/week-8-monday-night-inactives-chicago-bears-at-seattle-seahawks",
+      "kind": "official_inactives",
+      "sha256": "3ac9472647bfcd3d0e3809f870f9e2397496d8a494ce274843201accde75873b",
+      "started_at": "2026-11-03T01:06:17.331897+00:00",
+      "status": 200,
+      "team": null,
+      "url": "https://www.nfl.com/news/week-8-monday-night-inactives-chicago-bears-at-seattle-seahawks"
+    }
+  ]
+}
