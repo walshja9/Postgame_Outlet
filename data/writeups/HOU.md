@@ -1,3 +1,7 @@
+## Week 9: QB re-evaluation
+
+Stroud is held at +1.5. His 69.2 QBR, 100.7 passer rating and 11 TD/1 INT sit right where that grade puts him.
+
 ## Week 7: vs N.Y. Giants (L 21–27)
 
 Houston managed only **237 yards**. C.J. Stroud graded 49.4 behind a poor line (Keylan Rutledge 35.1). The defense gave up 420 yards and ranks 21st in EPA allowed. WR **Jaylin Noel** has turf toe.

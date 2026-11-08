@@ -1,3 +1,7 @@
+## Week 9: QB re-evaluation
+
+Rodgers is held at −1.0. His 49.2 QBR and 86.2 passer rating both rank 24th, which matches the grade.
+
 ## Week 7: at New Orleans (W 16–10)
 
 Pittsburgh's front was dominant: Keeanu Benton (90.8), Payton Wilson (89.8), Patrick Queen (84.5) and T.J. Watt (81.5). S **DeShon Elliott** (knee) returned from IR.

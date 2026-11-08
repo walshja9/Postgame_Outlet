@@ -6,7 +6,7 @@ Kansas City Chiefs,2,Justin Fields,-1.5,Former starter | Band re-grade 9/29 (-2.
 Cincinnati Bengals,2,Joe Flacco,-2.0,Proven veteran | Band re-grade 9/29 (-3.0->-2.0): backup band now -1.5..-4.0 (Sean: backups were underrated),41,18
 Washington Commanders,2,Marcus Mariota,-2.0,"INJURED (right MCL sprain, no IR) — back to QB2 behind Daniels (restored Wk5); was Wk1-4 fill-in starter",,
 San Francisco 49ers,2,Mac Jones,-2.0,Former starter | Band re-grade 9/29 (-3.0->-2.0): backup band now -1.5..-4.0 (Sean: backups were underrated),28,5
-Cleveland Browns,2,Shedeur Sanders,-2.5,Rookie; Watson now starter | Band re-grade 9/29 (-3.0->-2.5): backup band now -1.5..-4.0 (Sean: backups were underrated),24,1
+Cleveland Browns,2,Deshaun Watson,-2.0,"Concussion Wk8 (cleared protocol, Q Wk9); Shedeur Sanders named starter (-2.5, first 2026 start) — Sean 11/7",,
 New York Giants,2,Jaxson Dart,-0.5,"INJURED (left knee surgery, meniscus) — IR, out at least rest of regular season (AP); McCarthy (ratings QB1, -3.0) starting Wk7; restore Dart if/when he returns",23,1
 Baltimore Ravens,2,Lamar Jackson,4.0,"INJURED — IR (right thumb fracture-dislocation, surgery 11/2026), likely out for season; Fagnano QB1 (-5.0)",,
 Carolina Panthers,2,Kenny Pickett,-3.0,Former 1st-rounder | Band re-grade 9/29 (-3.5->-3.0): backup band now -1.5..-4.0 (Sean: backups were underrated),28,4
@@ -23,7 +23,8 @@ Houston Texans,2,Davis Mills,-3.5,Replacement-level | Band re-grade 9/29 (-4.0->
 Tennessee Titans,2,Mitchell Trubisky,-3.0,Journeyman | Band re-grade 9/29 (-4.0->-3.0): backup band now -1.5..-4.0 (Sean: backups were underrated),,
 Jacksonville Jaguars,2,Nick Mullens,-3.5,Journeyman | Band re-grade 9/29 (-4.0->-3.5): backup band now -1.5..-4.0 (Sean: backups were underrated),,
 Dallas Cowboys,2,Joe Milton III,-3.5,Strong arm; raw | Band re-grade 9/29 (-4.0->-3.5): backup band now -1.5..-4.0 (Sean: backups were underrated),,
-Philadelphia Eagles,2,Jalen Hurts,1.5,"INJURED — IR (DVT + bilateral pulmonary emboli, Oct 2026), expected out for season; McKee QB1",,
+Philadelphia Eagles,2,Tanner McKee,-3.0,Benched Wk9 for Joe Milton after 6 straight losses; QB2,,
+Philadelphia Eagles,3,Jalen Hurts,1.5,"INJURED — IR (DVT + bilateral pulmonary emboli, Oct 2026), expected out for season; Milton QB1 (Wk9)",,
 New York Jets,2,Will Levis,-3.0,"Veteran backup (on ESPN + Sleeper roster); value placeholder, verify | Band re-grade 9/29 (-3.5->-3.0): backup band now -1.5..-4.0 (Sean: backups were underrated)",27,4
 Miami Dolphins,2,Brady Cook,-4.0,"QB2 (Ewers not on roster; Sleeper lists Cook Out) — value placeholder, verify | Band re-grade 9/29 (-4.5->-4.0): backup band now -1.5..-4.0 (Sean: backups were underrated)",24,2
 Las Vegas Raiders,2,Fernando Mendoza,-2.5,Rookie; raised per your read | Band re-grade 9/29 (-3.0->-2.5): backup band now -1.5..-4.0 (Sean: backups were underrated),22,0
@@ -33,9 +34,9 @@ Buffalo Bills,2,Kyle Allen,-4.0,Deep journeyman | Band re-grade 9/29 (-4.5->-4.0
 New England Patriots,2,Tommy DeVito,-4.0,Deep journeyman | Band re-grade 9/29 (-4.5->-4.0): backup band now -1.5..-4.0 (Sean: backups were underrated),,
 Las Vegas Raiders,3,Aidan O'Connell,-4.5,Real starting experience,,
 Tennessee Titans,3,Hendon Hooker,-5.5,"Practice squad (Levis now on NYJ) - value placeholder, verify",,
-Minnesota Vikings,2,Carson Wentz,-1.0,"QB2 behind Murray; rated -1.0 = his value as a fill-in starter (started Wk2, 9-3 W vs CHI for concussed Murray). McCarthy traded to NYG 9/28",33,11
+Minnesota Vikings,2,Kyler Murray,-0.5,"INJURED — OUT Wk9 (hamstring); Carson Wentz QB1 at Kyler's -0.5 (Sean, 11/7); restore Kyler -0.5 on return",,
 Dallas Cowboys,3,Sam Howell,-4.5,Has starting experience,,
-Philadelphia Eagles,3,Cole Payton,-5.5,"Rookie — healthy QB2 behind McKee (Dalton cut ~10/13); value placeholder, verify",,
+Philadelphia Eagles,4,Cole Payton,-5.5,"Rookie — QB3 behind Milton + McKee (Dalton cut ~10/13); value placeholder, verify",,
 Chicago Bears,3,Tyson Bagent,-1.5,Benched in Wk5 (L 7-31 at GB: 87 yds/2 INT); rated equal to Keenum (Sean 10/13),,
 New Orleans Saints,3,Zach Wilson,-5.0,Former #2 overall,,
 Cincinnati Bengals,3,Josh Johnson,-5.0,Career journeyman,,

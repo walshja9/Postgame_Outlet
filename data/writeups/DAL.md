@@ -1,3 +1,7 @@
+## Week 9: QB re-evaluation
+
+Prescott is held at +2.0. He ranks 7th among this week's starters in QBR (75.8), and his overall blend lands right at his grade.
+
 ## Week 8: vs Arizona (L 30–33, OT)
 
 Dallas was out-gained by 206 yards at home and gave up 27 second-half points plus the OT winner. Only some timely takeaways kept it close. TE **Jake Ferguson (ankle)** is out.

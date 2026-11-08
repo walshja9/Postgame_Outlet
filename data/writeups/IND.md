@@ -1,3 +1,11 @@
+## Week 9: QB re-evaluation
+
+He ranks 30th among this week's starters in passer rating (68.7), with 5 TD/9 INT and a 39.6 QBR.
+
+**What changed:**
+- **QB Jones −1.5 → −2.0 (−0.5).**
+- **New total −3.1 → −3.6.**
+
 ## Week 9: vs Dallas (pre-game)
 
 Indianapolis keeps losing starters on defense. S **A.J. Haulcy (ankle)** has been ruled out, and Hunter Wohler starts in his place. CB **Justin Walley (knee)** and LB **Akeem Davis-Gaither (knee)** are also out. **Daniel Jones** remains the starter, but other teams are asking about trading for him.
@@ -167,7 +175,7 @@ skill group is above average, but Week 1 pulled the quarterback and defense belo
 ## Quarterback
 
 
-Daniel Jones (−1.5) drops another half-point after 144 yards and 2 INTs (31.8 QBR) in the 42–7 loss at Jacksonville, his sixth straight negative game. It's unclear whether Jones or Anthony Richardson starts Week 9. If Richardson gets the job, he takes over at −2.0.
+Daniel Jones (−2.0) is the starter. He ranks 30th among this week's starters in passer rating (68.7), with 5 TD/9 INT and a 39.6 QBR.
 
 ## Quarterback: through Week 1 2026 (historical)
 

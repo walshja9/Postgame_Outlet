@@ -1,3 +1,11 @@
+## Week 9: QB re-evaluation
+
+He ranks 3rd among this week's starters in passer rating (111.7), with 18 TD/4 INT, and he's playing like a top-10 quarterback in Liam Coen's system.
+
+**What changed:**
+- **QB Lawrence +3.7 → +4.2 (+0.5).**
+- **New total +4.6 → +5.1.**
+
 ## Week 8: vs Indianapolis (W 42–7)
 
 Jacksonville led 28–0 at halftime, and the game was over before the break. Trevor Lawrence was surgical (10/14, 210 yards, 3 TD, 0 INT). The defense held the Colts scoreless until garbage time, but it's banged up: DT **DaVon Hamilton (quad strain)** is out, and the secondary is missing S **Eric Murray (elbow)**, **Antonio Johnson (ankle)** and **Caleb Ransaw (IR, knee)**.
@@ -57,7 +65,7 @@ and 2 TDs, both to **Parker Washington** (6-124-2, 84.2 PFF). He also had an INT
 
 <!-- REPLACE the current "## Quarterback" section -->
 
-## Week 4: at Cincinnati (W 22–17)
+Trevor Lawrence (+4.2) is the starter. He ranks 3rd among this week's starters in passer rating (111.7), with 18 TD/4 INT, and he's playing like a top-10 quarterback in Liam Coen's system.
 
 A win Jacksonville would have lost a year ago, and it was more about the defense's timing than about
 controlling the game. Cincinnati **out-gained the Jaguars 437–323**, and the box had the Bengals by about

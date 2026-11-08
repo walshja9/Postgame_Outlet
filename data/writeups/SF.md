@@ -1,3 +1,11 @@
+## Week 9: QB re-evaluation
+
+He ranks 2nd among this week's starters in QBR (79.3), with a 110.1 passer rating and 15 TD/4 INT. That's elite production even with the receiver room in pieces.
+
+**What changed:**
+- **QB Purdy +4.5 → +5.0 (+0.5).**
+- **New total +6.2 → +6.7.**
+
 ## Week 9: vs Las Vegas (pre-game)
 
 The receiver room got thinner, not healthier, out of the bye. **Christian Kirk** went on **injured reserve** after getting hurt in Thursday's practice. **Deebo Samuel (hamstring)** and **Mike Evans (Achilles tendinitis)** have both been ruled out again, so the offense's expected return to health is on hold. The good news is on the other side: **Nick Bosa (calf)** is cleared to play for the first time since Week 3.
@@ -179,7 +187,7 @@ confidence.
 
 ## Quarterback
 
-Brock Purdy (+4.5) is the selected quarterback, up eight-tenths after Week 6. He went 21-of-29 for 264 yards against Washington (9.1 per attempt, 76.7 PFF passing), his third straight grade above 74, and he has 15 touchdowns to 2 interceptions for a 6–0 team. He's doing it with Deebo Samuel, Christian Kirk, Ricky Pearsall and Brandon Aiyuk all out and Mike Evans managing an Achilles problem.
+Brock Purdy (+5.0) is the starter. He ranks 2nd among this week's starters in QBR (79.3), with a 110.1 passer rating and 15 TD/4 INT. That's elite production even with the receiver room in pieces.
 
 ## Quarterback: through Week 1 2026 (historical)
 

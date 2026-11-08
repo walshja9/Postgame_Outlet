@@ -1,3 +1,7 @@
+## Week 9: QB re-evaluation
+
+Allen is held at +6.5. His passing numbers rank 6th in QBR (76.7) and 11th in passer rating (101.1), but neither stat fully captures the running and creating that make him the league's most valuable quarterback.
+
 ## Week 7: bye
 
 Buffalo comes out of the bye getting two key pieces back. Coach Joe Brady said the "hope and intent" is for WR **DJ Moore** (shoulder) and DT **Ed Oliver** (knee) to return against Baltimore after each missed two games. S **C.J. Gardner-Johnson** is suspended for Week 8, but he isn't priced.

@@ -1,3 +1,7 @@
+## Week 9: QB re-evaluation
+
+Daniels is held at +1.5. His 63.6 QBR, 96.2 rating and zero interceptions land right at his grade.
+
 ## Week 9: vs L.A. Rams (pre-game)
 
 **Stefon Diggs** is healthy, but there's very little behind him. **Dyami Brown (calf)** went on **injured reserve** and will miss at least four games, and **Treylon Burks (foot)** has been ruled out. With McLaurin already lost for the year, Van Jefferson and Luke McCaffrey move up behind Diggs.

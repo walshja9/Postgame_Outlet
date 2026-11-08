@@ -1,3 +1,7 @@
+## Week 9: QB re-evaluation
+
+Goff is held at +2.5. He ranks 6th among this week's starters in passer rating (110.0) with just 1 interception, and his overall blend lands right at his grade.
+
 ## Week 9: at Miami (pre-game)
 
 Five Detroit starters are out. LB **Jack Campbell** went on **injured reserve** Saturday with a **serious neck injury**; he was carted off and hospitalized last week, and he says he's encouraged by his progress. CB1 **D.J. Reed (hip)**, DE **DJ Wonnum (concussion)**, S **Kerby Joseph (knee, PUP)** and OL **Cade Mays (ankle)** are also out. **Amon-Ra St. Brown** is **questionable with a rib injury** after limited practices.

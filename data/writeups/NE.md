@@ -1,3 +1,11 @@
+## Week 9: QB re-evaluation
+
+He ranks 5th among this week's starters in QBR (76.8) with 15 touchdowns. The ascent has held up over a full half-season.
+
+**What changed:**
+- **QB Maye +2.5 → +3.0 (+0.5).**
+- **New total +2.1 → +2.6.**
+
 ## Week 8: at Miami (W 24–19)
 
 Without A.J. Brown or TreVeyon Henderson, Drake Maye was efficient (16/20, 199 yards, 2 TD, 0 INT), and New England won in Miami. A new injury adds to the pile: TE **Hunter Henry (foot)** is out.
@@ -164,7 +172,7 @@ structure are real even when the process is sloppy and the WR1 is gone.
 
 ## Quarterback
 
-Drake Maye (+2.5) is the starter, up another half-point after his third straight elite game: 92.1 PFF passing against the Jets (3 TD, no interceptions, no sacks) on the heels of a 93.5 against Las Vegas. That's 7 touchdowns and no interceptions over his last two games, and the early-season rough patch (three picks at Seattle, a 28.1 at Jacksonville) is well behind him. With A.J. Brown and Will Campbell back, the offense around him is finally close to whole.
+Drake Maye (+3.0) is the starter. He ranks 5th among this week's starters in QBR (76.8) with 15 touchdowns. The ascent has held up over a full half-season.
 
 ## Quarterback: through Week 1 2026 (historical)
 

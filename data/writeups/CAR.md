@@ -1,3 +1,11 @@
+## Week 9: QB re-evaluation
+
+He ranks 20th among this week's starters in QBR (59.9) and 23rd in passer rating (89.1), down from his early-season level.
+
+**What changed:**
+- **QB Young +1.5 → +1.0 (−0.5).**
+- **New total −0.3 → −0.8.**
+
 ## Week 9: vs Denver (pre-game)
 
 Carolina ruled out four players, and three of them are on defense. LB **Bobby Okereke (foot)** and OLB **Jaelan Phillips (hamstring)** leave the linebacker corps without both starters. Rookie CB **Will Lee III (hamstring)**, who had moved into the lineup with Horn, Mike Jackson and Evans on IR, is out too. LG **Damien Lewis (knee)** misses another game. T **Brady Christensen** has opened his practice window.
@@ -130,7 +138,7 @@ are trending up, while the defense is now the drag.
 
 ## Quarterback
 
-Bryce Young (+1.5) is the selected quarterback after his best game of the year (29-of-41, 329 yards, 2 TDs, 0 INT vs Detroit). He climbed from +0.5 to +1.0 after Week 1 and to +1.5 after Week 4, and he has done it behind a patchwork line missing both starting tackles.
+Bryce Young (+1.0) is the starter. He ranks 20th among this week's starters in QBR (59.9) and 23rd in passer rating (89.1), down from his early-season level.
 
 ## What moved the number
 

@@ -1,3 +1,7 @@
+## Week 9: QB re-evaluation
+
+Love is held at +1.5. His numbers are middle of the pack (64.2 QBR, 92.4 rating), but 16 TD/6 INT behind an inconsistent supporting cast doesn't warrant a cut yet.
+
 ## Week 7: at Detroit (L 17–20)
 
 Green Bay's offensive line is in trouble. Starting C **Sean Rhyan** suffered a high ankle sprain on the first series (typically 4–6 weeks), backup C **Jacob Monk** (quad) is on IR, and LG Aaron Banks and RT Anthony Bako-Bewele were already out. Second-year **John Williams** is in line to start at center. WR **Matthew Golden** (foot/shoulder) and LB **Zaire Franklin** (hairline fracture in his shin) are unlikely for Thursday.

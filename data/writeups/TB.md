@@ -1,3 +1,11 @@
+## Week 9: QB re-evaluation
+
+He ranks 29th among this week's starters in QBR (35.1). He's thrown 14 passes in two games since the right-thumb dislocation, and the offense has become run-only.
+
+**What changed:**
+- **QB Mayfield +1.5 → +0.5 (−1.0).**
+- **New total +2.2 → +1.2.**
+
 ## Week 8: vs Atlanta (W 16–0)
 
 Tampa Bay won without completing a pass. In a monsoon, the Bucs ran 52 times for 310 yards, and **Baker Mayfield** went 0/3. That was the weather, not his thumb: he was off the injury report and played the whole game. The defense was the story, with a shutout, 4 takeaways and only 224 yards allowed. It did that without edge **Yaya Diaby (MCL sprain)**.
@@ -68,7 +76,7 @@ Kancey** (80.9) and **Al-Quadin Muhammad** (81.0) won inside.
 
 <!-- REPLACE the current "## Quarterback" section -->
 
-## Week 4: vs Green Bay (L 14–17)
+Baker Mayfield (+0.5) is the starter. He ranks 29th among this week's starters in QBR (35.1). He's thrown 14 passes in two games since the right-thumb dislocation, and the offense has become run-only.
 
 Tampa Bay is **0–4**, but this was the closest it's been. The box had it **TB 17, GB 16**, a coin
 flip lost on a 58-yard field goal and a Green Bay offense that went 3-for-3 on fourth down. UDFA

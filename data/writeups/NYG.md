@@ -1,3 +1,7 @@
+## Week 9: QB re-evaluation
+
+McCarthy is held at −2.0. He has only about 60 plays with the Giants, not enough to move the number.
+
 ## Week 7: at Houston (W 27–21)
 
 The Giants were better than the score. The box score had them at 31–19, with **420 yards**. **J.J. McCarthy** has now had two straight good games (80.0 PFF), and Abdul Carter (91.0) and DJ Reader (87.2) controlled the line. LB **Tremaine Edmunds** (chest) is out for the season.

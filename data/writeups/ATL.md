@@ -1,3 +1,11 @@
+## Week 9: QB re-evaluation
+
+The Week 8 cut was mostly one game in torrential rain. Over the full season (55.9 QBR, 90.9 passer rating) he grades closer to −1.0.
+
+**What changed:**
+- **QB Penix −1.3 → −1.0 (+0.3).**
+- **New total −0.9 → −0.6.**
+
 ## Week 8: at Tampa Bay (L 0–16)
 
 Atlanta was shut out in torrential rain. Michael Penix Jr. went 8/24 for 125 yards with **4 INTs** (8.2 QBR). The weather excuses some of that, but not all of it, especially since his ribs injury has already made this a rough stretch. The defense held Tampa to 16, even though it's missing edge **James Pearce Jr. (suspension)**, LB **Divine Deablo (forearm)**, S **Billy Bowman Jr. (hamstring)** and DE **Samson Ebukam (hamstring)**.
@@ -149,7 +157,7 @@ and the defense's pass rush is thinned through the first half.
 ## Quarterback
 
 
-Michael Penix Jr. (−1.3) drops 0.3 after going 8/24 for 125 yards with 4 INTs (8.2 QBR) in the 16–0 loss at Tampa Bay. The cut is softened for the torrential rain, but this caps a rough stretch since his rib injury.
+Michael Penix Jr. (−1.0) is the starter. The Week 8 cut was mostly one game in torrential rain. Over the full season (55.9 QBR, 90.9 passer rating) he grades closer to −1.0.
 
 ## What moved the number
 

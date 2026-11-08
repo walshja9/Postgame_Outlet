@@ -1,3 +1,7 @@
+## Week 9: QB re-evaluation
+
+Minshew is held at −1.5. His numbers so far are strong, but they come from only about 25 plays.
+
 ## Week 8: at Dallas (W 33–30, OT)
 
 Arizona benched **Jacoby Brissett** mid-game, and **Gardner Minshew** rallied the Cardinals for 27 second-half points and an overtime win (17/23, 188 yards, 3 TD, 0 INT). Arizona out-gained Dallas by 206 yards. On Monday, Mike LaFleur named Minshew the starter, made rookie Carson Beck the backup, and dropped Brissett to third string.

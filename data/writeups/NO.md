@@ -1,3 +1,11 @@
+## Week 9: QB re-evaluation
+
+He ranks 21st among this week's starters in passer rating (90.9) and is still playing through the left-hand injury.
+
+**What changed:**
+- **QB Shough −0.3 → −0.5 (−0.2).**
+- **New total −1.8 → −2.0.**
+
 ## Week 7: vs Pittsburgh (L 10–16)
 
 New Orleans couldn't block Pittsburgh's front. Taliese Fuaga (50.9) and Jeremiah Wright (39.2) struggled, and Tyler Shough was under siege. The defense ranks 24th in EPA allowed, and S **Justin Reid** is in the concussion protocol.
@@ -145,10 +153,7 @@ keeps thinning out, though the skill group keeps the offense afloat.
 
 ## Quarterback
 
-Tyler Shough (−0.3) is cut from 0.0 while he plays through a left (non-throwing) hand injury that
-the team won't fully describe. His grades have slid four straight weeks, and in Week 5 he threw for
-96 yards with 2 INTs against Minnesota. Before the injury he was a legitimate starter (410 yards at
-Detroit, the upset at Baltimore). Ball security under pressure remains the watch item.
+Tyler Shough (−0.5) is the starter. He ranks 21st among this week's starters in passer rating (90.9) and is still playing through the left-hand injury.
 
 ## Quarterback: through Week 1 2026 (historical)
 

@@ -1,3 +1,11 @@
+## Week 9: QB re-evaluation
+
+Kyler Murray is out with a hamstring injury, so Wentz starts Monday against Buffalo at the same −0.5. He beat Chicago 9-3 in his Week 2 spot start.
+
+**What changed:**
+- **QB Kyler Murray −0.5 → Carson Wentz −0.5.**
+- **Total unchanged at +1.6.**
+
 ## Week 7: vs Indianapolis (W 16–10)
 
 Minnesota's defense is in a class of its own: first in EPA allowed by a wide margin, with **Blake Cashman (94.3)** and **Kyle Van Noy (89.7)** leading the way. The offense is moving the other way. It's 29th in EPA, and **Aaron Jones** re-aggravated his MCL.
@@ -127,10 +135,7 @@ defense. Carson Wentz's Week 1–2 appearances remain historical context.
 
 ## Quarterback
 
-Kyler Murray (−0.5) is held despite back-to-back clean, efficient games: 79.3 PFF vs Miami
-and 79.9 (tied for 3rd of 30) at New Orleans, with no turnovers in either. His Week 3 return from
-the Week 1 concussion was rough (55.8 PFF, 24.5 QBR). He's trending toward a middling starter in
-O'Connell's system; the raise waits for a strong game against a good defense. Carson Wentz (−1.0) is the QB2.
+Carson Wentz (−0.5) is the starter. Kyler Murray is out with a hamstring injury, so Wentz starts Monday against Buffalo at the same −0.5. He beat Chicago 9-3 in his Week 2 spot start.
 
 ## What moved the number
 

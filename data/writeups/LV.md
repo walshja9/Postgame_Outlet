@@ -1,3 +1,11 @@
+## Week 9: QB re-evaluation
+
+He has 19 TD/5 INT and ranks 10th among this week's starters in passer rating (101.4).
+
+**What changed:**
+- **QB Cousins +0.3 → +0.5 (+0.2).**
+- **New total −1.1 → −0.9.**
+
 ## Week 8: at N.Y. Jets (W 38–33)
 
 Kirk Cousins had his best game of the season: 19/26 for 247 yards, 3 TD, 0 INT and an 88.0 QBR. The offense scored 24 second-half points to come back and win.
@@ -158,7 +166,7 @@ Las Vegas has two genuine stars — one on each side of the ball — dragged dow
 ## Quarterback
 
 
-Kirk Cousins (+0.3) goes up 0.3 after his best game of the season: 19/26 for 247 yards, 3 TD and 0 INT (88.0 QBR) in the comeback win at the Jets. Rookie Fernando Mendoza is still expected to play at some point, and the rating resets if he takes over.
+Kirk Cousins (+0.5) is the starter. He has 19 TD/5 INT and ranks 10th among this week's starters in passer rating (101.4).
 
 ## Quarterback: through Week 1 2026 (historical)
 

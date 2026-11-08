@@ -1,3 +1,11 @@
+## Week 9: QB re-evaluation
+
+Tanner McKee was benched after six straight losses, and Milton makes his first Eagles start against the Giants at the same −3.0.
+
+**What changed:**
+- **QB Tanner McKee −3.0 → Joe Milton −3.0.**
+- **Total unchanged at −6.0.**
+
 ## Week 8: at Washington (L 10–27)
 
 Philadelphia scored 10 points in the first quarter and none after. Washington is one of the league's worst defenses and was missing DTs Daron Payne and Javon Kinlaw and DL Jer'Zhan Newton, and the Eagles still couldn't move the ball. Tanner McKee went 23/34 for 212 yards with an INT and no TDs (32.9 QBR). WR **DeVonta Smith (hamstring)** is still out.
@@ -80,7 +88,7 @@ good: **Quinyon Mitchell** (84.6, INT), **Jalen Carter** (2 sacks, 2 forced fumb
 
 <!-- REPLACE the current "## Quarterback" section -->
 
-## Week 4: vs L.A. Rams (L 20–24)
+Joe Milton (−3.0) is the starter. Tanner McKee was benched after six straight losses, and Milton makes his first Eagles start against the Giants at the same −3.0.
 
 A **20–10 halftime lead couldn't hide how badly Philadelphia was out-played.** The Rams **out-gained the
 Eagles 415–172**. Philadelphia went **0-for-12 on third down**, threw for **68 net yards**, and managed

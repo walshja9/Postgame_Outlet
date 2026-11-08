@@ -1,3 +1,11 @@
+## Week 9: QB re-evaluation
+
+A 32.5 QBR and the most interceptions among this week's starters (10, with 5 TD). It's a hard-to-believe falloff for his track record, but it's seven games of evidence.
+
+**What changed:**
+- **QB Herbert −1.0 → −2.0 (−1.0).**
+- **New total −3.1 → −4.1.**
+
 ## Week 8: at L.A. Rams (L 9–24)
 
 This was closer than the score. The Chargers out-gained the Rams by 144 yards in the first half but trailed 10–9, and the game model had it roughly even (16–18). Justin Herbert threw 2 INTs. The bigger problem is the secondary: S **Derwin James (hamstring, IR)**, CBs **Donte Jackson** and **Rodney Shelley (hamstrings)** and **Deane Leonard (concussion)** are all out.
@@ -159,7 +167,7 @@ but Week 1 pulled the offense back to the pack.
 
 ## Quarterback
 
-Justin Herbert (−1.0) is the selected quarterback, down a point and a half after his sixth straight passing grade under 61. At Kansas City he threw for 204 yards with no touchdowns and an interception, and he hasn't thrown more than one touchdown in any game this season (8 INTs in six games). Backup linemen and injured receivers explain part of it, and the grade will be revisited when the line and Ladd McConkey are healthy.
+Justin Herbert (−2.0) is the starter. A 32.5 QBR and the most interceptions among this week's starters (10, with 5 TD). It's a hard-to-believe falloff for his track record, but it's seven games of evidence.
 
 ## Quarterback: through Week 1 2026 (historical)
 

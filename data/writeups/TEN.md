@@ -1,3 +1,7 @@
+## Week 9: QB re-evaluation
+
+Ward is held at −1.2. His 48.2 QBR and 78.7 rating rank in the bottom six, consistent with where the grade already sits.
+
 ## Week 8: at Cincinnati (L 36–43)
 
 Tennessee lost a shootout, but Cam Ward was the best quarterback on the field: 26/40 for 304 yards, 2 TD, 0 INT and an 80.9 QBR. The offense piled up 440 yards and kept trading scores with Cincinnati. The bigger news came earlier in the week, when the Titans traded DT **Jeffery Simmons** to Chicago for two first-round picks.

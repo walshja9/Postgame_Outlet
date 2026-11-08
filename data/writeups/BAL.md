@@ -1,3 +1,7 @@
+## Week 9: QB re-evaluation
+
+Fagnano is held at −5.0, the emergency-starter level. Thursday's 10-33 loss (10.1 QBR) didn't argue for anything higher.
+
 ## Week 8: at Buffalo (L 10–36)
 
 Baltimore's season turned on the first snap. **Lamar Jackson** suffered a **fracture-dislocation of his right (throwing) thumb** when his hand hit Greg Rousseau on the opening play. He needs surgery, is headed to IR, and is likely out for the season. Backup **Tyler Huntley** then went down in the second quarter with **turf toe** and is doubtful for Thursday; reports say he could miss four-plus weeks. Undrafted rookie **Joe Fagnano** finished the game 10/21 for 91 yards with an INT, and Buffalo out-gained the Ravens by 282 yards. For Thursday night vs Jacksonville, Fagnano (ankle) is expected to start, with **Kedon Slovis** (signed 11/3) and Austin Reed as the other options.

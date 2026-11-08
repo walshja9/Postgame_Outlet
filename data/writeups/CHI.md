@@ -1,3 +1,11 @@
+## Week 9: QB re-evaluation
+
+He ranks 4th among this week's starters in QBR (76.9), with 6 TD and just 1 INT since returning from the hamstring injury.
+
+**What changed:**
+- **QB Williams +3.0 → +3.5 (+0.5).**
+- **New total +4.9 → +5.4.**
+
 ## Week 8: at Seattle (W 34–17)
 
 Chicago went into Seattle and won by 17, the biggest statement of the season. Days earlier the Bears traded two first-round picks to Tennessee for All-Pro DT **Jeffery Simmons**. In his debut he had a sack, and per the ESPN broadcast Seattle averaged just 2.3 yards per play while he was on the field. Caleb Williams was clean (24/34, 247 yards, 1 TD, 0 INT), and the offense put up 363 yards against the league's top-rated defense.
@@ -75,7 +83,7 @@ was a real disagreement, and this result settled it.
 
 <!-- REPLACE the current "## Quarterback" section -->
 
-## Week 4: vs N.Y. Jets (W 23–12)
+Caleb Williams (+3.5) is the starter. He ranks 4th among this week's starters in QBR (76.9), with 6 TD and just 1 INT since returning from the hamstring injury.
 
 A third quarterback, a third win, and the most lopsided box score of the week. Chicago out-gained the
 Jets **492–157**, had **34 first downs to 7**, and held the ball for **42:45**. The box says the Bears

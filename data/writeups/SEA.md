@@ -1,3 +1,7 @@
+## Week 9: QB re-evaluation
+
+Lock is held at −0.5. His numbers are excellent (82.4 QBR, 127.3 rating), but they come from only about 60 plays, too small a sample to move the grade while he plays through the elbow tendonitis.
+
 ## Week 9: vs Arizona (pre-game)
 
 **Sam Darnold is out.** He hurt his **quad** late in the Chicago loss and, Mike Macdonald says, **cracked a rib** early in that same game. He played every snap anyway, and he's now week-to-week. **Drew Lock** starts, but not at full strength: he's been playing through **severe elbow tendonitis** (Tom Pelissero). G **Quenton Nelson** (**knee**) is also out and needs a procedure, and DE **Leonard Williams** (**shoulder stinger**) has been ruled out.

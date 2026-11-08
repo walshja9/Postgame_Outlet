@@ -1,3 +1,11 @@
+## Week 9: QB re-evaluation
+
+He ranks 9th among this week's starters in passer rating (104.5), with 12 TD/3 INT. His 21st-ranked QBR is the one soft spot.
+
+**What changed:**
+- **QB Smith −1.5 → −0.5 (+1.0).**
+- **New total −2.4 → −1.4.**
+
 ## Week 8: vs Las Vegas (L 33–38)
 
 The Jets out-gained Las Vegas (439–333) and lost anyway. Geno Smith was fine (290 yards, 2 TD, 1 INT), but the Jets blew a 23–14 halftime lead. The game model says the Raiders scored about 12 more points than their stats support. That's a pattern here: the coaching keeps giving games away.
@@ -165,9 +173,7 @@ anchor, while the units around him are better than replacement-level and climbin
 
 ## Quarterback
 
-Geno Smith (−1.5) holds after the Week 5 win over Cleveland (17-of-30, 182 yards, 1 TD, 65.7 PFF). He
-was raised from −2.0 after three mistake-free weeks capped by 321 yards and 3 TDs at Detroit. He's a
-below-the-line starter whose ceiling is limited, but he's not being priced near the floor.
+Geno Smith (−0.5) is the starter. He ranks 9th among this week's starters in passer rating (104.5), with 12 TD/3 INT. His 21st-ranked QBR is the one soft spot.
 
 ## What moved the number
 

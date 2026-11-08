@@ -1,3 +1,11 @@
+## Week 9: QB re-evaluation
+
+He ranks 11th among this week's starters in QBR (67.3) and 14th in passer rating (99.7). The talent isn't in question, but this season's production sits in the middle of the league.
+
+**What changed:**
+- **QB Mahomes +5.0 → +4.0 (−1.0).**
+- **New total +5.2 → +4.2.**
+
 ## Week 8: at Denver (pre-game)
 
 Kansas City's secondary was gutted for the trip to Denver. CB **L'Jarius Sneed** went to IR Saturday with the **right knee** injury he'd been playing through for over a month; the earliest he can return is Week 12. Rookie CB **Mansoor Delane** was downgraded to out with a **shoulder** injury. That's both starting corners, so Kristian Fulton and Christian Roland-Wallace take on bigger roles. On offense, **Rashee Rice** (hamstring/knee) carried no game status and RT **Jaylon Moore** was trending back from his concussion, but neither return is priced in yet.
@@ -126,10 +134,7 @@ Mahomes' knee looks fine.
 
 ## Quarterback
 
-Patrick Mahomes (+5.0) is the selected quarterback, raised during the Week 5 bye to sit level with Burrow and Stafford. He was held after Week 4 (15 of 30, 225
-yards, 2 TD, 0 INT) at Las Vegas, where he lost WR1 Rashee Rice in the first series. He reached
-+4.5 after his Week 2 performance (32 of 47, 382 yards, 3 TD, 0 INT) and followed it with a
-surgical Week 3 at Miami (82.4 PFF). His knee is no longer a factor in the grade.
+Patrick Mahomes (+4.0) is the starter. He ranks 11th among this week's starters in QBR (67.3) and 14th in passer rating (99.7). The talent isn't in question, but this season's production sits in the middle of the league.
 
 ## What moved the number
 

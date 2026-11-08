@@ -1,3 +1,7 @@
+## Week 9: QB re-evaluation
+
+Burrow is held at +5.0. He ranks 1st among this week's starters in the QBR/passer-rating blend (77.3 QBR, 111.6 rating, 20 TD/6 INT), which confirms the elite grade he already carries.
+
 ## Week 8: vs Tennessee (W 43–36)
 
 Cincinnati won, but the defense gave up 36 points and 440 yards to one of the league's weakest offenses. Joe Burrow threw for 462 yards and 5 TDs, along with 3 INTs. The offense can win shootouts, but the defense keeps forcing it to.

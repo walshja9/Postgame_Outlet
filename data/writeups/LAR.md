@@ -1,3 +1,11 @@
+## Week 9: QB re-evaluation
+
+His season QBR (63.3) and passer rating (93.2) both rank mid-pack among this week's starters, and his 8 interceptions are tied for third-most. He keeps a top-10 grade on talent, but the production hasn't matched an elite number.
+
+**What changed:**
+- **QB Stafford +5.0 → +4.5 (−0.5).**
+- **New total +6.4 → +5.9.**
+
 ## Week 7: at Las Vegas (W 35–21)
 
 Matthew Stafford was efficient (70.5 PFF, 3 TD), and Blake Corum (87.4) and Puka Nacua (86.8) did the damage. LT **Alaric Jackson** has served his two-game suspension and is back for Week 8.
@@ -191,10 +199,7 @@ Garrett loss move the number.
 
 ## Quarterback
 
-Matthew Stafford (+5.0) moved down from +5.5 after Week 4 and held in Week 5. The arm talent and veteran
-precision are still there: Week 5 against Buffalo was 40-of-54 for 383 yards, 3 TD and his first
-turnover-free game of the year. But six interceptions in the first four games keep him in the tier below
-elite for now.
+Matthew Stafford (+4.5) is the starter. His season QBR (63.3) and passer rating (93.2) both rank mid-pack among this week's starters, and his 8 interceptions are tied for third-most. He keeps a top-10 grade on talent, but the production hasn't matched an elite number.
 
 ## What moved the number
 

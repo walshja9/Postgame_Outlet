@@ -1,3 +1,7 @@
+## Week 9: QB re-evaluation
+
+Nix is held at −1.0. His 49.0 QBR and 83.6 passer rating both rank 25th, exactly where the grade has him.
+
 ## Week 9: at Carolina (pre-game)
 
 **Pat Surtain II** looks set to return from the **ankle** injury that cost him three and a half games. S **Brandon Jones** has a **hamstring** injury he hurt in practice and aggravated against Kansas City, and he's trending toward inactive. S **Talanoa Hufanga (ankle)** is questionable.

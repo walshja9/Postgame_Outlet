@@ -1,3 +1,11 @@
+## Week 9: QB re-evaluation
+
+He ranks 16th among this week's starters in QBR (62.5) and has been better than the floor he was priced at.
+
+**What changed:**
+- **QB Willis −2.2 → −1.5 (+0.7).**
+- **New total −4.9 → −4.2.**
+
 ## Week 8: vs New England (L 19–24)
 
 Miami lost by five, but the defense held New England to 313 yards. Malik Willis was steady (21/32, 211 yards, 2 TD, 1 INT).
@@ -129,7 +137,7 @@ Miami grades near the floor on all three lines — the aftermath of a roster tea
 
 ## Quarterback
 
-Malik Willis (−2.2) moves up after his best game of the season at the Jets: 14 of 21 for 208 yards and 2 TD, a 99.5 QBR and a 77.3 PFF grade. He's still a below-average starter, but this was the first sign the earlier floor was too low.
+Malik Willis (−1.5) is the starter. He ranks 16th among this week's starters in QBR (62.5) and has been better than the floor he was priced at.
 
 ## Quarterback: through Week 1 2026 (historical)
 
