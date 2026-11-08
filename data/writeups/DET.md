@@ -1,3 +1,12 @@
+## Week 9: at Miami (pre-game)
+
+Five Detroit starters are out. LB **Jack Campbell** went on **injured reserve** Saturday with a **serious neck injury**; he was carted off and hospitalized last week, and he says he's encouraged by his progress. CB1 **D.J. Reed (hip)**, DE **DJ Wonnum (concussion)**, S **Kerby Joseph (knee, PUP)** and OL **Cade Mays (ankle)** are also out. **Amon-Ra St. Brown** is **questionable with a rib injury** after limited practices.
+
+**What changed:**
+- **Defense −1.7 → −2.4 (−0.7):** −0.4 for Campbell, −0.2 for Reed, −0.1 for Wonnum.
+- **QB and offense held.** **−0.3 if St. Brown can't go.**
+- **New total 2.3 → 1.6.**
+
 ## Week 7: vs Green Bay (W 20–17)
 
 Detroit won a game the box score had closer to 29–22. The big news is S **Brian Branch**, back from his Achilles injury and immediately excellent (91.1 PFF) next to Aidan Hutchinson (91.5).

@@ -1,3 +1,11 @@
+## Week 9: vs Denver (pre-game)
+
+Carolina ruled out four players, and three of them are on defense. LB **Bobby Okereke (foot)** and OLB **Jaelan Phillips (hamstring)** leave the linebacker corps without both starters. Rookie CB **Will Lee III (hamstring)**, who had moved into the lineup with Horn, Mike Jackson and Evans on IR, is out too. LG **Damien Lewis (knee)** misses another game. T **Brady Christensen** has opened his practice window.
+
+**What changed:**
+- **Defense −0.7 → −1.0 (−0.3):** −0.2 for Okereke and −0.1 for Lee.
+- **QB and offense held.** Lewis was already priced in. **New total 0.0 → −0.3.**
+
 ## Week 8: at Green Bay (L 19–27)
 
 The depleted Carolina secondary couldn't hold up. With CBs Jaycee Horn, Mike Jackson and Akayleb Evans all out, Jordan Love threw for 288 yards and 3 TDs.

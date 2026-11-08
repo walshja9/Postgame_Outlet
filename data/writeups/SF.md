@@ -1,3 +1,12 @@
+## Week 9: vs Las Vegas (pre-game)
+
+The receiver room got thinner, not healthier, out of the bye. **Christian Kirk** went on **injured reserve** after getting hurt in Thursday's practice. **Deebo Samuel (hamstring)** and **Mike Evans (Achilles tendinitis)** have both been ruled out again, so the offense's expected return to health is on hold. The good news is on the other side: **Nick Bosa (calf)** is cleared to play for the first time since Week 3.
+
+**What changed:**
+- **Offense +0.4 → +0.2 (−0.2):** Kirk is on IR, and Deebo and Evans are out again.
+- **Defense +1.2 → +1.5 (+0.3):** Bosa is back. This comes back off if he's inactive.
+- **QB Purdy held** at +4.5. **New total 6.1 → 6.2.**
+
 ## Week 7: at Atlanta (L 20–29)
 
 Four turnovers sank San Francisco despite **400 yards**. Brock Purdy threw two interceptions (59.3 PFF), his third straight flat game. The 49ers added DT **DeForest Buckner** from Indianapolis, and they get a bye to heal before Mike Evans and Deebo Samuel are expected back.

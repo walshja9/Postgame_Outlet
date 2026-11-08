@@ -1,3 +1,11 @@
+## Week 9: at Carolina (pre-game)
+
+**Pat Surtain II** looks set to return from the **ankle** injury that cost him three and a half games. S **Brandon Jones** has a **hamstring** injury he hurt in practice and aggravated against Kansas City, and he's trending toward inactive. S **Talanoa Hufanga (ankle)** is questionable.
+
+**What changed:**
+- **Defense +1.5 → +1.7:** +0.3 for Surtain, which comes back off if he's inactive, and −0.1 for Jones.
+- **QB and offense held.** **New total 0.8 → 1.0.**
+
 ## Week 7: at Arizona (W 30–16)
 
 Denver won comfortably on the scoreboard, but Arizona had more first downs and the box score made it close to even. CB **Pat Surtain II** (ankle) was inactive for the third straight game, so last week's pre-game bump for his return comes back off.

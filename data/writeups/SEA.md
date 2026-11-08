@@ -1,3 +1,13 @@
+## Week 9: vs Arizona (pre-game)
+
+**Sam Darnold is out.** He hurt his **quad** late in the Chicago loss and, Mike Macdonald says, **cracked a rib** early in that same game. He played every snap anyway, and he's now week-to-week. **Drew Lock** starts, but not at full strength: he's been playing through **severe elbow tendonitis** (Tom Pelissero). G **Quenton Nelson** (**knee**) is also out and needs a procedure, and DE **Leonard Williams** (**shoulder stinger**) has been ruled out.
+
+**What changed:**
+- **QB Darnold +1.3 → Lock −0.5 (−1.8):** Lock has been one of the league's best backups (0.0), but the elbow takes half a point off. Darnold returns at +1.3 when he's back.
+- **Offense +0.5 → +0.2 (−0.3):** this takes back the Nelson bump.
+- **Defense +2.9 → +2.7 (−0.2):** Williams is out, with Nwosu already missing.
+- **New total 4.7 → 2.4.**
+
 ## Week 8: vs Chicago (L 17–34)
 
 Seattle was out-gained by 111 yards at home. Sam Darnold went 17/34 for 188 yards with 2 TD and an INT (31.3 QBR), extending a stretch of turnover-prone play. The league's top-rated defense gave up 363 yards to a Bears offense that had just added Jeffery Simmons on the other side of the ball. LB **Uchenna Nwosu (ankle)** and WR **Rashid Shaheed (knee)** are both out.
@@ -168,8 +178,7 @@ into the season.
 
 ## Quarterback
 
-
-Sam Darnold (+1.3) is the starter, down another 0.2 after a 17/34, 188-yard game (2 TD, 1 INT, 31.3 QBR) in the home loss to Chicago. The turnovers have been the issue for over a month. Mike Macdonald has said he's staying the starter. Drew Lock (0.0) is the QB2.
+Drew Lock (−0.5) starts Week 9 while Sam Darnold (quad, cracked rib) is out week-to-week. Lock is normally graded at 0.0 but is playing through severe elbow tendonitis. Darnold (+1.3) returns to the starting grade when healthy; his turnovers were already the watch item.
 
 ## Week 1 rating notes (historical)
 

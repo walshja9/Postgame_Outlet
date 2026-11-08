@@ -1,3 +1,11 @@
+## Week 9: vs Dallas (pre-game)
+
+Indianapolis keeps losing starters on defense. S **A.J. Haulcy (ankle)** has been ruled out, and Hunter Wohler starts in his place. CB **Justin Walley (knee)** and LB **Akeem Davis-Gaither (knee)** are also out. **Daniel Jones** remains the starter, but other teams are asking about trading for him.
+
+**What changed:**
+- **Defense −1.5 → −1.7 (−0.2):** Haulcy is out.
+- **QB and offense held.** **New total −2.9 → −3.1.**
+
 ## Week 8: at Jacksonville (L 7–42)
 
 This looked like a team that had just sold off its best players. Indianapolis trailed 28–0 at halftime and didn't score until the second half. Daniel Jones threw 2 INTs for 144 yards (31.8 QBR), his sixth straight negative game. With Buckner and Nelson traded away the week before, the motivation concern we were watching showed up on the field. It's unclear whether Jones or **Anthony Richardson** starts Week 9.

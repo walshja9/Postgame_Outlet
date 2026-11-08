@@ -1,3 +1,11 @@
+## Week 9: at New Orleans (pre-game)
+
+DT **Maliek Collins (elbow)** has been ruled out. He got hurt at Pittsburgh and returned to that game. With **Mason Graham (MCL)** already out, both of Cleveland's starting defensive tackles are down, and the Browns signed **Sam Kamara** for depth.
+
+**What changed:**
+- **Defense +0.5 → +0.3 (−0.2):** both starting DTs are out.
+- **QB and offense held.** **New total −2.0 → −2.2.**
+
 ## Week 7: at Tennessee (W 27–24)
 
 Cleveland's offense finally showed up: **491 yards**, with the box score at 33–21. Deshaun Watson graded 72.8. LT Spencer Fano (92.2), WR KC Concepcion (87.6) and TE Harold Fannin Jr. (84.5) led the way, with Concepcion and RBs Judkins and Sampson all back.

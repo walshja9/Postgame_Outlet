@@ -1,3 +1,11 @@
+## Week 9: vs L.A. Rams (pre-game)
+
+**Stefon Diggs** is healthy, but there's very little behind him. **Dyami Brown (calf)** went on **injured reserve** and will miss at least four games, and **Treylon Burks (foot)** has been ruled out. With McLaurin already lost for the year, Van Jefferson and Luke McCaffrey move up behind Diggs.
+
+**What changed:**
+- **Offense −1.1 → −1.3 (−0.2):** Washington's No. 2 and No. 3 receivers are both out.
+- **QB Daniels (+1.5) and defense held.** **New total −0.9 → −1.1.**
+
 ## Week 6: at San Francisco (L 17–23, MNF)
 
 Washington fell behind **20–3 at halftime**, out-gained 278–71, and then nearly came all the way back. After the
