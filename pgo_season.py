@@ -29,6 +29,7 @@ URLS = {
     'depth': 'https://github.com/nflverse/nflverse-data/releases/download/depth_charts/depth_charts_2026.csv.gz',
 }
 SCOREBOARD = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates={season}&seasontype=2&week={week}'
+KICKOFF_CORRECTIONS = ROOT / 'data/schedule_kickoff_corrections.json'
 IDENTITY = ('game_id', 'season', 'week', 'game_type', 'home', 'away', 'kickoff')
 
 
@@ -350,8 +351,39 @@ def load_current(root=DEFAULT_ROOT):
     return state
 
 
-def parse_schedule(raw, season=SEASON):
+def load_kickoff_corrections(path=KICKOFF_CORRECTIONS):
+    """Human-reviewed kickoff corrections for games the schedule source has not yet updated."""
+    if not Path(path).exists():
+        return {}
+    entries = read_json(path)
+    require(isinstance(entries, list), 'Kickoff corrections must be a list')
+    out = {}
+    for e in entries:
+        require(isinstance(e, dict) and {'game_id', 'source_kickoff', 'kickoff', 'reviewed'} <= set(e),
+                'Kickoff correction requires game_id, source_kickoff, kickoff and reviewed')
+        require(e['game_id'] not in out, 'Duplicate kickoff correction')
+        utc(e['source_kickoff']); utc(e['kickoff'])
+        out[e['game_id']] = e
+    return out
+
+
+def apply_kickoff_correction(game, corrections):
+    """Use a reviewed kickoff only while the source still shows the exact superseded time.
+
+    Once the source publishes the corrected time the entry becomes a no-op; any other
+    source change fails so a person reviews it again.
+    """
+    fix = corrections.get(game['game_id'])
+    if fix is None or utc(game['kickoff']) == utc(fix['kickoff']):
+        return game
+    require(utc(game['kickoff']) == utc(fix['source_kickoff']),
+            'Schedule source kickoff changed from the reviewed correction; review rescheduling')
+    return dict(game, kickoff=utc(fix['kickoff']).isoformat())
+
+
+def parse_schedule(raw, season=SEASON, corrections=None):
     from pgo_prospective import _normalize_row
+    corrections = load_kickoff_corrections() if corrections is None else corrections
     rows = list(csv.DictReader(io.StringIO(gzip.decompress(raw).decode('utf-8-sig'))))
     games = []
     for row in rows:
@@ -360,6 +392,7 @@ def parse_schedule(raw, season=SEASON):
         game = {k: normalized[k] for k in ('game_id', 'season', 'week', 'game_type', 'kickoff', 'location', 'home_rest', 'away_rest')}
         game.update(home=normalized['home_team'], away=normalized['away_team'], espn_id=row.get('espn',''))
         require(re.fullmatch(r'\d+', game['espn_id']) is not None, 'Missing schedule provider event ID')
+        game = apply_kickoff_correction(game, corrections)
         game['lock_at'] = (utc(game['kickoff'])-timedelta(minutes=60)).isoformat()
         game['provider_scores'] = {k: row.get(k) for k in ('home_score', 'away_score')}
         games.append(game)
